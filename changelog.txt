@@ -4,3 +4,5 @@ Date: 27/4/25
   Features:
     - (TODO) Added mod setting to modify resource patch generation shape.
     - (TODO) Added mod setting to modify number of sides of the resource patch generation shape.
+  Major Features:
+    - (TODO) Added quests.

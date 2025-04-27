@@ -1,27 +1,25 @@
 local lib = require "api.lib"
+local event_system = require "api.event_system"
 
 local quests = {}
 
 
 
 function quests.new_quest(params)
-    if not params.type then
-        lib.log_error("Quest must have a type")
-        return
-    end
-    if not params.internal_name then
-        lib.log_error("Quest must have an internal name")
+    -- if not params.type then
+    --     lib.log_error("quests.new_quest: Quest must have a type")
+    --     return
+    -- end
+    if not params.name then
+        lib.log_error("quests.new_quest: Quest must have a name")
         return
     end
     local quest = {
-        type = params.type,
-        internal_name = params.internal_name,
+        -- type = params.type,
+        name = params.name,
         conditions = {},
         rewards = {},
     }
-
-    quest.title = params.title
-    quest.description = params.description
 
     for _, condition in pairs(params.conditions or {}) do
         table.insert(quest.conditions, condition)
@@ -62,15 +60,10 @@ function quests.new_reward(params)
 end
 
 function quests.is_condition_satisfied(condition, info)
-
+    
 end
 
 function quests.claim_reward(reward, info)
-
-end
-
-function quests.register_all()
-    -- Load quest data into storage
 
 end
 

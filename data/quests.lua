@@ -29,6 +29,28 @@ return {
     },
 
     allowed_reward_types = sets.new {
-        ""
+        "hex-core-input-preservation",
+        "hex-core-warp-level-1",
+        "hex-core-warp-level-2",
+        "automated-hex-claiming-level-1",
+        "automated-hex-claiming-level-2",
+        "trade-productivity-bonus",
+        "resource-conversion",
+        "resource-removal",
+        "hex-core-removal",
+        "trade-reversal",
+        "resource-anchoring", -- makes resources infinite in a hex
+        "free-space-platform",
+        "unlock-t4-modules",
+        "unlock-t6-quality",
+        "infinite-robot-batteries",
+        "spawn-death-spiders",
+        "claim-free-hexes",
+        "spawn-power-poles",
+        "spawn-roboports",
+        "trade-overview",
+        "trade-loop-finder",
+        "megaclaim-hexes",
+        "more-trades",
     }
 }
