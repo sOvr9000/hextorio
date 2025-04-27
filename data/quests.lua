@@ -1,0 +1,34 @@
+
+local sets = require "api.sets"
+
+return {
+    allowed_condition_types = sets.new {
+        "claimed-hexes", -- the more hexes you claim, the higher your score
+        "trading-rate", -- the faster (and more) you make trades, the higher your score (counts multi-batch trades as well)
+        "researched-technologies", -- the more technologies you research, the higher your score
+        "cumulative-claimed-hex-dist", -- the higher the sum of distances from spawn for each of your hexes, the higher your score
+        "max-claimed-hex-dist", -- the farther away from spawn you claim a hex, the higher your score
+        "obtain-item", -- the more you have of a certain item, the higher your score
+        "obtain-coins", -- the more coins you have in your inventory, the higher your score
+        "coin-production-rate", -- the better your coin farming, the higher your score
+        "spawner-kill-rate", -- the faster you can kill spawners, the higher your score
+        "biter-kill-rate", -- the faster you can kill biters, the higher your score
+        "planets-reached", -- the more planets you reach, the higher your score
+        "space-platform-trips-completed", -- the more trips completed by space platforms, the higher your score
+        "depleted-resources", -- the more individual resource tiles you fully mine, the higher your score
+        "quests-completed", -- the more quests you complete, the higher your score
+        "max-dist-between-trades", -- the farther apart you're making trades from each other, the higher your score
+        "rockets-launched", -- the more rockets you launch into space, the higher your score
+        "turret-diversity", -- the more types of turrets you place within a 10x10 tile range of each other, the higher your score
+        "achievements-unlocked", -- the more achievements you unlock, the higher your score
+        "fastest-ship-speed", -- the higher your space platform's top speed, the higher your score
+
+        "biter-spawner-ram", -- destroy a vehicle by ramming it into a biter spawner
+        "slippery-drive", -- drive a vehicle on the oceans of Fulgora
+        "destroy-item", -- shoot and destroy a chest with a specific item in it
+    },
+
+    allowed_reward_types = sets.new {
+        ""
+    }
+}

@@ -1,0 +1,513 @@
+
+local lib = require "api.lib"
+local item_values = require "api.item_values"
+local sets        = require "api.sets"
+local item_ranks  = require "api.item_ranks"
+local coin_tiers  = require "api.coin_tiers"
+local event_system= require "api.event_system"
+
+require "util" -- for table.deepcopy
+
+local trades = {}
+
+
+
+function trades.init()
+    event_system.register_callback("rank-up-all", function()
+        for surface_name, _ in pairs(game.surfaces) do
+            for _, item_name in pairs(item_values.get_items_sorted_by_value(surface_name, true, false)) do
+                if trades.is_item_discovered(item_name) then
+                    item_ranks.rank_up(item_name)
+                end
+            end
+        end
+    end)
+end
+
+function trades.new(input_items, output_items, surface_name)
+    if not input_items or not output_items then
+        lib.log_error("trade has no input items or no output items")
+    end
+    if not surface_name then
+        lib.log_error("trade has no specified surface name")
+    end
+    local trade = {
+        input_items = {},
+        output_items = {},
+        surface_name = surface_name,
+        active = true,
+    }
+    for _, input_item in pairs(input_items) do
+        table.insert(trade.input_items, {
+            name = input_item.name,
+            count = input_item.count,
+        })
+    end
+    for _, output_item in pairs(output_items) do
+        table.insert(trade.output_items, {
+            name = output_item.name,
+            count = output_item.count,
+        })
+    end
+    return trade
+end
+
+-- Return a deep copy of a single trade
+function trades.copy_trade(trade)
+    return table.deepcopy(trade)
+end
+
+function trades.from_item_names(surface_name, input_item_names, output_item_names, params)
+    if not params then
+        params = {}
+    end
+
+    local max_value = 0
+    for _, item_name in pairs(input_item_names) do
+        max_value = math.max(max_value, item_values.get_item_value(surface_name, item_name))
+    end
+    for _, item_name in pairs(output_item_names) do
+        max_value = math.max(max_value, item_values.get_item_value(surface_name, item_name))
+    end
+
+    local value_budget = (3 + math.random() * 7) * max_value
+    local value_per_input = value_budget / #input_item_names
+
+    local input_items = {}
+    for _, item_name in pairs(input_item_names) do
+        local value = item_values.get_item_value(surface_name, item_name)
+        local mean_count = value_per_input / value
+        local count = math.max(1, math.floor(0.5 + mean_count * (0.75 + 0.5 * math.random())))
+        local input_item = {
+            name = item_name,
+            count = count,
+        }
+        table.insert(input_items, input_item)
+    end
+
+    local output_items = {}
+    for _, item_name in pairs(output_item_names) do
+        local output_item = {
+            name = item_name,
+            -- leave count unset for automatic calculation
+        }
+        table.insert(output_items, output_item)
+    end
+
+    local trade = trades.new(input_items, output_items, surface_name)
+    trades.determine_best_output_counts(surface_name, trade)
+    return trade
+end
+
+-- Given a trade with set input items and counts and set output items but unset output counts, set the remaining unset output counts to the values which best preserve a value ratio of 1:1.
+function trades.determine_best_output_counts(surface_name, trade)
+    trades._try_set_output_counts(surface_name, trade)
+end
+
+function trades._try_set_output_counts(surface_name, trade)
+    local total_input_value = trades.get_input_value(surface_name, trade)
+    local output_items_value = {}
+
+    -- Initialize with values and minimal counts
+    for i, output_item in ipairs(trade.output_items) do
+        output_items_value[i] = item_values.get_item_value(surface_name, output_item.name)
+        output_item.count = output_item.count or 1  -- Initialize with count 1 if not set
+    end
+
+    -- Handle single output item case specially
+    if #trade.output_items == 1 then
+        local output_item = trade.output_items[1]
+        local item_value = output_items_value[1]
+        output_item.count = math.max(1, math.floor((total_input_value / item_value) + 0.5))
+        return
+    end
+
+    -- Initial distribution based on proportional values
+    local total_output_value_per_item = 0
+    for i = 1, #output_items_value do
+        total_output_value_per_item = total_output_value_per_item + output_items_value[i]
+    end
+
+    for i, output_item in ipairs(trade.output_items) do
+        local proportion = output_items_value[i] / total_output_value_per_item
+        local target_value = total_input_value * proportion
+        local target_count = target_value / output_items_value[i]
+        output_item.count = math.max(1, math.floor(target_count + 0.5))
+    end
+
+    -- Hill climbing optimization to get closer to 1:1 ratio
+    local iterations = 0
+    local max_iterations = 50
+    local best_error = math.abs(trades.get_trade_value_ratio(surface_name, trade) - 1)
+
+    while iterations < max_iterations and best_error > 0.01 do
+        iterations = iterations + 1
+        local improved = false
+
+        -- For each output item, try incrementing and decrementing
+        for i, output_item in ipairs(trade.output_items) do
+            -- Try incrementing
+            output_item.count = output_item.count + 1
+            local new_ratio = trades.get_trade_value_ratio(surface_name, trade)
+            local new_error = math.abs(new_ratio - 1)
+
+            if new_error < best_error then
+                best_error = new_error
+                improved = true
+            else
+                -- Revert increment
+                output_item.count = output_item.count - 1
+
+                -- Try decrementing if count > 1
+                if output_item.count > 1 then
+                    output_item.count = output_item.count - 1
+                    new_ratio = trades.get_trade_value_ratio(surface_name, trade)
+                    new_error = math.abs(new_ratio - 1)
+
+                    if new_error < best_error then
+                        best_error = new_error
+                        improved = true
+                    else
+                        -- Revert decrement
+                        output_item.count = output_item.count + 1
+                    end
+                end
+            end
+        end
+
+        -- Exit if no improvements in this iteration
+        if not improved then break end
+    end
+end
+
+-- Return the value of the trade's inputs
+function trades.get_input_value(surface_name, trade)
+    local input_value = 0
+    for _, input_item in pairs(trade.input_items) do
+        input_value = input_value + item_values.get_item_value(surface_name, input_item.name) * input_item.count * (1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(input_item.name)))
+    end
+    return input_value
+end
+
+-- Return the value of the trade's outputs
+function trades.get_output_value(surface_name, trade)
+    local output_value = 0
+    for _, output_item in pairs(trade.output_items) do
+        output_value = output_value + item_values.get_item_value(surface_name, output_item.name) * output_item.count / (1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(output_item.name)))
+    end
+    return output_value
+end
+
+-- Return the ratio of values of the trade's outputs to its inputs
+function trades.get_trade_value_ratio(surface_name, trade)
+    return trades.get_output_value(surface_name, trade) / trades.get_input_value(surface_name, trade)
+end
+
+function trades.get_input_coins_from_inventory_trade(inventory, trade)
+    local inventory_coin, trade_coin
+    for _, input_item in pairs(trade.input_items) do
+        if lib.is_item_coin(input_item.name) then
+            inventory_coin = coin_tiers.get_coin_from_inventory(inventory)
+            local coins = {["hex-coin"] = 0, ["gravity-coin"] = 0, ["meteor-coin"] = 0, ["hexaprism-coin"] = 0}
+            for _, _input_item in pairs(trade.input_items) do
+                if lib.is_item_coin(_input_item.name) then
+                    coins[_input_item.name] = _input_item.count
+                end
+            end
+            trade_coin = coin_tiers.new(coins)
+            break
+        end
+    end
+
+    return inventory_coin, trade_coin
+end
+
+function trades.get_output_coins_from_inventory_trade(inventory, trade)
+    local inventory_coin, trade_coin
+    for _, output_item in pairs(trade.output_items) do
+        if lib.is_item_coin(output_item.name) then
+            inventory_coin = coin_tiers.get_coin_from_inventory(inventory)
+            local coins = {["hex-coin"] = 0, ["gravity-coin"] = 0, ["meteor-coin"] = 0, ["hexaprism-coin"] = 0}
+            for _, _output_item in pairs(trade.output_items) do
+                if lib.is_item_coin(_output_item.name) then
+                    coins[_output_item.name] = _output_item.count
+                end
+            end
+            trade_coin = coin_tiers.new(coins)
+            break
+        end
+    end
+
+    return inventory_coin, trade_coin
+end
+
+-- Check whether a trade can occur at least once within an inventory
+function trades.can_trade_items(inventory, trade)
+    if not trade.active then return false end
+
+    for _, input_item in pairs(trade.input_items) do
+        if not lib.is_item_coin(input_item.name) then
+            local count = inventory.get_item_count(input_item.name)
+            if count < input_item.count then
+                return false
+            end
+        end
+    end
+
+    local inventory_coin, trade_coin = trades.get_input_coins_from_inventory_trade(inventory, trade)
+    if inventory_coin and trade_coin then
+        if coin_tiers.lt(inventory_coin, trade_coin) then
+            return false
+        end
+    end
+
+    return true
+end
+
+-- Check how many batches of (how many times) a trade can occur within an inventory
+function trades.get_num_batches_for_trade(input_inventory, output_inventory, trade)
+    if not trade.active then return 0 end
+
+    local num_batches = math.huge
+    for _, input_item in pairs(trade.input_items) do
+        if not lib.is_item_coin(input_item.name) then
+            local count = input_inventory.get_item_count(input_item.name)
+            local num = math.floor(count / input_item.count)
+            num_batches = math.min(num, num_batches)
+        end
+    end
+
+    local inventory_coin, trade_coin = trades.get_input_coins_from_inventory_trade(input_inventory, trade)
+    if inventory_coin and trade_coin then
+        num_batches = math.min(math.floor(coin_tiers.divide_coins(inventory_coin, trade_coin)), num_batches)
+    end
+
+    -- Further limit num batches by available space in output inventory
+    for _, output_item in pairs(trade.output_items) do
+        if not lib.is_item_coin(output_item.name) then
+            local count = output_inventory.get_insertable_count(output_item.name)
+            local num = math.floor(count / (3 * output_item.count)) -- divide by 3 to overestimate the needed room for other output items
+            num_batches = math.min(num, num_batches)
+        end
+    end
+
+    return num_batches
+end
+
+-- Trade items within an inventory
+function trades.trade_items(inventory_input, inventory_output, trade, num_batches)
+    if not trade.active then return {}, {} end
+    if num_batches <= 0 then return {}, {} end
+
+    local total_removed = {}
+    for _, input_item in pairs(trade.input_items) do
+        if not lib.is_item_coin(input_item.name) then
+            local to_remove = math.min(input_item.count * num_batches, inventory_input.get_item_count(input_item.name))
+            inventory_input.remove {name = input_item.name, count = to_remove}
+            total_removed[input_item.name] = (total_removed[input_item.name] or 0) + to_remove
+            trades.increment_total_sold(input_item.name, to_remove)
+        end
+    end
+
+    local _, trade_coin = trades.get_input_coins_from_inventory_trade(inventory_input, trade)
+    if trade_coin then
+        coin_tiers.remove_coin_from_inventory(inventory_input, coin_tiers.multiply(trade_coin, num_batches))
+    end
+
+    local total_inserted = {}
+    for _, output_item in pairs(trade.output_items) do
+        if not lib.is_item_coin(output_item.name) then
+            local to_insert = output_item.count * num_batches
+            inventory_output.insert {name = output_item.name, count = to_insert}
+            total_inserted[output_item.name] = (total_inserted[output_item.name] or 0) + to_insert
+            trades.increment_total_bought(output_item.name, to_insert)
+        end
+    end
+
+    _, trade_coin = trades.get_output_coins_from_inventory_trade(inventory_input, trade)
+    if trade_coin then
+        coin_tiers.add_coin_to_inventory(inventory_input, coin_tiers.multiply(trade_coin, num_batches))
+    end
+
+    return total_removed, total_inserted
+end
+
+function trades.random_trade_item_names(surface_name, volume)
+    local possible_items = item_values.get_items_near_value(surface_name, volume, 10, true, false)
+    if #possible_items < 2 then
+        lib.log_error("Not enough items found near value " .. volume)
+        lib.log_error("Found: " .. serpent.line(possible_items))
+        return
+    end
+    local set = sets.new()
+    for i = 1, 6 do
+        sets.add(set, possible_items[math.random(1, #possible_items)])
+    end
+    local trade_items = sets.to_array(set)
+
+    local input_item_names = {}
+    local output_item_names = {}
+    for i = 1, #trade_items do
+        if i % 2 == 0 then
+            table.insert(output_item_names, trade_items[i])
+        else
+            table.insert(input_item_names, trade_items[i])
+        end
+    end
+
+    local num_inputs = math.random(1, 3)
+    while #input_item_names > num_inputs do
+        table.remove(input_item_names, 1)
+    end
+
+    local num_outputs = math.random(1, 3)
+    while #output_item_names > num_outputs do
+        table.remove(output_item_names, 1)
+    end
+
+    return input_item_names, output_item_names
+end
+
+-- Generate a random trade
+function trades.random(surface_name, volume)
+    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume)
+
+    if not input_item_names or not output_item_names then
+        lib.log("trades.random: Not enough items centered around the value " .. volume)
+        return
+    end
+
+    if math.random() < lib.runtime_setting_value "coin-trade-chance" then
+        local coin_type = "hex-coin"
+        if volume > item_values.get_item_value(surface_name, "hexaprism-coin") then
+            coin_type = "hexaprism-coin"
+        elseif volume > item_values.get_item_value(surface_name, "meteor-coin") then
+            coin_type = "meteor-coin"
+        elseif volume > item_values.get_item_value(surface_name, "gravity-coin") then
+            coin_type = "gravity-coin"
+        end
+        if math.random() < lib.runtime_setting_value "sell-trade-chance" then
+            output_item_names[math.random(1, #output_item_names)] = coin_type
+        else
+            input_item_names[math.random(1, #input_item_names)] = coin_type
+        end
+    end
+
+    return trades.from_item_names(surface_name, input_item_names, output_item_names)
+end
+
+function trades.is_trade_valid(trade)
+    if not trade then return false end
+    if not trade.input_items then return false end
+    if not trade.output_items then return false end
+    if not trade.surface_name then return false end
+    if type(trade.surface_name) ~= "string" then return false end
+    if type(trade.input_items) ~= "table" then return false end
+    if type(trade.output_items) ~= "table" then return false end
+    local all_items = table.pack(table.unpack(trade.input_items), table.unpack(trade.output_items))
+    all_items.n = nil -- weird thing from Lua idk
+    -- lib.log(serpent.block(all_items))
+    for _, input in pairs(all_items) do
+        if type(input) ~= "table" then return false end
+        if not input.name then return false end
+        if type(input.name) ~= "string" then return false end
+        if not input.count then return false end
+        if type(input.count) ~= "number" then return false end
+        if input.count <= 0 then return false end
+        if not item_values.has_item_value(trade.surface_name, input.name) then return false end
+    end
+    return true
+end
+
+-- Return whether the item is now discovered if it wasn't previously.
+function trades.mark_as_discovered(item_name)
+    if item_name:sub(-5) == "-coin" then return false end
+    local already_discovered = trades.is_item_discovered(item_name)
+    storage.trades.discovered_items[item_name] = true
+    return not already_discovered
+end
+
+function trades.is_item_discovered(item_name)
+    return storage.trades.discovered_items[item_name] == true
+end
+
+-- Return a list of the item names which were newly discovered in the given trades.
+function trades.discover_items(trades_list)
+    local new_discoveries = {}
+    for _, trade in pairs(trades_list) do
+        for _, input in pairs(trade.input_items) do
+            if trades.mark_as_discovered(input.name) then
+                table.insert(new_discoveries, input.name)
+            end
+        end
+        for _, output in pairs(trade.output_items) do
+            if trades.mark_as_discovered(output.name) then
+                table.insert(new_discoveries, output.name)
+            end
+        end
+    end
+
+    if next(new_discoveries) then
+        local s = " "
+        for i, item_name in ipairs(new_discoveries) do
+            if i > 1 then
+                s = s .. " "
+            end
+            s = s .. "[img=item." .. item_name .. "]"
+        end
+        game.print({"", {"hextorio.new-catalog-items"}, s})
+    end
+
+    return new_discoveries
+end
+
+function trades.discover_all()
+
+end
+
+function trades._increment_total_traded(item_name, amount)
+    if amount <= 0 then return end
+    storage.trades.total_items_traded[item_name] = (storage.trades.total_items_traded[item_name] or 0) + amount
+end
+
+function trades.increment_total_sold(item_name, amount)
+    if amount <= 0 then return end
+    local old_amount = storage.trades.total_items_sold[item_name] or 0
+    storage.trades.total_items_sold[item_name] = (storage.trades.total_items_sold[item_name] or 0) + amount
+    trades._increment_total_traded(item_name, amount)
+    if old_amount == 0 and trades.get_total_bought(item_name) > 0 and item_ranks.get_item_rank(item_name) == 1 then
+        item_ranks.progress_item_rank(item_name, 2)
+    end
+end
+
+function trades.increment_total_bought(item_name, amount)
+    if amount <= 0 then return end
+    local old_amount = storage.trades.total_items_bought[item_name] or 0
+    storage.trades.total_items_bought[item_name] = (storage.trades.total_items_bought[item_name] or 0) + amount
+    trades._increment_total_traded(item_name, amount)
+    if old_amount == 0 and trades.get_total_sold(item_name) > 0 and item_ranks.get_item_rank(item_name) == 1 then
+        item_ranks.progress_item_rank(item_name, 2)
+    end
+end
+
+function trades.get_total_traded(item_name)
+    return storage.trades.total_items_traded[item_name] or 0
+end
+
+function trades.get_total_sold(item_name)
+    return storage.trades.total_items_sold[item_name] or 0
+end
+
+function trades.get_total_bought(item_name)
+    return storage.trades.total_items_bought[item_name] or 0
+end
+
+function trades.set_trade_active(trade, flag)
+    if flag == trade.active then return false end
+    trade.active = flag
+    return true
+end
+
+
+
+return trades
