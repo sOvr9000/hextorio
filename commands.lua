@@ -4,16 +4,17 @@ local hex_grid = require "api.hex_grid"
 local item_ranks = require "api.item_ranks"
 local gui = require "api.gui"
 local event_system = require "api.event_system"
+local sets = require "api.sets"
 
 
 
-local admin_only = {
-    ["claim"] = true,
-    ["debug-items"] = true,
-    ["rank-up"] = true,
-    ["add-trade"] = true,
-    ["remove-trade"] = true,
-    ["rank-up-all"] = true,
+local admin_only = sets.new {
+    "claim",
+    "debug-items",
+    "rank-up",
+    "rank-up-all",
+    "add-trade",
+    "remove-trade",
 }
 
 function on_command(player, command, params)
