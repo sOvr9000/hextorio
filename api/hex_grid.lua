@@ -690,6 +690,13 @@ function hex_grid.init()
         player.print("Removed trade: " .. lib.get_trade_img_str(trade))
         hex_grid.remove_trade(state, idx)
     end)
+
+    event_system.register_callback("command-debug-mode", function(player, params)
+        hex_grid.claim_hex(player.surface.name, {q = 0, r = 0})
+        for _, hex_pos in pairs(hex_grid.get_adjacent_hexes {q = 0, r = 0}) do
+            hex_grid.claim_hex(player.surface.name, hex_pos)
+        end
+    end)
 end
 
 -- Get or create surface storage

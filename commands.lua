@@ -10,7 +10,7 @@ local sets = require "api.sets"
 
 local admin_only = sets.new {
     "claim",
-    "debug-items",
+    "debug-mode",
     "rank-up",
     "rank-up-all",
     "add-trade",
@@ -22,23 +22,37 @@ function on_command(player, command, params)
 
     if command == "claim" then
         hex_grid.claim_hex(player.surface.name, {q = params[1], r = params[2]})
-    elseif command == "debug-items" then
-        player.insert{
+    elseif command == "debug-mode" then
+        player.insert {
             name = "hex-coin",
-            count = 12345,
+            count = 99999,
         }
-        player.insert{
+        player.insert {
             name = "gravity-coin",
-            count = 12345,
+            count = 99999,
         }
-        player.insert{
+        player.insert {
             name = "meteor-coin",
-            count = 12345,
+            count = 99999,
         }
-        player.insert{
+        player.insert {
             name = "hexaprism-coin",
-            count = 12345,
+            count = 100000,
         }
+
+        -- Get legendary mech armor
+        lib.insert_endgame_armor(player)
+
+        -- Claim hexes
+        -- handled by event_system
+
+        -- Research all technologies
+        for _, tech in pairs(game.forces.player.technologies) do
+            tech.researched = true
+        end
+
+        -- Enable cheat mode (spawn in items instead of crafting them)
+        player.cheat_mode = true
     elseif command == "rank-up" then
         if item_ranks.rank_up(params[1]) then
             -- player.print("Ranked up [item=" .. params[1] .. "] to rank " .. lib.get_rank_img_str(item_ranks.get_item_rank(params[1])))
@@ -51,10 +65,11 @@ function on_command(player, command, params)
     elseif command == "discover-all" then
         -- item_ranks.rank_up_all()
     elseif command == "add-trade" then
-        event_system.trigger("command-add-trade", player, params)
+        -- handled by event system
     elseif command == "remove-trade" then
-        event_system.trigger("command-remove-trade", player, params)
+        -- handled by event system
     end
+    event_system.trigger("command-" .. command, player, params)
 end
 
 function parse_command(command)
@@ -124,7 +139,7 @@ end
 
 
 commands.add_command("claim", "Claim a hex", parse_command)
-commands.add_command("debug-items", "Add items to your inventory for debugging", parse_command)
+commands.add_command("debug-mode", "Set up your character and game for debugging", parse_command)
 commands.add_command("rank-up", "Rank up an item, bypassing progress requirements", parse_command)
 commands.add_command("rank-up-all", "Rank up all items that are discovered in the catalog, bypassing progress requirements", parse_command)
 commands.add_command("discover-all", "Discover an item in the catalog", parse_command)

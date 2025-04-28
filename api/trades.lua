@@ -471,6 +471,7 @@ end
 
 -- Return a list of the item names which were newly discovered in the given trades.
 function trades.discover_items(trades_list)
+    if not trades_list then return {} end
     local new_discoveries = {}
     for _, trade in pairs(trades_list) do
         for _, input in pairs(trade.input_items) do

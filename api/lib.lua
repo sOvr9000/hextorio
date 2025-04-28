@@ -693,6 +693,41 @@ function lib.get_gps_str_from_hex_core(hex_core)
     return "[gps=" .. hex_core.position.x .. "," .. hex_core.position.y .. "," .. hex_core.surface.name .. "]"
 end
 
+function lib.insert_endgame_armor(player)
+    player.insert{name = "construction-robot", count = 248}
+    player.insert{name="mech-armor", quality="legendary", count = 1}
+
+    local mech_armor = player.get_inventory(5)[1].grid
+    for _ = 1, 6 do
+        mech_armor.put({name = "fusion-reactor-equipment", quality = "legendary"})
+    end
+    for _ = 1, 3 do
+        mech_armor.put({name = "battery-mk3-equipment", quality = "legendary"})
+    end
+    mech_armor.put({name = "night-vision-equipment", quality = "legendary"})
+    for _ = 1, 2 do
+        mech_armor.put({name = "personal-roboport-mk2-equipment", quality = "legendary"})
+    end
+    for _ = 1, 6 do
+        mech_armor.put({name = "exoskeleton-equipment", quality = "legendary"})
+    end
+    for _ = 1, 2 do
+        mech_armor.put({name = "personal-roboport-mk2-equipment", quality = "legendary"})
+    end
+    for _ = 1, 7 do
+        mech_armor.put({name = "energy-shield-mk2-equipment", quality = "legendary"})
+    end
+    for _ = 1, 7 do
+        mech_armor.put({name = "personal-laser-defense-equipment", quality = "legendary"})
+    end
+    for _ = 1, 7 do
+        mech_armor.put({name = "battery-mk3-equipment", quality = "legendary"})
+    end
+    for _ = 1, 5 do
+        mech_armor.put({name = "toolbelt-equipment", quality = "legendary"})
+    end
+end
+
 
 
 return lib
