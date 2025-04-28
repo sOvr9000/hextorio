@@ -8,17 +8,15 @@ local sets = require "api.sets"
 
 
 
-local admin_only = sets.new {
-    "claim",
-    "debug-mode",
-    "rank-up",
-    "rank-up-all",
-    "add-trade",
-    "remove-trade",
+local public_commands = sets.new {
+    -- nothing yet
 }
 
 function on_command(player, command, params)
-    if admin_only[command] and not player.admin then return end
+    if not public_commands[command] and not player.admin then
+        player.print("You must be an admin to use that command.")
+        return
+    end
 
     if command == "claim" then
         hex_grid.claim_hex(player.surface.name, {q = params[1], r = params[2]})
