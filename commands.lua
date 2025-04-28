@@ -87,7 +87,9 @@ function parse_command(command)
                     -- Find end of current token
                     local token_end = param_str:find("[%s%]]", i) or (#param_str + 1)
                     local token = param_str:sub(i, token_end - 1)
-                    table.insert(array, token)
+                    -- Cast to number if possible
+                    local num = tonumber(token)
+                    table.insert(array, num or token)
                     i = token_end
                 end
             end
@@ -105,7 +107,9 @@ function parse_command(command)
             -- Parse regular parameter
             local token_end = param_str:find("%s", i) or (#param_str + 1)
             local token = param_str:sub(i, token_end - 1)
-            table.insert(params, token)
+            -- Cast to number if possible
+            local num = tonumber(token)
+            table.insert(params, num or token)
             i = token_end
         end
     end
@@ -116,7 +120,6 @@ function parse_command(command)
     -- Invoke the command function with the passed parameters
     on_command(player, command.name, params)
 end
-
 
 
 commands.add_command("claim", "Claim a hex", parse_command)

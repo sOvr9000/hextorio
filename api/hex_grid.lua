@@ -662,6 +662,7 @@ function hex_grid.init()
     event_system.register_callback("item-rank-up", function(item_name)
         hex_grid.update_all_trades(item_name)
     end)
+
     event_system.register_callback("command-add-trade", function(player, params)
         local hex_core = player.selected
         if not hex_core then return end
@@ -669,10 +670,25 @@ function hex_grid.init()
         if not state then return end
         local trade = trades.from_item_names(hex_core.surface.name, params[1], params[2])
         if not trade then
-            game.print("Failed to generate trade with inputs = " .. serpent.line(params[1]) .. ", outputs = " .. serpent.line(params[2]))
+            player.print("Failed to generate trade with inputs = " .. serpent.line(params[1]) .. ", outputs = " .. serpent.line(params[2]))
             return
         end
         hex_grid.add_trade(state, trade)
+    end)
+
+    event_system.register_callback("command-remove-trade", function(player, params)
+        local hex_core = player.selected
+        if not hex_core then return end
+        local state = hex_grid.get_hex_state_from_core(hex_core)
+        if not state then return end
+        local idx = params[1]
+        if idx <= 0 or idx > #state.trades then
+            player.print("Failed to remove trade at index " .. idx)
+            return
+        end
+        local trade = state.trades[idx]
+        player.print("Removed trade: " .. lib.get_trade_img_str(trade))
+        hex_grid.remove_trade(state, idx)
     end)
 end
 
@@ -773,6 +789,18 @@ function hex_grid.add_trade(hex_core_state, trade)
     if hex_core_state.claimed then
         trades.discover_items {trade}
     end
+end
+
+function hex_grid.remove_trade(hex_core_state, idx)
+    if not hex_core_state then
+        lib.log_error("hex_grid.add_trade: nil hex core state")
+        return
+    end
+    if idx <= 0 or idx > #hex_core_state.trades then
+        lib.log_error("hex_grid.remove_trade: invalid index " .. idx)
+        return
+    end
+    table.remove(hex_core_state.trades, idx)
 end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
