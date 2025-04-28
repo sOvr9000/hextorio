@@ -13,14 +13,18 @@ local trades = {}
 
 
 function trades.init()
-    event_system.register_callback("rank-up-all", function()
-        for surface_name, _ in pairs(game.surfaces) do
-            for _, item_name in pairs(item_values.get_items_sorted_by_value(surface_name, true, false)) do
-                if trades.is_item_discovered(item_name) then
-                    item_ranks.rank_up(item_name)
+    event_system.register_callback("command-discover-all", function(player, params)
+        local items_list = {}
+        for surface_id, _ in pairs(game.surfaces) do
+            local surface = game.get_surface(surface_id)
+            if surface and surface.name ~= "space-platform" and surface.name ~= "hextorio-temp" then
+                local items_sorted_by_value = item_values.get_items_sorted_by_value(player.surface.name, true)
+                for _, item_name in pairs(items_sorted_by_value) do
+                    table.insert(items_list, item_name)
                 end
             end
         end
+        trades.discover_items(items_list)
     end)
 end
 
@@ -469,20 +473,14 @@ function trades.is_item_discovered(item_name)
     return storage.trades.discovered_items[item_name] == true
 end
 
--- Return a list of the item names which were newly discovered in the given trades.
-function trades.discover_items(trades_list)
-    if not trades_list then return {} end
+-- Return a list of the item names which were newly discovered.
+function trades.discover_items(items_list)
+    if not items_list then return {} end
+
     local new_discoveries = {}
-    for _, trade in pairs(trades_list) do
-        for _, input in pairs(trade.input_items) do
-            if trades.mark_as_discovered(input.name) then
-                table.insert(new_discoveries, input.name)
-            end
-        end
-        for _, output in pairs(trade.output_items) do
-            if trades.mark_as_discovered(output.name) then
-                table.insert(new_discoveries, output.name)
-            end
+    for _, item_name in pairs(items_list) do
+        if trades.mark_as_discovered(item_name) then
+            table.insert(new_discoveries, item_name)
         end
     end
 
@@ -500,8 +498,21 @@ function trades.discover_items(trades_list)
     return new_discoveries
 end
 
-function trades.discover_all()
+-- Return a list of the item names which were newly discovered in the given trades.
+function trades.discover_items_in_trades(trades_list)
+    if not trades_list then return {} end
 
+    local items_list = {}
+    for _, trade in pairs(trades_list) do
+        for _, input in pairs(trade.input_items) do
+            table.insert(items_list, input.name)
+        end
+        for _, output in pairs(trade.output_items) do
+            table.insert(items_list, output.name)
+        end
+    end
+
+    return trades.discover_items(items_list)
 end
 
 function trades._increment_total_traded(item_name, amount)

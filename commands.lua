@@ -123,7 +123,7 @@ commands.add_command("force-claim", "Claim ANY hex, or ALL hexes within a range"
 commands.add_command("debug-mode", "Set up your character and game for debugging", parse_command)
 commands.add_command("rank-up", "Rank up an item, bypassing progress requirements", parse_command)
 commands.add_command("rank-up-all", "Rank up all items that are discovered in the catalog, bypassing progress requirements", parse_command)
-commands.add_command("discover-all", "Discover an item in the catalog", parse_command)
+commands.add_command("discover-all", "Discover all items in the catalog", parse_command)
 commands.add_command("add-trade", "Add a trade to the nearest hex core", parse_command)
 commands.add_command("remove-trade", "Remove trade #x from the nearest hex core (indexing starts at 1)", parse_command)
 

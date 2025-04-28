@@ -28,7 +28,7 @@ return {
             beacon = 2935.7112718704366,
             ["belt-immunity-equipment"] = 643.98659848794205,
             ["big-electric-pole"] = 118.46855380490642,
-            ["biter-egg"] = 0.001,
+            ["biter-egg"] = 9001,
             boiler = 16.12202720423301,
             ["buffer-chest"] = 312.77629900280334,
             ["bulk-inserter"] = 423.6987037071583,

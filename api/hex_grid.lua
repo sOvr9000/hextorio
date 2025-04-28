@@ -825,7 +825,7 @@ function hex_grid.add_trade(hex_core_state, trade)
     hex_grid.update_hex_core_inventory_filters(hex_core_state)
 
     if hex_core_state.claimed then
-        trades.discover_items {trade}
+        trades.discover_items_in_trades {trade}
     end
 end
 
@@ -1482,7 +1482,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
 
     -- Add trade items to catalog list
-    trades.discover_items(state.trades)
+    trades.discover_items_in_trades(state.trades)
 end
 
 -- Claim hexes within a range, covering water as well

@@ -24,7 +24,7 @@ function migrations.on_mod_updated(old_version, new_version)
             state.hex_core_output_inventory = state.hex_core_input_inventory
             if state.trades then
                 if state.claimed then
-                    trades.discover_items(state.trades)
+                    trades.discover_items_in_trades(state.trades)
                 end
                 for _, trade in pairs(state.trades) do
                     trade.surface_name = "nauvis"
