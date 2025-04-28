@@ -62,6 +62,13 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
         params = {}
     end
 
+    if type(input_item_names) == "string" then
+        input_item_names = {input_item_names}
+    end
+    if type(output_item_names) == "string" then
+        output_item_names = {output_item_names}
+    end
+
     local max_value = 0
     for _, item_name in pairs(input_item_names) do
         max_value = math.max(max_value, item_values.get_item_value(surface_name, item_name))

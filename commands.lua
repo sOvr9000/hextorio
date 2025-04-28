@@ -3,6 +3,7 @@ local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
 local item_ranks = require "api.item_ranks"
 local gui = require "api.gui"
+local event_system = require "api.event_system"
 
 
 
@@ -49,24 +50,69 @@ function on_command(player, command, params)
     elseif command == "discover-all" then
         -- item_ranks.rank_up_all()
     elseif command == "add-trade" then
-        -- TODO
+        event_system.trigger("command-add-trade", player, params)
     elseif command == "remove-trade" then
-        -- TODO
+        event_system.trigger("command-remove-trade", player, params)
     end
 end
 
 function parse_command(command)
-    -- Split command.parameter by spaces
+    -- Parse parameters, handling arrays in square brackets
     local params = {}
-    if command.parameter then
-        for arg in command.parameter:gmatch("%S+") do
-            table.insert(params, arg)
+    
+    -- If there's no parameter, use empty params
+    if not command.parameter or command.parameter == "" then
+        local player = game.get_player(command.player_index)
+        on_command(player, command.name, params)
+        return
+    end
+    
+    local param_str = command.parameter
+    local i = 1
+    
+    while i <= #param_str do
+        local char = param_str:sub(i, i)
+        
+        if char == "[" then
+            -- Parse array
+            local array = {}
+            i = i + 1
+            
+            -- Look for array elements until closing bracket
+            while i <= #param_str and param_str:sub(i, i) ~= "]" do
+                -- Skip whitespace
+                if param_str:sub(i, i):match("%s") then
+                    i = i + 1
+                else
+                    -- Find end of current token
+                    local token_end = param_str:find("[%s%]]", i) or (#param_str + 1)
+                    local token = param_str:sub(i, token_end - 1)
+                    table.insert(array, token)
+                    i = token_end
+                end
+            end
+            
+            -- Skip closing bracket if found
+            if i <= #param_str and param_str:sub(i, i) == "]" then
+                i = i + 1
+            end
+            
+            table.insert(params, array)
+        elseif char:match("%s") then
+            -- Skip whitespace
+            i = i + 1
+        else
+            -- Parse regular parameter
+            local token_end = param_str:find("%s", i) or (#param_str + 1)
+            local token = param_str:sub(i, token_end - 1)
+            table.insert(params, token)
+            i = token_end
         end
     end
-
+    
     -- Fetch the player who called the command
     local player = game.get_player(command.player_index)
-
+    
     -- Invoke the command function with the passed parameters
     on_command(player, command.name, params)
 end

@@ -662,6 +662,18 @@ function hex_grid.init()
     event_system.register_callback("item-rank-up", function(item_name)
         hex_grid.update_all_trades(item_name)
     end)
+    event_system.register_callback("command-add-trade", function(player, params)
+        local hex_core = player.selected
+        if not hex_core then return end
+        local state = hex_grid.get_hex_state_from_core(hex_core)
+        if not state then return end
+        local trade = trades.from_item_names(hex_core.surface.name, params[1], params[2])
+        if not trade then
+            game.print("Failed to generate trade with inputs = " .. serpent.line(params[1]) .. ", outputs = " .. serpent.line(params[2]))
+            return
+        end
+        hex_grid.add_trade(state, trade)
+    end)
 end
 
 -- Get or create surface storage
