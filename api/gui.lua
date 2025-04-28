@@ -550,6 +550,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
         trade_arrow_sprite.style.width = size / 1.2
         trade_arrow_sprite.style.height = size / 1.2
         trade_arrow_sprite.style.top_margin = 2
+        trade_arrow_sprite.tooltip = trades.get_total_values_str(trade)
         for i = 1, 3 do
             local j = 4 - i
             if j <= #trade.output_items then
@@ -620,6 +621,7 @@ function gui.update_hex_core(player)
             gui.generate_sprite_buttons(player, hex_core.surface.name, frame["trades-total-sold-table"], total_items_sold, true)
         else
             frame["trades-total-sold-none"].visible = true
+            frame["trades-total-sold-table"].visible = false
         end
 
         local total_items_bought = state.total_items_bought or {}
@@ -630,6 +632,7 @@ function gui.update_hex_core(player)
             gui.generate_sprite_buttons(player, hex_core.surface.name, frame["trades-total-bought-table"], total_items_bought, true)
         else
             frame["trades-total-bought-none"].visible = true
+            frame["trades-total-bought-table"].visible = false
         end
 
         frame["hex-control-flow"].visible = true

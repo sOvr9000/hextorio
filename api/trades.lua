@@ -181,19 +181,39 @@ function trades._try_set_output_counts(surface_name, trade)
 end
 
 -- Return the value of the trade's inputs
-function trades.get_input_value(surface_name, trade)
+function trades.get_input_value(surface_name, trade, apply_bonus, invert_bonus)
+    if apply_bonus == nil then apply_bonus = true end
+    if invert_bonus == nil then invert_bonus = false end
     local input_value = 0
     for _, input_item in pairs(trade.input_items) do
-        input_value = input_value + item_values.get_item_value(surface_name, input_item.name) * input_item.count * (1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(input_item.name)))
+        local bonus = 1
+        if apply_bonus then
+            bonus = 1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(input_item.name))
+            if invert_bonus then
+                bonus = 1 / bonus
+            end
+        end
+        local inc = item_values.get_item_value(surface_name, input_item.name) * input_item.count * bonus
+        input_value = input_value + inc
     end
     return input_value
 end
 
 -- Return the value of the trade's outputs
-function trades.get_output_value(surface_name, trade)
+function trades.get_output_value(surface_name, trade, apply_bonus, invert_bonus)
+    if apply_bonus == nil then apply_bonus = true end
+    if invert_bonus == nil then invert_bonus = false end
     local output_value = 0
     for _, output_item in pairs(trade.output_items) do
-        output_value = output_value + item_values.get_item_value(surface_name, output_item.name) * output_item.count / (1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(output_item.name)))
+        local bonus = 1
+        if apply_bonus then
+            bonus = 1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(output_item.name))
+            if invert_bonus then
+                bonus = 1 / bonus
+            end
+        end
+        local inc = item_values.get_item_value(surface_name, output_item.name) * output_item.count / bonus
+        output_value = output_value + inc
     end
     return output_value
 end
@@ -201,6 +221,17 @@ end
 -- Return the ratio of values of the trade's outputs to its inputs
 function trades.get_trade_value_ratio(surface_name, trade)
     return trades.get_output_value(surface_name, trade) / trades.get_input_value(surface_name, trade)
+end
+
+function trades.get_total_values_str(trade)
+    local coin_value = item_values.get_item_value("nauvis", "hex-coin")
+    local total_input_value = trades.get_input_value(trade.surface_name, trade, false) / coin_value
+    local total_output_value = trades.get_output_value(trade.surface_name, trade, false) / coin_value
+    return {"",
+        {"hextorio-gui.total-input-value", coin_tiers.coin_to_text(total_input_value)},
+        "\n",
+        {"hextorio-gui.total-output-value", coin_tiers.coin_to_text(total_output_value)},
+    }
 end
 
 function trades.get_input_coins_from_inventory_trade(inventory, trade)

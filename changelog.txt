@@ -6,3 +6,6 @@ Date: 27/4/25
     - (TODO) Added mod setting to modify number of sides of the resource patch generation shape.
   Major Features:
     - (TODO) Added quests.
+  Minor Features:
+    - (TODO) Clicking on the arrow in a trade pings it in chat.
+    - (TODO) Mousing over the arrow in a trade shows the total input value and output value of the trade.

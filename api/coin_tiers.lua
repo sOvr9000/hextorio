@@ -330,13 +330,13 @@ function coin_tiers.coin_to_text(coin, show_leading_zeros, sigfigs)
     local p = 10 ^ (sigfigs or 4)
     local function format(value)
         if not sigfigs then
-            return tostring(math.ceil(value))
+            return tostring(math.floor(0.5 + value))
         end
         if value ~= math.floor(value) and value < p then
             return lib.tostring_sigfigs(value, sigfigs)
         end
         if value > p then
-            return tostring(math.floor(value))
+            return tostring(math.floor(0.5 + value))
         end
         return tostring(value)
     end
