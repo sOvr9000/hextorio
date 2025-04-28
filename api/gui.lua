@@ -614,6 +614,7 @@ function gui.update_hex_core(player)
         frame["trades-total-bought"].visible = true
 
         local total_items_sold = state.total_items_sold or {}
+        lib.log("gui.update_hex_core: total items sold: " .. serpent.line(total_items_sold))
         if next(total_items_sold) then
             frame["trades-total-sold-none"].visible = false
             frame["trades-total-sold-table"].visible = true
@@ -625,6 +626,7 @@ function gui.update_hex_core(player)
         end
 
         local total_items_bought = state.total_items_bought or {}
+        lib.log("gui.update_hex_core: total items bought: " .. serpent.line(total_items_bought))
         if next(total_items_bought) then
             frame["trades-total-bought-none"].visible = false
             frame["trades-total-bought-table"].visible = true

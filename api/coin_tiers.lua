@@ -308,8 +308,8 @@ end
 function coin_tiers.add_coin_to_inventory(inventory, coin)
     local current_coin = coin_tiers.get_coin_from_inventory(inventory)
     local new_coin = coin_tiers.add(current_coin, coin)
-    log("add_coin_to_inventory: current_coin = " .. serpent.line(current_coin))
-    log("add_coin_to_inventory: new_coin = " .. serpent.line(new_coin))
+    -- log("add_coin_to_inventory: current_coin = " .. serpent.line(current_coin))
+    -- log("add_coin_to_inventory: new_coin = " .. serpent.line(new_coin))
     coin_tiers.update_inventory(inventory, current_coin, new_coin)
 end
 
@@ -317,8 +317,8 @@ end
 function coin_tiers.remove_coin_from_inventory(inventory, coin)
     local current_coin = coin_tiers.get_coin_from_inventory(inventory)
     local new_coin = coin_tiers.subtract(current_coin, coin)
-    log("remove_coin_from_inventory: current_coin = " .. serpent.line(current_coin))
-    log("remove_coin_from_inventory: new_coin = " .. serpent.line(new_coin))
+    -- log("remove_coin_from_inventory: current_coin = " .. serpent.line(current_coin))
+    -- log("remove_coin_from_inventory: new_coin = " .. serpent.line(new_coin))
     coin_tiers.update_inventory(inventory, current_coin, new_coin)
 end
 
