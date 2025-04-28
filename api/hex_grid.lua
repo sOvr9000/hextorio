@@ -692,10 +692,41 @@ function hex_grid.init()
     end)
 
     event_system.register_callback("command-debug-mode", function(player, params)
-        hex_grid.claim_hex(player.surface.name, {q = 0, r = 0})
-        for _, hex_pos in pairs(hex_grid.get_adjacent_hexes {q = 0, r = 0}) do
-            hex_grid.claim_hex(player.surface.name, hex_pos)
+        hex_grid.claim_hexes_range(player.surface.name, {q = 0, r = 0}, 1, nil, true) -- claim by server
+    end)
+
+    event_system.register_callback("command-claim", function(player, params)
+        if params[1] then
+            if params[1] > 2 then
+                player.print("The claim range is too large!")
+                return
+            end
+            if params[1] < 0 then
+                player.print("The claim range must be nonnegative.")
+                return
+            end
         end
+        local transformation = hex_grid.get_surface_transformation(player.surface)
+        if not transformation then return end
+        local hex_pos = hex_grid.get_hex_containing(player.position, transformation.scale, transformation.rotation)
+        hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, false) -- claim by server
+    end)
+
+    event_system.register_callback("command-force-claim", function(player, params)
+        if params[1] then
+            if params[1] > 2 then
+                player.print("The claim range is too large!")
+                return
+            end
+            if params[1] < 0 then
+                player.print("The claim range must be nonnegative.")
+                return
+            end
+        end
+        local transformation = hex_grid.get_surface_transformation(player.surface)
+        if not transformation then return end
+        local hex_pos = hex_grid.get_hex_containing(player.position, transformation.scale, transformation.rotation)
+        hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, true) -- claim by server
     end)
 end
 
@@ -1356,9 +1387,11 @@ function hex_grid.is_hex_near_claimed_hex(surface, hex_pos)
     return false
 end
 
-function hex_grid.can_claim_hex(player, surface, hex_pos)
+function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
     local state = hex_grid.get_hex_state(surface, hex_pos)
     if state.claimed then return false end
+
+    if not state.is_land and not allow_nonland then return end
 
     local coin = state.claim_price
     if not coin or coin_tiers.is_zero(coin) then
@@ -1375,11 +1408,14 @@ function hex_grid.can_claim_hex(player, surface, hex_pos)
 end
 
 -- Claim a hex and spawn hex cores in adjacent hexes if possible.
-function hex_grid.claim_hex(surface, hex_pos, by_player)
+function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     if by_player and not hex_grid.can_claim_hex(by_player, surface, hex_pos) then return end
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
     if state.claimed then return end
+
+    if not state.is_land and not allow_nonland then return end
+
     state.claimed = true
     state.claimed_by = by_player
     if state.claimed_by then
@@ -1427,7 +1463,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player)
         hex_grid.spawn_hex_core(surface, hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
     end
 
-    local fill_tilee
+    local fill_tile_name
     if by_player then
         fill_tile_name = lib.player_setting_value(by_player, "edge-fill-tile")
     end
@@ -1447,6 +1483,28 @@ function hex_grid.claim_hex(surface, hex_pos, by_player)
 
     -- Add trade items to catalog list
     trades.discover_items(state.trades)
+end
+
+-- Claim hexes within a range, covering water as well
+function hex_grid.claim_hexes_range(surface, hex_pos, range, by_player, allow_nonland)
+    hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, hex_pos, allow_nonland)
+end
+
+function hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, center_pos, allow_nonland)
+    local dist = hex_grid.distance(hex_pos, center_pos)
+    if dist > range then return end
+
+    local state = hex_grid.get_hex_state(surface, hex_pos)
+    if not state.claimed then
+        hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
+    end
+
+    for _, adj_hex in pairs(hex_grid.get_adjacent_hexes(hex_pos)) do
+        local adj_state = hex_grid.get_hex_state(surface, adj_hex)
+        if not adj_state.claimed then
+            hex_grid._claim_hexes_dfs(surface, adj_hex, range, by_player, center_pos, allow_nonland)
+        end
+    end
 end
 
 -- Handle chunk generation event for the hex grid
@@ -1709,7 +1767,7 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
                 if sum_squared <= threshold then
                     -- Check if it's a water tile
                     local game_tile = surface.get_tile(tile.x, tile.y)
-                    if game_tile and (
+                    if game_tile and game_tile.valid and (
                         game_tile.name == "water" or 
                         game_tile.name == "deepwater" or 
                         game_tile.name == "oil-ocean" or 
@@ -1832,7 +1890,7 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
                                 if corner_dist_squared < corner_radius_squared * 0.5 then
                                     -- Check if it's a water tile
                                     local game_tile = surface.get_tile(tile.x, tile.y)
-                                    if game_tile and (
+                                    if game_tile and game_tile.valid and (
                                         game_tile.name == "water" or 
                                         game_tile.name == "deepwater" or 
                                         game_tile.name == "oil-ocean" or 

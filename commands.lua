@@ -1,6 +1,5 @@
 
 local lib = require "api.lib"
-local hex_grid = require "api.hex_grid"
 local item_ranks = require "api.item_ranks"
 local gui = require "api.gui"
 local event_system = require "api.event_system"
@@ -18,9 +17,7 @@ function on_command(player, command, params)
         return
     end
 
-    if command == "claim" then
-        hex_grid.claim_hex(player.surface.name, {q = params[1], r = params[2]})
-    elseif command == "debug-mode" then
+    if command == "debug-mode" then
         player.insert {
             name = "hex-coin",
             count = 99999,
@@ -60,12 +57,6 @@ function on_command(player, command, params)
         end
     elseif command == "rank-up-all" then
         item_ranks.rank_up_all()
-    elseif command == "discover-all" then
-        -- item_ranks.rank_up_all()
-    elseif command == "add-trade" then
-        -- handled by event system
-    elseif command == "remove-trade" then
-        -- handled by event system
     end
     event_system.trigger("command-" .. command, player, params)
 end
@@ -136,7 +127,8 @@ function parse_command(command)
 end
 
 
-commands.add_command("claim", "Claim a hex", parse_command)
+commands.add_command("claim", "Claim a land hex, or all land hexes within a range", parse_command)
+commands.add_command("force-claim", "Claim ANY hex, or ALL hexes within a range", parse_command)
 commands.add_command("debug-mode", "Set up your character and game for debugging", parse_command)
 commands.add_command("rank-up", "Rank up an item, bypassing progress requirements", parse_command)
 commands.add_command("rank-up-all", "Rank up all items that are discovered in the catalog, bypassing progress requirements", parse_command)
