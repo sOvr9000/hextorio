@@ -1656,11 +1656,13 @@ function hex_grid.spawn_hex_core(surface, position)
     local surface_values = item_values.get_item_values_for_surface(surface.name)
     if surface_values then
         for item_name, _ in pairs(surface_values) do
-            local rank = item_ranks.get_item_rank(item_name)
-            if rank >= 2 then
-                local volume = item_values.get_item_value(surface.name, item_name)
-                local random_volume = volume * (0.5 + math.random())
-                hex_grid.apply_extra_trade_bonus(state, item_name, random_volume)
+            if item_ranks.is_item_rank_defined(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
+                local rank = item_ranks.get_item_rank(item_name)
+                if rank >= 2 then
+                    local volume = item_values.get_item_value(surface.name, item_name)
+                    local random_volume = volume * (0.5 + math.random())
+                    hex_grid.apply_extra_trade_bonus(state, item_name, random_volume)
+                end
             end
         end
     end

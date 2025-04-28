@@ -1,12 +1,24 @@
 
 local lib = require "api.lib"
 local event_system = require "api.event_system"
--- local item_values = require "api.item_values"
 
 local item_ranks = {}
 
 
 
+function item_ranks.init()
+    event_system.register_callback("command-rank-up", function(player, params)
+        if item_ranks.rank_up(params[1]) then
+            event_system.trigger("post-rank-up-command", player, params)
+        end
+    end)
+    event_system.register_callback("command-rank-up-all", function(player, params)
+        for item_name, _ in pairs(storage.item_ranks.item_ranks) do
+            item_ranks.rank_up(item_name)
+        end
+        event_system.trigger("post-rank-up-all-command", player, params)
+    end)
+end
 
 function item_ranks.init_item(item_name)
     local rank = {
@@ -28,6 +40,10 @@ function item_ranks.get_rank_obj(item_name)
         rank = item_ranks.init_item(item_name)
     end
     return rank
+end
+
+function item_ranks.is_item_rank_defined(item_name)
+    return storage.item_ranks.item_ranks[item_name] ~= nil
 end
 
 -- Progress an item rank by some amount on one of the rank tiers.
@@ -92,15 +108,6 @@ function item_ranks.get_rank_bonus_effect(rank_tier)
     elseif rank_tier == 5 then
         return 0.5
     end
-end
-
-function item_ranks.rank_up_all()
-    -- for surface_name, _ in pairs(game.surfaces) do
-    --     for item_name, _ in pairs(item_values.get_items_sorted_by_value(surface_name, true, false)) do
-    --         item_ranks.rank_up(item_name)
-    --     end
-    -- end
-    event_system.trigger("rank-up-all")
 end
 
 

@@ -1,6 +1,5 @@
 
 local lib = require "api.lib"
-local item_ranks = require "api.item_ranks"
 local gui = require "api.gui"
 local event_system = require "api.event_system"
 local sets = require "api.sets"
@@ -48,16 +47,8 @@ function on_command(player, command, params)
 
         -- Enable cheat mode (spawn in items instead of crafting them)
         player.cheat_mode = true
-    elseif command == "rank-up" then
-        if item_ranks.rank_up(params[1]) then
-            -- player.print("Ranked up [item=" .. params[1] .. "] to rank " .. lib.get_rank_img_str(item_ranks.get_item_rank(params[1])))
-            gui.update_catalog(player, "nauvis", params[1])
-        else
-            player.print("Failed to rank up [item=" .. params[1] .. "]")
-        end
-    elseif command == "rank-up-all" then
-        item_ranks.rank_up_all()
     end
+
     event_system.trigger("command-" .. command, player, params)
 end
 

@@ -5,10 +5,24 @@ local coin_tiers  = require "api.coin_tiers"
 local item_ranks = require "api.item_ranks"
 local trades = require "api.trades"
 local sets = require "api.sets"
+local event_system = require "api.event_system"
 
 local gui = {}
 
 
+
+function gui.init_events()
+    event_system.register_callback("post-rank-up-command", function(player, params)
+        gui.close_all(player)
+        gui.show_catalog(player)
+        gui.update_catalog(player, "nauvis", params[1])
+    end)
+    event_system.register_callback("post-rank-up-all-command", function(player, params)
+        gui.close_all(player)
+        gui.show_catalog(player)
+        gui.update_catalog(player, "nauvis", "stone")
+    end)
+end
 
 function gui.reinitialize_everything(player)
     -- called during migration
