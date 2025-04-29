@@ -1,6 +1,5 @@
 
 local lib = require "api.lib"
-local gui = require "api.gui"
 local event_system = require "api.event_system"
 local sets = require "api.sets"
 

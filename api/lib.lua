@@ -152,7 +152,10 @@ function lib.table_to_string(t, indent)
     return result
 end
 
-function lib.color_localized_string(str, color)
+function lib.color_localized_string(str, color, font)
+    if font then
+        return {"", "[font=" .. font .. "][color=" .. color .. "]", str, "[.color][.font]"}
+    end
     return {"", "[color=" .. color .. "]", str, "[.color]"}
 end
 
@@ -675,8 +678,16 @@ function lib.get_trade_img_str(trade)
     return s
 end
 
-function lib.is_item_coin(item_name)
+function lib.is_coin(item_name)
     return item_name:sub(-5) == "-coin"
+end
+
+function lib.is_fluid(item_name)
+    return prototypes.fluid[item_name] ~= nil
+end
+
+function lib.is_item(item_name)
+    return prototypes.item[item_name] ~= nil
 end
 
 function lib.format_percentage(x, decimal_places, include_symbol)

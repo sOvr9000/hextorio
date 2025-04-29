@@ -1963,29 +1963,24 @@ function hex_grid.update_hex_core(state)
     end
 end
 
-function hex_grid.update_all_trades(item_name)
-    local bronze_rank = item_ranks.get_item_rank(item_name) >= 2
+function hex_grid.update_all_trades()
     for surface_name, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
         for _, Q in pairs(surface_hexes) do
             for _, state in pairs(Q) do
-                if state.claimed then
-                    -- log(serpent.block(state.trades_original))
+                if state.trades then
                     for i, trade in ipairs(state.trades) do
-                        -- log(serpent.line(trade))
+                        trades.set_productivity(trade, 0)
                         for j, item in ipairs(trade.input_items) do
-                            if item.name == item_name then
-                                trade.input_items[j].count = math.max(1, math.floor(0.5 + state.trades_original[i].input_items[j].count / (1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item_name)))))
+                            if item_ranks.is_item_rank_defined(item.name) then
+                                trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
                             end
                         end
                         for j, item in ipairs(trade.output_items) do
-                            if item.name == item_name then
-                                trade.output_items[j].count = math.max(1, math.floor(0.5 + state.trades_original[i].output_items[j].count * (1 + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item_name)))))
+                            if item_ranks.is_item_rank_defined(item.name) then
+                                trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
                             end
                         end
                     end
-                end
-                if bronze_rank then
-                    
                 end
             end
         end

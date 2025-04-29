@@ -22,6 +22,14 @@ function gui.init_events()
         gui.show_catalog(player)
         gui.update_catalog(player, "nauvis", "stone")
     end)
+    event_system.register_callback("trade-processed", function(trade)
+        if not trade.hex_core_state or not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then return end
+        for _, player in pairs(game.players) do
+            if player.opened == trade.hex_core_state.hex_core then
+                gui.update_hex_core(player)
+            end
+        end
+    end)
 end
 
 function gui.reinitialize_everything(player)
@@ -417,57 +425,28 @@ function gui.hide_all_frames(player)
     gui.hide_catalog(player)
 end
 
-function gui.give_item_tooltip(player, surface_name, sprite_button, trade_side)
+function gui.give_item_tooltip(player, surface_name, element)
     local item_name
     local rich_type
-    if sprite_button.sprite:sub(1, 5) == "item/" then
-        item_name = sprite_button.sprite:sub(6)
+    if element.sprite:sub(1, 5) == "item/" then
+        item_name = element.sprite:sub(6)
         rich_type = "item"
         if item_name:sub(-5) == "-coin" then return end
-    elseif sprite_button.sprite:sub(1, 7) == "entity/" then
-        item_name = sprite_button.sprite:sub(8)
+    elseif element.sprite:sub(1, 7) == "entity/" then
+        item_name = element.sprite:sub(8)
         rich_type = "fluid"
     else
-        lib.log_error("gui.give_item_tooltip: Could not determine item name from sprite: " .. sprite_button.sprite)
+        lib.log_error("gui.give_item_tooltip: Could not determine item name from sprite: " .. element.sprite)
         return
     end
 
     local hex_coin_value = item_values.get_item_value(surface_name, "hex-coin")
-    local item_count = sprite_button.number or 1
+    local item_count = element.number or 1
     local value = item_values.get_item_value(surface_name, item_name)
     local scaled_value = value / hex_coin_value
     local rank = item_ranks.get_item_rank(item_name)
 
-    local true_sell_value = value + item_values.get_item_sell_value_bonus_from_rank(surface_name, item_name, rank)
-    local scaled_true_sell_value = true_sell_value / hex_coin_value
-    local true_buy_value = value + item_values.get_item_buy_value_bonus_from_rank(surface_name, item_name, rank)
-    local scaled_true_buy_value = true_buy_value / hex_coin_value
-
-    local rank_bonus_type, rank_mod_str, scaled_true_value
-    if trade_side == "buy" then
-        rank_bonus_type = {"hextorio-gui.rank-bonus-buying"}
-        rank_mod_str = "- " .. coin_tiers.coin_to_text(scaled_value - scaled_true_buy_value, false, 4)
-        scaled_true_value = scaled_true_buy_value
-    elseif trade_side == "sell" then
-        rank_bonus_type = {"hextorio-gui.rank-bonus-selling"}
-        rank_mod_str = "+ " .. coin_tiers.coin_to_text(scaled_true_sell_value - scaled_value, false, 4)
-        scaled_true_value = scaled_true_sell_value
-    else
-        scaled_true_value = scaled_value
-    end
-
-    local rank_bonus_str
-    if rank_bonus_type and rank > 1 then
-        rank_bonus_str = {"",
-            "\n[color=green]",
-            rank_bonus_type,
-            "[.color]\n" .. rank_mod_str,
-        }
-    else
-        rank_bonus_str = ""
-    end
-
-    sprite_button.tooltip = {"",
+    element.tooltip = {"",
         "[font=heading-1]",
         {"hextorio-gui.rank"},
         "[.font] " .. lib.get_rank_img_str(rank),
@@ -475,15 +454,30 @@ function gui.give_item_tooltip(player, surface_name, sprite_button, trade_side)
         {"hextorio-gui.item-value"},
         "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. "]x1 = ",
         coin_tiers.coin_to_text(scaled_value, false, 4),
-        rank_bonus_str,
-        "\n\n[font=heading-2][color=purple]",
+        "\n\n[font=heading-2][color=yellow]",
         {"hextorio-gui.stack-value-total"},
         "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. "]x" .. item_count .. " = ",
-        coin_tiers.coin_to_text(item_count * scaled_true_value, false, nil)
+        coin_tiers.coin_to_text(item_count * scaled_value, false, nil)
     }
 end
 
-function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, show_toggle_trade, show_tag_creator, show_core_finder)
+function gui.give_trade_arrow_tooltip(element, trade)
+    local prod = trades.get_productivity(trade)
+    if prod > 0 then
+        element.tooltip = {"",
+            trades.get_total_values_str(trade),
+            "\n\n",
+            trades.get_productivity_bonus_str(trade),
+        }
+    else
+        element.tooltip = {"",
+            trades.get_total_values_str(trade),
+        }
+    end
+end
+
+function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
+    if not params then params = {} end
     trades_scroll_pane.clear()
 
     local size = 40
@@ -493,7 +487,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             name = "trade-" .. trade_number,
             direction = "horizontal",
         }
-        if show_toggle_trade then
+        if params.show_toggle_trade then
             local checkbox = trade_flow.add {
                 type = "checkbox",
                 name = "toggle-trade-" .. trade_number,
@@ -505,7 +499,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             checkbox.style.top_margin = size / 2 + 1
             -- checkbox.style.top_margin = size / 2 - 5
         end
-        if show_tag_creator then
+        if params.show_tag_creator then
             local tag_button = trade_flow.add {
                 type = "sprite-button",
                 name = "tag-button-" .. trade_number,
@@ -515,7 +509,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             tag_button.style.top_margin = 10
             tag_button.tooltip = {"hex-core-gui.tag-button"}
         end
-        if show_core_finder then
+        if params.show_core_finder then
             local core_finder_button = trade_flow.add {
                 type = "sprite-button",
                 name = "core-finder-button-" .. trade_number,
@@ -528,7 +522,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
         local trade_frame = trade_flow.add {
             type = "frame",
             name = "frame",
-            direction = "horizontal",
+            direction = "vertical",
         }
         trade_frame.style.left_margin = 10
         trade_frame.style.natural_height = (size + 20) / 1.2 - 5
@@ -548,7 +542,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
                     sprite = "item/" .. input_item.name,
                     number = input_item.count,
                 }
-                gui.give_item_tooltip(player, trade.surface_name, input, "sell")
+                gui.give_item_tooltip(player, trade.surface_name, input)
             else
                 total_empty = total_empty + 1
                 local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
@@ -561,10 +555,22 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             type = "sprite",
             sprite = "trade-arrow",
         }
+        if params.show_productivity and trades.get_productivity(trade) > 0 then
+            local prod_bar = trade_frame.add {
+                type = "progressbar",
+                name = "prod-bar",
+                value = trades.get_current_prod_value(trade),
+                style = "bonus_progressbar",
+            }
+            prod_bar.style.horizontally_squashable = true
+            prod_bar.style.horizontally_stretchable = true
+        end
+
         trade_arrow_sprite.style.width = size / 1.2
         trade_arrow_sprite.style.height = size / 1.2
         trade_arrow_sprite.style.top_margin = 2
-        trade_arrow_sprite.tooltip = trades.get_total_values_str(trade)
+        gui.give_trade_arrow_tooltip(trade_arrow_sprite, trade)
+
         for i = 1, 3 do
             local j = 4 - i
             if j <= #trade.output_items then
@@ -575,7 +581,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
                     sprite = "item/" .. output_item.name,
                     number = output_item.count,
                 }
-                gui.give_item_tooltip(player, trade.surface_name, output, "buy")
+                gui.give_item_tooltip(player, trade.surface_name, output)
             else
                 total_empty = total_empty + 1
                 local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
@@ -596,7 +602,7 @@ function gui.generate_sprite_buttons(player, surface_name, flow, items, give_too
             number = count,
         }
         if give_tooltip or give_tooltip == nil then
-            gui.give_item_tooltip(player, surface_name, sprite_button, nil)
+            gui.give_item_tooltip(player, surface_name, sprite_button)
         end
     end
 end
@@ -671,7 +677,7 @@ function gui.update_hex_core(player)
 
     frame["delete-core-confirmation"].visible = false
 
-    gui.update_trades_scroll_pane(player, frame.trades, state.trades, state.claimed, true, false)
+    gui.update_trades_scroll_pane(player, frame.trades, state.trades, {show_toggle_trade=state.claimed, show_tag_creator=true, show_core_finder=false, show_productivity=true})
     gui.update_hex_core_resources(player)
 end
 
@@ -714,7 +720,7 @@ function gui.update_hex_core_resources(player)
             sprite = sprite,
             number = amount,
         }
-        gui.give_item_tooltip(player, hex_core.surface.name, resource, nil)
+        gui.give_item_tooltip(player, hex_core.surface.name, resource)
         any = true
     end
 
@@ -854,7 +860,7 @@ function gui.update_trade_overview(player)
     -- lib.log(serpent.block(trades_list))
 
     storage.trade_overview.trades[player.name] = trades_list
-    gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, false, false, true)
+    gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, {show_toggle_trade=false, show_tag_creator=false, show_core_finder=true, show_productivity=false})
 end
 
 function gui.update_catalog(player, selected_item_surface, selected_item_name)
@@ -937,11 +943,12 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     if not trades.is_item_discovered(item_name) then
         item_name = nil
     end
-
-    inspect_frame.clear()
     if not item_name then return end
 
     local rank_obj = item_ranks.get_rank_obj(item_name)
+    if not rank_obj then return end
+
+    inspect_frame.clear()
 
     local inspect_header = inspect_frame.add {
         type = "label",
@@ -965,27 +972,16 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     bonuses_label.style.font = "heading-2"
 
     if rank_obj.rank > 1 then
-        local bonus_sell = inspect_frame.add {
+        local bonus_productivity = inspect_frame.add {
             type = "label",
-            name = "bonus-sell",
-            caption = {"hextorio-gui.rank-bonus-sells-for-more", "[color=green]" .. math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)) .. "[.color]"},
+            name = "bonus-productivity",
+            caption = {"hextorio-gui.rank-bonus-trade-productivity", "[color=green]" .. math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)) .. "[.color]"},
         }
-        bonus_sell.style.single_line = false
-        bonus_sell.style.horizontally_squashable = true
-        bonus_sell.style.horizontally_stretchable = true
-        bonus_sell.style.vertically_squashable = true
-        bonus_sell.style.vertically_stretchable = true
-
-        local bonus_buy = inspect_frame.add {
-            type = "label",
-            name = "bonus-buy",
-            caption = {"hextorio-gui.rank-bonus-buys-for-less", "[color=green]" .. math.floor(100 * (1 - 1 / (1 + item_ranks.get_rank_bonus_effect(rank_obj.rank)))) .. "[.color]"},
-        }
-        bonus_buy.style.single_line = false
-        bonus_buy.style.horizontally_squashable = true
-        bonus_buy.style.horizontally_stretchable = true
-        bonus_buy.style.vertically_squashable = true
-        bonus_buy.style.vertically_stretchable = true
+        bonus_productivity.style.single_line = false
+        bonus_productivity.style.horizontally_squashable = true
+        bonus_productivity.style.horizontally_stretchable = true
+        bonus_productivity.style.vertically_squashable = true
+        bonus_productivity.style.vertically_stretchable = true
     else
         local none_label = inspect_frame.add {
             type = "label",

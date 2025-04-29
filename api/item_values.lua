@@ -121,7 +121,7 @@ function item_values.get_items_sorted_by_value(surface_name, items_only, allow_c
     local sorted_items = {}
     for item_name, _ in pairs(surface_vals) do
         if not items_only or prototypes.item[item_name] then
-            if allow_coins or not lib.is_item_coin(item_name) then
+            if allow_coins or not lib.is_coin(item_name) then
                 table.insert(sorted_items, item_name)
             end
         end

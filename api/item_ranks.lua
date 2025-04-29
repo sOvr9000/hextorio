@@ -21,6 +21,10 @@ function item_ranks.init()
 end
 
 function item_ranks.init_item(item_name)
+    if lib.is_coin(item_name) or not lib.is_item(item_name) then
+        lib.log_error("item_ranks.init_item: tried to define rank for coin or non-item: " .. item_name)
+        return
+    end
     local rank = {
         item_name = item_name,
         rank = 1,
@@ -31,7 +35,13 @@ function item_ranks.init_item(item_name)
 end
 
 function item_ranks.get_item_rank(item_name)
-    return item_ranks.get_rank_obj(item_name).rank
+    if lib.is_coin(item_name) or not lib.is_item(item_name) then
+        lib.log_error("item_ranks.get_item_rank: tried to get rank of coin or non-item: " .. item_name)
+        return 0
+    end
+    local rank = item_ranks.get_rank_obj(item_name)
+    if not rank then return 0 end
+    return rank.rank
 end
 
 function item_ranks.get_rank_obj(item_name)
@@ -79,6 +89,7 @@ end
 -- Force rank up an item by one tier (bypass progress requirements). Return whether the rank was actually increased. Rank cannot go past the max tier.
 function item_ranks.rank_up(item_name)
     local rank = item_ranks.get_rank_obj(item_name)
+    if not rank then return false end
     if rank.rank >= 5 then return false end
     if rank.rank <= 0 then return false end
 
