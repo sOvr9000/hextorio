@@ -114,8 +114,11 @@ function gui.init_hex_core(player)
     }
     local hex_core_gui = player.gui.relative.add {type = "frame", name = "hex-core", direction = "vertical", anchor = anchor}
     hex_core_gui.caption = {"hex-core-gui.title"}
-    -- hex_core_gui.style.size = {width = 385, height = 625}
-    hex_core_gui.style.size = {width = 444, height = 625}
+    -- gui.add_titlebar(hex_core_gui, {"hex-core-gui.title"})
+    -- hex_core_gui.style.size = {width = 444, height = 625}
+    hex_core_gui.style.width = 444
+    hex_core_gui.style.natural_height = 625
+    hex_core_gui.style.vertically_stretchable = true
 
     local resources_header = hex_core_gui.add {type = "label", name = "resources-header", caption = {"hex-core-gui.initial-resources"}}
     resources_header.style.font = "heading-2"
@@ -261,7 +264,7 @@ function gui.init_catalog(player)
     local flow = frame.add {type = "flow", name = "flow", direction = "horizontal"}
 
     local catalog_frame = flow.add {type = "frame", name = "catalog-frame", direction = "vertical"}
-    catalog_frame.style.natural_width = 500
+    catalog_frame.style.width = 600
     catalog_frame.style.vertically_stretchable = true
     catalog_frame.style.horizontally_squashable = true
 
@@ -271,8 +274,7 @@ function gui.init_catalog(player)
 
     local inspect_frame = flow.add {type = "frame", name = "inspect-frame", direction = "vertical"}
     -- inspect_frame.style.natural_width = 400
-    inspect_frame.style.vertically_stretchable = true
-    inspect_frame.style.horizontally_stretchable = true
+    gui.auto_width_height(inspect_frame)
 
     for i, surface_name in ipairs {
         "nauvis",
@@ -526,7 +528,9 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
         }
         trade_frame.style.left_margin = 10
         trade_frame.style.natural_height = (size + 20) / 1.2 - 5
-        trade_frame.style.horizontally_stretchable = true
+        -- trade_frame.style.horizontally_stretchable = true
+        -- gui.auto_width(trade_frame)
+        trade_frame.style.width = 381 / 1.2
         local trade_table = trade_frame.add {
             type = "table",
             name = "trade_table",
@@ -955,8 +959,11 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
         name = "inspect-header",
         caption = {"", "[font=heading-1]", {"hextorio-gui.catalog-item", "[item=" .. item_name .. "]"}, "[.font]"},
     }
+    gui.auto_width(inspect_header)
 
-    inspect_frame.add {type = "line", direction = "horizontal"}
+    local line = inspect_frame.add {type = "line", direction = "horizontal"}
+    line.style.horizontally_stretchable = true
+    line.style.horizontally_squashable = true
 
     local rank_label = inspect_frame.add {
         type = "label",
@@ -975,7 +982,7 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
         local bonus_productivity = inspect_frame.add {
             type = "label",
             name = "bonus-productivity",
-            caption = {"hextorio-gui.rank-bonus-trade-productivity", "[color=green]" .. math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)) .. "[.color]"},
+            caption = {"", lib.color_localized_string({"hextorio-gui.main-bonus"}, "purple", "heading-2"), " ", {"hextorio-gui.rank-bonus-trade-productivity", "[color=green]" .. math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)) .. "[.color]"}},
         }
         bonus_productivity.style.single_line = false
         bonus_productivity.style.horizontally_squashable = true
@@ -991,10 +998,16 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     end
 
     for i = 2, rank_obj.rank do
+        local color_rich_text = lib.color_to_rich_text(storage.item_ranks.rank_colors[i])
+        local rank_bonus_unique_heading = inspect_frame.add {
+            type = "label",
+            name = "rank-bonus-unique-heading-" .. i,
+            caption = lib.color_localized_string({"", "[img=" .. storage.item_ranks.rank_star_sprites[i] .. "] ", {"hextorio-gui.unique-bonus"}}, color_rich_text, "heading-2"),
+        }
         local rank_bonus_unique = inspect_frame.add {
             type = "label",
             name = "rank-bonus-unique-" .. i,
-            caption = {"", "[img=" .. storage.item_ranks.rank_star_sprites[i] .. "] ", {"hextorio-gui.rank-bonus-unique-" .. i, "[color=purple]" .. lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false) .. "[.color]"}},
+            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, color_rich_text .. lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false) .. "[.color]"}},
         }
         rank_bonus_unique.style.single_line = false
         rank_bonus_unique.style.horizontally_squashable = true
@@ -1439,6 +1452,21 @@ function gui.update_player_trade_overview_filters(player)
     if not next(filter.output_items) then
         filter.output_items = nil
     end
+end
+
+function gui.auto_width(element)
+    element.style.horizontally_stretchable = true
+    element.style.horizontally_squashable = true
+end
+
+function gui.auto_height(element)
+    element.style.vertically_stretchable = true
+    element.style.vertically_squashable = true
+end
+
+function gui.auto_width_height(element)
+    gui.auto_width(element)
+    gui.auto_height(element)
 end
 
 

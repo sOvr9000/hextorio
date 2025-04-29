@@ -153,10 +153,20 @@ function lib.table_to_string(t, indent)
 end
 
 function lib.color_localized_string(str, color, font)
-    if font then
-        return {"", "[font=" .. font .. "][color=" .. color .. "]", str, "[.color][.font]"}
+    local rich_text
+    if type(color) == "string" then
+        if color:sub(1, 7) == "[color=" and color:sub(-1) == "]" then
+            rich_text = color
+        else
+            rich_text = "[color=" .. color .. "]"
+        end
+    else
+        rich_text = lib.color_to_rich_text(color)
     end
-    return {"", "[color=" .. color .. "]", str, "[.color]"}
+    if font then
+        return {"", "[font=" .. font .. "]" .. rich_text, str, "[.color][.font]"}
+    end
+    return {"", rich_text, str, "[.color]"}
 end
 
 function lib.log_error(txt)
@@ -737,6 +747,10 @@ function lib.insert_endgame_armor(player)
     for _ = 1, 5 do
         mech_armor.put({name = "toolbelt-equipment", quality = "legendary"})
     end
+end
+
+function lib.color_to_rich_text(color)
+    return "[color=" .. (color.r or color[1]) .. "," .. (color.g or color[2]) .. "," .. (color.b or color[3]) .. "]"
 end
 
 
