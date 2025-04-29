@@ -660,7 +660,7 @@ end
 
 function hex_grid.init()
     event_system.register_callback("item-rank-up", function(item_name)
-        hex_grid.update_all_trades(item_name)
+        hex_grid.update_all_trades()
     end)
 
     event_system.register_callback("command-add-trade", function(player, params)

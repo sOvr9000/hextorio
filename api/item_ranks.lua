@@ -62,10 +62,8 @@ function item_ranks.progress_item_rank(item_name, toward_rank, amount)
     if item_name:sub(-5) == "-coin" then
         return 0
     end
-    local rank = storage.item_ranks.item_ranks[item_name]
-    if not rank then
-        rank = item_ranks.init_item(item_name)
-    end
+    local rank = item_ranks.get_rank_obj(item_name)
+    if not rank then return end
     if toward_rank < 2 or toward_rank > 4 then
         lib.log_error("item_ranks.progress_item_rank: toward_rank is out of range")
         return 0
