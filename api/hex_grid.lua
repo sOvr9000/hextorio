@@ -819,8 +819,6 @@ function hex_grid.add_trade(hex_core_state, trade)
     trade.hex_core_state = hex_core_state
     table.insert(hex_core_state.trades, trades.copy_trade(trade))
 
-    hex_core_state.trades_original = trades.copy_trade(hex_core_state.trades)
-
     hex_grid.update_loader_filters(hex_core_state)
     hex_grid.update_hex_core_inventory_filters(hex_core_state)
 
@@ -1628,7 +1626,6 @@ function hex_grid.spawn_hex_core(surface, position)
     state.output_loader = output_loader
 
     state.trades = {}
-    state.trades_original = {}
     local hex_core_trades = {}
     if is_starting_hex then
         for _, trade in pairs(storage.trades.starting_trades) do
