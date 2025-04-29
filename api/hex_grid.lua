@@ -1649,7 +1649,7 @@ function hex_grid.spawn_hex_core(surface, position)
     local claim_price = hex_grid.distance(state.position, {q=0, r=0}) + 1
     claim_price = claim_price * claim_price
 
-    state.hexe = hex_core
+    state.hex_core = hex_core
     state.hex_core_input_inventory = hex_core.get_inventory(defines.inventory.chest)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory

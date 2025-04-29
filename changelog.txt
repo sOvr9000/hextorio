@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.5
+Date: 29/4/25
+  Bugfixes:
+    - Fixed that currently existing hex cores were not sometimes getting new trades upon ranking up items to bronze rank.
+---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 29/4/25
   Bugfixes:
