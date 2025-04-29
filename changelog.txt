@@ -13,6 +13,7 @@ Date: 28/4/25
     - Changed starter trades.
   Gui:
     - Cleaned up the catalog.
+    - Made catalog texts more concise.
   Bugfixes:
     - Fixed rounding of item stack value calculation.
     - Fixed display of total bought and sold items at a hex core.
