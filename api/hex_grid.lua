@@ -822,7 +822,6 @@ function hex_grid.add_trade(hex_core_state, trade)
     trade.hex_core_state = hex_core_state
     table.insert(hex_core_state.trades, trades.copy_trade(trade))
 
-    hex_grid.update_loader_filters(hex_core_state)
     hex_grid.update_hex_core_inventory_filters(hex_core_state)
 
     if hex_core_state.claimed then
@@ -892,33 +891,7 @@ end
 
 function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
     if not trades.set_trade_active(hex_core_state.trades[trade_index], flag) then return end
-    hex_grid.update_loader_filters(hex_core_state)
-end
-
-function hex_grid.update_loader_filters(hex_core_state)
-    if not hex_core_state.output_loader or not hex_core_state.output_loader.valid then return end
-
-    local loader = hex_core_state.output_loader
-
-    -- Clear all filters
-    for i = 1, loader.filter_slot_count do
-        loader.set_filter(i)
-    end
-
-    -- Set outputs of trades as loader filters
-    local idx = 1
-    for _, trade in pairs(hex_core_state.trades) do
-        if trade.active then
-            for _, item in pairs(trade.output_items) do
-                if idx > loader.filter_slot_count then
-                    lib.log("hex_grid.update_loader_filters: loader filter slot count exceeded")
-                    break
-                end
-                loader.set_filter(idx, {name = item.name, quality = item.quality or "normal"})
-                idx = idx + 1
-            end
-        end
-    end
+    -- hex_grid.update_loader_filters(hex_core_state)
 end
 
 function hex_grid.update_hex_core_inventory_filters(hex_core_state)
@@ -1682,7 +1655,6 @@ function hex_grid.spawn_hex_core(surface, position)
 
     hex_grid.apply_extra_trades_bonus(state)
 
-    hex_grid.update_loader_filters(state)
     hex_grid.update_hex_core_inventory_filters(state)
 
     return hex_core

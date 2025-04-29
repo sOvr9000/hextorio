@@ -146,8 +146,23 @@ function gui.init_hex_core(player)
     local teleport = hex_control_flow.add {type = "sprite-button", name = "teleport", sprite = "teleport"}
     teleport.tooltip = {"hex-core-gui.teleport-tooltip"}
 
+    local unloader_filters = hex_control_flow.add {type = "sprite-button", name = "unloader-filters", sprite = "item/loader"}
+    unloader_filters.tooltip = {"hex-core-gui.unloader-filters-tooltip"}
+
+    local sink_mode = hex_control_flow.add {type = "sprite-button", name = "sink-mode", sprite = "hex-coin"}
+    sink_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.sink-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.sink-mode-tooltip-body"}}
+
+    local generator_mode = hex_control_flow.add {type = "sprite-button", name = "generator-mode", sprite = "gravity-coin"}
+    generator_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.generator-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.generator-mode-tooltip-body"}}
+
     local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/deconstruction_mark"}
     delete_core.tooltip = {"hex-core-gui.delete-core-tooltip"}
+
+    local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
+    for i, dir in ipairs {"west", "north", "south", "east"} do
+        local unloader_filters_dir = unloader_filters_flow.add {type = "sprite-button", name = dir, sprite = "arrow-" .. dir}
+    end
+    unloader_filters_flow.visible = false
 
     local delete_core_confirmation = hex_core_gui.add {type = "flow", name = "delete-core-confirmation", direction = "horizontal"}
     delete_core_confirmation.visible = false
@@ -672,6 +687,7 @@ function gui.update_hex_core(player)
         end
 
         frame["hex-control-flow"].visible = true
+        frame["hex-control-flow"]["unloader-filters"].enabled = true
         frame["hex-control-flow"]["delete-core"].enabled = true
         frame["hex-control-flow"]["delete-core"].tooltip = {"hex-core-gui.delete-core-tooltip", coin_tiers.coin_to_text(hex_grid.get_delete_core_cost(hex_core))}
     else
@@ -690,6 +706,7 @@ function gui.update_hex_core(player)
     end
 
     frame["delete-core-confirmation"].visible = false
+    frame["unloader-filters-flow"].visible = false
 
     gui.update_trades_scroll_pane(player, frame.trades, state.trades, {show_toggle_trade=state.claimed, show_tag_creator=true, show_core_finder=false, show_productivity=true})
     gui.update_hex_core_resources(player)
@@ -1174,6 +1191,10 @@ function gui.on_sprite_button_click(player, element)
         gui.on_delete_core_button_click(player, element)
     elseif element.name == "confirmation-button" then
         gui.on_confirmation_button_click(player, element)
+    elseif element.name == "unloader-filters" then
+        gui.on_unloader_filters_button_click(player, element)
+    elseif element.parent.name == "unloader-filters-flow" then
+        gui.on_unloader_filters_direction_click(player, element)
     elseif element.parent.parent.name == "planet-flow" then
         if element.parent["status"].sprite == "check-mark-green" then
             element.parent["status"].sprite = "red-ex"
@@ -1181,6 +1202,29 @@ function gui.on_sprite_button_click(player, element)
             element.parent["status"].sprite = "check-mark-green"
         end
         gui.update_trade_overview(player)
+    end
+end
+
+function gui.on_unloader_filters_button_click(player, element)
+    element.parent.parent["unloader-filters-flow"].visible = true
+    element.enabled = false
+end
+
+function gui.on_unloader_filters_direction_click(player, element)
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    local dir = element.name
+    local entities = player.surface.find_entities_filtered{
+        name = "hex-core-loader",
+        area = {{hex_core.position.x - 2, hex_core.position.y - 2}, {hex_core.position.x + 2, hex_core.position.y + 2}},
+    }
+    for _, e in pairs(entities) do
+        if e.direction == defines.direction[dir] and e.loader_type == "output" then
+            gui.close_all(player)
+            player.opened = e
+            break
+        end
     end
 end
 
