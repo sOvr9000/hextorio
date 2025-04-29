@@ -14,10 +14,9 @@
 return {
     starting_trades = {
         {{"electronic-circuit", "stone-brick"}, {"hex-coin"}},
-        {{"low-density-structure"}, {"hex-coin"}},
+        {{"copper-cable", "boiler"}, {"wood", "raw-fish"}},
         {{"iron-plate", "copper-ore", "hex-coin"}, {"stone", "coal"}},
-        {{"crude-oil-barrel", "hex-coin"}, {"light-oil-barrel", "water-barrel"}},
-        -- {{"hex-coin"}, {"stone-brick"}}, -- used in debugging
+        {{"low-density-structure"}, {"hex-coin"}},
         {{"atomic-bomb"}, {"hex-coin"}},
     },
 
