@@ -36,6 +36,17 @@ function on_command(player, command, params)
         -- Get legendary mech armor
         lib.insert_endgame_armor(player)
 
+        for _, trade_items in pairs(storage.trades.starting_trades) do
+            for _, item_name in pairs(trade_items[1]) do
+                if not lib.is_coin(item_name) then
+                    player.insert {
+                        name = item_name,
+                        count = 200,
+                    }
+                end
+            end
+        end
+
         -- Claim hexes
         -- handled by event_system
 
