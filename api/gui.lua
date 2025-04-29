@@ -318,7 +318,7 @@ function gui.init_catalog(player)
         local n = 1
         for j = 1, #items_sorted_by_value do
             local item_name = items_sorted_by_value[j]
-            if not lib.is_coin(item_name) then
+            if lib.is_catalog_item(item_name) then
                 n = n + 1
                 local rank = item_ranks.get_item_rank(item_name)
 
@@ -453,13 +453,16 @@ function gui.give_item_tooltip(player, surface_name, element)
     local item_count = element.number or 1
     local value = item_values.get_item_value(surface_name, item_name)
     local scaled_value = value / hex_coin_value
-    local rank = item_ranks.get_item_rank(item_name)
+
+    local rank_str = {""}
+    if lib.is_catalog_item(item_name) then
+        local rank = item_ranks.get_item_rank(item_name)
+        rank_str = {"", lib.color_localized_string({"hextorio-gui.rank"}, "white", "heading-1"), " " , lib.get_rank_img_str(rank), "\n\n"}
+    end
 
     element.tooltip = {"",
-        "[font=heading-1]",
-        {"hextorio-gui.rank"},
-        "[.font] " .. lib.get_rank_img_str(rank),
-        "\n\n[font=heading-2][color=green]",
+        rank_str,
+        "[font=heading-2][color=green]",
         {"hextorio-gui.item-value"},
         "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. "]x1 = ",
         coin_tiers.coin_to_text(scaled_value, false, 4),
