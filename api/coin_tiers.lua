@@ -36,54 +36,45 @@ end
 
 -- Normalize a coin, ensuring all tiers are within bounds and have integer values
 function coin_tiers.normalized(coin)
-    -- local new_coin = coin_tiers.copy(coin)
-    -- local tier_scaling = new_coin.tier_scaling
+    local new_coin = coin_tiers.copy(coin)
+    local tier_scaling = new_coin.tier_scaling
 
-    -- -- Convert decimals to integers
-    -- for i = new_coin.max_coin_tier, 1, -1 do
-    --     if new_coin.values[i] ~= math.floor(new_coin.values[i]) then
-    --         if i > 1 then
-    --             new_coin.values[i - 1] = new_coin.values[i - 1] + new_coin.tier_scaling * (new_coin.values[i] - math.floor(new_coin.values[i]))
-    --         end
-    --         new_coin.values[i] = math.floor(new_coin.values[i])
-    --     end
-    -- end
-    
-    -- -- Handle carrying to higher tiers
-    -- for i = 1, new_coin.max_coin_tier - 1 do
-    --     if new_coin.values[i] >= tier_scaling then
-    --         local carry = math.floor(new_coin.values[i] / tier_scaling)
-    --         new_coin.values[i] = new_coin.values[i] % tier_scaling
-    --         new_coin.values[i + 1] = new_coin.values[i + 1] + carry
-    --     end
-    -- end
-    
-    -- -- Handle borrowing from higher tiers for negative values
-    -- for i = 1, new_coin.max_coin_tier - 1 do
-    --     while new_coin.values[i] < 0 do
-    --         if new_coin.values[i + 1] > 0 then
-    --             new_coin.values[i + 1] = new_coin.values[i + 1] - 1
-    --             new_coin.values[i] = new_coin.values[i] + tier_scaling
-    --         else
-    --             -- Cannot borrow, so zero out all tiers
-    --             for j = 1, new_coin.max_coin_tier do
-    --                 new_coin.values[j] = 0
-    --             end
-    --             return new_coin
-    --         end
-    --     end
-    -- end
-    
-    -- -- If highest tier is negative, zero out everything
-    -- if new_coin.values[new_coin.max_coin_tier] < 0 then
-    --     for i = 1, new_coin.max_coin_tier do
-    --         new_coin.values[i] = 0
-    --     end
-    --     lib.log_error("encountered negative coin value after normalization: " .. serpent.line(new_coin.values))
-    -- end
+    -- Convert decimals to integers
+    for i = new_coin.max_coin_tier, 2, -1 do
+        if new_coin.values[i] ~= math.floor(new_coin.values[i]) then
+            if i > 1 then
+                new_coin.values[i - 1] = new_coin.values[i - 1] + new_coin.tier_scaling * (new_coin.values[i] - math.floor(new_coin.values[i]))
+                new_coin.values[i] = math.floor(new_coin.values[i])
+            end
+        end
+    end
 
-    local new_coin = coin_tiers.from_base_value(coin_tiers.to_base_value(coin))
-    
+    for i = 1, new_coin.max_coin_tier - 1 do
+        local v = new_coin.values[i]
+        if v < 0 then
+            -- Handle borrowing from higher tiers for negative values
+            local borrow = math.ceil(-v / tier_scaling)
+            new_coin.values[i + 1] = new_coin.values[i + 1] - borrow
+            new_coin.values[i] = v + tier_scaling * borrow
+        elseif v >= tier_scaling then
+            -- Handle carrying to higher tiers
+            local carry = math.floor(new_coin.values[i] / tier_scaling)
+            new_coin.values[i] = v % tier_scaling
+            new_coin.values[i + 1] = new_coin.values[i + 1] + carry
+        end
+    end
+
+    -- If highest tier is negative, zero out everything
+    if new_coin.values[new_coin.max_coin_tier] < 0 then
+        for i = 1, new_coin.max_coin_tier do
+            new_coin.values[i] = 0
+        end
+        lib.log_error("coin_tiers.normalized: Encountered negative coin value: " .. serpent.line(new_coin.values))
+    end
+
+    -- This simple method doesn't work because the base values can be too large for integer arithmetic.
+    -- local new_coin = coin_tiers.from_base_value(coin_tiers.to_base_value(coin))
+
     return new_coin
 end
 
