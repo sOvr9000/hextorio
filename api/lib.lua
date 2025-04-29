@@ -779,6 +779,20 @@ function lib.filter_blacklist(list, func)
     return t
 end
 
+function lib.get_direction_name(d)
+    if d == 1 then
+        return "north"
+    elseif d == 2 then
+        return "east"
+    elseif d == 3 then
+        return "south"
+    elseif d == 4 then
+        return "west"
+    end
+    lib.log_error("Invalid direction: " .. d)
+    return "north"
+end
+
 
 
 return lib

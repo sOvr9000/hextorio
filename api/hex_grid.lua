@@ -1620,25 +1620,25 @@ function hex_grid.spawn_hex_core(surface, position)
     end
     hex_core.destructible = false
 
-    -- Input loader
-    local input_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - 1, position.y + 2}, direction = defines.direction.north, type = "input", force = "player"}
-    input_loader.destructible = false -- prevent acid splash damage
-    -- local loader = surface.create_entity {name = "hps__ml-stack-miniloader", position = {position.x - 1, position.y + 2}, direction = defines.direction.north, type = "input", force = "player"}
-    -- loader.minable = false
+    state.input_loaders = {}
+    state.output_loaders = {}
+    local dx = 1
+    local dy = -2
+    for i = 1, 4 do
+        local dir_name = lib.get_direction_name((i + 1) % 4 + 1)
+        local dir_name_opposite = lib.get_direction_name((i + 3) % 4 + 1)
 
-    -- Output chest
-    -- local output_chest = surface.create_entity {name = "hex-core-output-chest", position = {position.x + 1, position.1}, force = "player"}
-    -- if not output_chest then
-    --     lib.log_error("Failed to spawn hex core output chest")
-    --     return
-    -- end
+        local input_loader = surface.create_entity {name = "hex-core-loader", position = {position.x + dx, position.y + dy}, direction = defines.direction[dir_name], type = "input", force = "player"}
+        input_loader.destructible = false
+        table.insert(state.input_loaders, input_loader)
 
-    -- Output loader
-    local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x + 1, position.y + 2}, direction = defines.direction.south, type = "output", force = "player"}
-    output_loader.loader_filter_mode = "whitelist" -- only outputs the output items of all trades in the hex core
-    output_loader.destructible = false -- prevent acid splash damage
-    -- loader = surface.create_entity {name = "hps__ml-stack-miniloader", position = {position.x + 1, position.y + 2}, direction = defines.direction.south, type = "output", force = "player"}
-    -- loader.minable = false
+        local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - dx, position.y + dy}, direction = defines.direction[dir_name_opposite], type = "output", force = "player"}
+        output_loader.loader_filter_mode = "whitelist"
+        output_loader.destructible = false
+        table.insert(state.output_loaders, output_loader)
+
+        dx, dy = dy, -dx
+    end
 
     for _, e in pairs(entities) do
         if e.valid and e.type == "character" then
@@ -1654,7 +1654,6 @@ function hex_grid.spawn_hex_core(surface, position)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory
     state.claim_price = coin_tiers.from_base_value(claim_price)
-    state.output_loader = output_loader
 
     state.trades = {}
     local hex_core_trades = {}
