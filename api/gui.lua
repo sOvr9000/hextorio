@@ -22,6 +22,11 @@ function gui.init_events()
         gui.show_catalog(player)
         gui.update_catalog(player, "nauvis", "stone")
     end)
+    event_system.register_callback("post-discover-all-command", function(player, params)
+        gui.close_all(player)
+        gui.show_catalog(player)
+        gui.update_catalog(player, "nauvis", "stone")
+    end)
     event_system.register_callback("trade-processed", function(trade)
         if not trade.hex_core_state or not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then return end
         for _, player in pairs(game.players) do
@@ -256,25 +261,23 @@ function gui.init_catalog(player)
         name = "catalog",
         direction = "vertical",
     }
-    frame.style.width = 900
-    frame.style.height = 700
+    frame.style.width = 1200
+    frame.style.height = 800
 
     gui.add_titlebar(frame, {"hextorio-gui.catalog"})
 
     local flow = frame.add {type = "flow", name = "flow", direction = "horizontal"}
 
     local catalog_frame = flow.add {type = "frame", name = "catalog-frame", direction = "vertical"}
-    catalog_frame.style.width = 600
-    catalog_frame.style.vertically_stretchable = true
-    catalog_frame.style.horizontally_squashable = true
+    gui.auto_width_height(catalog_frame)
 
     local scroll_pane = catalog_frame.add {type = "scroll-pane", name = "scroll-pane"}
     scroll_pane.style.vertically_stretchable = true
     scroll_pane.style.vertically_squashable = true
 
     local inspect_frame = flow.add {type = "frame", name = "inspect-frame", direction = "vertical"}
-    -- inspect_frame.style.natural_width = 400
     gui.auto_width_height(inspect_frame)
+    inspect_frame.style.natural_width = 340 / 1.2
 
     for i, surface_name in ipairs {
         "nauvis",
@@ -299,7 +302,6 @@ function gui.init_catalog(player)
         pb_discovery.style.color = {39, 137, 228}
 
         local progress_bar_flow = scroll_pane.add {type = "flow", name = "progress-bar-flow-" .. surface_name, direction = "horizontal"}
-        -- progress_bar_flow.style.natural_width = 
         progress_bar_flow.style.horizontally_stretchable = true
         progress_bar_flow.style.horizontally_squashable = true
         for j = 2, 5 do
@@ -310,23 +312,28 @@ function gui.init_catalog(player)
             pb_ranks.style.horizontally_squashable = true
         end
 
-        local table = scroll_pane.add {type = "table", name = "table-" .. surface_name, column_count = 9}
-        table.style.horizontally_stretchable = true
-        table.style.horizontally_squashable = true
+        local catalog_table = scroll_pane.add {type = "table", name = "table-" .. surface_name, column_count = 13}
+        gui.auto_width(catalog_table)
 
+        local n = 1
         for j = 1, #items_sorted_by_value do
             local item_name = items_sorted_by_value[j]
-            if item_name:sub(-5) ~= "-coin" then
+            if not lib.is_coin(item_name) then
+                n = n + 1
                 local rank = item_ranks.get_item_rank(item_name)
 
-                local rank_flow = table.add {
+                local rank_flow = catalog_table.add {
                     type = "flow",
                     name = "rank-flow-" .. item_name,
                     direction = "vertical",
                 }
 
                 rank_flow.style.top_margin = 20
-                rank_flow.style.right_margin = 10
+                rank_flow.style.width = 60 -- this makes undiscovered items have the same width as discovered items
+
+                if n % catalog_table.column_count > 0 then
+                    rank_flow.style.left_margin = 0
+                end
 
                 local sprite_button = rank_flow.add {
                     type = "sprite-button",
@@ -954,22 +961,35 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
 
     inspect_frame.clear()
 
-    local inspect_header = inspect_frame.add {
-        type = "label",
-        name = "inspect-header",
-        caption = {"", "[font=heading-1]", {"hextorio-gui.catalog-item", "[item=" .. item_name .. "]"}, "[.font]"},
+    local rank_flow = inspect_frame.add {
+        type = "flow",
+        name = "rank-flow",
+        direction = "horizontal",
     }
-    gui.auto_width(inspect_header)
 
-    local line = inspect_frame.add {type = "line", direction = "horizontal"}
-    line.style.horizontally_stretchable = true
-    line.style.horizontally_squashable = true
+    rank_flow.style.natural_height = 32 / 1.2
 
-    local rank_label = inspect_frame.add {
+    local rank_label1 = rank_flow.add {
         type = "label",
-        name = "rank-label",
-        caption = {"", "[font=heading-2]", {"hextorio-gui.rank"}, " " .. lib.get_rank_img_str(rank_obj.rank) .. "[.font]"},
+        name = "label1",
+        caption = "[font=heading-1][img=item." .. item_name .. "][.font]",
     }
+
+    local rank_label2 = rank_flow.add {
+        type = "label",
+        name = "label2",
+        caption = "[font=heading-1]" .. lib.get_rank_img_str(rank_obj.rank) .. "[.font]",
+    }
+    rank_label2.style.left_margin = 73 / 1.2
+
+    local rank_label3 = rank_flow.add {
+        type = "label",
+        name = "label3",
+        caption = "[font=heading-1][img=item." .. item_name .. "][.font]",
+    }
+    rank_label3.style.left_margin = 73 / 1.2
+
+    inspect_frame.add {type = "line", direction = "horizontal"}
 
     local bonuses_label = inspect_frame.add {
         type = "label",
@@ -982,19 +1002,18 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
         local bonus_productivity = inspect_frame.add {
             type = "label",
             name = "bonus-productivity",
-            caption = {"", lib.color_localized_string({"hextorio-gui.main-bonus"}, "purple", "heading-2"), " ", {"hextorio-gui.rank-bonus-trade-productivity", "[color=green]" .. math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)) .. "[.color]"}},
+            caption = {"", lib.color_localized_string({"hextorio-gui.main-bonus"}, "blue", "heading-2"), "\n", {"hextorio-gui.rank-bonus-trade-productivity", "[color=green]" .. math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)) .. "[.color]"}},
         }
         bonus_productivity.style.single_line = false
-        bonus_productivity.style.horizontally_squashable = true
-        bonus_productivity.style.horizontally_stretchable = true
-        bonus_productivity.style.vertically_squashable = true
-        bonus_productivity.style.vertically_stretchable = true
+        gui.auto_width_height(bonus_productivity)
     else
         local none_label = inspect_frame.add {
             type = "label",
             name = "none",
             caption = {"hextorio-gui.rank-bonus-none"},
         }
+        none_label.style.single_line = false
+        gui.auto_width_height(none_label)
     end
 
     for i = 2, rank_obj.rank do
@@ -1010,10 +1029,7 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
             caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, color_rich_text .. lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false) .. "[.color]"}},
         }
         rank_bonus_unique.style.single_line = false
-        rank_bonus_unique.style.horizontally_squashable = true
-        rank_bonus_unique.style.horizontally_stretchable = true
-        rank_bonus_unique.style.vertically_squashable = true
-        rank_bonus_unique.style.vertically_stretchable = true
+        gui.auto_width_height(rank_bonus_unique)
     end
 
     inspect_frame.add {type = "line", direction = "horizontal"}
@@ -1024,10 +1040,7 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
         caption = {"", "[img=" .. storage.item_ranks.rank_star_sprites[math.min(5, (rank_obj.rank + 1))] .. "] ", {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}},
     }
     rank_up_instructions.style.single_line = false
-    rank_up_instructions.style.horizontally_squashable = true
-    rank_up_instructions.style.horizontally_stretchable = true
-    rank_up_instructions.style.vertically_squashable = true
-    rank_up_instructions.style.vertically_stretchable = true
+    gui.auto_width_height(rank_up_instructions)
 
     if rank_obj.rank == 1 then
         gui.add_info(inspect_frame, "buying-info")

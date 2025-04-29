@@ -25,6 +25,7 @@ function trades.init()
             end
         end
         trades.discover_items(items_list)
+        event_system.trigger("post-discover-all-command", player, params)
     end)
 end
 
