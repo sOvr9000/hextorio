@@ -3,6 +3,9 @@ Version: 0.1.5
 Date: 29/4/25
   Bugfixes:
     - Fixed that currently existing hex cores were not sometimes getting new trades upon ranking up items to bronze rank.
+  Features:
+    - Added more loaders per hex core.
+    - Added ability to configure unloader filters directly for each hex core.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 29/4/25
