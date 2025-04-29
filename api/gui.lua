@@ -11,7 +11,7 @@ local gui = {}
 
 
 
-function gui.init_events()
+function gui.register_events()
     event_system.register_callback("post-rank-up-command", function(player, params)
         gui.close_all(player)
         gui.show_catalog(player)

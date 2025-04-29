@@ -12,6 +12,11 @@ local migrations = require "api.migrations"
 local trades = require "api.trades"
 local item_ranks = require "api.item_ranks"
 
+hex_grid.register_events()
+trades.register_events()
+item_ranks.register_events()
+gui.register_events()
+
 require "commands"
 
 local data_constants = require "data.constants"
@@ -101,10 +106,6 @@ script.on_init(function()
     temp.request_to_generate_chunks({0, 0}, 0)
 
     item_values.init()
-    hex_grid.init()
-    trades.init()
-    item_ranks.init()
-    gui.init_events()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then

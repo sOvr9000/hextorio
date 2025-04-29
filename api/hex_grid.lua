@@ -658,7 +658,7 @@ end
 -- Hex grid generation and management --
 ----------------------------------------
 
-function hex_grid.init()
+function hex_grid.register_events()
     event_system.register_callback("item-rank-up", function(item_name)
         hex_grid.update_all_trades()
     end)

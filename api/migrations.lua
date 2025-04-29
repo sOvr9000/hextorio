@@ -54,6 +54,12 @@ function migrations.on_mod_updated(old_version, new_version)
         storage.item_values.values.nauvis["uranium-ore"] = 10
     elseif old_version == "0.1.1" then
         storage.trade_overview = data_trade_overview
+    elseif old_version == "0.1.2" then
+        table.insert(storage.trades.starting_trades, {{"copper-cable", "boiler"}, {"wood", "raw-fish"}})
+        local trade = trades.from_item_names("nauvis", {"copper-cable", "boiler"}, {"wood", "raw-fish"})
+        local starter_hex_state = hex_grid.get_hex_state("nauvis", {q=0, r=0})
+        hex_grid.remove_trade(starter_hex_state, 4)
+        hex_grid.add_trade(starter_hex_state, trade)
     end
 
     -- Reinitialize GUIs

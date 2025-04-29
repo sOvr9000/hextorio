@@ -6,7 +6,7 @@ local item_ranks = {}
 
 
 
-function item_ranks.init()
+function item_ranks.register_events()
     event_system.register_callback("command-rank-up", function(player, params)
         if item_ranks.rank_up(params[1]) then
             event_system.trigger("post-rank-up-command", player, params)

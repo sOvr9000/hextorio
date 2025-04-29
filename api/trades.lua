@@ -12,7 +12,7 @@ local trades = {}
 
 
 
-function trades.init()
+function trades.register_events()
     event_system.register_callback("command-discover-all", function(player, params)
         local items_list = {}
         for surface_id, _ in pairs(game.surfaces) do
