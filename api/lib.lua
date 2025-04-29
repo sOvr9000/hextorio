@@ -757,6 +757,28 @@ function lib.color_to_rich_text(color)
     return "[color=" .. (color.r or color[1]) .. "," .. (color.g or color[2]) .. "," .. (color.b or color[3]) .. "]"
 end
 
+function lib.filter_whitelist(list, func)
+    -- These can be handled as sets also, but here's the non-sets version.
+    local t = {}
+    for _, v in pairs(list) do
+        if func(v) then
+            table.insert(t, v)
+        end
+    end
+    return t
+end
+
+function lib.filter_blacklist(list, func)
+    -- These can be handled as sets also, but here's the non-sets version.
+    local t = {}
+    for _, v in pairs(list) do
+        if not func(v) then
+            table.insert(t, v)
+        end
+    end
+    return t
+end
+
 
 
 return lib

@@ -393,8 +393,24 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     return total_removed, total_inserted
 end
 
-function trades.random_trade_item_names(surface_name, volume)
+function trades.random_trade_item_names(surface_name, volume, params)
+    if not params then params = {} end
     local possible_items = item_values.get_items_near_value(surface_name, volume, 10, true, false)
+
+    -- Apply whitelist filter
+    if params.whitelist then
+        possible_items = lib.filter_whitelist(possible_items, function(item_name)
+            return params.whitelist[item_name]
+        end)
+    end
+
+    -- Apply blacklist filter
+    if params.blacklist then
+        possible_items = lib.filter_blacklist(possible_items, function(item_name)
+            return params.blacklist[item_name]
+        end)
+    end
+
     if #possible_items < 2 then
         lib.log_error("Not enough items found near value " .. volume)
         lib.log_error("Found: " .. serpent.line(possible_items))
@@ -602,6 +618,12 @@ function trades.increment_current_prod_value(trade, times)
     local prod_amount = math.floor(trade.current_prod_value)
     trade.current_prod_value = trade.current_prod_value - prod_amount
     return prod_amount
+end
+
+function trades.get_random_volume_for_item(surface_name, item_name)
+    local volume = item_values.get_item_value(surface_name, item_name)
+    local random_volume = volume * (3 + 7 * math.random())
+    return random_volume
 end
 
 

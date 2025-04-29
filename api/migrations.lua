@@ -1,5 +1,8 @@
 
+local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
+local item_values = require "api.item_values"
+local item_ranks = require "api.item_ranks"
 local trades = require "api.trades"
 local gui = require "api.gui"
 
@@ -74,6 +77,16 @@ function migrations.on_mod_updated(old_version, new_version)
         storage.item_values.values.nauvis["biter-egg"] = 9001
 
         hex_grid.update_all_trades()
+    elseif old_version == "0.1.3" then
+    elseif old_version == "0.1.4" then
+        for item_name, _ in pairs(storage.item_values.values.nauvis) do
+            if lib.is_catalog_item(item_name) then
+                local rank = item_ranks.get_item_rank(item_name)
+                if rank >= 2 then
+                    hex_grid.apply_extra_trades_bonus_retro(item_name)
+                end
+            end
+        end
     end
 
     -- Reinitialize GUIs

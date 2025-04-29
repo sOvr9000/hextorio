@@ -660,6 +660,9 @@ end
 
 function hex_grid.register_events()
     event_system.register_callback("item-rank-up", function(item_name)
+        if item_ranks.get_item_rank(item_name) == 2 then
+            hex_grid.apply_extra_trades_bonus_retro(item_name)
+        end
         hex_grid.update_all_trades()
     end)
 
@@ -841,7 +844,7 @@ end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if math.random() > 0.01 then return end
-    local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume)
+    local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume, {blacklist = sets.new {item_name}})
     if not input_names or not output_names then
         lib.log_error("hex_grid.apply_extra_trade_bonus: failed to get random trade item name from volume = " .. volume)
         return
@@ -856,7 +859,35 @@ function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     end
     local trade = trades.from_item_names(state.hex_core.surface.name, input_names, output_names)
     hex_grid.add_trade(state, trade)
-    game.print{"hextorio.bonus-trade", lib.get_gps_str_from_hex_core(state.hex_core), "[item=" .. item_name .. "]"}
+    -- game.print{"hextorio.bonus-trade", lib.get_gps_str_from_hex_core(state.hex_core), "[item=" .. item_name .. "]"}
+    return trade
+end
+
+function hex_grid.apply_extra_trades_bonus(state)
+    if not state or not state.hex_core or not state.hex_core.trades then return end
+    local surface = state.hex_core.surface
+    local surface_values = item_values.get_item_values_for_surface(surface.name)
+    if surface_values then
+        local added_trades = {}
+        for item_name, _ in pairs(surface_values) do
+            if lib.is_catalog_item(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
+                local rank = item_ranks.get_item_rank(item_name)
+                if rank >= 2 then
+                    local trade = hex_grid.apply_extra_trade_bonus(state, item_name, trades.get_random_volume_for_item(surface.name, item_name))
+                    if trade then -- "if" check isn't necessary, technically
+                        added_trades[item_name] = trade
+                    end
+                end
+            end
+        end
+        if next(added_trades) then
+            local new_trades_str = ""
+            for item_name, trade in pairs(added_trades) do
+                new_trades_str = new_trades_str .. "[img=item." .. item_name .. "]"
+            end
+            game.print{"hextorio.bonus-trade", lib.get_gps_str_from_hex_core(state.hex_core), new_trades_str}
+        end
+    end
 end
 
 function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
@@ -1618,7 +1649,7 @@ function hex_grid.spawn_hex_core(surface, position)
     local claim_price = hex_grid.distance(state.position, {q=0, r=0}) + 1
     claim_price = claim_price * claim_price
 
-    state.hex_core = hex_core
+    state.hexe = hex_core
     state.hex_core_input_inventory = hex_core.get_inventory(defines.inventory.chest)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory
@@ -1650,19 +1681,7 @@ function hex_grid.spawn_hex_core(surface, position)
         hex_grid.add_trade(state, trade)
     end
 
-    local surface_values = item_values.get_item_values_for_surface(surface.name)
-    if surface_values then
-        for item_name, _ in pairs(surface_values) do
-            if lib.is_catalog_item(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
-                local rank = item_ranks.get_item_rank(item_name)
-                if rank >= 2 then
-                    local volume = item_values.get_item_value(surface.name, item_name)
-                    local random_volume = volume * (0.5 + math.random())
-                    hex_grid.apply_extra_trade_bonus(state, item_name, random_volume)
-                end
-            end
-        end
-    end
+    hex_grid.apply_extra_trades_bonus(state)
 
     hex_grid.update_loader_filters(state)
     hex_grid.update_hex_core_inventory_filters(state)
@@ -1981,6 +2000,37 @@ function hex_grid.update_all_trades()
                 end
             end
         end
+    end
+end
+
+function hex_grid.apply_extra_trades_bonus_retro(item_name)
+    if not lib.is_catalog_item(item_name) then return end
+    local rank = item_ranks.get_item_rank(item_name)
+    local volume = trades.get_random_volume_for_item(item_name)
+    local added_trades = {}
+    local trades_per_hex = lib.runtime_setting_value "trades-per-hex"
+    for surface_name, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
+        for _, Q in pairs(surface_hexes) do
+            for _, state in pairs(Q) do
+                if state.trades and #state.trades == trades_per_hex then
+                    local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
+                    if trade then
+                        table.insert(added_trades, trade)
+                    end
+                end
+            end
+        end
+    end
+    if next(added_trades) then
+        local hex_cores_str = ""
+        for i, trade in ipairs(added_trades) do
+            if i > 1 then
+                hex_cores_str = hex_cores_str .. "   "
+            end
+            hex_cores_str = hex_cores_str .. lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
+        end
+        game.print({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"})
+        game.print(hex_cores_str)
     end
 end
 
