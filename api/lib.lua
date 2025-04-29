@@ -700,6 +700,10 @@ function lib.is_item(item_name)
     return prototypes.item[item_name] ~= nil
 end
 
+function lib.is_catalog_item(item_name)
+    return not lib.is_coin(item_name) and lib.is_item(item_name)
+end
+
 function lib.format_percentage(x, decimal_places, include_symbol)
     if include_symbol == nil then include_symbol = true end
     local p = 10 ^ decimal_places

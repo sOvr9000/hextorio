@@ -1971,12 +1971,12 @@ function hex_grid.update_all_trades()
                     for i, trade in ipairs(state.trades) do
                         trades.set_productivity(trade, 0)
                         for j, item in ipairs(trade.input_items) do
-                            if item_ranks.is_item_rank_defined(item.name) then
+                            if lib.is_catalog_item(item.name) then
                                 trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
                             end
                         end
                         for j, item in ipairs(trade.output_items) do
-                            if item_ranks.is_item_rank_defined(item.name) then
+                            if lib.is_catalog_item(item.name) then
                                 trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
                             end
                         end

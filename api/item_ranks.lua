@@ -40,7 +40,10 @@ function item_ranks.get_item_rank(item_name)
         return 0
     end
     local rank = item_ranks.get_rank_obj(item_name)
-    if not rank then return 0 end
+    if not rank then
+        lib.log_error("item_ranks.get_item_rank: could not find rank object of item: " .. item_name)
+        return 0
+    end
     return rank.rank
 end
 
@@ -106,6 +109,10 @@ function item_ranks.rank_up(item_name)
 end
 
 function item_ranks.get_rank_bonus_effect(rank_tier)
+    if not rank_tier then
+        lib.log_error("item_ranks.get_rank_bonus_effect: rank_tier is nil")
+        return
+    end
     if rank_tier == 1 then
         return 0.0
     elseif rank_tier == 2 then
@@ -117,6 +124,7 @@ function item_ranks.get_rank_bonus_effect(rank_tier)
     elseif rank_tier == 5 then
         return 0.5
     end
+    lib.log_error("item_ranks.get_rank_bonus_effect: rank_tier is out of range: " .. rank_tier)
 end
 
 

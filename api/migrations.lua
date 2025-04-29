@@ -60,6 +60,16 @@ function migrations.on_mod_updated(old_version, new_version)
         local starter_hex_state = hex_grid.get_hex_state("nauvis", {q=0, r=0})
         hex_grid.remove_trade(starter_hex_state, 4)
         hex_grid.add_trade(starter_hex_state, trade)
+
+        -- Revert trades to original
+        for _, state in pairs(hex_grid.get_flattened_surface_hexes(game.surfaces.nauvis)) do
+            for _, trade in pairs(state.trades) do
+                trade.trades = trade.trades_original
+                trade.trades_original = nil
+            end
+        end
+
+        hex_grid.update_all_trades()
     end
 
     -- Reinitialize GUIs
