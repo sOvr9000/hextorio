@@ -6,6 +6,7 @@ local trades = require "api.trades"
 local item_values = require "api.item_values"
 local item_ranks  = require "api.item_ranks"
 local event_system = require "api.event_system"
+local quests = require "api.quests"
 
 
 
@@ -1548,6 +1549,8 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
 
     -- Add trade items to catalog list
     trades.discover_items_in_trades(state.trades)
+
+    quests.increment_progress_for_type("claimed-hexes", 1)
 end
 
 -- Claim hexes within a range, covering water as well

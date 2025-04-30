@@ -6,6 +6,7 @@ local item_ranks = require "api.item_ranks"
 local trades = require "api.trades"
 local sets = require "api.sets"
 local event_system = require "api.event_system"
+local quests = require "api.quests"
 
 local gui = {}
 
@@ -35,10 +36,24 @@ function gui.register_events()
             end
         end
     end)
+
+    event_system.register_callback("quest-reward-received", function(reward_type, value)
+        if reward_type == "unlock-feature" then
+            if value == "catalog" then
+                for _, player in pairs(game.players) do
+                    gui.init_catalog_button(player)
+                end
+            elseif value == "trade-overview" then
+                for _, player in pairs(game.players) do
+                    gui.init_trade_overview_button(player)
+                end
+            end
+        end
+    end)
 end
 
 function gui.reinitialize_everything(player)
-    -- called during migration
+    -- called during migration or for player joins
 
     local frame
 
@@ -95,21 +110,25 @@ function gui.init_questbook_button(player)
 end
 
 function gui.init_trade_overview_button(player)
-    if player.gui.top["trade-overview-button"] then return end
-    local trade_overview_button = player.gui.top.add {
-        type = "sprite-button",
-        name = "trade-overview-button",
-        sprite = "trade-overview",
-    }
+    if not player.gui.top["trade-overview-button"] then
+        local trade_overview_button = player.gui.top.add {
+            type = "sprite-button",
+            name = "trade-overview-button",
+            sprite = "trade-overview",
+        }
+    end
+    player.gui.top["trade-overview-button"].visible = quests.is_feature_unlocked "trade-overview"
 end
 
 function gui.init_catalog_button(player)
-    if player.gui.top["catalog-button"] then return end
-    local catalog_button = player.gui.top.add {
-        type = "sprite-button",
-        name = "catalog-button",
-        sprite = "catalog",
-    }
+    if not player.gui.top["catalog-button"] then
+        local catalog_button = player.gui.top.add {
+            type = "sprite-button",
+            name = "catalog-button",
+            sprite = "catalog",
+        }
+    end
+    player.gui.top["catalog-button"].visible = quests.is_feature_unlocked "catalog"
 end
 
 function gui.init_hex_core(player)
@@ -201,9 +220,38 @@ end
 function gui.init_questbook(player)
     if player.gui.screen["questbook"] then return end
     local questbook = player.gui.screen.add {type = "frame", name = "questbook", direction = "vertical"}
-    questbook.style.size = {width = 400, height = 600}
+    questbook.style.size = {width = 1200, height = 800}
 
     gui.add_titlebar(questbook, {"hextorio-questbook.questbook-title"})
+
+    local info_frame = questbook.add {type = "frame", name = "info-frame", direction = "horizontal"}
+    info_frame.style.horizontally_stretchable = true
+    info_frame.style.vertically_squashable = true
+    info_frame.style.natural_height = 150
+
+    local lower_flow = questbook.add {type = "flow", name = "lower-flow", direction = "horizontal"}
+    gui.auto_width_height(lower_flow)
+
+    local list_frame = lower_flow.add {type = "frame", name = "list-frame", direction = "vertical"}
+
+    local quest_frame = lower_flow.add {type = "frame", name = "quest-frame", direction = "vertical"}
+
+
+
+    local list_scroll_pane = list_frame.add {type = "scroll-pane", name = "scroll-pane", direction = "vertical"}
+    gui.auto_width_height(list_scroll_pane)
+
+    local incomplete_header = list_scroll_pane.add {type = "label", name = "incomplete-header", caption = {"hextorio-questbook.incomplete"}}
+    incomplete_header.style.font = "heading-2"
+    local incomplete_list = list_scroll_pane.add {type = "list-box", name = "incomplete-list"}
+    gui.auto_width_height(incomplete_list)
+
+    local complete_header = list_scroll_pane.add {type = "label", name = "complete-header", caption = {"hextorio-questbook.complete"}}
+    complete_header.style.font = "heading-2"
+    local complete_list = list_scroll_pane.add {type = "list-box", name = "complete-list"}
+    gui.auto_width_height(complete_list)
+
+    local quest_info_flow = quest_frame.add {type = "flow", name = "quest-info-flow", direction = "horizontal"}
 end
 
 function gui.init_trade_overview(player)

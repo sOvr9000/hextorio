@@ -52,5 +52,24 @@ return {
         "trade-loop-finder",
         "megaclaim-hexes",
         "more-trades",
-    }
+        "unlock-feature",
+        "reduce-biters",
+    },
+
+    quests = {},
+    quests_by_condition_type = {},
+    unlocked_features = {},
+
+    quest_defs = {
+        {
+            name = "ground-zero",
+            conditions = {{type = "claimed-hexes", progress_requirement = 2}},
+            rewards = {{type = "unlock-feature", value = "catalog"}},
+        },
+        {
+            name = "biter-rammer",
+            conditions = {{type = "biter-spawner-ram"}},
+            rewards = {{type = "reduce-biters", value = 0.5}},
+        },
+    },
 }

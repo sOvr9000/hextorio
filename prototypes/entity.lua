@@ -25,7 +25,9 @@ hex_core.picture = {
         }
     }
 }
+hex_core.icon = "__hextorio__/graphics/icons/hex-core.png"
 hex_core.inventory_type = "with_filters_and_bar"
+hex_core.map_color = {0.9, 0.9, 0.9}
 
 
 

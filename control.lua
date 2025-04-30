@@ -11,6 +11,7 @@ local event_system= require "api.event_system"
 local migrations = require "api.migrations"
 local trades = require "api.trades"
 local item_ranks = require "api.item_ranks"
+local quests = require "api.quests"
 
 hex_grid.register_events()
 trades.register_events()
@@ -106,6 +107,7 @@ script.on_init(function()
     temp.request_to_generate_chunks({0, 0}, 0)
 
     item_values.init()
+    quests.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -210,7 +212,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
     lib.unstuck_player(player)
-    gui.init_all_buttons(player)
+    gui.reinitialize_everything(player)
 end)
 
 script.on_event(defines.events.on_gui_opened, function (event)
