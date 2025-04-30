@@ -130,4 +130,29 @@ data:extend({
         default_value = true,
         order = "mb",
     },
+
+    {
+        type = "double-setting",
+        name = "hextorio-supercharge-cost-per-tile",
+        setting_type = "runtime-global",
+        minimum_value = 0,
+        default_value = 50,
+        order = "pa",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-supercharge-cost-per-well",
+        setting_type = "runtime-global",
+        minimum_value = 0,
+        default_value = 1000,
+        order = "pb",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-supercharge-cost-multiplier",
+        setting_type = "runtime-global",
+        minimum_value = 0,
+        default_value = 0.025,
+        order = "pc",
+    },
 })

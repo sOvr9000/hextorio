@@ -3,11 +3,13 @@ Version: 0.1.5
 Date: 29/4/25
   Bugfixes:
     - Fixed that currently existing hex cores were not sometimes getting new trades upon ranking up items to bronze rank.
+    - Fixed that deleting a core was free.
   Features:
     - Added more loaders per hex core.
     - Added ability to configure unloader filters directly for each hex core.
     - Added sink mode for hex cores.
     - Added generator mode for hex cores.
+    - Added supercharge operation for hex cores.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 29/4/25

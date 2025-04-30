@@ -107,10 +107,6 @@ function coin_tiers.subtract(coin1, coin2)
         result.values[i] = coin1.values[i] - coin2.values[i]
     end
 
-    log("subtracting coin2 from coin1, result: " .. serpent.line(result))
-    local norm = coin_tiers.normalized(result)
-    log("normalized result: " .. serpent.line(norm))
-    
     return coin_tiers.normalized(result)
 end
 

@@ -1709,7 +1709,7 @@ end
 function hex_grid.delete_hex_core(hex_core)
     if not hex_core or not hex_core.valid then return end
 
-    local surface_hexes = hex_grid.get_sur_hexes(hex_core.surface)
+    local surface_hexes = hex_grid.get_surface_hexes(hex_core.surface)
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
 
@@ -1726,6 +1726,17 @@ function hex_grid.delete_hex_core(hex_core)
     if not Q then return end
 
     Q[state.position.r] = nil
+end
+
+function hex_grid.supercharge_resources(hex_core)
+    for _, e in pairs(hex_grid.get_hex_resources(hex_core)) do
+        e.amount = 4294967295
+    end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    state.is_infinite = true
 end
 
 function hex_grid.generate_loaders(hex_core_state)
@@ -1984,13 +1995,56 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
     end
 end
 
+function hex_grid.get_hex_resources(hex_core)
+    local transformation = hex_grid.get_surface_transformation(hex_core.surface)
+    if not transformation then return coin_tiers.from_base_value(0) end
+
+    return hex_core.surface.find_entities_filtered {
+        type = "resource",
+        position = hex_core.position,
+        radius = transformation.scale * storage.constants.ROOT_THREE_OVER_TWO + 0.5,
+    }
+end
+
 function hex_grid.get_delete_core_cost(hex_core)
     if not hex_core or not hex_core.valid then return coin_tiers.from_base_value(0) end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
-    if not state then return 0 end
+    if not state then return coin_tiers.from_base_value(0) end
 
     return state.claim_price or coin_tiers.from_base_value(0)
+end
+
+function hex_grid.get_supercharge_cost(hex_core)
+    if not hex_core or not hex_core.valid then return coin_tiers.from_base_value(0) end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return coin_tiers.from_base_value(0) end
+
+    local entities = hex_grid.get_hex_resources(hex_core)
+
+    local base_cost
+    if state.is_oil then
+        base_cost = lib.runtime_setting_value "supercharge-cost-per-well"
+    else
+        base_cost = lib.runtime_setting_value "supercharge-cost-per-tile"
+    end
+
+    local total_value = 0
+    for _, e in pairs(entities) do
+        local products = e.prototype.mineable_properties.products
+        for _, product in pairs(products) do
+            if product.type == "item" or product.type == "fluid" then
+                lib.log(product.name)
+                total_value = total_value + item_values.get_item_value(hex_core.surface.name, product.name)
+            end
+        end
+    end
+
+    base_cost = base_cost * total_value * lib.runtime_setting_value "supercharge-cost-multiplier"
+
+    lib.log("found " .. #entities .. " resources")
+    return coin_tiers.from_base_value(#entities * base_cost)
 end
 
 function hex_grid.update_all_hex_cores()

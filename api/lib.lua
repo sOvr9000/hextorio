@@ -176,7 +176,7 @@ end
 function lib.log(txt, error)
     local prefix = "HEXTORIO | "
     if error then
-        prefix = prefix .. "\n\nERROR: "
+        prefix = prefix .. "ERROR: "
     end
     local s
     if type(txt) == "table" then
@@ -184,9 +184,9 @@ function lib.log(txt, error)
     else
         s = prefix .. tostring(txt)
     end
-    if error then
-        s = s .. "\n"
-    end
+    -- if error then
+    --     s = s .. "\n"
+    -- end
     log(s)
 end
 

@@ -149,6 +149,8 @@ function gui.init_hex_core(player)
     local unloader_filters = hex_control_flow.add {type = "sprite-button", name = "unloader-filters", sprite = "item/loader"}
     unloader_filters.tooltip = {"hex-core-gui.unloader-filters-tooltip"}
 
+    local supercharge = hex_control_flow.add {type = "sprite-button", name = "supercharge", sprite = "item/electric-mining-drill"}
+
     local sink_mode = hex_control_flow.add {type = "sprite-button", name = "sink-mode", sprite = "hex-coin"}
     sink_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.sink-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.sink-mode-tooltip-body"}}
 
@@ -156,7 +158,6 @@ function gui.init_hex_core(player)
     generator_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.generator-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.generator-mode-tooltip-body"}}
 
     local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/deconstruction_mark"}
-    delete_core.tooltip = {"hex-core-gui.delete-core-tooltip"}
 
     local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
     for i, dir in ipairs {"west", "north", "south", "east"} do
@@ -686,8 +687,24 @@ function gui.update_hex_core(player)
 
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["unloader-filters"].enabled = true
+        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite
+        if not state.is_infinite then
+            frame["hex-control-flow"]["supercharge"].tooltip = {"",
+                lib.color_localized_string({"hex-core-gui.supercharge-tooltip-header"}, "orange", "heading-2"),
+                "\n",
+                {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_supercharge_cost(hex_core))},
+                "\n",
+                {"hex-core-gui.supercharge-tooltip-body"},
+            }
+        end
         frame["hex-control-flow"]["delete-core"].enabled = true
-        frame["hex-control-flow"]["delete-core"].tooltip = {"hex-core-gui.delete-core-tooltip", coin_tiers.coin_to_text(hex_grid.get_delete_core_cost(hex_core))}
+        frame["hex-control-flow"]["delete-core"].tooltip = {"",
+            lib.color_localized_string({"hex-core-gui.delete-core-tooltip-header"}, "red", "heading-2"),
+            "\n",
+            {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_delete_core_cost(hex_core))},
+            "\n",
+            {"hex-core-gui.delete-core-tooltip-body"},
+        }
 
         frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil
         frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil
@@ -739,10 +756,12 @@ function gui.update_hex_core_resources(player)
     end
 
     local resources = state.resources or {}
-    local any = false
 
     resources_flow.clear()
     for resource_name, amount in pairs(resources) do
+        if state.is_infinite then
+            amount = 1000000000000
+        end
         local sprite = "item/" .. resource_name
         if state.is_oil then
             sprite = "entity/crude-oil"
@@ -753,10 +772,9 @@ function gui.update_hex_core_resources(player)
             number = amount,
         }
         gui.give_item_tooltip(player, hex_core.surface.name, resource)
-        any = true
     end
 
-    if not any then
+    if not next(resources) then
         resources_flow.add {
             type = "label",
             name = "no-resources",
@@ -1188,6 +1206,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_core_finder_button_click(player, element)
     elseif element.name == "teleport" then
         gui.on_teleport_button_click(player, element)
+    elseif element.name == "supercharge" then
+        gui.on_supercharge_button_click(player, element)
     elseif element.name == "delete-core" then
         gui.on_delete_core_button_click(player, element)
     elseif element.name == "confirmation-button" then
@@ -1212,6 +1232,25 @@ function gui.on_sprite_button_click(player, element)
         end
         gui.update_trade_overview(player)
     end
+end
+
+function gui.on_supercharge_button_click(player, element)
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    local inv = lib.get_player_inventory(player)
+    if not inv then return end
+
+    local coin = hex_grid.get_supercharge_cost(hex_core)
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    if coin_tiers.gt(coin, inv_coin) then
+        player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
+        return
+    end
+
+    coin_tiers.remove_coin_from_inventory(inv, coin)
+
+    hex_grid.supercharge_resources(hex_core)
 end
 
 function gui.on_trade_overview_item_clicked(player, element)
@@ -1301,6 +1340,8 @@ function gui.on_confirmation_button_click(player, element)
             player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
             return
         end
+
+        coin_tiers.remove_coin_from_inventory(inv, coin)
 
         hex_grid.delete_hex_core(hex_core)
         gui.hide_all_frames(player)
