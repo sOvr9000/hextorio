@@ -118,6 +118,7 @@ function migrations.on_mod_updated(old_version, new_version)
         if not func then
             error("missing migration for " .. old_version .. " -> " .. version_stepping[old_version])
         end
+        lib.log("migrating " .. old_version .. " -> " .. version_stepping[old_version])
         func()
         old_version = version_stepping[old_version]
     end
