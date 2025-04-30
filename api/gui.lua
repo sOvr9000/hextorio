@@ -1195,6 +1195,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_unloader_filters_button_click(player, element)
     elseif element.parent.name == "unloader-filters-flow" then
         gui.on_unloader_filters_direction_click(player, element)
+    elseif element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
+        gui.on_hex_mode_button_click(player, element)
     elseif element.parent.parent.name == "planet-flow" then
         if element.parent["status"].sprite == "check-mark-green" then
             element.parent["status"].sprite = "red-ex"
@@ -1202,6 +1204,27 @@ function gui.on_sprite_button_click(player, element)
             element.parent["status"].sprite = "check-mark-green"
         end
         gui.update_trade_overview(player)
+    end
+end
+
+function gui.on_hex_mode_button_click(player, element)
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    local mode = element.name:sub(1, -6)
+    local succeeded = hex_grid.switch_hex_core_mode(state, mode)
+
+    if succeeded then
+        for _, elem in pairs(element.parent.children) do
+            if elem.name:sub(-5) == "-mode" then
+                elem.visible = false
+            end
+        end
+
+        gui.update_hex_core(player)
     end
 end
 

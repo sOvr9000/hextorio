@@ -842,6 +842,7 @@ function hex_grid.remove_trade(hex_core_state, idx)
 end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
+    if state.mode == "sink" or state.mode == "generator" then return end
     if math.random() > 0.01 then return end
     local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume, {blacklist = sets.new {item_name}})
     if not input_names or not output_names then
@@ -892,6 +893,68 @@ end
 function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
     if not trades.set_trade_active(hex_core_state.trades[trade_index], flag) then return end
     -- hex_grid.update_loader_filters(hex_core_state)
+end
+
+function hex_grid.switch_hex_core_mode(state, mode)
+    if not mode then
+        lib.log_error("hex_grid.switch_hex_core_mode: Tried to set mode to nil")
+        return false
+    end
+    if not state or not state.trades or state.mode then return false end
+
+    if mode == "generator" then
+        local all_outputs = sets.new()
+        for i = #state.trades, 1, -1 do
+            for _, output in pairs(state.trades[i].output_items) do
+                if not lib.is_coin(output.name) then
+                    sets.add(all_outputs, output.name)
+                end
+            end
+            hex_grid.remove_trade(state, i)
+        end
+        local params = {target_efficiency = 0.1}
+        for item_name, _ in pairs(all_outputs) do
+            local trade = trades.from_item_names(state.hex_core.surface.name, {"hex-coin"}, {item_name}, params) -- TODO: Implement target_efficiency
+            if trade then
+
+                -- TODO: when target_efficiency is implemented, remove the loop below
+                for _, input in pairs(trade.input_items) do
+                    input.count = math.floor(0.5 + input.count / params.target_efficiency)
+                end
+
+                hex_grid.add_trade(state, trade)
+            end
+        end
+    elseif mode == "sink" then
+        local all_inputs = sets.new()
+        for i = #state.trades, 1, -1 do
+            for _, input in pairs(state.trades[i].input_items) do
+                if not lib.is_coin(input.name) then
+                    sets.add(all_inputs, input.name)
+                end
+            end
+            hex_grid.remove_trade(state, i)
+        end
+        local params = {target_efficiency = 0.1}
+        for item_name, _ in pairs(all_inputs) do
+            local trade = trades.from_item_names(state.hex_core.surface.name, {item_name}, {"hex-coin"}, params) -- TODO: Implement target_efficiency
+            if trade then
+
+                -- TODO: when target_efficiency is implemented, remove the loop below
+                for _, input in pairs(trade.input_items) do
+                    input.count = math.floor(0.5 + input.count / params.target_efficiency)
+                end
+
+                hex_grid.add_trade(state, trade)
+            end
+        end
+    else
+        lib.log_error("hex_grid.switch_hex_core_mode: Unrecognized mode: " .. mode)
+        return false
+    end
+
+    state.mode = mode
+    return true
 end
 
 function hex_grid.update_hex_core_inventory_filters(hex_core_state)

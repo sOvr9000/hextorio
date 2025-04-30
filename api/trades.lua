@@ -107,16 +107,17 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
     end
 
     local trade = trades.new(input_items, output_items, surface_name)
-    trades.determine_best_output_counts(surface_name, trade)
+    trades.determine_best_output_counts(surface_name, trade, params)
     return trade
 end
 
 -- Given a trade with set input items and counts and set output items but unset output counts, set the remaining unset output counts to the values which best preserve a value ratio of 1:1.
-function trades.determine_best_output_counts(surface_name, trade)
-    trades._try_set_output_counts(surface_name, trade)
+function trades.determine_best_output_counts(surface_name, trade, params)
+    if not params then params = {} end
+    trades._try_set_output_counts(surface_name, trade, params)
 end
 
-function trades._try_set_output_counts(surface_name, trade)
+function trades._try_set_output_counts(surface_name, trade, params)
     local total_input_value = trades.get_input_value(surface_name, trade)
     local output_items_value = {}
 
