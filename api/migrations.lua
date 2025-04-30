@@ -87,6 +87,10 @@ function migrations.on_mod_updated(old_version, new_version)
                 end
             end
         end
+
+        for _, state in pairs(hex_grid.get_flattened_surface_hexes(game.surfaces.nauvis)) do
+            hex_grid.generate_loaders(state)
+        end
     end
 
     -- Reinitialize GUIs

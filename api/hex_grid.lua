@@ -1656,26 +1656,6 @@ function hex_grid.spawn_hex_core(surface, position)
     end
     hex_core.destructible = false
 
-    state.input_loaders = {}
-    state.output_loaders = {}
-    local dx = 1
-    local dy = -2
-    for i = 1, 4 do
-        local dir_name = lib.get_direction_name((i + 1) % 4 + 1)
-        local dir_name_opposite = lib.get_direction_name((i + 3) % 4 + 1)
-
-        local input_loader = surface.create_entity {name = "hex-core-loader", position = {position.x + dx, position.y + dy}, direction = defines.direction[dir_name], type = "input", force = "player"}
-        input_loader.destructible = false
-        table.insert(state.input_loaders, input_loader)
-
-        local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - dx, position.y + dy}, direction = defines.direction[dir_name_opposite], type = "output", force = "player"}
-        output_loader.loader_filter_mode = "whitelist"
-        output_loader.destructible = false
-        table.insert(state.output_loaders, output_loader)
-
-        dx, dy = dy, -dx
-    end
-
     for _, e in pairs(entities) do
         if e.valid and e.type == "character" then
             lib.unstuck_player(e.player)
@@ -1690,6 +1670,8 @@ function hex_grid.spawn_hex_core(surface, position)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory
     state.claim_price = coin_tiers.from_base_value(claim_price)
+
+    hex_grid.generate_loaders(state)
 
     state.trades = {}
     local hex_core_trades = {}
@@ -1727,7 +1709,7 @@ end
 function hex_grid.delete_hex_core(hex_core)
     if not hex_core or not hex_core.valid then return end
 
-    local surface_hexes = hex_grid.get_surface_hexes(hex_core.surface)
+    local surface_hexes = hex_grid.get_sur_hexes(hex_core.surface)
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
 
@@ -1744,6 +1726,42 @@ function hex_grid.delete_hex_core(hex_core)
     if not Q then return end
 
     Q[state.position.r] = nil
+end
+
+function hex_grid.generate_loaders(hex_core_state)
+    if not hex_core_state.hex_core then return end
+
+    hex_core_state.input_loaders = {}
+    hex_core_state.output_loaders = {}
+
+    local surface = hex_core_state.hex_core.surface
+    local position = hex_core_state.hex_core.position
+
+    local entities = surface.find_entities_filtered {
+        name = "hex-core-loader",
+        area = {{position.x - 2, position.y - 2}, {position.x + 2, position.y + 2}},
+    }
+    for _, e in pairs(entities) do
+        e.destroy()
+    end
+
+    local dx = 1
+    local dy = -2
+    for i = 1, 4 do
+        local dir_name = lib.get_direction_name((i + 1) % 4 + 1)
+        local dir_name_opposite = lib.get_direction_name((i + 3) % 4 + 1)
+
+        local input_loader = surface.create_entity {name = "hex-core-loader", position = {position.x + dx, position.y + dy}, direction = defines.direction[dir_name], type = "input", force = "player"}
+        input_loader.destructible = false
+        table.insert(hex_core_state.input_loaders, input_loader)
+
+        local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - dx, position.y + dy}, direction = defines.direction[dir_name_opposite], type = "output", force = "player"}
+        output_loader.loader_filter_mode = "whitelist"
+        output_loader.destructible = false
+        table.insert(hex_core_state.output_loaders, output_loader)
+
+        dx, dy = dy, -dx
+    end
 end
 
 -- Fill edges between adjacent claimed hexes using sum of squared distances method
