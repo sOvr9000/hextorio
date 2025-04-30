@@ -1197,6 +1197,12 @@ function gui.on_sprite_button_click(player, element)
         gui.on_unloader_filters_direction_click(player, element)
     elseif element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
         gui.on_hex_mode_button_click(player, element)
+    elseif element.parent.name == "trade-table" then
+        if player.opened and player.opened.name == "hex-core" then
+            gui.on_hex_core_trade_item_clicked(player, element)
+        elseif player.opened and player.opened.name == "trade-overview" then
+            gui.on_trade_overview_item_clicked(player, element)
+        end
     elseif element.parent.parent.name == "planet-flow" then
         if element.parent["status"].sprite == "check-mark-green" then
             element.parent["status"].sprite = "red-ex"
@@ -1205,6 +1211,18 @@ function gui.on_sprite_button_click(player, element)
         end
         gui.update_trade_overview(player)
     end
+end
+
+function gui.on_trade_overview_item_clicked(player, element)
+    -- todo
+    -- set overview filter
+end
+
+function gui.on_hex_core_trade_item_clicked(player, element)
+    local item_name = element.sprite:sub(6)
+    local prot = prototypes.item[item_name]
+    if not prot then return end
+    player.open_factoriopedia_gui(prot)
 end
 
 function gui.on_hex_mode_button_click(player, element)

@@ -20,6 +20,7 @@ local versions = {
     "0.1.2",
     "0.1.3",
     "0.1.4",
+    "0.1.5",
 }
 
 local version_stepping = {}
@@ -113,7 +114,13 @@ local process_migration = {
 }
 
 function migrations.on_mod_updated(old_version, new_version)
-    while old_version ~= new_version and old_version ~= versions[#versions] do
+    lib.log("Checking migration for version " .. old_version .. " -> " .. new_version)
+    local latest = versions[#versions]
+    while true do
+        if not old_version or old_version == latest or old_version == new_version then
+            lib.log("migrated to " .. old_version)
+            break
+        end
         local func = process_migration[old_version]
         if not func then
             error("missing migration for " .. old_version .. " -> " .. version_stepping[old_version])
