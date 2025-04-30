@@ -6,6 +6,8 @@ Date: 29/4/25
   Features:
     - Added more loaders per hex core.
     - Added ability to configure unloader filters directly for each hex core.
+    - Added sink mode for hex cores.
+    - Added generator mode for hex cores.
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 29/4/25
