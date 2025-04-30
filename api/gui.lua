@@ -690,6 +690,9 @@ function gui.update_hex_core(player)
         frame["hex-control-flow"]["unloader-filters"].enabled = true
         frame["hex-control-flow"]["delete-core"].enabled = true
         frame["hex-control-flow"]["delete-core"].tooltip = {"hex-core-gui.delete-core-tooltip", coin_tiers.coin_to_text(hex_grid.get_delete_core_cost(hex_core))}
+
+        frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil
+        frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil
     else
         frame["claim-flow"].visible = true
         frame["claimed-by"].visible = false
