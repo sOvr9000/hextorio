@@ -13,9 +13,22 @@ local migrations = {}
 
 
 
-function migrations.on_mod_updated(old_version, new_version)
-    log("old version: " .. old_version .. ", new version: " .. new_version)
-    if old_version == "0.0.1" then
+local versions = {
+    "0.0.1",
+    "0.1.0",
+    "0.1.1",
+    "0.1.2",
+    "0.1.3",
+    "0.1.4",
+}
+
+local version_stepping = {}
+for i = 1, #versions - 1 do
+    version_stepping[versions[i]] = versions[i + 1]
+end
+
+local process_migration = {
+    ["0.0.1"] = function()
         storage.trades.discovered_items = {}
         storage.trades.total_items_traded = {}
         storage.trades.total_items_bought = {}
@@ -52,12 +65,14 @@ function migrations.on_mod_updated(old_version, new_version)
                 hex_grid.update_loader_filters(state)
             end
         end
-
-    elseif old_version == "0.1.0" then
+    end,
+    ["0.1.0"] = function()
         storage.item_values.values.nauvis["uranium-ore"] = 10
-    elseif old_version == "0.1.1" then
+    end,
+    ["0.1.1"] = function()
         storage.trade_overview = data_trade_overview
-    elseif old_version == "0.1.2" then
+    end,
+    ["0.1.2"] = function()
         table.insert(storage.trades.starting_trades, {{"copper-cable", "boiler"}, {"wood", "raw-fish"}})
         local trade = trades.from_item_names("nauvis", {"copper-cable", "boiler"}, {"wood", "raw-fish"})
         local starter_hex_state = hex_grid.get_hex_state("nauvis", {q=0, r=0})
@@ -77,8 +92,11 @@ function migrations.on_mod_updated(old_version, new_version)
         storage.item_values.values.nauvis["biter-egg"] = 9001
 
         hex_grid.update_all_trades()
-    elseif old_version == "0.1.3" then
-    elseif old_version == "0.1.4" then
+    end,
+    ["0.1.3"] = function()
+
+    end,
+    ["0.1.4"] = function()
         for item_name, _ in pairs(storage.item_values.values.nauvis) do
             if lib.is_catalog_item(item_name) then
                 local rank = item_ranks.get_item_rank(item_name)
@@ -91,6 +109,17 @@ function migrations.on_mod_updated(old_version, new_version)
         for _, state in pairs(hex_grid.get_flattened_surface_hexes(game.surfaces.nauvis)) do
             hex_grid.generate_loaders(state)
         end
+    end,
+}
+
+function migrations.on_mod_updated(old_version, new_version)
+    while old_version ~= new_version and old_version ~= versions[#versions] do
+        local func = process_migration[old_version]
+        if not func then
+            error("missing migration for " .. old_version .. " -> " .. version_stepping[old_version])
+        end
+        func()
+        old_version = version_stepping[old_version]
     end
 
     -- Reinitialize GUIs
