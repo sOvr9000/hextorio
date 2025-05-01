@@ -1,10 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.0
-Date: 30/4/25
+Date: 1/5/25
   Bugfixes:
     - Changed hex core icon from [img=entity.steel-chest] to [img=entity.hex-core]
   Changes:
-    - The trade overview and catalog are now locked behind quests.
+    - The trade overview and catalog are now locked behind the first two quests (which serve as a tutorial).
   Major Features:
     - Implemented the questbook and some quests.
 ---------------------------------------------------------------------------------------------------
