@@ -26,7 +26,6 @@ local data_events = require "data.events"
 local data_item_values = require "data.item_values"
 local data_hex_grid = require "data.hex_grid"
 local data_coin_tiers = require "data.coin_tiers"
-local data_surface_properties = require "data.surface_properties"
 local data_trades = require "data.trades"
 local data_quests = require "data.quests"
 local data_item_ranks = require "data.item_ranks"
@@ -48,7 +47,6 @@ script.on_init(function()
     storage.item_values = data_item_values
     storage.hex_grid = data_hex_grid
     storage.coin_tiers = data_coin_tiers
-    storage.surface_properties = data_surface_properties
     storage.trades = data_trades
     storage.quests = data_quests
     storage.item_ranks = data_item_ranks
