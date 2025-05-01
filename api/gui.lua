@@ -321,17 +321,28 @@ function gui.init_trade_overview(player)
 
     gui.add_titlebar(frame, {"hex-core-gui.trade-overview"})
 
-    local filter_frame = frame.add {type = "frame", name = "filter-frame", direction = "vertical"}
-    local clear_filters_button = filter_frame.add {type = "button", name = "clear-filters-button", caption = {"hextorio-gui.clear-filters"}}
-    local planet_flow = filter_frame.add {type = "flow", name = "planet-flow", direction = "horizontal"}
-    filter_frame.add {type = "line", direction = "horizontal"}
-    local trade_contents_flow = filter_frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
+    local filter_frame = frame.add {type = "flow", name = "filter-frame", direction = "horizontal"}
+    -- filter_frame.style.natural_height = 200
+    filter_frame.style.vertically_stretchable = false
+    local left_frame = filter_frame.add {type = "frame", name = "left", direction = "vertical"}
+    gui.auto_width_height(left_frame)
+    local right_frame = filter_frame.add {type = "frame", name = "right", direction = "vertical"}
+    gui.auto_width_height(right_frame)
+
+    local clear_filters_button = left_frame.add {type = "button", name = "clear-filters-button", caption = {"hextorio-gui.clear-filters"}}
+    local planet_flow = left_frame.add {type = "flow", name = "planet-flow", direction = "horizontal"}
+    left_frame.add {type = "line", direction = "horizontal"}
+    local trade_contents_flow = left_frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
     local trade_contents_label = trade_contents_flow.add {type = "label", name = "label", caption = {"hextorio-gui.trade-contents"}}
     local trade_contents_frame = trade_contents_flow.add {type = "frame", name = "frame", direction = "horizontal"}
-    filter_frame.add {type = "line", direction = "horizontal"}
-    local processing_flow = filter_frame.add {type = "flow", name = "processing-flow", direction = "horizontal"}
+    left_frame.add {type = "line", direction = "horizontal"}
+    local processing_flow = left_frame.add {type = "flow", name = "processing-flow", direction = "horizontal"}
     local processing_label = processing_flow.add {type = "label", name = "label", caption = {"hextorio-gui.processing-finished"}}
     local processing_progress_bar = processing_flow.add {type = "progressbar", name = "progressbar", value = 0}
+
+    local show_only_claimed_flow = right_frame.add {type = "flow", name = "show-only-claimed", direction = "horizontal"}
+    local toggle_show_only_claimed = show_only_claimed_flow.add {type = "checkbox", name = "checkbox", state = false}
+    local toggle_show_only_claimed_label = show_only_claimed_flow.add {type = "label", name = "label", caption = {"hextorio-gui.show-only-claimed"}}
 
     trade_contents_label.style.font = "heading-2"
     processing_progress_bar.visible = false
@@ -1057,8 +1068,8 @@ function gui.update_trade_overview(player)
     local filter_frame = frame["filter-frame"]
     for surface_name, _ in pairs(game.surfaces) do
         if storage.trade_overview.allowed_planet_filters[surface_name] then
-            if not filter_frame["planet-flow"][surface_name] then
-                local surface_flow = filter_frame["planet-flow"].add {
+            if not filter_frame["left"]["planet-flow"][surface_name] then
+                local surface_flow = filter_frame["left"]["planet-flow"].add {
                     type = "flow",
                     name = surface_name,
                     direction = "vertical",
@@ -1095,6 +1106,8 @@ function gui.update_trade_overview(player)
     if not filter.planets then
         filter.planets = sets.new {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
     end
+
+    filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
 
     -- local empty_input_filter = true
     -- if filter.input_items then
@@ -1148,11 +1161,13 @@ function gui.update_trade_overview(player)
             if filter.planets[surface_name] then
                 for _, Q in pairs(surface_hexes) do
                     for _, state in pairs(Q) do
-                        if state.trades then
-                            -- lib.log(serpent.block(state.trades))
-                            for _, trade in pairs(state.trades) do
-                                if filter_condition(trade) then
-                                    table.insert(trades_list, trade)
+                        if not filter.show_claimed_only or state.claimed then
+                            if state.trades then
+                                -- lib.log(serpent.block(state.trades))
+                                for _, trade in pairs(state.trades) do
+                                    if filter_condition(trade) then
+                                        table.insert(trades_list, trade)
+                                    end
                                 end
                             end
                         end
@@ -1541,7 +1556,7 @@ end
 function gui.on_checkbox_click(player, element)
     if element.name:sub(1, 12) == "toggle-trade" then
         gui.on_toggle_trade_checkbox_click(player, element)
-    elseif element.parent.parent.name == "planet-flow" then
+    elseif element.parent.name == "show-only-claimed" then
         gui.on_trade_overview_filter_changed(player)
     end
 end
@@ -1710,18 +1725,20 @@ function gui.on_unloader_filters_direction_click(player, element)
 end
 
 function gui.on_clear_filters_button_click(player, element)
-    local filter_frame = element.parent
-    for _, planet_filter in pairs(filter_frame["planet-flow"].children) do
+    local filter_frame = element.parent.parent
+    for _, planet_filter in pairs(filter_frame["left"]["planet-flow"].children) do
         planet_filter["status"].sprite = "check-mark-green"
     end
 
     for i = 1, 3 do
-        filter_frame["trade-contents-flow"]["frame"]["input-item-" .. i].elem_value = nil
+        filter_frame["left"]["trade-contents-flow"]["frame"]["input-item-" .. i].elem_value = nil
     end
 
     for i = 1, 3 do
-        filter_frame["trade-contents-flow"]["frame"]["output-item-" .. i].elem_value = nil
+        filter_frame["left"]["trade-contents-flow"]["frame"]["output-item-" .. i].elem_value = nil
     end
+
+    filter_frame["right"]["show-only-claimed"]["checkbox"].state = false
 
     gui.on_trade_overview_filter_changed(player)
 end
@@ -1958,13 +1975,13 @@ function gui.update_player_trade_overview_filters(player)
     if not filter_frame then return end
 
     local filter = gui.get_player_trade_overview_filter(player)
-    local trade_contents_frame = filter_frame["trade-contents-flow"]["frame"]
+    local trade_contents_frame = filter_frame["left"]["trade-contents-flow"]["frame"]
 
     if not filter.planets then
         filter.planets = {}
     end
 
-    for _, planet_filter_flow in pairs(filter_frame["planet-flow"].children) do
+    for _, planet_filter_flow in pairs(filter_frame["left"]["planet-flow"].children) do
         local planet_name = planet_filter_flow.name
         -- local planet_checkbox = planet_filter_flow["checkbox"]
         -- filter.planets[planet_name] = planet_checkbox.state

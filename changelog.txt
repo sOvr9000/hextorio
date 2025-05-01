@@ -3,6 +3,7 @@ Version: 0.2.1
 Date: 1/5/25
   Features:
     - Added more quests and unique rewards.
+    - Added toggle in trade overview filter to only show trades in claimed hex cores (off by default).
   Bugfixes:
     - Fixed that quest selection wasn't preserved in the questbook after closing and reopening, and a related bug.
 ---------------------------------------------------------------------------------------------------
