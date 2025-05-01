@@ -5,9 +5,11 @@ local item_values = require "api.item_values"
 local item_ranks = require "api.item_ranks"
 local trades = require "api.trades"
 local gui = require "api.gui"
+local quests = require "api.quests"
 
 local data_item_ranks = require "data.item_ranks"
 local data_trade_overview = require "data.trade_overview"
+local data_quests = require "data.quests"
 
 local migrations = {}
 
@@ -21,6 +23,7 @@ local versions = {
     "0.1.3",
     "0.1.4",
     "0.1.5",
+    "0.2.0",
 }
 
 local version_stepping = {}
@@ -110,6 +113,24 @@ local process_migration = {
         for _, state in pairs(hex_grid.get_flattened_surface_hexes(game.surfaces.nauvis)) do
             hex_grid.generate_loaders(state)
         end
+    end,
+    ["0.1.5"] = function()
+        storage.quests = data_quests
+        storage.trade_overview = data_trade_overview
+
+        -- log(serpent.block(storage.quests))
+
+
+
+
+        -- Reinitialize GUIs
+        for _, player in pairs(game.players) do
+            gui.reinitialize_everything(player)
+        end
+
+        quests.init()
+
+        quests.reveal_quest(quests.get_quest "ground-zero")
     end,
 }
 

@@ -77,15 +77,12 @@ function gui.reinitialize_everything(player)
 
     frame = player.gui.screen["questbook"]
     if frame then frame.destroy() end
-    gui.init_questbook(player)
 
     frame = player.gui.screen["trade-overview"]
     if frame then frame.destroy() end
-    gui.init_trade_overview(player)
 
     frame = player.gui.screen["catalog"]
     if frame then frame.destroy() end
-    gui.init_catalog(player)
 
     local button
 
@@ -97,6 +94,9 @@ function gui.reinitialize_everything(player)
 
     button = player.gui.top["catalog-button"]
     if button then button.destroy() end
+
+    gui.init_all_buttons(player)
+    gui.init_all_frames(player)
 
     gui.repopulate_quest_lists(player)
 
