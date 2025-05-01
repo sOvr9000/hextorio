@@ -310,14 +310,9 @@ function lib.normalize_recipe_structure(recipe)
     local r = {
         name = recipe.name,
         energy = recipe.energy,
-        surfaces = lib.get_planets_of_surface_conditions(recipe.surface_conditions),
-        surfaces_lookup = {},
         ingredients = {},
         products = {},
     }
-    for _, surface_name in pairs(r.surfaces) do
-        r.surfaces_lookup[surface_name] = true
-    end
     for _, ing in pairs(recipe.ingredients) do
         table.insert(r.ingredients, {name = ing.name, amount = ing.amount})
     end
@@ -353,8 +348,6 @@ function lib.get_recipe_graph(recipe_tree)
         recipes_by_name = {},
         item_edges = {},
         all_items = {},
-        items_per_surface = {},
-        items_per_surface_lookup = {}
     }
 
     local added_edges = {}
@@ -392,21 +385,6 @@ function lib.get_recipe_graph(recipe_tree)
     end
 
     recipe_graph.all_items = sets.to_array(recipe_graph.all_items)
-
-    -- This section isn't particularly useful because it is extremely difficult, or impossible, to algorithmically determine exactly what items SHOULD be available to trade on a given surface.
-    for surface_name, _ in pairs(storage.surface_properties) do
-        recipe_graph.items_per_surface_lookup[surface_name] = {}
-    end
-
-    for recipe_name, recipe in pairs(recipe_graph.recipes_by_name) do
-        for _, surface_name in pairs(recipe.surfaces) do
-            recipe_graph.items_per_surface_lookup[surface_name][recipe_name] = true
-        end
-    end
-
-    for surface_name, _ in pairs(storage.surface_properties) do
-        recipe_graph.items_per_surface[surface_name] = sets.to_array(recipe_graph.items_per_surface_lookup[surface_name])
-    end
 
     return recipe_graph
 end
