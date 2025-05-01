@@ -16,50 +16,54 @@ function on_command(player, command, params)
     end
 
     if command == "debug-mode" then
-        player.insert {
-            name = "hex-coin",
-            count = 99999,
-        }
-        player.insert {
-            name = "gravity-coin",
-            count = 99999,
-        }
-        player.insert {
-            name = "meteor-coin",
-            count = 99999,
-        }
-        player.insert {
-            name = "hexaprism-coin",
-            count = 100000,
-        }
-
-        -- Get legendary mech armor
-        lib.insert_endgame_armor(player)
-
-        for _, trade_items in pairs(storage.trades.starting_trades) do
-            for _, item_name in pairs(trade_items[1]) do
-                if not lib.is_coin(item_name) then
-                    player.insert {
-                        name = item_name,
-                        count = 200,
-                    }
+        if player.get_inventory(defines.inventory.character_main) then
+            player.insert {
+                name = "hex-coin",
+                count = 99999,
+            }
+            player.insert {
+                name = "gravity-coin",
+                count = 99999,
+            }
+            player.insert {
+                name = "meteor-coin",
+                count = 99999,
+            }
+            player.insert {
+                name = "hexaprism-coin",
+                count = 100000,
+            }
+    
+            -- Get legendary mech armor
+            lib.insert_endgame_armor(player)
+    
+            for _, trade_items in pairs(storage.trades.starting_trades) do
+                for _, item_name in pairs(trade_items[1]) do
+                    if not lib.is_coin(item_name) then
+                        player.insert {
+                            name = item_name,
+                            count = 200,
+                        }
+                    end
                 end
             end
+    
+            -- Claim hexes
+            -- handled by event_system
+    
+            -- Research all technologies
+            for _, tech in pairs(game.forces.player.technologies) do
+                tech.researched = true
+            end
+    
+            -- Enable cheat mode (spawn in items instead of crafting them)
+            player.cheat_mode = true
+    
+            player.insert {name = "car", count = 4} -- lol
+            player.insert {name = "nuclear-fuel", count = 10}
+        else
+            player.print("Cannot find player inventory. Exit remote view?")
         end
-
-        -- Claim hexes
-        -- handled by event_system
-
-        -- Research all technologies
-        for _, tech in pairs(game.forces.player.technologies) do
-            tech.researched = true
-        end
-
-        -- Enable cheat mode (spawn in items instead of crafting them)
-        player.cheat_mode = true
-
-        player.insert {name = "car", count = 4} -- lol
-        player.insert {name = "nuclear-fuel", count = 10}
     end
 
     event_system.trigger("command-" .. command, player, params)
