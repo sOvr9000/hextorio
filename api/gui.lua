@@ -1028,8 +1028,8 @@ function gui.update_trade_overview(player)
 
     -- Ensure that all available planets are listed
     local filter_frame = frame["filter-frame"]
-    for surface_name, surface in pairs(game.surfaces) do
-        if surface_name ~= "hextorio-temp" and surface_name ~= "space-platform" then
+    for surface_name, _ in pairs(game.surfaces) do
+        if storage.trade_overview.allowed_planet_filters[surface_name] then
             if not filter_frame["planet-flow"][surface_name] then
                 local surface_flow = filter_frame["planet-flow"].add {
                     type = "flow",

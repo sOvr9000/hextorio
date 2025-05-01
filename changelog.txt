@@ -4,6 +4,7 @@ Date: 1/5/25
   Bugfixes:
     - Changed hex core icon from [img=entity.steel-chest] to [img=entity.hex-core]
     - Removed pistols from trade item rolls because they cannot be crafted.
+    - Fixed that custom planets added by mods would cause crashes with the trade overview.
   Changes:
     - The trade overview and catalog are now locked behind the first two quests (which serve as a tutorial).
     - Cleaned up the intro messages (made fewer) and added starter chart tags for Discord server.
