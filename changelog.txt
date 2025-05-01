@@ -5,6 +5,7 @@ Date: 1/5/25
     - Changed hex core icon from [img=entity.steel-chest] to [img=entity.hex-core]
   Changes:
     - The trade overview and catalog are now locked behind the first two quests (which serve as a tutorial).
+    - Cleaned up the intro messages (made fewer) and added starter chart tags for Discord server.
   Major Features:
     - Implemented the questbook and some quests.
 ---------------------------------------------------------------------------------------------------
