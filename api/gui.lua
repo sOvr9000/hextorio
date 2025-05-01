@@ -1357,7 +1357,32 @@ function gui.add_quest_to_list(list, quest)
             return
         end
     end
-    list.add_item(name)
+
+    -- Binary search to insert in order
+    local left = 1
+    local right = #list.items
+    local quest_order = quest.order
+    while left <= right do
+        local mid = math.floor((left + right) / 2)
+        if mid > 0 then
+            local mid_quest = gui.get_quest_from_list_item(list.get_item(mid))
+            if mid_quest.order < quest_order then
+                left = mid + 1
+            else
+                right = mid - 1
+            end
+        else
+            break
+        end
+    end
+    idx = left
+
+    list.add_item(name, idx)
+end
+
+function gui.get_quest_from_list_item(item)
+    local quest_name = item[1]:sub(7, -7)
+    return quests.get_quest(quest_name)
 end
 
 function gui.get_current_selected_quest(player)
@@ -1375,10 +1400,7 @@ function gui.get_current_selected_quest(player)
 
     if not list then return end
 
-    local localized_quest_name = list.get_item(list.selected_index)
-    local quest_name = localized_quest_name[1]:sub(7, -7)
-
-    return quests.get_quest(quest_name)
+    return gui.get_quest_from_list_item(list.get_item(list.selected_index))
 end
 
 function gui.update_coin_tier(flow, coin)

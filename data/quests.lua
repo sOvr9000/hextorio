@@ -80,7 +80,6 @@ return {
             conditions = {{type = "biter-ramming"}},
             rewards = {{type = "reduce-biters", value = 50}},
             prerequisites = {"ground-zero"},
-            has_img = false,
         },
     },
 }

@@ -229,19 +229,20 @@ data:extend{
     },
 }
 
-local quest_names = {
-    "ground-zero",
-}
+local data_quests = require "data.quests"
+local quest_names = {}
 
 local quest_sprites = {}
-for _, name in pairs(quest_names) do
-    table.insert(quest_sprites, {
-        type = "sprite",
-        name = "quest-" .. name,
-        filename = "__hextorio__/graphics/quest/" .. name .. ".png",
-        width = 256,
-        height = 256,
-    })
+for _, quest_def in pairs(data_quests.quest_defs) do
+    if quest_def.has_img == nil or quest_def.has_img then
+        table.insert(quest_sprites, {
+            type = "sprite",
+            name = "quest-" .. quest_def.name,
+            filename = "__hextorio__/graphics/quest/" .. quest_def.name .. ".png",
+            width = 256,
+            height = 256,
+        })
+    end
 end
 
 data:extend(quest_sprites)

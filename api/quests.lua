@@ -26,13 +26,36 @@ function quests.init()
         local quest = quests.new_quest(def)
         if quest then
             storage.quests.quests[def.name] = quest
+            quest.order = 0
             quests.index_by_condition_types(quest)
-            
+
             if not quest.prerequisites or not next(quest.prerequisites) then
                 table.insert(reveal, quest)
             end
         end
     end
+
+    local visited = {}
+    local function dfs(quest)
+        if visited[quest.name] then return end
+        visited[quest.name] = true
+        local q
+        if quest.unlocks then
+            for _, unlock in pairs(quest.unlocks) do
+                q = quests.get_quest(unlock)
+                q.order = math.min(q.order, quest.order + 1)
+                dfs(q)
+            end
+        end
+        if quest.prerequisites then
+            for _, prereq in pairs(quest.prerequisites) do
+                q = quests.get_quest(prereq)
+                quest.order = math.min(quest.order, q.order + 1)
+                dfs(q)
+            end
+        end
+    end
+    dfs(quests.get_quest "ground-zero")
 
     for _, quest in pairs(reveal) do
         quests.reveal_quest(quest)
