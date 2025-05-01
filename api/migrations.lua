@@ -24,6 +24,7 @@ local versions = {
     "0.1.4",
     "0.1.5",
     "0.2.0",
+    "0.2.1",
 }
 
 local version_stepping = {}
@@ -131,6 +132,23 @@ local process_migration = {
         quests.init()
 
         quests.reveal_quest(quests.get_quest "ground-zero")
+    end,
+    ["0.2.0"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs -- only copy this over so that quest progress isn't reset
+        storage.quests.players_rewarded = {}
+        storage.quests.players_quest_selected = {}
+        storage.quests.notes_per_reward_type = {
+            ["receive-items"] = {"new-players-receive"},
+        }
+        storage.quests.notes_per_condition_type = {
+            ["trades-found"] = {"finding-counts-unclaimed"},
+        }
+
+        for _, quest in pairs(storage.quests.quests) do
+            quest.order = 0
+        end
+
+        quests.init()
     end,
 }
 

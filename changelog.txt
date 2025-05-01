@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.1
 Date: 1/5/25
+  Features:
+    - Added more quests and unique rewards.
   Bugfixes:
     - Fixed that quest selection wasn't preserved in the questbook after closing and reopening, and a related bug.
 ---------------------------------------------------------------------------------------------------
