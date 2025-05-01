@@ -134,7 +134,6 @@ return {
             ["piercing-shotgun-shell"] = 90.016668105473627,
             pipe = 1.7595423787240871,
             ["pipe-to-ground"] = 18.092900997540731,
-            pistol = 20.279471805920377,
             ["plastic-bar"] = 5.5586643930898862,
             ["poison-capsule"] = 127.0522836728717,
             ["power-armor"] = 48311.582339766617,
