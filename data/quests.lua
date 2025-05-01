@@ -60,6 +60,7 @@ return {
     quests_by_condition_type = {},
     unlocked_features = {},
     players_rewarded = {},
+    players_quest_selected = {},
 
     notes_per_reward_type = {
         ["receive-items"] = {"new-players-receive"},

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.1
+Date: 1/5/25
+  Bugfixes:
+    - Fixed that quest selection wasn't preserved in the questbook after closing and reopening, and a related bug.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.0
 Date: 1/5/25
   Bugfixes:

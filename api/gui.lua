@@ -518,7 +518,7 @@ function gui.show_questbook(player)
     end
     frame.visible = true
     player.opened = frame
-    gui.update_questbook(player, "ground-zero")
+    gui.update_questbook(player)
     frame.force_auto_center()
 end
 
@@ -915,6 +915,10 @@ function gui.update_questbook(player, quest_name)
     local quest_rewards_frame = quest_frame["conditions-rewards"]["rewards"]
     local quest_rewards_scroll_pane = quest_rewards_frame["scroll-pane"]
 
+    if not quest_name then
+        quest_name = gui.get_player_current_quest_selected(player)
+    end
+
     local quest
     if quest_name then
         quest = quests.get_quest(quest_name)
@@ -1241,6 +1245,17 @@ function gui.add_sprite_buttons(element, item_stacks, name_prefix)
     end
 end
 
+function gui.get_player_current_quest_selected(player)
+    if not storage.quests.players_quest_selected[player.name] then
+        storage.quests.players_quest_selected[player.name] = "ground-zero"
+    end
+    return storage.quests.players_quest_selected[player.name]
+end
+
+function gui.set_player_current_quest_selected(player, quest_name)
+    storage.quests.players_quest_selected[player.name] = quest_name
+end
+
 function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     local frame = player.gui.screen["catalog"]
     if not frame then
@@ -1565,7 +1580,8 @@ function gui.on_quest_name_selected(player, element)
     local quest = gui.get_current_selected_quest(player)
     if not quest then return end
 
-    gui.update_questbook(player, quest.name)
+    gui.set_player_current_quest_selected(player, quest.name)
+    gui.update_questbook(player)
 end
 
 function gui.on_toggle_trade_checkbox_click(player, element)
