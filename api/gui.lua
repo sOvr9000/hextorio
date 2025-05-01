@@ -1013,6 +1013,11 @@ function gui.update_questbook(player, quest_name)
             }
             gui.add_sprite_buttons(receive_items_flow, reward.value, "receive-items-")
         end
+        if reward.notes then
+            for j, note_name in ipairs(reward.notes) do
+                gui.add_info(reward_frame, quests.get_localized_note(note_name), "info-" .. j)
+            end
+        end
     end
 
     -- Ensure that the selected index of the corresponding list is accurate to the displayed quest.

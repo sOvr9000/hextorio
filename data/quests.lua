@@ -61,6 +61,10 @@ return {
     unlocked_features = {},
     players_rewarded = {},
 
+    notes_per_reward_type = {
+        ["receive-items"] = {"new-players-receive"},
+    },
+
     quest_defs = {
         {
             name = "ground-zero",

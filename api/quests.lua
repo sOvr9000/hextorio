@@ -135,7 +135,18 @@ function quests.new_reward(params)
     local reward = {
         type = params.type,
         value = params.value, -- can be nil
+        notes = params.notes, -- can be nil
     }
+    local constant_notes = storage.quests.notes_per_reward_type[reward.type]
+    if constant_notes then
+        if not reward.notes then
+            reward.notes = constant_notes
+        else
+            for _, note in pairs(constant_notes) do
+                table.insert(reward.notes, note)
+            end
+        end
+    end
     if reward.type == "unlock-feature" and not reward.value then
         error("Reward of type \"unlock-feature\" must have a value")
     end
