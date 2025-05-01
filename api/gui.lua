@@ -1365,10 +1365,29 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
 
     inspect_frame.add {type = "line", direction = "horizontal"}
 
+    local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
+
+    if rank_obj.rank == 1 then
+        if trades.get_total_bought(item_name) > 0 then
+            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
+        else
+            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
+        end
+        if trades.get_total_sold(item_name) > 0 then
+            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
+        else
+            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
+        end
+    elseif rank_obj.rank == 2 then
+        table.insert(rank_up_localized_str, lib.color_localized_string({"hex-core-gui.generator-mode-tooltip-header"}, "red", "heading-2"))
+    elseif rank_obj.rank == 3 then
+        table.insert(rank_up_localized_str, lib.color_localized_string({"hex-core-gui.sink-mode-tooltip-header"}, "red", "heading-2"))
+    end
+
     local rank_up_instructions = inspect_frame.add {
         type = "label",
         name = "rank-up-instructions",
-        caption = {"", "[img=" .. storage.item_ranks.rank_star_sprites[math.min(5, (rank_obj.rank + 1))] .. "] ", {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}},
+        caption = {"", "\n" .. lib.get_rank_img_str(math.min(5, (rank_obj.rank + 1))) .. "\n", rank_up_localized_str, "\n"},
     }
     rank_up_instructions.style.single_line = false
     gui.auto_width_height(rank_up_instructions)
