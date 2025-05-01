@@ -828,6 +828,8 @@ function hex_grid.add_trade(hex_core_state, trade)
     if hex_core_state.claimed then
         trades.discover_items_in_trades {trade}
     end
+
+    quests.increment_progress_for_type("trades-found")
 end
 
 function hex_grid.remove_trade(hex_core_state, idx)
@@ -2038,7 +2040,6 @@ function hex_grid.get_supercharge_cost(hex_core)
         local products = e.prototype.mineable_properties.products
         for _, product in pairs(products) do
             if product.type == "item" or product.type == "fluid" then
-                lib.log(product.name)
                 total_value = total_value + item_values.get_item_value(hex_core.surface.name, product.name)
             end
         end
@@ -2046,7 +2047,6 @@ function hex_grid.get_supercharge_cost(hex_core)
 
     base_cost = base_cost * total_value * lib.runtime_setting_value "supercharge-cost-multiplier"
 
-    lib.log("found " .. #entities .. " resources")
     return coin_tiers.from_base_value(#entities * base_cost)
 end
 

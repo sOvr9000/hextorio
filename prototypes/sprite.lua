@@ -220,4 +220,28 @@ data:extend{
         width = 128,
         height = 128,
     },
+    {
+        type = "sprite",
+        name = "missing-quest-img",
+        filename = "__hextorio__/graphics/icons/missing-quest-img.png",
+        width = 256,
+        height = 256,
+    },
 }
+
+local quest_names = {
+    "ground-zero",
+}
+
+local quest_sprites = {}
+for _, name in pairs(quest_names) do
+    table.insert(quest_sprites, {
+        type = "sprite",
+        name = "quest-" .. name,
+        filename = "__hextorio__/graphics/quest/" .. name .. ".png",
+        width = 256,
+        height = 256,
+    })
+end
+
+data:extend(quest_sprites)

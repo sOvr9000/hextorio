@@ -17,6 +17,7 @@ hex_grid.register_events()
 trades.register_events()
 item_ranks.register_events()
 gui.register_events()
+quests.register_events()
 
 require "commands"
 
@@ -240,6 +241,10 @@ end)
 
 script.on_event(defines.events.on_gui_elem_changed, function (event)
     gui.on_gui_elem_changed(event)
+end)
+
+script.on_event(defines.events.on_gui_selection_state_changed, function (event)
+    gui.on_gui_item_selected(event)
 end)
 
 script.on_configuration_changed(function(handler)

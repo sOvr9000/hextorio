@@ -50,6 +50,20 @@ function gui.register_events()
             end
         end
     end)
+
+    event_system.register_callback("quest-revealed", function(quest)
+        for _, player in pairs(game.players) do
+            gui.update_quest_lists(player, quest)
+            gui.update_questbook(player)
+        end
+    end)
+
+    event_system.register_callback("quest-completed", function(quest)
+        for _, player in pairs(game.players) do
+            gui.update_quest_lists(player, quest)
+            gui.update_questbook(player)
+        end
+    end)
 end
 
 function gui.reinitialize_everything(player)
@@ -83,6 +97,8 @@ function gui.reinitialize_everything(player)
 
     button = player.gui.top["catalog-button"]
     if button then button.destroy() end
+
+    gui.repopulate_quest_lists(player)
 
     gui.hide_all_frames(player)
 end
@@ -227,19 +243,23 @@ function gui.init_questbook(player)
     local info_frame = questbook.add {type = "frame", name = "info-frame", direction = "horizontal"}
     info_frame.style.horizontally_stretchable = true
     info_frame.style.vertically_squashable = true
-    info_frame.style.natural_height = 150
+    info_frame.style.natural_height = 75
 
     local lower_flow = questbook.add {type = "flow", name = "lower-flow", direction = "horizontal"}
     gui.auto_width_height(lower_flow)
 
     local list_frame = lower_flow.add {type = "frame", name = "list-frame", direction = "vertical"}
+    list_frame.style.natural_width = 300 / 1.2
+    list_frame.style.horizontally_stretchable = false
+    list_frame.style.horizontally_squashable = true
 
-    local quest_frame = lower_flow.add {type = "frame", name = "quest-frame", direction = "vertical"}
+    local quest_frame = lower_flow.add {type = "flow", name = "quest-frame", direction = "vertical"}
+    gui.auto_width_height(quest_frame)
 
 
 
     local list_scroll_pane = list_frame.add {type = "scroll-pane", name = "scroll-pane", direction = "vertical"}
-    gui.auto_width_height(list_scroll_pane)
+    gui.auto_height(list_scroll_pane)
 
     local incomplete_header = list_scroll_pane.add {type = "label", name = "incomplete-header", caption = {"hextorio-questbook.incomplete"}}
     incomplete_header.style.font = "heading-2"
@@ -251,7 +271,42 @@ function gui.init_questbook(player)
     local complete_list = list_scroll_pane.add {type = "list-box", name = "complete-list"}
     gui.auto_width_height(complete_list)
 
-    local quest_info_flow = quest_frame.add {type = "flow", name = "quest-info-flow", direction = "horizontal"}
+    local quest_info_frame = quest_frame.add {type = "frame", name = "info-frame", direction = "horizontal"}
+    quest_info_frame.style.natural_height = 300 / 1.2
+
+    local quest_info_main = quest_info_frame.add {type = "flow", name = "main", direction = "vertical"}
+    local quest_info_img_frame = quest_info_frame.add {type = "frame", name = "img-frame"}
+    local quest_info_img = quest_info_img_frame.add {type = "sprite", name = "img", sprite = "missing-quest-img"}
+
+    local quest_title = quest_info_main.add {type = "label", name = "title", caption = "[Quest Title]"}
+    quest_title.style.font = "heading-1"
+    quest_info_main.add {type = "line", direction = "horizontal"}
+
+    local quest_description = quest_info_main.add {type = "label", name = "description", caption = "[Quest Description]"}
+    quest_description.style.single_line = false
+
+    local quest_notes_flow = quest_info_main.add {type = "flow", name = "notes-flow", direction = "vertical"}
+
+    local quest_conditions_rewards = quest_frame.add {type = "flow", name = "conditions-rewards", direction = "horizontal"}
+    gui.auto_width_height(quest_conditions_rewards)
+
+    local quest_conditions_frame = quest_conditions_rewards.add {type = "frame", name = "conditions", direction = "vertical"}
+
+    local quest_conditions_header = quest_conditions_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.conditions"}}
+    quest_conditions_header.style.font = "heading-1"
+    quest_conditions_frame.add {type = "line", direction = "horizontal"}
+
+    local quest_conditions_scroll_pane = quest_conditions_frame.add {type = "scroll-pane", name = "scroll-pane"}
+    gui.auto_width_height(quest_conditions_scroll_pane)
+
+    local quest_rewards_frame = quest_conditions_rewards.add {type = "frame", name = "rewards", direction = "vertical"}
+
+    local quest_rewards_header = quest_rewards_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.rewards"}}
+    quest_rewards_header.style.font = "heading-1"
+    quest_rewards_frame.add {type = "line", direction = "horizontal"}
+
+    local quest_rewards_scroll_pane = quest_rewards_frame.add {type = "scroll-pane", name = "scroll-pane"}
+    gui.auto_width_height(quest_rewards_scroll_pane)
 end
 
 function gui.init_trade_overview(player)
@@ -462,7 +517,7 @@ function gui.show_questbook(player)
     end
     frame.visible = true
     player.opened = frame
-    gui.update_questbook(player)
+    gui.update_questbook(player, "ground-zero")
     frame.force_auto_center()
 end
 
@@ -831,12 +886,131 @@ function gui.update_hex_core_resources(player)
     end
 end
 
-function gui.update_questbook(player)
+function gui.update_questbook(player, quest_name)
     local frame = player.gui.screen["questbook"]
     if not frame then
         gui.init_questbook(player)
+        frame = player.gui.screen["questbook"]
     end
-    -- todo
+
+    local quest_frame = frame["lower-flow"]["quest-frame"]
+
+    local quests_scroll_pane = frame["lower-flow"]["list-frame"]["scroll-pane"]
+    local incomplete_list = quests_scroll_pane["incomplete-list"]
+    local complete_list = quests_scroll_pane["complete-list"]
+
+    local quest_info_frame = quest_frame["info-frame"]
+    local quest_info_main = quest_info_frame["main"]
+    local quest_info_img_frame = quest_info_frame["img-frame"]
+    local quest_info_img = quest_info_img_frame["img"]
+    local quest_title = quest_info_main["title"]
+    local quest_description = quest_info_main["description"]
+    local quest_notes_flow = quest_info_main["notes-flow"]
+
+    local quest_conditions_frame = quest_frame["conditions-rewards"]["conditions"]
+    local quest_conditions_scroll_pane = quest_conditions_frame["scroll-pane"]
+    local quest_rewards_frame = quest_frame["conditions-rewards"]["rewards"]
+    local quest_rewards_scroll_pane = quest_rewards_frame["scroll-pane"]
+
+    local quest
+    if quest_name then
+        quest = quests.get_quest(quest_name)
+    end
+
+    if not quest then return end
+    if quest.has_img == nil or quest.has_img then
+        quest_info_img_frame.visible = true
+        quest_info_img.sprite = "quest-" .. quest.name
+    else
+        quest_info_img_frame.visible = false
+    end
+
+    local localized_quest_title = quests.get_quest_localized_title(quest)
+    quest_title.caption = localized_quest_title
+    quest_description.caption = quests.get_quest_localized_description(quest)
+
+    quest_notes_flow.clear()
+    if quest.notes then
+        for i, note_name in ipairs(quest.notes) do
+            gui.add_info(quest_notes_flow, quests.get_localized_note(note_name), "info-" .. i)
+        end
+    end
+
+    quest_conditions_scroll_pane.clear()
+    for i, condition in ipairs(quest.conditions) do
+        local condition_frame = quest_conditions_scroll_pane.add {
+            type = "frame",
+            name = "condition-" .. i,
+            direction = "vertical",
+            caption = quests.get_condition_localized_name(condition),
+        }
+        condition_frame.style.horizontally_squashable = false
+        local condition_desc = condition_frame.add {
+            type = "label",
+            name = "desc",
+            caption = quests.get_condition_localized_description(condition, "[color=green]" .. condition.progress_requirement .. "[.color]"),
+        }
+        condition_desc.style.single_line = false
+        gui.auto_width(condition_desc)
+        if condition.show_progress_bar then
+            local progress_bar = condition_frame.add {
+                type = "progressbar",
+                name = "progressbar",
+                value = condition.progress / condition.progress_requirement,
+            }
+            gui.auto_width(progress_bar)
+            local r, g, b = lib.hsv_to_rgb(progress_bar.value * 0.3333, 1, 1)
+            progress_bar.style.color = {r, g, b}
+            progress_bar.tooltip = condition.progress .. " / " .. condition.progress_requirement
+        end
+    end
+
+    quest_rewards_scroll_pane.clear()
+    for i, reward in ipairs(quest.rewards) do
+        local reward_frame = quest_rewards_scroll_pane.add {
+            type = "frame",
+            name = "reward-" .. i,
+            direction = "vertical",
+            caption = quests.get_reward_localized_name(reward),
+        }
+        reward_frame.style.horizontally_squashable = false
+        local reward_str
+        if reward.type == "unlock-feature" then
+            reward_str = lib.color_localized_string(quests.get_feature_localized_name(reward.value), "orange", "heading-2")
+        else
+            reward_str = "[font=heading-2][color=green]" .. reward.value .. "[.color][.font]"
+        end
+        local reward_desc = reward_frame.add {
+            type = "label",
+            name = "desc",
+            caption = quests.get_reward_localized_description(reward, reward_str),
+        }
+        reward_desc.style.single_line = false
+        gui.auto_width(reward_desc)
+        if reward.type == "unlock-feature" then
+            local feature_desc = reward_frame.add {
+                type = "label",
+                name = "feature-desc",
+                caption = lib.color_localized_string(quests.get_feature_localized_description(reward.value), "orange"),
+            }
+            feature_desc.style.single_line = false
+            gui.auto_width(feature_desc)
+        end
+    end
+
+    -- Ensure that the selected index of the corresponding list is accurate to the displayed quest.
+    for idx, item in ipairs(incomplete_list.items) do
+        if item[1] == localized_quest_title[1] and incomplete_list.selected_index ~= idx then
+            incomplete_list.selected_index = idx
+            return
+        end
+    end
+    for idx, item in ipairs(complete_list.items) do
+        if item[1] == localized_quest_title[1] and complete_list.selected_index ~= idx then
+            complete_list.selected_index = idx
+            return
+        end
+    end
 end
 
 function gui.update_trade_overview(player)
@@ -1016,17 +1190,14 @@ function gui.update_catalog(player, selected_item_surface, selected_item_name)
     gui.update_catalog_inspect_frame(player, selected_item_surface, selected_item_name)
 end
 
-function gui.add_info(element, info_type)
+function gui.add_info(element, info_id, name)
     local info = element.add {
         type = "label",
-        name = info_type,
-        caption = {"", "[color=117,218,251][img=virtual-signal.signal-info] ", {"hextorio-gui." .. info_type}, "[.color]"},
+        name = name,
+        caption = {"", "[color=117,218,251][img=virtual-signal.signal-info] ", info_id, "[.color]"},
     }
     info.style.single_line = false
-    info.style.horizontally_squashable = true
-    info.style.horizontally_stretchable = true
-    info.style.vertically_squashable = true
-    info.style.vertically_stretchable = true
+    gui.auto_width(info)
 end
 
 function gui.update_catalog_inspect_frame(player, surface_name, item_name)
@@ -1130,13 +1301,78 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     gui.auto_width_height(rank_up_instructions)
 
     if rank_obj.rank == 1 then
-        gui.add_info(inspect_frame, "buying-info")
-        gui.add_info(inspect_frame, "selling-info")
+        gui.add_info(inspect_frame, {"hextorio-gui.buying-info"}, "info-buying")
+        gui.add_info(inspect_frame, {"hextorio-gui.selling-info"}, "info-selling")
     elseif rank_obj.rank == 2 or rank_obj.rank == 3 then
-        gui.add_info(inspect_frame, "selling-info")
+        gui.add_info(inspect_frame, {"hextorio-gui.selling-info"}, "info-selling")
+    end
+end
+
+function gui.update_quest_lists(player, quest)
+    local scroll_pane = player.gui.screen["questbook"]["lower-flow"]["list-frame"]["scroll-pane"]
+    local incomplete_list = scroll_pane["incomplete-list"]
+    local complete_list = scroll_pane["complete-list"]
+
+    if quest and quest.complete then
+        gui.add_quest_to_list(complete_list, quest)
     end
 
-    -- inspect_frame.add {type = "line", direction = "horizontal"}
+    incomplete_list.clear_items()
+    for _, q in pairs(storage.quests.quests) do
+        if q.revealed and not q.complete then
+            incomplete_list.add_item(quests.get_quest_localized_title(q))
+        end
+    end
+end
+
+function gui.repopulate_quest_lists(player)
+    local scroll_pane = player.gui.screen["questbook"]["lower-flow"]["list-frame"]["scroll-pane"]
+    local incomplete_list = scroll_pane["incomplete-list"]
+    local complete_list = scroll_pane["complete-list"]
+
+    complete_list.clear_items()
+    incomplete_list.clear_items()
+
+    for _, q in pairs(storage.quests.quests) do
+        if q.revealed then
+            if q.complete then
+                complete_list.add_item(quests.get_quest_localized_title(q))
+            else
+                incomplete_list.add_item(quests.get_quest_localized_title(q))
+            end
+        end
+    end
+end
+
+function gui.add_quest_to_list(list, quest)
+    local name = quests.get_quest_localized_title(quest)
+    for _, item in pairs(list.items) do
+        if item == name then
+            return
+        end
+    end
+    list.add_item(name)
+end
+
+function gui.get_current_selected_quest(player)
+    local scroll_pane = player.gui.screen["questbook"]["lower-flow"]["list-frame"]["scroll-pane"]
+    local incomplete_list = scroll_pane["incomplete-list"]
+    local complete_list = scroll_pane["complete-list"]
+
+    local list
+
+    if incomplete_list.selected_index > 0 then
+        list = incomplete_list
+    elseif complete_list.selected_index > 0 then
+        list = complete_list
+    end
+
+    if not list then return end
+
+    local localized_quest_name = list.get_item(list.selected_index)
+    local quest_name = localized_quest_name[1]:sub(7, -7)
+
+    return quests.get_quest(quest_name)
 end
 
 function gui.update_coin_tier(flow, coin)
@@ -1230,6 +1466,43 @@ function gui.on_checkbox_click(player, element)
     elseif element.parent.parent.name == "planet-flow" then
         gui.on_trade_overview_filter_changed(player)
     end
+end
+
+function gui.on_gui_item_selected(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if event.element.type == "list-box" then
+        gui.on_listbox_item_selected(player, event.element)
+    else
+        gui.on_dropdown_item_selected(player, event.element)
+    end
+end
+
+function gui.on_listbox_item_selected(player, element)
+    if element.name == "complete-list" or element.name == "incomplete-list" then
+        gui.on_quest_name_selected(player, element)
+    end
+end
+
+function gui.on_dropdown_item_selected(player, element)
+
+end
+
+function gui.on_quest_name_selected(player, element)
+    if element.selected_index == 0 then return end
+
+    -- First, ensure that only one quest is selected between the two list boxes.
+    if element.name == "complete-list" then
+        element.parent['incomplete-list'].selected_index = 0
+    elseif element.name == "incomplete-list" then
+        element.parent['complete-list'].selected_index = 0
+    end
+
+    local quest = gui.get_current_selected_quest(player)
+    if not quest then return end
+
+    gui.update_questbook(player, quest.name)
 end
 
 function gui.on_toggle_trade_checkbox_click(player, element)

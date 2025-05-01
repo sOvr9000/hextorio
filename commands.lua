@@ -134,6 +134,7 @@ commands.add_command("debug-mode", "Set up your character and game for debugging
 commands.add_command("rank-up", "Rank up an item, bypassing progress requirements", parse_command)
 commands.add_command("rank-up-all", "Rank up all items that are discovered in the catalog, bypassing progress requirements", parse_command)
 commands.add_command("discover-all", "Discover all items in the catalog", parse_command)
-commands.add_command("add-trade", "Add a trade to the nearest hex core", parse_command)
-commands.add_command("remove-trade", "Remove trade #x from the nearest hex core (indexing starts at 1)", parse_command)
+commands.add_command("add-trade", "Add a trade to the hex core that you're mousing over", parse_command)
+commands.add_command("remove-trade", "Remove trade #x from the hex core that you're mousing over (indexing starts at 1)", parse_command)
+commands.add_command("complete-quest", "Complete a quest, bypassing progress requirements", parse_command)
 

@@ -6,13 +6,36 @@ local quests = {}
 
 
 
+function quests.register_events()
+    event_system.register_callback("command-complete-quest", function(player, params)
+        local quest = quests.get_quest(params[1])
+        if quest then
+            quests.complete_quest(quest)
+        else
+            player.print("Unrecognized quest name: " .. params[1])
+        end
+    end)
+end
+
 function quests.init()
     lib.log("Indexing quests...")
+
+    local reveal = {}
     for _, def in pairs(storage.quests.quest_defs) do
         lib.log(def.name)
         local quest = quests.new_quest(def)
-        storage.quests.quests[def.name] = quest
-        quests.index_by_condition_types(quest)
+        if quest then
+            storage.quests.quests[def.name] = quest
+            quests.index_by_condition_types(quest)
+            
+            if not quest.prerequisites or not next(quest.prerequisites) then
+                table.insert(reveal, quest)
+            end
+        end
+    end
+
+    for _, quest in pairs(reveal) do
+        quests.reveal_quest(quest)
     end
 end
 
@@ -47,6 +70,10 @@ function quests.new_quest(params)
         name = params.name,
         conditions = {},
         rewards = {},
+        notes = params.notes, -- can be nil
+        unlocks = params.unlocks, -- can be nil
+        prerequisites = params.prerequisites, -- can be nil
+        has_img = params.has_img, -- can be nil, defaults to true
     }
 
     for _, condition in pairs(params.conditions or {}) do
@@ -92,12 +119,48 @@ function quests.new_reward(params)
     return reward
 end
 
+function quests.get_quest(quest_name)
+    local quest = storage.quests.quests[quest_name]
+    if not quest then
+        lib.log_error("quests.get_quest: Could not find quest with name " .. quest_name)
+    end
+    return quest
+end
+
 function quests.get_quest_localized_title(quest)
     return {"quest." .. quest.name .. "-title"}
 end
 
 function quests.get_quest_localized_description(quest)
     return {"quest." .. quest.name .. "-desc"}
+end
+
+function quests.get_condition_localized_name(condition)
+    return {"quest-condition." .. condition.type .. "-name"}
+end
+
+function quests.get_condition_localized_description(condition, ...)
+    return {"quest-condition." .. condition.type .. "-desc", ...}
+end
+
+function quests.get_reward_localized_name(reward)
+    return {"quest-reward." .. reward.type .. "-name"}
+end
+
+function quests.get_reward_localized_description(reward, ...)
+    return {"quest-reward." .. reward.type .. "-desc", ...}
+end
+
+function quests.get_localized_note(note_name)
+    return {"hextorio-questbook.note-" .. note_name}
+end
+
+function quests.get_feature_localized_name(feature_name)
+    return {"hextorio-feature." .. feature_name .. "-name"}
+end
+
+function quests.get_feature_localized_description(feature_name)
+    return {"hextorio-feature." .. feature_name .. "-desc"}
 end
 
 -- Dish out the rewards of a quest.
@@ -131,10 +194,8 @@ function quests.check_quest_completion(quest)
             return
         end
     end
-    quests.give_rewards(quest)
-    quest.completed = true
-    quests.print_quest_completion(quest)
-    event_system.trigger("quest-completed", quest)
+
+    quests.complete_quest(quest)
 end
 
 -- Set a quest condition's progress and check if the quest is complete.
@@ -161,6 +222,7 @@ end
 
 -- Increment the progress of all quest conditions of a certain type.
 function quests.increment_progress_for_type(condition_type, amount)
+    if not amount then amount = 1 end
     local quest_list = storage.quests.quests_by_condition_type[condition_type]
     if not quest_list then return end
     for _, quest in pairs(quest_list) do
@@ -174,8 +236,46 @@ function quests.increment_progress_for_type(condition_type, amount)
     end
 end
 
+-- Return whether a given feature has been unlocked by any quest.
 function quests.is_feature_unlocked(feature_name)
     return storage.quests.unlocked_features[feature_name] == true
+end
+
+-- Reveal a quest, making it visible in the questbook.
+function quests.reveal_quest(quest)
+    quest.revealed = true
+    event_system.trigger("quest-revealed", quest)
+end
+
+-- Reveal any quests that are unlocked by this quest and have all prerequisite quests completed.
+function quests.check_revelations(quest)
+    if not quest.unlocks or not quest.complete then return end
+    for _, unlock in pairs(quest.unlocks) do
+        local reveal = true
+        local unlock_quest = quests.get_quest(unlock)
+        if unlock_quest.prerequisites then
+            for _, prereq in pairs(quest.prerequisites) do
+                local prereq_quest = quests.get_quest(prereq)
+                if not prereq_quest.complete then
+                    reveal = false
+                    break
+                end
+            end
+        end
+        if reveal then
+            quests.reveal_quest(unlock_quest)
+        end
+    end
+end
+
+-- Complete a quest, bypassing any progress requirements.
+function quests.complete_quest(quest)
+    quests.give_rewards(quest)
+    quest.complete = true
+    quest.progress = quest.progress_requirement
+    quests.print_quest_completion(quest)
+    quests.check_revelations(quest)
+    event_system.trigger("quest-completed", quest)
 end
 
 

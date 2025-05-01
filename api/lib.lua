@@ -793,6 +793,41 @@ function lib.get_direction_name(d)
     return "north"
 end
 
+function lib.hsv_to_rgb(h, s, v)
+    -- Normalize h to 0-1 range (in case it's outside that range)
+    h = h - math.floor(h)
+
+    -- If saturation is 0, the color is a shade of gray
+    if s <= 0.0 then
+        return v, v, v
+    end
+
+    -- Convert hue to 0-6 range
+    h = h * 6.0
+    local i = math.floor(h)
+    local f = h - i  -- Fractional part
+
+    -- Calculate RGB components
+    local p = v * (1.0 - s)
+    local q = v * (1.0 - s * f)
+    local t = v * (1.0 - s * (1.0 - f))
+
+    -- Return RGB based on the sector of the color wheel
+    if i == 0 then
+        return v, t, p
+    elseif i == 1 then
+        return q, v, p
+    elseif i == 2 then
+        return p, v, t
+    elseif i == 3 then
+        return p, q, v
+    elseif i == 4 then
+        return t, p, v
+    else  -- i == 5
+        return v, p, q
+    end
+end
+
 
 
 return lib
