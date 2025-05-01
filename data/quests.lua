@@ -81,5 +81,18 @@ return {
             rewards = {{type = "reduce-biters", value = 50}},
             prerequisites = {"ground-zero"},
         },
+        {
+            name = "exploration",
+            conditions = {{type = "claimed-hexes", progress_requirement = 15}},
+            rewards = {{type = "receive-items", value = {
+                {name = "modular-armor", count = 1},
+                {name = "solar-panel-equipment", count = 15},
+                {name = "personal-roboport-equipment", count = 1},
+                {name = "battery-equipment", count = 3},
+                {name = "construction-robot", count = 10},
+            }}},
+            prerequisites = {"ground-zero"},
+            has_img = false,
+        },
     },
 }

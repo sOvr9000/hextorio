@@ -189,10 +189,24 @@ end
 -- Dish out the rewards of a quest.
 function quests.give_rewards(quest)
     if quest.completed then return end
+
     for _, reward in pairs(quest.rewards) do
         if reward.type == "unlock-feature" then
             storage.quests.unlocked_features[reward.value] = true
+        elseif reward.type == "receive-items" then
+            for _, player in pairs(game.players) do
+                local spilled = false
+                for _, item_stack in pairs(reward.value) do
+                    if not lib.safe_insert(player, item_stack) then
+                        spilled = true
+                    end
+                end
+                if spilled then
+                    player.print("[gps=" .. player.position.x .. "," .. player.position.y .. "," .. player.surface.name .. "]")
+                end
+            end
         end
+
         event_system.trigger("quest-reward-received", reward.type, reward.value)
     end
 end
@@ -205,6 +219,13 @@ function quests.print_quest_completion(quest)
             table.insert(s, lib.color_localized_string(quests.get_feature_localized_name(reward.value), "orange", "heading-1"))
             table.insert(s, " ")
             table.insert(s, lib.color_localized_string(quests.get_feature_localized_description(reward.value), "gray"))
+        elseif reward.type == "receive-items" then
+            local item_imgs = {}
+            for _, item_stack in pairs(reward.value) do
+                table.insert(item_imgs, "[img=item." .. item_stack.name .. "]x" .. item_stack.count)
+            end
+            table.insert(s, lib.color_localized_string(quests.get_reward_localized_name(reward), "yellow", "heading-1"))
+            table.insert(s, " [color=gray]" .. table.concat(item_imgs, " ") .. "[.color]")
         else
             table.insert(s, lib.color_localized_string(quests.get_reward_localized_name(reward), "white", "heading-1"))
             table.insert(s, " ")

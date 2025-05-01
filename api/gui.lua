@@ -984,7 +984,11 @@ function gui.update_questbook(player, quest_name)
         if reward.type == "unlock-feature" then
             reward_str = lib.color_localized_string(quests.get_feature_localized_name(reward.value), "orange", "heading-2")
         else
-            reward_str = "[font=heading-2][color=green]" .. reward.value .. "[.color][.font]"
+            if reward.type == "receive-items" then
+                reward_str = ""
+            else
+                reward_str = "[font=heading-2][color=green]" .. reward.value .. "[.color][.font]"
+            end
         end
         local reward_desc = reward_frame.add {
             type = "label",
@@ -1001,6 +1005,13 @@ function gui.update_questbook(player, quest_name)
             }
             feature_desc.style.single_line = false
             gui.auto_width(feature_desc)
+        elseif reward.type == "receive-items" then
+            local receive_items_flow = reward_frame.add {
+                type = "flow",
+                name = "receive-items-flow",
+                direction = "horizontal",
+            }
+            gui.add_sprite_buttons(receive_items_flow, reward.value, "receive-items-")
         end
     end
 
@@ -1204,6 +1215,18 @@ function gui.add_info(element, info_id, name)
     }
     info.style.single_line = false
     gui.auto_width(info)
+end
+
+function gui.add_sprite_buttons(element, item_stacks, name_prefix)
+    if not name_prefix then name_prefix = "" end
+    for i, item_stack in ipairs(item_stacks) do
+        local sprite_button = element.add {
+            type = "sprite-button",
+            name = name_prefix .. item_stack.name,
+            sprite = "item/" .. item_stack.name,
+            number = item_stack.count,
+        }
+    end
 end
 
 function gui.update_catalog_inspect_frame(player, surface_name, item_name)

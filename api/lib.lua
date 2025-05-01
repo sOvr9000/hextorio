@@ -828,6 +828,17 @@ function lib.hsv_to_rgb(h, s, v)
     end
 end
 
+function lib.safe_insert(player, item_stack)
+    if player.can_insert(item_stack) then
+        player.insert(item_stack)
+        return true
+    else
+        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. "]"}
+        player.surface.spill_item_stack{position=player.position, stack=item_stack}
+        return false
+    end
+end
+
 
 
 return lib
