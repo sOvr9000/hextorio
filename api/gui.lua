@@ -1395,8 +1395,6 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     if rank_obj.rank == 1 then
         gui.add_info(inspect_frame, {"hextorio-gui.buying-info"}, "info-buying")
         gui.add_info(inspect_frame, {"hextorio-gui.selling-info"}, "info-selling")
-    elseif rank_obj.rank == 2 or rank_obj.rank == 3 then
-        gui.add_info(inspect_frame, {"hextorio-gui.selling-info"}, "info-selling")
     end
 end
 
