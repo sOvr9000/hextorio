@@ -175,14 +175,32 @@ function quests.give_rewards(quest)
 end
 
 function quests.print_quest_completion(quest)
+    local rewards_str = {""}
+    for _, reward in pairs(quest.rewards) do
+        local s = {"", "\n"}
+        if reward.type == "unlock-feature" then
+            table.insert(s, lib.color_localized_string(quests.get_feature_localized_name(reward.value), "orange", "heading-1"))
+            table.insert(s, " ")
+            table.insert(s, lib.color_localized_string(quests.get_feature_localized_description(reward.value), "gray"))
+        else
+            table.insert(s, lib.color_localized_string(quests.get_reward_localized_name(reward), "white", "heading-1"))
+            table.insert(s, " ")
+            table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "[color=green]" .. reward.value .. "[.color]"), "gray"))
+        end
+        table.insert(rewards_str, s)
+    end
+    table.insert(rewards_str, "\n")
+
     game.print({"",
         "\n[font=heading-1][color=blue]-=-=-=-=-= ",
         {"hextorio.quest-complete"},
         " =-=-=-=-=-[.color][.font]\n",
         lib.color_localized_string(quests.get_quest_localized_title(quest), "cyan", "heading-1"),
-        "\n",
+        " ",
         lib.color_localized_string(quests.get_quest_localized_description(quest), "gray"),
-        "\n",
+        "\n\n",
+        lib.color_localized_string({"hextorio-questbook.rewards"}, "green", "heading-1"),
+        rewards_str,
     })
 end
 

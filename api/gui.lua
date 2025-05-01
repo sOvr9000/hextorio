@@ -240,10 +240,11 @@ function gui.init_questbook(player)
 
     gui.add_titlebar(questbook, {"hextorio-questbook.questbook-title"})
 
-    local info_frame = questbook.add {type = "frame", name = "info-frame", direction = "horizontal"}
-    info_frame.style.horizontally_stretchable = true
-    info_frame.style.vertically_squashable = true
-    info_frame.style.natural_height = 75
+    -- TODO
+    -- local info_frame = questbook.add {type = "frame", name = "info-frame", direction = "horizontal"}
+    -- info_frame.style.horizontally_stretchable = true
+    -- info_frame.style.vertically_squashable = true
+    -- info_frame.style.natural_height = 75
 
     local lower_flow = questbook.add {type = "flow", name = "lower-flow", direction = "horizontal"}
     gui.auto_width_height(lower_flow)
@@ -261,12 +262,12 @@ function gui.init_questbook(player)
     local list_scroll_pane = list_frame.add {type = "scroll-pane", name = "scroll-pane", direction = "vertical"}
     gui.auto_height(list_scroll_pane)
 
-    local incomplete_header = list_scroll_pane.add {type = "label", name = "incomplete-header", caption = {"hextorio-questbook.incomplete"}}
+    local incomplete_header = list_scroll_pane.add {type = "label", name = "incomplete-header", caption = {"hextorio-questbook.incomplete", 0}}
     incomplete_header.style.font = "heading-2"
     local incomplete_list = list_scroll_pane.add {type = "list-box", name = "incomplete-list"}
     gui.auto_width_height(incomplete_list)
 
-    local complete_header = list_scroll_pane.add {type = "label", name = "complete-header", caption = {"hextorio-questbook.complete"}}
+    local complete_header = list_scroll_pane.add {type = "label", name = "complete-header", caption = {"hextorio-questbook.complete", 0}}
     complete_header.style.font = "heading-2"
     local complete_list = list_scroll_pane.add {type = "list-box", name = "complete-list"}
     gui.auto_width_height(complete_list)
@@ -896,6 +897,8 @@ function gui.update_questbook(player, quest_name)
     local quest_frame = frame["lower-flow"]["quest-frame"]
 
     local quests_scroll_pane = frame["lower-flow"]["list-frame"]["scroll-pane"]
+    local complete_header = quests_scroll_pane["complete-header"]
+    local incomplete_header = quests_scroll_pane["incomplete-header"]
     local incomplete_list = quests_scroll_pane["incomplete-list"]
     local complete_list = quests_scroll_pane["complete-list"]
 
@@ -928,6 +931,9 @@ function gui.update_questbook(player, quest_name)
     local localized_quest_title = quests.get_quest_localized_title(quest)
     quest_title.caption = localized_quest_title
     quest_description.caption = quests.get_quest_localized_description(quest)
+
+    complete_header.caption = {"hextorio-questbook.complete", #complete_list.items}
+    incomplete_header.caption = {"hextorio-questbook.incomplete", #incomplete_list.items}
 
     quest_notes_flow.clear()
     if quest.notes then
