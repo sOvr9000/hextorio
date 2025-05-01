@@ -465,45 +465,6 @@ function lib.get_technology_graph()
     return tech_graph
 end
 
--- Return a table of all planet names (or space platform) which satisfy all conditions provided.
-function lib.get_planets_of_surface_conditions(conditions)
-    local planets = {}
-    for planet, _ in pairs(storage.surface_properties) do
-        table.insert(planets, planet)
-    end
-    if not conditions then
-        return planets
-    end
-    planets = sets.new(planets)
-    local bad = {}
-    for _, cond in pairs(conditions) do
-        for planet, _ in pairs(planets) do
-            local properties = storage.surface_properties[planet]
-            if properties then
-                -- Check if planet satisfies surface condition
-                local val = properties[cond.property]
-                if not (val and val <= cond.max and val >= cond.min) then
-                    bad[planet] = true -- avoiding to manipulate the data while looping over it, don't want to do this: planets[planet] = nil
-                end
-            end
-        end
-    end
-    return sets.to_array(sets.difference(planets, bad))
-end
-
--- Return a table of recipes that are allowed on the given surface.
-function lib.get_recipes_allowed_on_surface(surface_name, recipe_tree)
-    local allowed = {}
-    for name, recipe in pairs(recipe_tree) do
-        for _, surface in pairs(recipe.surfaces) do
-            if surface == surface_name then
-                allowed[name] = recipe
-            end
-        end
-    end
-    return allowed
-end
-
 -- Return a lookup table of angles for a pie chart from a weighted choice
 function lib.get_pie_angles(wc)
     local angles = {}
