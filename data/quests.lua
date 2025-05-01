@@ -65,6 +65,10 @@ return {
         ["receive-items"] = {"new-players-receive"},
     },
 
+    notes_per_condition_type = {
+        ["trades-found"] = {"finding-counts-unclaimed"},
+    },
+
     quest_defs = {
         {
             name = "ground-zero",
@@ -76,7 +80,7 @@ return {
             name = "find-some-trades",
             conditions = {{type = "trades-found", progress_requirement = 40}},
             rewards = {{type = "unlock-feature", value = "trade-overview"}},
-            notes = {"trades-randomized", "finding-counts-unclaimed"},
+            notes = {"trades-randomized"},
             prerequisites = {"ground-zero"},
             has_img = false,
         },

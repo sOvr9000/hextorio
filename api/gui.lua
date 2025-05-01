@@ -958,6 +958,13 @@ function gui.update_questbook(player, quest_name)
         }
         condition_desc.style.single_line = false
         gui.auto_width(condition_desc)
+
+        if condition.notes then
+            for j, note_name in ipairs(condition.notes) do
+                gui.add_info(condition_frame, quests.get_localized_note(note_name), "info-" .. j)
+            end
+        end
+
         if condition.show_progress_bar then
             local progress_bar = condition_frame.add {
                 type = "progressbar",

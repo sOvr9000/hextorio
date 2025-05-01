@@ -123,7 +123,18 @@ function quests.new_condition(params)
         progress_requirement = params.progress_requirement or 1,
         progress = 0,
         show_progress_bar = params.show_progress_bar,
+        notes = params.notes, -- can be nil
     }
+    local constant_notes = storage.quests.notes_per_condition_type[condition.type]
+    if constant_notes then
+        if not condition.notes then
+            condition.notes = constant_notes
+        else
+            for _, note in pairs(constant_notes) do
+                table.insert(condition.notes, note)
+            end
+        end
+    end
     return condition
 end
 
