@@ -280,6 +280,7 @@ end
 
 -- Complete a quest, bypassing any progress requirements.
 function quests.complete_quest(quest)
+    quests.print_quest_completion(quest)
     quests.give_rewards(quest)
     quest.complete = true
 
@@ -287,7 +288,6 @@ function quests.complete_quest(quest)
         condition.progress = condition.progress_requirement
     end
     
-    quests.print_quest_completion(quest)
     quests.check_revelations(quest)
     event_system.trigger("quest-completed", quest)
 end

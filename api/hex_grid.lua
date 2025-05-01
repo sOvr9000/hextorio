@@ -732,6 +732,20 @@ function hex_grid.register_events()
         local hex_pos = hex_grid.get_hex_containing(player.position, transformation.scale, transformation.rotation)
         hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, true) -- claim by server
     end)
+
+    event_system.register_callback("quest-reward-received", function(reward_type, value)
+        if reward_type == "unlock-feature" and value == "catalog" then
+            local all_trades = {}
+            for _, state in pairs(hex_grid.get_flattened_surface_hexes("nauvis")) do
+                if state.trades then
+                    for _, trade in pairs(state.trades) do
+                        table.insert(all_trades, trade)
+                    end
+                end
+            end
+            trades.discover_items_in_trades(all_trades)
+        end
+    end)
 end
 
 -- Get or create surface storage

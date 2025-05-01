@@ -5,6 +5,7 @@ local sets        = require "api.sets"
 local item_ranks  = require "api.item_ranks"
 local coin_tiers  = require "api.coin_tiers"
 local event_system= require "api.event_system"
+local quests      = require "api.quests"
 
 require "util" -- for table.deepcopy
 
@@ -499,6 +500,7 @@ end
 
 -- Return whether the item is now discovered if it wasn't previously.
 function trades.mark_as_discovered(item_name)
+    if not quests.is_feature_unlocked "catalog" then return false end
     if item_name:sub(-5) == "-coin" then return false end
     local already_discovered = trades.is_item_discovered(item_name)
     storage.trades.discovered_items[item_name] = true
