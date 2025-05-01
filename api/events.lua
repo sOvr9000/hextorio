@@ -35,6 +35,10 @@ function events.on_game_started()
         end
 
         gui.init_all_buttons(player)
+
+        -- JOIN DISCORD PLEASE :D
+        game.forces.player.add_chart_tag("nauvis", {position = {0, 0}, text = "Join the Discord to ask questions, report bugs, share your ideas, or just hang out!"})
+        game.forces.player.add_chart_tag("nauvis", {position = {0, 4}, text = "https://discord.gg/huJY7QK6UG"})
     end
 end
 

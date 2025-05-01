@@ -39,7 +39,6 @@ local function attempt_initialization()
     if #game.players == 0 then return end
     if not storage.events.is_temp_surface_ready then return end
     if storage.events.is_nauvis_generating then return end
-    game.print {"hextorio-info.initializing"}
     events.on_nauvis_generating()
 end
 
@@ -124,14 +123,7 @@ end)
 script.on_event(defines.events.on_tick, function (event)
     if storage.events.has_game_started and not storage.events.intro_finished then
         if event.tick == storage.events.game_start_tick + 60 then
-            game.print("[color=black]<_>-<_>-<_>-<_>-<_>-<_>-<_>-<_>-<_>-<_>[.color]")
-            game.print(lib.color_localized_string({"hextorio-info.game-started-0"}, "green"))
-        elseif event.tick == storage.events.game_start_tick + 180 then
-            game.print(lib.color_localized_string({"hextorio-info.game-started-1"}, "yellow"))
-        elseif event.tick == storage.events.game_start_tick + 320 then
-            game.print(lib.color_localized_string({"hextorio-info.game-started-2"}, "cyan"))
-        elseif event.tick == storage.events.game_start_tick + 600 then
-            game.print(lib.color_localized_string({"hextorio-info.game-started-3"}, "purple"))
+            game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
             storage.events.intro_finished = true
         end
     end
