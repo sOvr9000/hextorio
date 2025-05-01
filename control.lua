@@ -206,6 +206,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     if not player then return end
     lib.unstuck_player(player)
     gui.reinitialize_everything(player)
+    quests.check_player_receive_items(player)
 end)
 
 script.on_event(defines.events.on_gui_opened, function (event)

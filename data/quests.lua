@@ -59,6 +59,7 @@ return {
     quests = {},
     quests_by_condition_type = {},
     unlocked_features = {},
+    players_rewarded = {},
 
     quest_defs = {
         {

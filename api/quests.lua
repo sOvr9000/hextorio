@@ -195,19 +195,52 @@ function quests.give_rewards(quest)
             storage.quests.unlocked_features[reward.value] = true
         elseif reward.type == "receive-items" then
             for _, player in pairs(game.players) do
-                local spilled = false
-                for _, item_stack in pairs(reward.value) do
-                    if not lib.safe_insert(player, item_stack) then
-                        spilled = true
-                    end
-                end
-                if spilled then
-                    player.print("[gps=" .. player.position.x .. "," .. player.position.y .. "," .. player.surface.name .. "]")
-                end
+                quests.try_receive_items_reward(player, quest, reward)
             end
         end
 
         event_system.trigger("quest-reward-received", reward.type, reward.value)
+    end
+end
+
+function quests.try_receive_items_reward(player, quest, reward)
+    if not storage.quests.players_rewarded[player.name] then
+        storage.quests.players_rewarded[player.name] = {}
+        if storage.quests.players_rewarded[player.name][quest.name] then
+            return false
+        end
+    end
+    storage.quests.players_rewarded[player.name][quest.name] = true
+
+    local spilled = false
+    for _, item_stack in pairs(reward.value) do
+        if not lib.safe_insert(player, item_stack) then
+            spilled = true
+        end
+    end
+
+    if spilled then
+        player.print("[gps=" .. player.position.x .. "," .. player.position.y .. "," .. player.surface.name .. "]")
+    end
+
+    return true
+end
+
+function quests.check_player_receive_items(player)
+    local any = false
+    for _, quest in pairs(storage.quests.quests) do
+        if quest.complete then
+            for _, reward in pairs(quest.rewards) do
+                if reward.type == "receive-items" then
+                    if quests.try_receive_items_reward(player, quest, reward) then
+                        any = true
+                    end
+                end
+            end
+        end
+    end
+    if any then
+        player.print({"hextorio.rewards-while-away"})
     end
 end
 
