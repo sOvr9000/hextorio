@@ -68,6 +68,7 @@ return {
 
     notes_per_condition_type = {
         ["trades-found"] = {"finding-counts-unclaimed"},
+        ["hex-span"] = {"hex-span-simplified"},
     },
 
     quest_defs = {
@@ -102,6 +103,13 @@ return {
                 {name = "construction-robot", count = 10},
             }}},
             prerequisites = {"ground-zero"},
+            has_img = false,
+        },
+        {
+            name = "sprawling-base",
+            conditions = {{type = "hex-span", progress_requirement = 30}},
+            rewards = {{type = "unlock-feature", value = "teleportation"}},
+            prerequisites = {"exploration"},
             has_img = false,
         },
     },

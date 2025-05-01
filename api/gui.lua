@@ -769,6 +769,8 @@ function gui.update_hex_core(player)
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
 
+    frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation"
+
     local coin = state.claim_price
     gui.update_coin_tier(frame["claim-flow"]["claim-price"], coin)
 
