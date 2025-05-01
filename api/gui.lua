@@ -379,11 +379,15 @@ function gui.init_trade_overview(player)
     -- surface_list_frame.style.vertically_stretchable = true
 
     local trade_table_frame = frame.add {type = "frame", name = "trade-table-frame", direction = "vertical"}
+    gui.auto_width_height(trade_table_frame)
+
     local scroll_pane = trade_table_frame.add {type = "scroll-pane", name = "scroll-pane"}
     scroll_pane.style.vertically_stretchable = true
     trade_table_frame.style.vertically_stretchable = true
     trade_table_frame.style.vertically_squashable = true
     trade_table_frame.style.natural_width = 700
+
+    local trade_table = scroll_pane.add {type = "table", name = "table", column_count = 2}
 end
 
 function gui.init_catalog(player)
@@ -1101,8 +1105,6 @@ function gui.update_trade_overview(player)
 
     -- lib.log(serpent.line(filter))
 
-    local trades_scroll_pane = frame["trade-table-frame"]["scroll-pane"]
-
     if not filter.planets then
         filter.planets = sets.new {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
     end
@@ -1177,10 +1179,10 @@ function gui.update_trade_overview(player)
         end
     end
 
-    -- lib.log(serpent.block(trades_list))
-
     storage.trade_overview.trades[player.name] = trades_list
-    gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, {show_toggle_trade=false, show_tag_creator=false, show_core_finder=true, show_productivity=false})
+
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    gui.update_trades_scroll_pane(player, trade_table, trades_list, {show_toggle_trade=false, show_tag_creator=false, show_core_finder=true, show_productivity=false})
 end
 
 function gui.update_catalog(player, selected_item_surface, selected_item_name)
