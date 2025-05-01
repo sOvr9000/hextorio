@@ -1326,7 +1326,7 @@ function gui.update_quest_lists(player, quest)
     incomplete_list.clear_items()
     for _, q in pairs(storage.quests.quests) do
         if q.revealed and not q.complete then
-            incomplete_list.add_item(quests.get_quest_localized_title(q))
+            gui.add_quest_to_list(incomplete_list, q)
         end
     end
 end
@@ -1342,9 +1342,9 @@ function gui.repopulate_quest_lists(player)
     for _, q in pairs(storage.quests.quests) do
         if q.revealed then
             if q.complete then
-                complete_list.add_item(quests.get_quest_localized_title(q))
+                gui.add_quest_to_list(complete_list, q)
             else
-                incomplete_list.add_item(quests.get_quest_localized_title(q))
+                gui.add_quest_to_list(incomplete_list, q)
             end
         end
     end
@@ -1353,7 +1353,7 @@ end
 function gui.add_quest_to_list(list, quest)
     local name = quests.get_quest_localized_title(quest)
     for _, item in pairs(list.items) do
-        if item == name then
+        if item[1] == name[1] then
             return
         end
     end
