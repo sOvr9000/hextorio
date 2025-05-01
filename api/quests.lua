@@ -243,27 +243,37 @@ end
 
 -- Reveal a quest, making it visible in the questbook.
 function quests.reveal_quest(quest)
+    if quest.revealed then return end
     quest.revealed = true
     event_system.trigger("quest-revealed", quest)
 end
 
 -- Reveal any quests that are unlocked by this quest and have all prerequisite quests completed.
 function quests.check_revelations(quest)
-    if not quest.unlocks or not quest.complete then return end
-    for _, unlock in pairs(quest.unlocks) do
-        local reveal = true
-        local unlock_quest = quests.get_quest(unlock)
-        if unlock_quest.prerequisites then
-            for _, prereq in pairs(quest.prerequisites) do
-                local prereq_quest = quests.get_quest(prereq)
-                if not prereq_quest.complete then
-                    reveal = false
-                    break
+    -- Direct unlocks are always revealed (like OR).
+    if quest.unlocks then
+        for _, unlock in pairs(quest.unlocks) do
+            local unlock_quest = quests.get_quest(unlock)
+            quests.reveal_quest(unlock_quest)
+        end
+    end
+
+    -- All prerequisites must be completed for the quest to be revealed (like AND).
+    for _, q in pairs(storage.quests.quests) do
+        if not q.complete and not q.revealed then
+            local reveal = true
+            if q.prerequisites then
+                for _, prereq in pairs(q.prerequisites) do
+                    local prereq_quest = quests.get_quest(prereq)
+                    if not prereq_quest.complete then
+                        reveal = false
+                        break
+                    end
                 end
             end
-        end
-        if reveal then
-            quests.reveal_quest(unlock_quest)
+            if reveal then
+                quests.reveal_quest(q)
+            end
         end
     end
 end
@@ -272,7 +282,11 @@ end
 function quests.complete_quest(quest)
     quests.give_rewards(quest)
     quest.complete = true
-    quest.progress = quest.progress_requirement
+
+    for _, condition in pairs(quest.conditions) do
+        condition.progress = condition.progress_requirement
+    end
+    
     quests.print_quest_completion(quest)
     quests.check_revelations(quest)
     event_system.trigger("quest-completed", quest)
