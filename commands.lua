@@ -57,6 +57,9 @@ function on_command(player, command, params)
 
         -- Enable cheat mode (spawn in items instead of crafting them)
         player.cheat_mode = true
+
+        player.insert {name = "car", count = 4} -- lol
+        player.insert {name = "nuclear-fuel", count = 10}
     end
 
     event_system.trigger("command-" .. command, player, params)
