@@ -298,6 +298,8 @@ end
 
 -- Complete a quest, bypassing any progress requirements.
 function quests.complete_quest(quest)
+    if quest.complete then return end
+
     quests.print_quest_completion(quest)
     quests.give_rewards(quest)
     quest.complete = true
