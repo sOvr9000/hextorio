@@ -695,7 +695,7 @@ function hex_grid.register_events()
         hex_grid.remove_trade(state, idx)
     end)
 
-    event_system.register_callback("command-debug-mode", function(player, params)
+    event_system.register_callback("command-hextorio-debug", function(player, params)
         hex_grid.claim_hexes_range(player.surface.name, {q = 0, r = 0}, 1, nil, true) -- claim by server
     end)
 
