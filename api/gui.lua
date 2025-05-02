@@ -1657,23 +1657,31 @@ function gui.on_sprite_button_click(player, element)
         gui.on_confirmation_button_click(player, element)
     elseif element.name == "unloader-filters" then
         gui.on_unloader_filters_button_click(player, element)
-    elseif element.parent.name == "unloader-filters-flow" then
-        gui.on_unloader_filters_direction_click(player, element)
-    elseif element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
-        gui.on_hex_mode_button_click(player, element)
-    elseif element.parent.name == "trade-table" then
-        if player.opened and player.opened.name == "hex-core" then
-            gui.on_hex_core_trade_item_clicked(player, element)
-        elseif player.opened and player.opened.name == "trade-overview" then
-            gui.on_trade_overview_item_clicked(player, element)
+    else
+        if element.parent then
+            if element.parent.name == "unloader-filters-flow" then
+                gui.on_unloader_filters_direction_click(player, element)
+            elseif element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
+                gui.on_hex_mode_button_click(player, element)
+            elseif element.parent.name == "trade-table" then
+                if player.opened and player.opened.name == "hex-core" then
+                    gui.on_hex_core_trade_item_clicked(player, element)
+                elseif player.opened and player.opened.name == "trade-overview" then
+                    gui.on_trade_overview_item_clicked(player, element)
+                end
+            else -- this is just horribly ugly, maybe I'll clean it up later
+                if element.parent.parent then
+                    if element.parent.parent.name == "planet-flow" then
+                        if element.parent["status"].sprite == "check-mark-green" then
+                            element.parent["status"].sprite = "red-ex"
+                        else
+                            element.parent["status"].sprite = "check-mark-green"
+                        end
+                        gui.update_trade_overview(player)
+                    end
+                end
+            end
         end
-    elseif element.parent.parent.name == "planet-flow" then
-        if element.parent["status"].sprite == "check-mark-green" then
-            element.parent["status"].sprite = "red-ex"
-        else
-            element.parent["status"].sprite = "check-mark-green"
-        end
-        gui.update_trade_overview(player)
     end
 end
 
