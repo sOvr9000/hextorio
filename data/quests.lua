@@ -112,5 +112,12 @@ return {
             prerequisites = {"exploration"},
             has_img = false,
         },
+        {
+            name = "too-many-hex-cores",
+            conditions = {{type = "claimed-hexes", progress_requirement = 50}},
+            rewards = {{type = "unlock-feature", value = "hex-core-deletion"}},
+            prerequisites = {"exploration"},
+            has_img = false,
+        },
     },
 }
