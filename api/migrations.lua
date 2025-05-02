@@ -143,6 +143,7 @@ local process_migration = {
         storage.quests.notes_per_condition_type = {
             ["trades-found"] = {"finding-counts-unclaimed"},
         }
+        storage.hex_grid.hex_span = {}
 
         for _, quest in pairs(storage.quests.quests) do
             quest.order = 0

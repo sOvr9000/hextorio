@@ -1566,6 +1566,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     -- Add trade items to catalog list
     trades.discover_items_in_trades(state.trades)
 
+    hex_grid.check_hex_span(surface, hex_pos)
     quests.increment_progress_for_type("claimed-hexes", 1)
 end
 
@@ -1589,6 +1590,26 @@ function hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, center_po
             hex_grid._claim_hexes_dfs(surface, adj_hex, range, by_player, center_pos, allow_nonland)
         end
     end
+end
+
+function hex_grid.check_hex_span(surface, hex_pos)
+    local surface_id = lib.get_surface_id(surface)
+    if not surface_id then
+        lib.log_error("hex_grid.check_hex_span: No surface found")
+        return
+    end
+    surface = game.surfaces[surface_id]
+
+    local span = 0
+    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface)) do
+        if state.claimed then
+            span = math.max(span, hex_grid.distance(hex_pos, state.position))
+        end
+    end
+
+    storage.hex_grid.hex_span[surface] = math.max(span, storage.hex_grid.hex_span[surface] or 0)
+
+    quests.set_progress_for_type("hex-span", span)
 end
 
 -- Handle chunk generation event for the hex grid

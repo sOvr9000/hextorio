@@ -332,8 +332,11 @@ end
 
 -- Set the progress of all quest conditions of a certain type.
 function quests.set_progress_for_type(condition_type, amount)
-    for _, quest in pairs(storage.quests.quests_by_condition_type) do
+    local quest_list = storage.quests.quests_by_condition_type[condition_type]
+    if not quest_list then return end
+    for _, quest in pairs(quest_list) do
         if not quest.completed then
+            log(serpent.line(quest))
             for _, condition in pairs(quest.conditions) do
                 if condition.type == condition_type then
                     quests.set_progress(quest, condition, amount)
