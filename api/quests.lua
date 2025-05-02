@@ -18,7 +18,9 @@ function quests.register_events()
 end
 
 function quests.reinitialize_everything()
+    event_system.trigger("quests-reinitializing")
     quests.init()
+    event_system.trigger("quests-reinitialized")
 end
 
 function quests.init()
@@ -348,7 +350,6 @@ function quests.set_progress_for_type(condition_type, amount)
     if not quest_list then return end
     for _, quest in pairs(quest_list) do
         if not quest.completed then
-            log(serpent.line(quest))
             for _, condition in pairs(quest.conditions) do
                 if condition.type == condition_type then
                     quests.set_progress(quest, condition, amount)
@@ -427,7 +428,7 @@ function quests.complete_quest(quest)
     for _, condition in pairs(quest.conditions) do
         condition.progress = condition.progress_requirement
     end
-    
+
     quests.check_revelations(quest)
     event_system.trigger("quest-completed", quest)
 end

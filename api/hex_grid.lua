@@ -746,6 +746,24 @@ function hex_grid.register_events()
             trades.discover_items_in_trades(all_trades)
         end
     end)
+
+    event_system.register_callback("quests-reinitialized", function(reward_type, value)
+        -- Recalculate all trade finds
+        local trades_found = 0
+        local claimed_hexes = 0
+        for _, surface in pairs(game.surfaces) do
+            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface.name)) do
+                if state.trades then
+                    trades_found = trades_found + #state.trades
+                end
+                if state.claimed then
+                    claimed_hexes = claimed_hexes + 1
+                end
+            end
+        end
+        quests.set_progress_for_type("trades-found", trades_found)
+        quests.set_progress_for_type("claimed-hexes", claimed_hexes)
+    end)
 end
 
 -- Get or create surface storage
