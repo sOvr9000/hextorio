@@ -149,7 +149,11 @@ local process_migration = {
             quest.order = 0
         end
 
-        quests.init()
+        quests.reinitialize_everything()
+
+        -- for _, player in pairs(game.players) do
+        --     gui.repopulate_quest_lists(player)
+        -- end
     end,
 }
 

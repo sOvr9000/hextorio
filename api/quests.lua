@@ -17,10 +17,15 @@ function quests.register_events()
     end)
 end
 
+function quests.reinitialize_everything()
+    quests.init()
+end
+
 function quests.init()
     lib.log("Indexing quests...")
 
     local reveal = {}
+    local check_rev = {}
     for _, def in pairs(storage.quests.quest_defs) do
         lib.log(def.name)
         local quest = quests.new_quest(def)
@@ -33,6 +38,10 @@ function quests.init()
                 if not quest.prerequisites or not next(quest.prerequisites) then
                     table.insert(reveal, quest)
                 end
+            else
+                if storage.quests.quests[def.name].complete then
+                    table.insert(check_rev, quest)
+                end
             end
         end
     end
@@ -41,6 +50,9 @@ function quests.init()
 
     for _, quest in pairs(reveal) do
         quests.reveal_quest(quest)
+    end
+    for _, quest in pairs(check_rev) do
+        quests.check_revelations(quest)
     end
 end
 

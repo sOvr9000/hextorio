@@ -12,6 +12,7 @@ Date: 1/5/25
     - Hex core player teleportation is now locked behind a quest.
     - Hex core deletion is now locked behind a quest.
     - Resource supercharging is now locked behind a quest.
+    - Hex core modes are now locked behind quests.
   Balancing:
     - Crude oil supercharging is now more expensive by default (it is a mod setting).
 ---------------------------------------------------------------------------------------------------
