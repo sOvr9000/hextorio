@@ -809,7 +809,7 @@ function gui.update_hex_core(player)
 
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["unloader-filters"].enabled = true
-        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite
+        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging"
         if not state.is_infinite then
             frame["hex-control-flow"]["supercharge"].tooltip = {"",
                 lib.color_localized_string({"hex-core-gui.supercharge-tooltip-header"}, "orange", "heading-2"),
@@ -828,8 +828,8 @@ function gui.update_hex_core(player)
             {"hex-core-gui.delete-core-tooltip-body"},
         }
 
-        frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil
-        frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil
+        frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil and quests.is_feature_unlocked "sink-mode"
+        frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil and quests.is_feature_unlocked "generator-mode"
     else
         frame["claim-flow"].visible = true
         frame["claimed-by"].visible = false
