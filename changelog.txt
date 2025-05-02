@@ -1,11 +1,17 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.1
 Date: 1/5/25
+  Minor Features:
+    - It is now possible to see for each item below bronze (1-star) rank whether you've bought or sold it already.
   Features:
     - Added more quests and unique rewards.
     - Added toggle in trade overview filter to only show trades in claimed hex cores (off by default).
   Bugfixes:
     - Fixed that quest selection wasn't preserved in the questbook after closing and reopening, and a related bug.
+  Changes:
+    - Hex core player teleportation is now locked behind a quest.
+  Balancing:
+    - Crude oil supercharging is now more expensive by default (it is a mod setting).
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.0
 Date: 1/5/25

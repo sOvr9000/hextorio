@@ -144,7 +144,7 @@ data:extend({
         name = "hextorio-supercharge-cost-per-well",
         setting_type = "runtime-global",
         minimum_value = 0,
-        default_value = 1000,
+        default_value = 400000,
         order = "pb",
     },
     {
