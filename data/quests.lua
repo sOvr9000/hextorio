@@ -69,6 +69,7 @@ return {
     notes_per_condition_type = {
         ["trades-found"] = {"finding-counts-unclaimed"},
         ["hex-span"] = {"hex-span-simplified"},
+        ["coins-in-inventory"] = {"does-not-consume"},
     },
 
     quest_defs = {
@@ -91,6 +92,7 @@ return {
             conditions = {{type = "biter-ramming"}},
             rewards = {{type = "reduce-biters", value = 50}},
             prerequisites = {"ground-zero"},
+            show_progress_bar = false,
         },
         {
             name = "exploration",
@@ -117,6 +119,13 @@ return {
             conditions = {{type = "claimed-hexes", progress_requirement = 50}},
             rewards = {{type = "unlock-feature", value = "hex-core-deletion"}},
             prerequisites = {"exploration"},
+            has_img = false,
+        },
+        {
+            name = "half-a-gravity",
+            conditions = {{type = "coins-in-inventory", progress_requirement = 50000}},
+            rewards = {{type = "unlock-feature", value = "supercharging"}},
+            prerequisites = {"find-some-trades"},
             has_img = false,
         },
     },

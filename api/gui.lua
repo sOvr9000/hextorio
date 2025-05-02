@@ -973,10 +973,16 @@ function gui.update_questbook(player, quest_name)
             caption = quests.get_condition_localized_name(condition),
         }
         condition_frame.style.horizontally_squashable = false
+
+        local condition_str = condition.progress_requirement
+        if condition.type == "coins-in-inventory" then
+            condition_str = coin_tiers.coin_to_text(coin_tiers.from_base_value(condition.progress_requirement))
+        end
+
         local condition_desc = condition_frame.add {
             type = "label",
             name = "desc",
-            caption = quests.get_condition_localized_description(condition, "[color=green]" .. condition.progress_requirement .. "[.color]"),
+            caption = quests.get_condition_localized_description(condition, "[color=green]" .. condition_str .. "[.color]"),
         }
         condition_desc.style.single_line = false
         gui.auto_width(condition_desc)

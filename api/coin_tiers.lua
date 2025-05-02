@@ -289,6 +289,8 @@ function coin_tiers.normalize_inventory(inventory)
     coin_tiers.update_inventory(inventory, coin, normalized_coin)
 
     storage.coin_tiers.is_processing[inventory] = nil
+
+    return normalized_coin
 end
 
 -- Add coins to the inventory
