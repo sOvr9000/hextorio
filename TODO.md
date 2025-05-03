@@ -14,5 +14,3 @@
 BUGS:
 
 - fix the input loaders on sides of hex cores
-
-- fix productivity not applying to new trades
