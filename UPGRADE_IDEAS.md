@@ -58,13 +58,7 @@
 
 - hex cores can now be upgraded in quality, providing many bonuses
 
-
-
-
-
-
-- EARLY GAME: get personal roboports + construction robots
-
+- non-land tiles can now be claimed
 
 
 
