@@ -38,13 +38,10 @@ hidden_loader.speed = 0.03125 * 20 -- ultimate belts support
 hidden_loader.belt_animation_set = nil
 hidden_loader.minable = nil
 hidden_loader.structure = nil
-hidden_loader.filter_count = 5
-
--- local hex_core_output_chest = table.deepcopy(data.raw.container["steel-chest"])
--- hex_core_output_chest.name = "hex-core-output-chest"
--- hex_core_output_chest.picture = nil
--- hex_core_output_chest.minable = nil
--- hex_core_output_chest.selection_box = nil
+hidden_loader.filter_count = 2
+hidden_loader.per_lane_filters = true
+hidden_loader.max_belt_stack_size = 4
+hidden_loader.adjustable_belt_stack_size = true
 
 
 

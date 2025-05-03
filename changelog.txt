@@ -4,6 +4,9 @@ Date: 3/5/25
   Bugfixes:
     - Fixed that input loaders on the sides of hex cores weren't working.
     - Fixed that new trades that should have productivity didn't.
+  Changes:
+    - Made hex core output loader filters work per-lane.
+    - Enabled (adjustable) belt stacking for hex core output loaders.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.1
 Date: 1/5/25

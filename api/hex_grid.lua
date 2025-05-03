@@ -1810,13 +1810,12 @@ function hex_grid.generate_loaders(hex_core_state)
     local filters = {}
 
     local function get_filters(loader)
-        return {loader.get_filter(1), loader.get_filter(2), loader.get_filter(3), loader.get_filter(4), loader.get_filter(5)}
+        return {loader.get_filter(1), loader.get_filter(2)}
     end
 
     local function set_filters(loader, _filters)
-        for i = 1, 5 do
-            loader.set_filter(i, _filters[i])
-        end
+        loader.set_filter(1, _filters[1])
+        loader.set_filter(2, _filters[2])
     end
 
     local entities = surface.find_entities_filtered {
