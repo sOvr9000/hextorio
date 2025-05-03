@@ -1817,7 +1817,7 @@ function hex_grid.generate_loaders(hex_core_state)
     local dx = 1
     local dy = -2
     for i = 1, 4 do
-        local dir_name = lib.get_direction_name((i + 1) % 4 + 1)
+        local dir_name = lib.get_direction_name((i + 3 - (i % 2) * 2) % 4 + 1) -- I have no idea why this works, but it does, so don't touch it.
         local dir_name_opposite = lib.get_direction_name((i + 3) % 4 + 1)
 
         local input_loader = surface.create_entity {name = "hex-core-loader", position = {position.x + dx, position.y + dy}, direction = defines.direction[dir_name], type = "input", force = "player"}
