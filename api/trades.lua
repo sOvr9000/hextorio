@@ -55,6 +55,7 @@ function trades.new(input_items, output_items, surface_name)
             count = output_item.count,
         })
     end
+    trades.check_productivity(trade)
     return trade
 end
 
@@ -621,6 +622,20 @@ function trades.increment_current_prod_value(trade, times)
     local prod_amount = math.floor(trade.current_prod_value)
     trade.current_prod_value = trade.current_prod_value - prod_amount
     return prod_amount
+end
+
+function trades.check_productivity(trade)
+    trades.set_productivity(trade, 0)
+    for j, item in ipairs(trade.input_items) do
+        if lib.is_catalog_item(item.name) then
+            trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
+        end
+    end
+    for j, item in ipairs(trade.output_items) do
+        if lib.is_catalog_item(item.name) then
+            trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
+        end
+    end
 end
 
 function trades.get_random_volume_for_item(surface_name, item_name)
