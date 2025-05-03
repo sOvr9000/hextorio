@@ -25,6 +25,7 @@ local versions = {
     "0.1.5",
     "0.2.0",
     "0.2.1",
+    "0.2.2",
 }
 
 local version_stepping = {}
@@ -150,10 +151,10 @@ local process_migration = {
         end
 
         quests.reinitialize_everything()
-
-        -- for _, player in pairs(game.players) do
-        --     gui.repopulate_quest_lists(player)
-        -- end
+    end,
+    ["0.2.1"] = function()
+        hex_grid.regenerate_all_hex_core_loaders()
+        hex_grid.update_all_trades()
     end,
 }
 

@@ -1806,11 +1806,27 @@ function hex_grid.generate_loaders(hex_core_state)
     local surface = hex_core_state.hex_core.surface
     local position = hex_core_state.hex_core.position
 
+    -- Try to preserve filters if already existent
+    local filters = {}
+
+    local function get_filters(loader)
+        return {loader.get_filter(1), loader.get_filter(2), loader.get_filter(3), loader.get_filter(4), loader.get_filter(5)}
+    end
+
+    local function set_filters(loader, _filters)
+        for i = 1, 5 do
+            loader.set_filter(i, _filters[i])
+        end
+    end
+
     local entities = surface.find_entities_filtered {
         name = "hex-core-loader",
         area = {{position.x - 2, position.y - 2}, {position.x + 2, position.y + 2}},
     }
     for _, e in pairs(entities) do
+        if e.loader_filter_mode == "whitelist" then
+            filters[lib.position_to_string(e.position)] = get_filters(e)
+        end
         e.destroy()
     end
 
@@ -1827,9 +1843,20 @@ function hex_grid.generate_loaders(hex_core_state)
         local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - dx, position.y + dy}, direction = defines.direction[dir_name_opposite], type = "output", force = "player"}
         output_loader.loader_filter_mode = "whitelist"
         output_loader.destructible = false
+        if filters[lib.position_to_string(output_loader.position)] then
+            set_filters(output_loader, filters[lib.position_to_string(output_loader.position)])
+        end
         table.insert(hex_core_state.output_loaders, output_loader)
 
         dx, dy = dy, -dx
+    end
+end
+
+function hex_grid.regenerate_all_hex_core_loaders()
+    for _, surface in pairs(game.surfaces) do
+        for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface)) do
+            hex_grid.generate_loaders(state)
+        end
     end
 end
 
