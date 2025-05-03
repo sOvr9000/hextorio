@@ -208,6 +208,21 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     quests.check_player_receive_items(player)
 end)
 
+script.on_event(defines.events.on_player_clicked_gps_tag, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    local position = event.position
+    local surface_name = event.surface
+    local surface = game.get_surface(surface_name)
+    if not surface then return end
+
+    local entity = surface.find_entity("hex-core", position)
+    if not entity then return end
+
+    player.opened = entity
+end)
+
 script.on_event(defines.events.on_gui_opened, function (event)
     local player = game.get_player(event.player_index)
     if not player then return end

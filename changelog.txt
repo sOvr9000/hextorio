@@ -3,6 +3,13 @@ Version: 0.2.2
 Date: 3/5/25
   Minor Features:
     - Copying and pasting hex core settings now copies over loader filters along with the inventory filters.
+    - Clicking on the arrow in a trade pings it in chat.
+    - Clicking on any ping in chat that's on a hex core brings up that hex core's GUI.
+    - When viewing a hex core, clicking on an item in a trade brings up that item in the Factoriopedia.
+  Features:
+    - When viewing the trade overview, clicking on an item in a trade sets the filter to that item on the opposite side of the trade.
+      For example, you click on an input item for a trade, it sets the trade overview filter so that you can see trades that let you obtain that item.
+      Helps to quickly find trade loops.
   Bugfixes:
     - Fixed that input loaders on the sides of hex cores weren't working.
     - Fixed that new trades that should have productivity didn't.

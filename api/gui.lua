@@ -366,7 +366,7 @@ function gui.init_trade_overview(player)
         local output_item = trade_contents_frame.add {
             type = "choose-elem-button",
             elem_type = "item",
-            name = "output-item-" .. i,
+            name = "output-item-" .. (4 - i), -- 4 - i to be more consistent with how trades are shown in general
         }
         if i == 1 then
             output_item.style.left_margin = 12
@@ -609,18 +609,19 @@ function gui.give_item_tooltip(player, surface_name, element)
 end
 
 function gui.give_trade_arrow_tooltip(element, trade)
+    local s = {"",
+        trades.get_total_values_str(trade),
+    }
     local prod = trades.get_productivity(trade)
     if prod > 0 then
-        element.tooltip = {"",
-            trades.get_total_values_str(trade),
-            "\n\n",
-            trades.get_productivity_bonus_str(trade),
-        }
-    else
-        element.tooltip = {"",
-            trades.get_total_values_str(trade),
-        }
+        table.insert(s, "\n\n")
+        table.insert(s, trades.get_productivity_bonus_str(trade))
     end
+    if not gui.is_descendant_of(element, "trade-contents-flow") then
+        table.insert(s, "\n\n")
+        table.insert(s, lib.color_localized_string({"hextorio-gui.click-to-ping"}, "gray"))
+    end
+    element.tooltip = s
 end
 
 function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
@@ -687,7 +688,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
                 local input_item = trade.input_items[i]
                 local input = trade_table.add {
                     type = "sprite-button",
-                    name = "input" .. tostring(i) .. "-" .. input_item.name,
+                    name = "input-" .. tostring(i) .. "-" .. input_item.name,
                     sprite = "item/" .. input_item.name,
                     number = input_item.count,
                 }
@@ -702,6 +703,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
         end
         local trade_arrow_sprite = trade_table.add {
             type = "sprite",
+            name = "trade-arrow",
             sprite = "trade-arrow",
         }
         if params.show_productivity and trades.get_productivity(trade) > 0 then
@@ -726,7 +728,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
                 local output_item = trade.output_items[j]
                 local output = trade_table.add {
                     type = "sprite-button",
-                    name = "output" .. tostring(i) .. "-" .. tostring(output_item.name),
+                    name = "output-" .. tostring(i) .. "-" .. tostring(output_item.name),
                     sprite = "item/" .. output_item.name,
                     number = output_item.count,
                 }
@@ -1566,6 +1568,8 @@ function gui.on_gui_click(event)
         gui.on_trade_overview_button_click(player)
     elseif event.element.name == "catalog-button" then
         gui.on_catalog_button_click(player)
+    elseif event.element.type == "sprite" then
+        gui.on_sprite_click(player, event.element)
     elseif event.element.type == "sprite-button" then
         gui.on_sprite_button_click(player, event.element)
     elseif event.element.type == "button" then
@@ -1573,6 +1577,43 @@ function gui.on_gui_click(event)
     elseif event.element.type == "checkbox" then
         gui.on_checkbox_click(player, event.element)
     end
+end
+
+function gui.on_sprite_click(player, element)
+    if element.name == "trade-arrow" then
+        gui.on_trade_arrow_click(player, element)
+    end
+end
+
+function gui.on_trade_arrow_click(player, element)
+    if gui.is_descendant_of(element, "trade-contents-flow") then return end
+
+    local trade, gps_str
+    if gui.is_descendant_of(element, "trade-overview") then
+        if not storage.trade_overview.trades[player.name] then return end
+
+        local trade_number = tonumber(element.parent.parent.parent.name:sub(7))
+        trade = storage.trade_overview.trades[player.name][trade_number]
+        if not trade then return end
+        if not trade.hex_core_state then return end
+        gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
+    else
+        -- it's in the hex core GUI
+        local hex_core = player.opened
+        if not hex_core then return end
+
+        local state = hex_grid.get_hex_state_from_core(hex_core)
+        if not state then return end
+
+        local trade_number = tonumber(element.parent.parent.parent.name:sub(7))
+        trade = state.trades[trade_number]
+        if not trade then return end
+
+        gps_str = hex_core.gps_tag
+    end
+
+    local trade_str = lib.get_trade_img_str(trade)
+    game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
 end
 
 function gui.on_button_click(player, element)
@@ -1663,12 +1704,10 @@ function gui.on_sprite_button_click(player, element)
                 gui.on_unloader_filters_direction_click(player, element)
             elseif element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
                 gui.on_hex_mode_button_click(player, element)
-            elseif element.parent.name == "trade-table" then
-                if player.opened and player.opened.name == "hex-core" then
-                    gui.on_hex_core_trade_item_clicked(player, element)
-                elseif player.opened and player.opened.name == "trade-overview" then
-                    gui.on_trade_overview_item_clicked(player, element)
-                end
+            elseif gui.is_descendant_of(element, "trade-overview") then
+                gui.on_trade_overview_item_clicked(player, element)
+            elseif gui.is_descendant_of(element, "hex-core") then
+                gui.on_hex_core_trade_item_clicked(player, element)
             else -- this is just horribly ugly, maybe I'll clean it up later
                 if element.parent.parent then
                     if element.parent.parent.name == "planet-flow" then
@@ -1705,14 +1744,38 @@ function gui.on_supercharge_button_click(player, element)
 end
 
 function gui.on_trade_overview_item_clicked(player, element)
-    -- todo
-    -- set overview filter
+    local item_name = element.sprite:sub(6)
+    if element.name:sub(1, 5) == "input" then
+        gui.set_trade_overview_item_filters(player, {}, {item_name})
+    else
+        gui.set_trade_overview_item_filters(player, {item_name}, {})
+    end
+end
+
+function gui.set_trade_overview_item_filters(player, input_items, output_items)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame then return end
+
+    local trade_contents_frame = frame["filter-frame"]["left"]["trade-contents-flow"]["frame"]
+
+    for i = 1, 3 do
+        local button = trade_contents_frame["input-item-" .. i]
+        button.elem_value = input_items[i]
+    end
+
+    for i = 1, 3 do
+        local button = trade_contents_frame["output-item-" .. i]
+        button.elem_value = output_items[i]
+    end
+
+    gui.update_trade_overview(player)
 end
 
 function gui.on_hex_core_trade_item_clicked(player, element)
     local item_name = element.sprite:sub(6)
     local prot = prototypes.item[item_name]
     if not prot then return end
+    gui.close_all(player)
     player.open_factoriopedia_gui(prot)
 end
 
@@ -2048,6 +2111,13 @@ function gui.update_player_trade_overview_filters(player)
     if not next(filter.output_items) then
         filter.output_items = nil
     end
+end
+
+function gui.is_descendant_of(element, parent_name)
+    local parent = element.parent
+    if not parent then return false end
+    if parent.name == parent_name then return true end
+    return gui.is_descendant_of(parent, parent_name)
 end
 
 function gui.auto_width(element)

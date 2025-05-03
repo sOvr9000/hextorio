@@ -621,8 +621,8 @@ function lib.get_trade_img_str(trade)
         s = s .. "[img=item." .. item.name .. "]"
     end
     s = s .. "[img=trade-arrow]"
-    for _, item in pairs(trade.output_items) do
-        s = s .. "[img=item." .. item.name .. "]"
+    for i = 1, #trade.output_items do
+        s = s .. "[img=item." .. trade.output_items[#trade.output_items + 1 - i].name .. "]"
     end
     return s
 end
