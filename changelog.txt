@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.2
 Date: 3/5/25
+  Minor Features:
+    - Copying and pasting hex core settings now copies over loader filters along with the inventory filters.
   Bugfixes:
     - Fixed that input loaders on the sides of hex cores weren't working.
     - Fixed that new trades that should have productivity didn't.

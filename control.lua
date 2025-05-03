@@ -239,6 +239,16 @@ script.on_event(defines.events.on_gui_selection_state_changed, function (event)
     gui.on_gui_item_selected(event)
 end)
 
+script.on_event(defines.events.on_entity_settings_pasted, function (event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    local source = event.source
+    destination = event.destination
+
+    hex_grid.on_entity_settings_pasted(player, source, destination)
+end)
+
 script.on_configuration_changed(function(handler)
 
     -- log("mod updated?")

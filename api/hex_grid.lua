@@ -1859,6 +1859,20 @@ function hex_grid.regenerate_all_hex_core_loaders()
     end
 end
 
+function hex_grid.on_entity_settings_pasted(player, source, destination)
+    if source.name ~= "hex-core" or destination.name ~= "hex-core" then return end
+
+    local source_state = hex_grid.get_hex_state_from_core(source)
+    if not source_state then return end
+
+    local destination_state = hex_grid.get_hex_state_from_core(destination)
+    if not destination_state then return end
+
+    for i, loader in ipairs(destination_state.output_loaders) do
+        loader.copy_settings(source_state.output_loaders[i], player)
+    end
+end
+
 -- Fill edges between adjacent claimed hexes using sum of squared distances method
 function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
     local surface_id = lib.get_surface_id(surface)
