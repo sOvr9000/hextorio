@@ -1463,7 +1463,7 @@ end
 -- Check if a hex core can be spawned within a hex
 function hex_grid.can_hex_core_spawn(surface, hex_pos)
     local state = hex_grid.get_hex_state(surface, hex_pos)
-    if state.hex_core or not state.is_land then
+    if state.hex_core or not state.is_land or state.deleted then
         return false
     end
     if hex_pos.q == 0 and hex_pos.r == 0 then
@@ -1767,23 +1767,21 @@ end
 function hex_grid.delete_hex_core(hex_core)
     if not hex_core or not hex_core.valid then return end
 
-    local surface_hexes = hex_grid.get_surface_hexes(hex_core.surface)
-
     local state = hex_grid.get_hex_state_from_core(hex_core)
 
-    local entities = hex_core.surface.find_entities_filtered {name = "hex-core-loader", radius = 2}
+    local entities = hex_core.surface.find_entities_filtered {name = "hex-core-loader", radius = 3, position = hex_core.position}
     for _, e in pairs(entities) do
         e.destroy()
     end
 
     hex_core.destroy()
+    event_system.trigger("hex-core-deleted", state)
 
     if not state then return end
 
-    local Q = surface_hexes[state.position.q]
-    if not Q then return end
-
-    Q[state.position.r] = nil
+    state.trades = nil
+    state.hex_core = nil
+    state.deleted = true
 end
 
 function hex_grid.supercharge_resources(hex_core)
@@ -2157,6 +2155,7 @@ end
 
 function hex_grid.update_hex_core(state)
     -- Check if trades can occur
+    if not state.trades then return end
     local inventory_input = state.hex_core_input_inventory
     if not inventory_input then return end
     local inventory_output = state.hex_core_output_inventory

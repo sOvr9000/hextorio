@@ -64,6 +64,13 @@ function gui.register_events()
             gui.update_questbook(player)
         end
     end)
+
+    event_system.register_callback("hex-core-deleted", function(state)
+        if not state then return end
+        for _, player in pairs(game.players) do
+            gui.update_trade_overview(player)
+        end
+    end)
 end
 
 function gui.reinitialize_everything(player)
