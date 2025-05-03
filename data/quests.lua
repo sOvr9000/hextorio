@@ -142,5 +142,12 @@ return {
             prerequisites = {"find-some-trades"},
             has_img = false,
         },
+        {
+            name = "catalog-initiate",
+            conditions = {{type = "total-item-rank", progress_requirement = 30}},
+            rewards = {{type = "unlock-feature", value = "trade-loop-finder"}},
+            prerequisites = {"ground-zero"},
+            has_img = false,
+        },
     },
 }

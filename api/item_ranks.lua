@@ -1,6 +1,7 @@
 
 local lib = require "api.lib"
 local event_system = require "api.event_system"
+local quests       = require "api.quests"
 
 local item_ranks = {}
 
@@ -17,6 +18,9 @@ function item_ranks.register_events()
             item_ranks.rank_up(item_name)
         end
         event_system.trigger("post-rank-up-all-command", player, params)
+    end)
+    event_system.register_callback("quests-reinitialized", function()
+        quests.set_progress_for_type("total-item-rank", item_ranks.get_total_item_rank())
     end)
 end
 
@@ -102,8 +106,9 @@ function item_ranks.rank_up(item_name)
     end
 
     game.print({localization, "[item=" .. item_name .. "]", lib.get_rank_img_str(rank.rank)})
-
     event_system.trigger("item-rank-up", item_name)
+
+    quests.increment_progress_for_type "total-item-rank"
 
     return true
 end
@@ -125,6 +130,16 @@ function item_ranks.get_rank_bonus_effect(rank_tier)
         return 0.5
     end
     lib.log_error("item_ranks.get_rank_bonus_effect: rank_tier is out of range: " .. rank_tier)
+end
+
+-- Count the total number of stars in the item ranks.
+-- Bronze star rank has one star, and it is item rank 2, but it is only counted as one toward the total.
+function item_ranks.get_total_item_rank()
+    local total = 0
+    for _, rank in pairs(storage.item_ranks.item_ranks) do
+        total = total + rank.rank - 1
+    end
+    return total
 end
 
 

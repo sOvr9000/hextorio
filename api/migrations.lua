@@ -26,6 +26,7 @@ local versions = {
     "0.2.0",
     "0.2.1",
     "0.2.2",
+    "0.2.3",
 }
 
 local version_stepping = {}
@@ -155,6 +156,9 @@ local process_migration = {
     ["0.2.1"] = function()
         hex_grid.regenerate_all_hex_core_loaders()
         hex_grid.update_all_trades()
+    end,
+    ["0.2.2"] = function()
+        quests.reinitialize_everything()
     end,
 }
 
