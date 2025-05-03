@@ -1781,6 +1781,8 @@ function hex_grid.delete_hex_core(hex_core)
 
     state.trades = nil
     state.hex_core = nil
+    state.input_loaders = nil
+    state.output_loaders = nil
     state.deleted = true
 end
 
