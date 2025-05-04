@@ -68,7 +68,9 @@ function gui.register_events()
     event_system.register_callback("hex-core-deleted", function(state)
         if not state then return end
         for _, player in pairs(game.players) do
-            gui.update_trade_overview(player)
+            if player.gui.screen["trade-overview"].visible then
+                gui.update_trade_overview(player)
+            end
         end
     end)
 end
