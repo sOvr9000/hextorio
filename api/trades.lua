@@ -644,37 +644,6 @@ function trades.get_random_volume_for_item(surface_name, item_name)
     return random_volume
 end
 
--- Performs one step of computation to find cycles, returning one cycle per call, or nil if none found within a certain amount of processing.
--- `trades_tree` maps item names to lists of trades, where each trade in the list of trades contains the corresponding item as an input.  This structure helps to quickly find loops.
--- `params` is a table of parameters for the search.
--- `state` is used internally for the search to process iterations over time.
-function trades.find_loops(trades_tree, params, state)
-    if not params then params = {} end
-    if not state then state = {} end
-
-    if not params.max_steps_per_iteration then
-        params.max_steps_per_iteration = 50
-    end
-
-    if params.allow_cross_surface == nil then
-        params.allow_cross_surface = true
-    end
-
-    if not params.max_excess then
-        params.max_excess = 1
-    end
-
-    if not params.max_required then
-        params.max_required = 1
-    end
-
-    if not params.max_cycle_size then
-        params.max_cycle_size = 3
-    end
-
-    -- todo
-end
-
 
 
 return trades
