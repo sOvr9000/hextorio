@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.3
 Date: 6/5/25
-  Major Features:
+  Features:
+    - Added more quests.
+  Changes:
     - Added rewards to some quests which enable claiming some hexes for free.
   Bugfixes:
     - Fixed that deleting a hex core would delete all hex core loaders and unloaders on the map.
