@@ -744,6 +744,8 @@ function hex_grid.register_events()
                 end
             end
             trades.discover_items_in_trades(all_trades)
+        elseif reward_type == "claim-free-hexes" then
+            hex_grid.add_free_hex_claims(value[1], value[2])
         end
     end)
 
@@ -1493,6 +1495,8 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
 
     if not state.is_land and not allow_nonland then return end
 
+    if hex_grid.get_free_hex_claims(surface.name) > 0 then return true end
+
     local coin = state.claim_price
     if not coin or coin_tiers.is_zero(coin) then
         return true
@@ -1544,7 +1548,9 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         tile_name = lib.player_setting_value(by_player, "claimed-hex-tile")
 
         -- Purchase
-        coin_tiers.remove_coin_from_inventory(lib.get_player_inventory(by_player), state.claim_price)
+        if hex_grid.get_free_hex_claims(surface) == 0 then
+            coin_tiers.remove_coin_from_inventory(lib.get_player_inventory(by_player), state.claim_price)
+        end
     end
     if not tile_name then
         if storage.hex_grid.last_used_claim_tile then
@@ -1585,6 +1591,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     trades.discover_items_in_trades(state.trades)
 
     hex_grid.check_hex_span(surface, hex_pos)
+    hex_grid.add_free_hex_claims(surface, -1)
     quests.increment_progress_for_type("claimed-hexes", 1)
 end
 
@@ -1613,7 +1620,7 @@ end
 function hex_grid.check_hex_span(surface, hex_pos)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
-        lib.log_error("hex_grid.check_hex_span: No surface found")
+        lib.log_r("hex_grid.check_hex_span: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
@@ -1628,6 +1635,32 @@ function hex_grid.check_hex_span(surface, hex_pos)
     storage.hex_grid.hex_span[surface] = math.max(span, storage.hex_grid.hex_span[surface] or 0)
 
     quests.set_progress_for_type("hex-span", span)
+end
+
+function hex_grid.add_free_hex_claims(surface, amount)
+    local surface_id = lib.get_surface_id(surface)
+    if not surface_id then
+        lib.log_error("hex_grid.add_free_hex_claims: No surface found")
+        return
+    end
+
+    if not storage.hex_grid.free_hex_claims then
+        storage.hex_grid.free_hex_claims = {}
+    end
+    storage.hex_grid.free_hex_claims[surface_id] = math.max(0, (storage.hex_grid.free_hex_claims[surface_id] or 0) + (amount or 1))
+end
+
+function hex_grid.get_free_hex_claims(surface)
+    local surface_id = lib.get_surface_id(surface)
+    if not surface_id then
+        lib.log_error("hex_grid.get_free_hex_claims: No surface found")
+        return
+    end
+
+    if not storage.hex_grid.free_hex_claims then
+        return 0
+    end
+    return storage.hex_grid.free_hex_claims[surface_id] or 0
 end
 
 -- Handle chunk generation event for the hex grid

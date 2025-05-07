@@ -778,6 +778,42 @@ function lib.safe_insert(player, item_stack)
     end
 end
 
+-- Check if two tables are equal.
+-- NOTE: Unsafe for circularly referencing tables
+function lib.tables_equal(tab1, tab2)
+    -- If one or both arguments are not tables, compare them directly
+    if type(tab1) ~= "table" or type(tab2) ~= "table" then
+        return tab1 == tab2
+    end
+
+    -- Check if tables have the same number of keys
+    local count1 = 0
+    for _ in pairs(tab1) do
+        count1 = count1 + 1
+    end
+
+    local count2 = 0
+    for _ in pairs(tab2) do
+        count2 = count2 + 1
+    end
+
+    if count1 ~= count2 then
+        return false
+    end
+
+    -- Recursively check each key-value pair
+    for k, v1 in pairs(tab1) do
+        local v2 = tab2[k]
+        -- If key doesn't exist in tab2 or values aren't equal (recursively)
+        if v2 == nil or not lib.tables_equal(v1, v2) then
+            return false
+        end
+    end
+
+    -- All checks passed, tables are equal
+    return true
+end
+
 
 
 return lib

@@ -32,17 +32,23 @@ function quests.init()
         lib.log(def.name)
         local quest = quests.new_quest(def)
         if quest then
-            if not storage.quests.quests[def.name] then -- don't overwrite old quest progress
+            -- don't overwrite old quest progress
+            if storage.quests.quests[def.name] then
+                -- check if extra rewards have been added due to migration
+                local extra_rewards = quests.get_reward_list_additions(quest, storage.quests.quests[def.name])
+                for _, reward in pairs(extra_rewards) do
+                    table.insert(storage.quests.quests[def.name].rewards, reward)
+                end
+                if storage.quests.quests[def.name].complete then
+                    table.insert(check_rev, quest)
+                end
+            else
                 storage.quests.quests[def.name] = quest
                 quest.order = 0
                 quests.index_by_condition_types(quest)
 
                 if not quest.prerequisites or not next(quest.prerequisites) then
                     table.insert(reveal, quest)
-                end
-            else
-                if storage.quests.quests[def.name].complete then
-                    table.insert(check_rev, quest)
                 end
             end
         end
@@ -71,6 +77,25 @@ function quests.index_by_condition_types(quest)
         end
         table.insert(t, quest)
     end
+end
+
+function quests.get_reward_list_additions(new_quest, old_quest)
+    local additions = {}
+
+    for _, new_reward in pairs(new_quest.rewards) do
+        local found = false
+        for _, old_reward in pairs(old_quest.rewards) do
+            if quests.rewards_equal(new_reward, old_reward) then
+                found = true
+                break
+            end
+        end
+        if not found then
+            table.insert(additions, new_reward)
+        end
+    end
+
+    return additions
 end
 
 function quests.new_quest(params)
@@ -160,6 +185,30 @@ function quests.new_reward(params)
     return reward
 end
 
+function quests.conditions_equal(condition1, condition2)
+    if condition1.type ~= condition2.type then return false end
+    if condition1.progress_requirement ~= condition2.progress_requirement then return false end
+
+    return true
+end
+
+function quests.rewards_equal(reward1, reward2)
+    if reward1.type ~= reward2.type then return false end
+    if type(reward1.value) ~= type(reward2.value) then return false end
+
+    if type(reward1.value) == "table" then
+        if not lib.tables_equal(reward1.value, reward2.value) then
+            return false
+        end
+    else
+        if reward1.value ~= reward2.value then
+            return false
+        end
+    end
+
+    return true
+end
+
 function quests.calculate_quest_order()
     local visited = {}
     local function dfs(quest)
@@ -193,39 +242,39 @@ function quests.get_quest(quest_name)
 end
 
 function quests.get_quest_localized_title(quest)
-    return {"quest." .. quest.name .. "-title"}
+    return {"quest-title." .. quest.name}
 end
 
 function quests.get_quest_localized_description(quest)
-    return {"quest." .. quest.name .. "-desc"}
+    return {"quest-description." .. quest.name}
 end
 
 function quests.get_condition_localized_name(condition)
-    return {"quest-condition." .. condition.type .. "-name"}
+    return {"quest-condition-name." .. condition.type}
 end
 
 function quests.get_condition_localized_description(condition, ...)
-    return {"quest-condition." .. condition.type .. "-desc", ...}
+    return {"quest-condition-description." .. condition.type, ...}
 end
 
 function quests.get_reward_localized_name(reward)
-    return {"quest-reward." .. reward.type .. "-name"}
+    return {"quest-reward-name." .. reward.type}
 end
 
 function quests.get_reward_localized_description(reward, ...)
-    return {"quest-reward." .. reward.type .. "-desc", ...}
+    return {"quest-reward-description." .. reward.type, ...}
 end
 
 function quests.get_localized_note(note_name)
-    return {"hextorio-questbook.note-" .. note_name}
+    return {"questbook-note." .. note_name}
 end
 
 function quests.get_feature_localized_name(feature_name)
-    return {"hextorio-feature." .. feature_name .. "-name"}
+    return {"feature-name." .. feature_name}
 end
 
 function quests.get_feature_localized_description(feature_name)
-    return {"hextorio-feature." .. feature_name .. "-desc"}
+    return {"feature-description." .. feature_name}
 end
 
 -- Dish out the rewards of a quest.
@@ -304,7 +353,11 @@ function quests.print_quest_completion(quest)
         else
             table.insert(s, lib.color_localized_string(quests.get_reward_localized_name(reward), "white", "heading-1"))
             table.insert(s, " ")
-            table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "[color=green]" .. reward.value .. "[.color]"), "gray"))
+            if type(reward.value) == "table" then
+                table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "green", "heading-1", table.unpack(reward.value)), "gray"))
+            else
+                table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "green", "heading-1", reward.value), "gray"))
+            end
         end
         table.insert(rewards_str, s)
     end

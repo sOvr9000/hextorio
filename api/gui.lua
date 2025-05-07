@@ -177,6 +177,7 @@ function gui.init_hex_core(player)
     hex_core_gui.add {type = "line", direction = "horizontal"}
 
     local claim_flow = hex_core_gui.add {type = "flow", name = "claim-flow", direction = "vertical"}
+    local free_hexes_remaining = claim_flow.add {type = "label", name = "free-hexes-remaining"}
     local claim_price = gui.create_coin_tier(claim_flow, "claim-price")
     local claim_hex = claim_flow.add {type = "button", name = "claim-hex", caption = {"hex-core-gui.claim-hex"}, style = "confirm_button"}
     claim_hex.tooltip = nil
@@ -783,9 +784,6 @@ function gui.update_hex_core(player)
     frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation"
     frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion"
 
-    local coin = state.claim_price
-    gui.update_coin_tier(frame["claim-flow"]["claim-price"], coin)
-
     if state.claimed then
         frame["claim-flow"].visible = false
         local claimed_by_name = state.claimed_by or {"hextorio.server"}
@@ -854,6 +852,16 @@ function gui.update_hex_core(player)
         frame["trades-total-bought-none"].visible = false
 
         frame["hex-control-flow"].visible = false
+
+        if hex_grid.get_free_hex_claims(hex_core.surface.name) > 0 then
+            frame["claim-flow"]["free-hexes-remaining"].visible = true
+            frame["claim-flow"]["free-hexes-remaining"].caption = {"", lib.color_localized_string({"hextorio-gui.quest-reward"}, "white", "heading-2"), " ", {"hextorio-gui.quest-reward-free-hexes-remaining", hex_grid.get_free_hex_claims(hex_core.surface.name), "green", "heading-2"}}
+            gui.update_coin_tier(frame["claim-flow"]["claim-price"], coin_tiers.new())
+        else
+            frame["claim-flow"]["free-hexes-remaining"].visible = false
+            local coin = state.claim_price
+            gui.update_coin_tier(frame["claim-flow"]["claim-price"], coin)
+        end
     end
 
     frame["delete-core-confirmation"].visible = false
@@ -993,7 +1001,7 @@ function gui.update_questbook(player, quest_name)
         local condition_desc = condition_frame.add {
             type = "label",
             name = "desc",
-            caption = quests.get_condition_localized_description(condition, "[color=green]" .. condition_str .. "[.color]"),
+            caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2"),
         }
         condition_desc.style.single_line = false
         gui.auto_width(condition_desc)
@@ -1026,20 +1034,20 @@ function gui.update_questbook(player, quest_name)
             caption = quests.get_reward_localized_name(reward),
         }
         reward_frame.style.horizontally_squashable = false
-        local reward_str
+        local caption
         if reward.type == "unlock-feature" then
-            reward_str = lib.color_localized_string(quests.get_feature_localized_name(reward.value), "orange", "heading-2")
+            caption = quests.get_reward_localized_description(reward, "orange", "heading-2", quests.get_feature_localized_name(reward.value))
+        elseif reward.type == "receive-items" then
+            caption = quests.get_reward_localized_description(reward)
+        elseif type(reward.value) == "table" then
+            caption = quests.get_reward_localized_description(reward, "green", "heading-2", table.unpack(reward.value))
         else
-            if reward.type == "receive-items" then
-                reward_str = ""
-            else
-                reward_str = "[font=heading-2][color=green]" .. reward.value .. "[.color][.font]"
-            end
+            caption = quests.get_reward_localized_description(reward, "green", "heading-2", reward.value)
         end
         local reward_desc = reward_frame.add {
             type = "label",
             name = "desc",
-            caption = quests.get_reward_localized_description(reward, reward_str),
+            caption = caption,
         }
         reward_desc.style.single_line = false
         gui.auto_width(reward_desc)
@@ -1485,7 +1493,7 @@ function gui.add_quest_to_list(list, quest)
 end
 
 function gui.get_quest_from_list_item(item)
-    local quest_name = item[1]:sub(7, -7)
+    local quest_name = item[1]:sub(13)
     return quests.get_quest(quest_name)
 end
 

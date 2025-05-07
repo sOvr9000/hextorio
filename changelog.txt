@@ -1,8 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.3
-Date: 3/5/25
+Date: 6/5/25
   Major Features:
-    - Added trade loop finder. Locked behind a new quest.
+    - Added rewards to some quests which enable claiming some hexes for free.
   Bugfixes:
     - Fixed that deleting a hex core would delete all hex core loaders and unloaders on the map.
     - Fixed that claiming hexes adjacent to a hex where a core was deleted wasn't forming a bridge.

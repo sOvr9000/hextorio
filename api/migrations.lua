@@ -158,7 +158,18 @@ local process_migration = {
         hex_grid.update_all_trades()
     end,
     ["0.2.2"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs -- only copy this over so that quest progress isn't reset
         quests.reinitialize_everything()
+
+        for _, quest in pairs(storage.quests.quests) do
+            if quest.complete then
+                for _, reward in pairs(quest.rewards) do
+                    if reward.type == "claim-free-hexes" then
+                        hex_grid.add_free_hex_claims(reward.value[1], reward.value[2])
+                    end
+                end
+            end
+        end
     end,
 }
 
