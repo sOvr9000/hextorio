@@ -34,10 +34,12 @@ function lib.vector_multiply(a, b)
     return {x=(a.x or a[1]) * b, y=(a.y or a[2]) * b}
 end
 
+---@param surface LuaSurface|SurfaceIdentification|int|string
+---@return int
 function lib.get_surface_id(surface)
     if not surface then
         lib.log_error("get_surface_id: No surface provided")
-        return
+        return -1
     end
     if type(surface) == "number" then
         return surface
@@ -45,13 +47,15 @@ function lib.get_surface_id(surface)
         local s = game.get_surface(surface)
         if not s then
             lib.log_error("get_surface_id: Surface not found for name: " .. surface)
-            return
+            return -1
         end
         return s.index
     elseif type(surface) == "userdata" then
+        surface = surface--[[@as LuaSurface]]
         return surface.index
     end
     lib.log_error("Invalid surface type")
+    return -1
 end
 
 function lib.random_unit_vector(length)

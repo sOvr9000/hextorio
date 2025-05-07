@@ -264,15 +264,21 @@ script.on_event(defines.events.on_entity_settings_pasted, function (event)
     hex_grid.on_entity_settings_pasted(player, source, destination)
 end)
 
+script.on_event(defines.events.on_entity_died, function (event)
+    if event.entity.name == "biter-spawner" or event.entity.name == "spitter-spawner" then
+        if event.cause and (event.cause.name == "car" or event.cause.name == "tank") then
+            event_system.trigger("spawner-rammed", event.entity, event.cause)
+        end
+    end
+end)
+
 script.on_configuration_changed(function(handler)
 
-    -- log("mod updated?")
-    
     local changes = handler.mod_changes.hextorio
     if changes and changes.old_version ~= changes.new_version then
         migrations.on_mod_updated(changes.old_version, changes.new_version)
     end
-    
+
     for _, player in pairs(game.players) do
         player.gui.relative.clear()
         gui.init_hex_core(player)

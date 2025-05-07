@@ -3,6 +3,7 @@ Version: 0.2.3
 Date: 6/5/25
   Features:
     - Added more quests.
+    - Implemented the Biter Rammer quest.
   Changes:
     - Added rewards to some quests which enable claiming some hexes for free.
   Bugfixes:

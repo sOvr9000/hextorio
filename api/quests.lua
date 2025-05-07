@@ -15,6 +15,10 @@ function quests.register_events()
             player.print("Unrecognized quest name: " .. params[1])
         end
     end)
+
+    event_system.register_callback("spawner-rammed", function(spawner, vehicle)
+        quests.increment_progress_for_type "biter-ramming"
+    end)
 end
 
 function quests.reinitialize_everything()

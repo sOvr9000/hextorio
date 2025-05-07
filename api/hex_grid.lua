@@ -746,6 +746,8 @@ function hex_grid.register_events()
             trades.discover_items_in_trades(all_trades)
         elseif reward_type == "claim-free-hexes" then
             hex_grid.add_free_hex_claims(value[1], value[2])
+        elseif reward_type == "reduce-biters" then
+            hex_grid.reduce_biters(value * 0.01)
         end
     end)
 
@@ -1098,11 +1100,17 @@ function hex_grid.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid
     hex_grid.set_tiles(surface, border_tiles, "water")
 end
 
+---@param surface SurfaceIdentification|LuaSurface|string
+---@return {scale:number, rotation:number, stroke_width:number}
 function hex_grid.get_surface_transformation(surface)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
         lib.log_error("Cannot find surface from " .. serpent.line(surface))
-        return
+        return {
+            scale = 24,
+            rotation = 0,
+            stroke_width = 5,
+        }
     end
 
     local transformations = storage.hex_grid.surface_transformations
@@ -1113,6 +1121,9 @@ function hex_grid.get_surface_transformation(surface)
     end
     if not transformation.scale then
         transformation.scale = lib.startup_setting_value "hex-size"
+        if not transformation.scale then
+            transformation.scale = 24
+        end
     end
     if not transformation.rotation then
         local mode = lib.startup_setting_value "grid-rotation-mode"
@@ -1122,10 +1133,15 @@ function hex_grid.get_surface_transformation(surface)
             transformation.rotation = math.pi * 0.5
         elseif mode == "pointed-top" then
             transformation.rotation = 0
+        else
+            transformation.rotation = 0
         end
     end
     if not transformation.stroke_width then
         transformation.stroke_width = lib.startup_setting_value "hex-stroke-width"
+        if not transformation.stroke_width then
+            transformation.stroke_width = 5
+        end
     end
     return transformation
 end
@@ -1227,6 +1243,13 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
         if is_biter_hex then
             local biter_chance = lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["enemy-base"].frequency)
+            log("before: " .. biter_chance)
+
+            if storage.hex_grid.total_biter_multiplier then
+                biter_chance = biter_chance * storage.hex_grid.total_biter_multiplier
+            end
+            log("after: " .. biter_chance)
+
             is_biter_hex = math.random() < biter_chance
             if is_biter_hex then
                 if hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
@@ -2257,6 +2280,32 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
         end
         game.print({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"})
         game.print(hex_cores_str)
+    end
+end
+
+function hex_grid.reduce_biters(portion)
+    log("reducing biters by " .. portion)
+    local transformation = hex_grid.get_surface_transformation "nauvis"
+    if not transformation then return end
+
+    log(transformation.scale)
+
+    storage.hex_grid.total_biter_multiplier = (storage.total_biter_multiplier or 1) * (1 - portion)
+    local surface = game.surfaces.nauvis
+
+    for _, state in pairs(hex_grid.get_flattened_surface_hexes "nauvis") do
+        if state.is_biters then
+            if math.random() < portion then
+                local entities = surface.find_entities_filtered {
+                    force = "enemy",
+                    position = hex_grid.get_hex_center(state.position, transformation.scale, transformation.rotation),
+                    radius = transformation.scale,
+                }
+                for _, e in pairs(entities) do
+                    e.destroy()
+                end
+            end
+        end
     end
 end
 

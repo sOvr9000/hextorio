@@ -89,10 +89,9 @@ return {
         },
         {
             name = "biter-rammer",
-            conditions = {{type = "biter-ramming"}},
-            rewards = {{type = "reduce-biters", value = 50}, {type = "claim-free-hexes", value = {"nauvis", 2}}},
+            conditions = {{type = "biter-ramming", show_progress_bar = false}},
+            rewards = {{type = "reduce-biters", value = 25}, {type = "claim-free-hexes", value = {"nauvis", 2}}},
             prerequisites = {"ground-zero"},
-            show_progress_bar = false,
         },
         {
             name = "exploration",

@@ -159,6 +159,7 @@ local process_migration = {
     end,
     ["0.2.2"] = function()
         storage.quests.quest_defs = data_quests.quest_defs -- only copy this over so that quest progress isn't reset
+        storage.quests.quests["biter-rammer"].rewards[1].value = 25
         quests.reinitialize_everything()
 
         for _, quest in pairs(storage.quests.quests) do
