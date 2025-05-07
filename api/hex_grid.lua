@@ -1620,7 +1620,7 @@ end
 function hex_grid.check_hex_span(surface, hex_pos)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
-        lib.log_r("hex_grid.check_hex_span: No surface found")
+        lib.log_error("hex_grid.check_hex_span: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
