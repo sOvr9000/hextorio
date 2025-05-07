@@ -236,11 +236,12 @@ function trades.get_productivity_bonus_str(trade)
     end
 
     local bonus_strs = {}
+
     for _, input_item in pairs(trade.input_items) do
         if item_ranks.is_item_rank_defined(input_item.name) then
             local rank = item_ranks.get_item_rank(input_item.name)
             if rank >= 2 then
-                table.insert(bonus_strs, "[img=item." .. input_item.name .. "] +[color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, false) .. "[.color]%")
+                table.insert(bonus_strs, "[img=item." .. input_item.name .. "] +[color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, false) .. "%[.color]")
             end
         end
     end
@@ -248,15 +249,23 @@ function trades.get_productivity_bonus_str(trade)
         if item_ranks.is_item_rank_defined(output_item.name) then
             local rank = item_ranks.get_item_rank(output_item.name)
             if rank >= 2 then
-                table.insert(bonus_strs, "[img=item." .. output_item.name .. "] +[color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, false) .. "[.color]%")
+                table.insert(bonus_strs, "[img=item." .. output_item.name .. "] +[color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, false) .. "%[.color]")
             end
         end
     end
 
-    return {"",
+    local str = {"",
         lib.color_localized_string({"hextorio-gui.productivity-bonus"}, "purple", "heading-2"),
-        "\n" .. table.concat(bonus_strs, "\n") .. "\n[font=heading-2]=[color=green]" .. lib.format_percentage(prod, 0, false) .. "[.color]%[.font]",
+        "\n" .. table.concat(bonus_strs, "\n") .. "\n[font=heading-2]=[color=green]" .. lib.format_percentage(prod, 0, false) .. "%[.color][.font]",
     }
+
+    if trades.get_base_trade_productivity() > 0 then
+        table.insert(str, 3, "\n")
+        table.insert(str, 4, lib.color_localized_string({"hextorio-gui.quest-reward"}, "white", "heading-2"))
+        table.insert(str, 5, " +[color=green]" .. lib.format_percentage(trades.get_base_trade_productivity(), 0, false) .. "%[.color]")
+    end
+
+    return str
 end
 
 function trades.get_input_coins_from_inventory_trade(inventory, trade)
@@ -624,8 +633,20 @@ function trades.increment_current_prod_value(trade, times)
     return prod_amount
 end
 
+function trades.get_base_trade_productivity()
+    return storage.trades.base_productivity or 0
+end
+
+function trades.set_base_trade_productivity(prod)
+    storage.trades.base_productivity = prod
+end
+
+function trades.increment_base_trade_productivity(prod)
+    storage.trades.base_productivity = (storage.trades.base_productivity or 0) + prod
+end
+
 function trades.check_productivity(trade)
-    trades.set_productivity(trade, 0)
+    trades.set_productivity(trade, trades.get_base_trade_productivity())
     for j, item in ipairs(trade.input_items) do
         if lib.is_catalog_item(item.name) then
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))

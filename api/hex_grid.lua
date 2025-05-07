@@ -748,6 +748,9 @@ function hex_grid.register_events()
             hex_grid.add_free_hex_claims(value[1], value[2])
         elseif reward_type == "reduce-biters" then
             hex_grid.reduce_biters(value * 0.01)
+        elseif reward_type == "all-trades-productivity" then
+            trades.increment_base_trade_productivity(value * 0.01)
+            hex_grid.update_all_trades()
         end
     end)
 
