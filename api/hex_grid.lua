@@ -1246,12 +1246,10 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
         if is_biter_hex then
             local biter_chance = lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["enemy-base"].frequency)
-            log("before: " .. biter_chance)
 
             if storage.hex_grid.total_biter_multiplier then
                 biter_chance = biter_chance * storage.hex_grid.total_biter_multiplier
             end
-            log("after: " .. biter_chance)
 
             is_biter_hex = math.random() < biter_chance
             if is_biter_hex then

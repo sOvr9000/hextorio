@@ -818,6 +818,12 @@ function lib.tables_equal(tab1, tab2)
     return true
 end
 
+---@param surface LuaSurface
+---@return boolean
+function lib.is_space_platform(surface)
+    return surface.name:sub(1, 9) == "platform-"
+end
+
 
 
 return lib

@@ -12,6 +12,8 @@ local migrations = require "api.migrations"
 local trades = require "api.trades"
 local item_ranks = require "api.item_ranks"
 local quests = require "api.quests"
+local blueprints = require "api.blueprints"
+local space_platforms = require "api.space_platforms"
 
 hex_grid.register_events()
 trades.register_events()
@@ -31,6 +33,7 @@ local data_quests = require "data.quests"
 local data_item_ranks = require "data.item_ranks"
 local data_event_system = require "data.event_system"
 local data_trade_overview = require "data.trade_overview"
+local data_blueprints = require "data.blueprints"
 
 
 
@@ -52,6 +55,7 @@ script.on_init(function()
     storage.item_ranks = data_item_ranks
     storage.event_system = data_event_system
     storage.trade_overview = data_trade_overview
+    storage.blueprints = data_blueprints
 
     for _, surface_vals in pairs(storage.item_values.values) do
         surface_vals['hex-coin'] = 10
@@ -106,6 +110,7 @@ script.on_init(function()
 
     item_values.init()
     quests.init()
+    blueprints.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -148,7 +153,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         end
     end
 
-    if surface.name == "space-platform" then return end
+    if lib.is_space_platform(surface) then return end
     if surface.name == "hextorio-temp" then return end
     if storage.events.is_nauvis_generating then return end
 

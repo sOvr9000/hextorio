@@ -1,6 +1,7 @@
 
 local lib = require "api.lib"
 local event_system = require "api.event_system"
+local space_platforms = require "api.space_platforms"
 local sets = require "api.sets"
 
 
@@ -83,8 +84,10 @@ function on_command(player, command, params)
         -- Enable cheat mode (spawn in items instead of crafting them)
         player.cheat_mode = true
 
-        player.insert {name = "car", count = 4} -- lol
-        player.insert {name = "nuclear-fuel", count = 10}
+        local sp = space_platforms.new("nauvis", "Hexaclysm")
+        if sp then
+            space_platforms.generate_tier1_ship(sp)
+        end
     end
 
     event_system.trigger("command-" .. command, player, params)
