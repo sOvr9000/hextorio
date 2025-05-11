@@ -851,6 +851,14 @@ function lib.flattened_position_array(arr)
     return flat
 end
 
+function lib.is_t2_planet(surface_name)
+    return surface_name == "vulcanus" or surface_name == "fulgora" or surface_name == "gleba"
+end
+
+function lib.is_t3_planet(surface_name)
+    return surface_name == "aquilo"
+end
+
 
 
 return lib

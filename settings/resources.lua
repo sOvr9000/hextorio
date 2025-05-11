@@ -177,7 +177,7 @@ data:extend({
         type = "int-setting",
         name = "hextorio-min-tungsten-dist",
         setting_type = "runtime-global",
-        default_value = 5,
+        default_value = 6,
         minimum_value = 1,
         maximum_value = 100,
         order = "ia",
@@ -187,7 +187,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-resource-bias",
         setting_type = "runtime-global",
-        default_value = 1.0,
+        default_value = 4.0,
         order = "ja",
     },
     {
@@ -236,31 +236,63 @@ data:extend({
     },
     {
         type = "double-setting",
+        name = "hextorio-base-resource-width-nauvis",
+        setting_type = "runtime-global",
+        default_value = 1,
+        minimum_value = 1,
+        order = "kba",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-base-resource-width-vulcanus",
+        setting_type = "runtime-global",
+        default_value = 4,
+        minimum_value = 1,
+        order = "kbb",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-base-resource-width-fulgora",
+        setting_type = "runtime-global",
+        default_value = 2,
+        minimum_value = 1,
+        order = "kbc",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-base-resource-width-gleba",
+        setting_type = "runtime-global",
+        default_value = 1,
+        minimum_value = 1,
+        order = "kbd",
+    },
+    {
+        type = "double-setting",
         name = "hextorio-resource-width-per-dist-nauvis",
         setting_type = "runtime-global",
         default_value = 0.125,
-        order = "kba",
+        order = "kca",
     },
     {
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-vulcanus",
         setting_type = "runtime-global",
         default_value = 0.375,
-        order = "kbb",
+        order = "kcb",
     },
     {
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-fulgora",
         setting_type = "runtime-global",
         default_value = 0.25,
-        order = "kbc",
+        order = "kcc",
     },
     {
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-gleba",
         setting_type = "runtime-global",
         default_value = 0.125,
-        order = "kbd",
+        order = "kcd", -- just missing an "x" lol
     },
     {
         type = "double-setting",
@@ -268,7 +300,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 1,
         default_value = 8,
-        order = "kca",
+        order = "kda",
     },
     {
         type = "double-setting",
@@ -276,7 +308,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 1,
         default_value = 16,
-        order = "kcb",
+        order = "kdb",
     },
     {
         type = "double-setting",
@@ -284,7 +316,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 1,
         default_value = 6,
-        order = "kcc",
+        order = "kdc",
     },
     {
         type = "double-setting",
@@ -292,7 +324,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 4,
         minimum_value = 1,
-        order = "kcd", -- just missing an "x" lol
+        order = "kdd",
     },
 
     {

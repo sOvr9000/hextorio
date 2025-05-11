@@ -1517,24 +1517,40 @@ end
 
 function gui.update_coin_tier(flow, coin)
     -- Don't show leading zeroes, but show intermediate zeroes, and always show hex coin even if total cost is zero.
-    local hex_coin_sprite = flow['hex-coin']
-    hex_coin_sprite.number = coin.values[1]
+    -- local hex_coin_sprite = flow['hex-coin']
+    -- hex_coin_sprite.number = coin.values[1]
 
-    local visible = false
-    if coin.values[4] > 0 then visible = true end
-    local hexaprism_coin_sprite = flow['hexaprism-coin']
-    hexaprism_coin_sprite.number = coin.values[4]
-    hexaprism_coin_sprite.visible = visible
+    -- local visible = false
+    -- if coin.values[4] > 0 then visible = true end
+    -- local hexaprism_coin_sprite = flow['hexaprism-coin']
+    -- hexaprism_coin_sprite.number = coin.values[4]
+    -- hexaprism_coin_sprite.visible = visible
 
-    if coin.values[3] > 0 then visible = true end
-    local meteor_coin_sprite = flow['meteor-coin']
-    meteor_coin_sprite.number = coin.values[3]
-    meteor_coin_sprite.visible = visible
+    -- if coin.values[3] > 0 then visible = true end
+    -- local meteor_coin_sprite = flow['meteor-coin']
+    -- meteor_coin_sprite.number = coin.values[3]
+    -- meteor_coin_sprite.visible = visible
 
-    if coin.values[2] > 0 then visible = true end
-    local gravity_coin_sprite = flow['gravity-coin']
-    gravity_coin_sprite.number = coin.values[2]
-    gravity_coin_sprite.visible = visible
+    -- if coin.values[2] > 0 then visible = true end
+    -- local gravity_coin_sprite = flow['gravity-coin']
+    -- gravity_coin_sprite.number = coin.values[2]
+    -- gravity_coin_sprite.visible = visible
+
+    -- Don't show any zeros unless it's a totla of zero coins.
+    local coin_names = {"hex-coin", "gravity-coin", "meteor-coin", "hexaprism-coin"}
+    for i = 1, 4 do
+        local coin_sprite = flow[coin_names[i]]
+        if coin.values[i] > 0 then
+            coin_sprite.number = coin.values[i]
+            coin_sprite.visible = true
+        else
+            coin_sprite.visible = false
+        end
+    end
+
+    if coin_tiers.is_zero(coin) then
+        flow['hex-coin'].visible = true
+    end
 end
 
 function gui.create_coin_tier(parent, name)

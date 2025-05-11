@@ -1314,7 +1314,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
 
     local is_mixed
     if surface.name ~= "aquilo" then
-        resource_stroke_width = 1 + math.floor(0.5 + r ^ 0.5 * (total_resource_size + dist * lib.runtime_setting_value("resource-width-per-dist-" .. surface.name)))
+        resource_stroke_width = lib.runtime_setting_value("base-resource-width-" .. surface.name) + math.floor(0.5 + r ^ 0.5 * (total_resource_size + dist * lib.runtime_setting_value("resource-width-per-dist-" .. surface.name)))
 
         -- Bound the resource stroke width to the physical limits of the hexagon and its hex core
         resource_stroke_width = math.min(resource_stroke_width, math.max(2, hex_grid_scale - stroke_width - 4), lib.runtime_setting_value("resource-width-max-" .. surface.name))
@@ -1486,12 +1486,13 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         return bias_wc, false
     elseif surface.name == "vulcanus" then
         if is_starter_hex then
-            return storage.hex_grid.resource_weighted_choice.vulcanus.resources, false
+            return storage.hex_grid.resource_weighted_choice.vulcanus.starting, false
         end
         local can_be_tungsten = dist >= lib.runtime_setting_value "min-tungsten-dist"
 
         local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"sulfuric_acid_geyser"})
         local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"vulcanus_coal", "calcite", "tungsten_ore"})
+        resource_freq = resource_freq * resource_freq / 3
 
         if math.random() > (well_freq + resource_freq) * 0.25 then
             return nil, nil
@@ -1930,7 +1931,7 @@ function hex_grid.spawn_hex_core(surface, position)
         end
     end
 
-    local claim_price = hex_grid.distance(state.position, {q=0, r=0}) + 1
+    local claim_price = dist + 1
     claim_price = claim_price * claim_price
 
     state.hex_core = hex_core
@@ -1938,6 +1939,12 @@ function hex_grid.spawn_hex_core(surface, position)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory
     state.claim_price = coin_tiers.from_base_value(claim_price)
+
+    if lib.is_t2_planet(surface.name) then -- vulcanus, fulgora, gleba
+        state.claim_price = coin_tiers.shift_tier(state.claim_price, 1)
+    elseif lib.is_t3_planet(surface.name) then -- aquilo
+        state.claim_price = coin_tiers.shift_tier(state.claim_price, 2)
+    end
 
     hex_grid.generate_loaders(state)
 

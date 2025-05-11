@@ -372,6 +372,23 @@ function coin_tiers.get_tier_of_base_value(base_value)
     return 1
 end
 
+function coin_tiers.shift_tier(coin, shift)
+    if shift == 0 then return coin_tiers.copy(coin) end
+    local new_coin = coin_tiers.new()
+    if shift > 0 then
+        for i = 2, new_coin.max_coin_tier do
+            new_coin.values[i] = coin.values[i - 1]
+        end
+        new_coin.values[#new_coin.values] = new_coin.values[#new_coin.values] + coin.values[#coin.values] * coin.tier_scaling
+        return coin_tiers.shift_tier(new_coin, shift - 1)
+    else
+        for i = 1, new_coin.max_coin_tier - 1 do
+            new_coin.values[i] = coin.values[i + 1]
+        end
+        return coin_tiers.shift_tier(new_coin, shift + 1)
+    end
+end
+
 
 
 return coin_tiers
