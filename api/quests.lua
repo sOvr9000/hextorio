@@ -43,7 +43,7 @@ function quests.init()
                 for _, reward in pairs(extra_rewards) do
                     table.insert(storage.quests.quests[def.name].rewards, reward)
                 end
-                if storage.quests.quests[def.name].complete then
+                if quests.is_complete(storage.quests.quests[def.name]) then
                     table.insert(check_rev, quest)
                 end
             else
@@ -281,9 +281,17 @@ function quests.get_feature_localized_description(feature_name)
     return {"feature-description." .. feature_name}
 end
 
+function quests.is_complete(quest)
+    return quest.complete == true
+end
+
+function quests._mark_complete(quest)
+    quest.complete = true
+end
+
 -- Dish out the rewards of a quest.
 function quests.give_rewards(quest)
-    if quest.completed then return end
+    if quests.is_complete(quest) then return end
 
     for _, reward in pairs(quest.rewards) do
         if reward.type == "unlock-feature" then
@@ -301,10 +309,9 @@ end
 function quests.try_receive_items_reward(player, quest, reward)
     if not storage.quests.players_rewarded[player.name] then
         storage.quests.players_rewarded[player.name] = {}
-        if storage.quests.players_rewarded[player.name][quest.name] then
-            return false
-        end
     end
+    if storage.quests.players_rewarded[player.name][quest.name] then return false end
+
     storage.quests.players_rewarded[player.name][quest.name] = true
 
     local spilled = false
@@ -324,7 +331,7 @@ end
 function quests.check_player_receive_items(player)
     local any = false
     for _, quest in pairs(storage.quests.quests) do
-        if quest.complete then
+        if quests.is_complete(quest) then
             for _, reward in pairs(quest.rewards) do
                 if reward.type == "receive-items" then
                     if quests.try_receive_items_reward(player, quest, reward) then
@@ -382,7 +389,7 @@ end
 
 -- Check if all conditions are satisfied.
 function quests.check_quest_completion(quest)
-    if quest.completed then return end
+    if quests.is_complete(quest) then return end
     for _, condition in pairs(quest.conditions) do
         if condition.progress < condition.progress_requirement then
             return
@@ -394,7 +401,7 @@ end
 
 -- Set a quest condition's progress and check if the quest is complete.
 function quests.set_progress(quest, condition, amount)
-    if quest.completed then return end
+    if quests.is_complete(quest) then return end
     condition.progress = math.max(0, math.min(condition.progress_requirement, amount))
     if condition.progress >= condition.progress_requirement then
         quests.check_quest_completion(quest)
@@ -406,7 +413,7 @@ function quests.set_progress_for_type(condition_type, amount)
     local quest_list = storage.quests.quests_by_condition_type[condition_type]
     if not quest_list then return end
     for _, quest in pairs(quest_list) do
-        if not quest.completed then
+        if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
                 if condition.type == condition_type then
                     quests.set_progress(quest, condition, amount)
@@ -422,7 +429,7 @@ function quests.increment_progress_for_type(condition_type, amount)
     local quest_list = storage.quests.quests_by_condition_type[condition_type]
     if not quest_list then return end
     for _, quest in pairs(quest_list) do
-        if not quest.completed then
+        if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
                 if condition.type == condition_type then
                     quests.set_progress(quest, condition, condition.progress + amount)
@@ -461,7 +468,7 @@ function quests.check_revelations(quest)
             if q.prerequisites then
                 for _, prereq in pairs(q.prerequisites) do
                     local prereq_quest = quests.get_quest(prereq)
-                    if not prereq_quest.complete then
+                    if not quests.is_complete(prereq_quest) then
                         reveal = false
                         break
                     end
@@ -476,11 +483,11 @@ end
 
 -- Complete a quest, bypassing any progress requirements.
 function quests.complete_quest(quest)
-    if quest.complete then return end
+    if quests.is_complete(quest) then return end
 
     quests.print_quest_completion(quest)
     quests.give_rewards(quest)
-    quest.complete = true
+    quests._mark_complete(quest)
 
     for _, condition in pairs(quest.conditions) do
         condition.progress = condition.progress_requirement

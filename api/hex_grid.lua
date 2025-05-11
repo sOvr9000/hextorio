@@ -592,12 +592,16 @@ function hex_grid.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotat
     return positions
 end
 
-function hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement)
-    local border_tiles = {}
+function hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement, flatten_array)
+    if flatten_array == nil then
+        flatten_array = true
+    end
+
     local added = {}
 
     hex_size_decrement = hex_size_decrement or 0
-    stroke_width = stroke_width * 2.5 -- dividing by the 0.8 factor for tile overlap and multiplying by two to adjust for the halving of stroke width
+    stroke_width = stroke_width - 1
+    stroke_width = stroke_width * 1.25 -- dividing by the 0.8 factor for tile overlap
 
     -- For each edge of the hex, place water tiles along it
     for i = 1, 6 do
@@ -607,7 +611,7 @@ function hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, str
 
         -- Calculate the number of steps needed (depends on hex size)
         -- Higher number for smoother border, but more intensive
-        local steps = math.max(10, math.floor((hex_grid_scale - hex_size_decrement) * 2))
+        local steps = math.max(10, math.floor(hex_grid_scale * 2))
 
         -- Calculate direction vector of the edge
         local dir_x = finish.x - start.x
@@ -619,40 +623,39 @@ function hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, str
         local perp_y = dir_x / length
 
         -- For each position along the edge
-        for step = 0, steps do
+        for step = 1, steps do
             local t = step / steps
             local base_x = start.x + dir_x * t
             local base_y = start.y + dir_y * t
 
             -- Create tiles for the stroke width
-            for w = 0, stroke_width - 1 do
+            for w = -1, math.ceil(stroke_width * 1.25) do
                 -- Offset in the perpendicular direction
                 -- We want the stroke to go inward from the edge
-                local offset = (w - (stroke_width - 1) / 2) * 0.8  -- 0.8 factor for tile overlap
+                local offset = w * 0.8  -- 0.8 factor for tile overlap
                 local x = math.floor(base_x + perp_x * offset + 0.5)
                 local y = math.floor(base_y + perp_y * offset + 0.5)
 
                 if not added[x] then
                     added[x] = {}
                 end
-                if not added[x][y] then
-                    table.insert(border_tiles, {x = x, y = y})
-                    added[x][y] = true
-                end
+                added[x][y] = true
             end
         end
     end
 
-    -- Remove duplicates
+    if flatten_array then
+        return lib.flattened_position_array(added)
+    end
 
-    return border_tiles
+    return added
 end
 
-function hex_grid.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, hex_size_decrement)
+function hex_grid.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, hex_size_decrement, flatten_array)
     hex_size_decrement = math.min(hex_size_decrement, hex_grid_scale)
     stroke_width = math.min(stroke_width, hex_grid_scale - hex_size_decrement)
     local corners = hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation, hex_size_decrement)
-    return hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement)
+    return hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement, flatten_array)
 end
 
 ----------------------------------------
@@ -1099,16 +1102,39 @@ function hex_grid.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid
     local corners = hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)
     local border_tiles = hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width)
 
-    -- Set all border tiles to water
-    hex_grid.set_tiles(surface, border_tiles, "water")
+    local surface_id = lib.get_surface_id(surface)
+    surface = game.get_surface(surface_id)
+    if not surface then
+        lib.log_error("hex_grid.generate_hex_border: Cannot find surface from " .. serpent.line(surface))
+        return
+    end
+
+    -- Set all border tiles to the non-land tile for the surface
+    local tile_type
+    if surface.name == "nauvis" then
+        tile_type = "water"
+    elseif surface.name == "vulcanus" then
+        tile_type = "lava-hot"
+    elseif surface.name == "fulgora" then
+        tile_type = "oil-ocean"
+    elseif surface.name == "gleba" then
+        tile_type = "gleba-deep-lake"
+    elseif surface.name == "aquilo" then
+        tile_type = "ammoniacal-ocean"
+    else
+        tile_type = "water"
+    end
+
+    hex_grid.set_tiles(surface, border_tiles, tile_type)
 end
 
----@param surface SurfaceIdentification|LuaSurface|string
+---@param surfaceID SurfaceIdentification|LuaSurface|string
 ---@return {scale:number, rotation:number, stroke_width:number}
-function hex_grid.get_surface_transformation(surface)
-    local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
-        lib.log_error("Cannot find surface from " .. serpent.line(surface))
+function hex_grid.get_surface_transformation(surfaceID)
+    local surface_id = lib.get_surface_id(surfaceID)
+    surface = game.get_surface(surface_id)
+    if not surface then
+        lib.log_error("Cannot find surface from " .. serpent.line(surfaceID))
         return {
             scale = 24,
             rotation = 0,
@@ -1116,20 +1142,24 @@ function hex_grid.get_surface_transformation(surface)
         }
     end
 
+    local surface_name = surface.name
+
     local transformations = storage.hex_grid.surface_transformations
     local transformation = transformations[surface_id]
     if not transformation then
         transformation = {}
         transformations[surface_id] = transformation
     end
+
     if not transformation.scale then
-        transformation.scale = lib.startup_setting_value "hex-size"
+        transformation.scale = lib.startup_setting_value("hex-size-" .. surface_name)
         if not transformation.scale then
             transformation.scale = 24
         end
     end
+
     if not transformation.rotation then
-        local mode = lib.startup_setting_value "grid-rotation-mode"
+        local mode = lib.startup_setting_value("grid-rotation-mode-" .. surface_name)
         if mode == "random" then
             transformation.rotation = math.random() * math.pi
         elseif mode == "flat-top" then
@@ -1140,23 +1170,25 @@ function hex_grid.get_surface_transformation(surface)
             transformation.rotation = 0
         end
     end
+
     if not transformation.stroke_width then
-        transformation.stroke_width = lib.startup_setting_value "hex-stroke-width"
+        transformation.stroke_width = lib.startup_setting_value("hex-stroke-width-" .. surface_name)
         if not transformation.stroke_width then
             transformation.stroke_width = 5
         end
     end
+
     return transformation
 end
 
 -- Initialize a hex with default state and generate its border
 function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    surface = game.get_surface(surface_id)
+    if not surface then
         lib.log_error("initialize_hex: No surface found")
         return
     end
-    surface = game.surfaces[surface_id]
 
     local state = hex_grid.get_hex_state(surface_id, hex_pos)
 
@@ -1165,14 +1197,25 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         return
     end
 
+    local mgs = storage.hex_grid.mgs[surface.name]
+    if not mgs then
+        lib.log_error("hex_grid.initialize_hex: No map gen settings found for surface " .. serpent.line(surface))
+        return
+    end
+
     hex_grid.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
 
-    local land_chance = (lib.remap_map_gen_setting(1 / storage.hex_grid.nauvis_mgs_original.autoplace_controls.water.frequency) + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls.water.size)) * 0.5
-    if storage.hex_grid.nauvis_mgs_original.autoplace_controls.water.size == 0 then
-        land_chance = 0
+    local land_chance
+    if surface.name == "nauvis" then
+        if mgs.autoplace_controls.water.size == 0 then
+            land_chance = 0
+        else
+            land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.water.size)) * 0.5
+        end
+    elseif surface.name == "vulcanus" then
+        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vulcanus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
     end
     land_chance = (1 - land_chance * land_chance) ^ 0.5
-    -- lib.log("land chance: " .. land_chance)
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
@@ -1185,76 +1228,23 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     if is_land then
         state.is_land = true
 
-        -- Calculating these parameters for each newly spawned hex because map gen settings can change.
-        local total_resource_freq = 0
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["iron-ore"].frequency)
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["copper-ore"].frequency)
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["coal"].frequency)
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["stone"].frequency)
-        -- total_resource_freq = total_resource_freq + storage.hex_grid.nauvis_mgs_original.autoplace_controls["uranium-ore"].frequency
-        total_resource_freq = total_resource_freq * 0.25
+        hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
 
-        local resource_chance = 0.1 + 0.9 * total_resource_freq
-        resource_chance = resource_chance * resource_chance
-        local is_resource_hex = is_starting_hex or math.random() < resource_chance
-
-        if is_resource_hex then
-            state.is_resources = true
-
-            local min_uranium_dist = lib.runtime_setting_value "min-uranium-dist"
-            local wc = weighted_choice.copy(storage.hex_grid.nauvis_resource_weighted_choice)
-            if is_starting_hex then
-                wc = weighted_choice.copy(storage.hex_grid.starting_resource_weighted_choice)
-            elseif dist < min_uranium_dist then
-                wc = weighted_choice.copy(storage.hex_grid.non_uranium_resource_weighted_choice)
-            end
-
-            if not is_starting_hex then
-                -- Based on the standard weighted choice, apply a random bias
-                local bias_wc = weighted_choice.copy(wc)
-                local resource = weighted_choice.choice(wc)
-
-                local bias_strength = lib.runtime_setting_value "resource-bias"
-
-                -- Make the selected resource more likely to be chosen
-                wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
-            end
-
-            local total_resource_size = 0
-            total_resource_size = total_resource_size + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["iron-ore"].size)
-            total_resource_size = total_resource_size + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["copper-ore"].size)
-            total_resource_size = total_resource_size + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["coal"].size)
-            total_resource_size = total_resource_size + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["stone"].size)
-            -- total_resource_size = total_resource_size + storage.hex_grid.nauvis_mgs_original.autoplace_controls["uranium-ore"].size
-            total_resource_size = total_resource_size * 0.25
-
-            local r = math.random()
-            local resource_stroke_width = 2 + r ^ 0.5 * (total_resource_size * 5 + dist * lib.runtime_setting_value "resource-width-per-dist")
-            resource_stroke_width = math.min(resource_stroke_width, math.max(2, hex_grid_scale - stroke_width - 5))
-            local is_mixed
-            if is_starting_hex then
-                is_mixed = lib.runtime_setting_value "starting-resources-mixed"
-                resource_stroke_width = lib.runtime_setting_value "starting-hex-resource-stroke-width" + 1 -- plus 1 because rounding math is messed up for some reason at the starting hex
-            else
-                is_mixed = lib.runtime_setting_value "default-resources-mixed"
-            end
-
-            hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, resource_stroke_width, wc, is_mixed)
-        end
-
-        local min_biter_distance = lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.starting_area, 0, 3)
-        local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
-        if is_biter_hex then
-            local biter_chance = lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["enemy-base"].frequency)
-
-            if storage.hex_grid.total_biter_multiplier then
-                biter_chance = biter_chance * storage.hex_grid.total_biter_multiplier
-            end
-
-            is_biter_hex = math.random() < biter_chance
+        if surface.name == "nauvis" then
+            local min_biter_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
+            local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
             if is_biter_hex then
-                if hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
-                    state.is_biters = true
+                local biter_chance = lib.remap_map_gen_setting(mgs.autoplace_controls["enemy-base"].frequency)
+
+                if storage.hex_grid.total_biter_multiplier then
+                    biter_chance = biter_chance * storage.hex_grid.total_biter_multiplier
+                end
+
+                is_biter_hex = math.random() < biter_chance
+                if is_biter_hex then
+                    if hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
+                        state.is_biters = true
+                    end
                 end
             end
         end
@@ -1266,82 +1256,130 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
 end
 
 -- Generate a small ring of mixed resources right up to the border of the hex
-function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, resource_stroke_width, resource_wc, is_mixed)
-    -- lib.log(serpent.line(resource_wc))
-
+function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
-        lib.log_error("generate_hex_resources: No surface found")
+    surface = game.get_surface(surface_id)
+    if not surface then
+        lib.log_error("hex_grid.generate_hex_resources: No surface found")
         return
     end
-    surface = game.surfaces[surface_id]
 
     local state = hex_grid.get_hex_state(surface_id, hex_pos)
     if not state then
-        lib.log_error("generate_hex_resources: No hex state found")
+        lib.log_error("hex_grid.generate_hex_resources: No hex state found")
         return
     end
 
-    local inner_border_tiles = hex_grid.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width)
-    local base_richness = 200 * lib.runtime_setting_value "base-resource-richness"
+    local mgs = storage.hex_grid.mgs[surface.name]
+    if not mgs then
+        lib.log_error("hex_grid.generate_hex_resources: No map gen settings found for surface " .. serpent.line(surface))
+        return
+    end
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
-    local scaled_richness = base_richness + dist * lib.runtime_setting_value "resource-richness-per-dist"
+    local is_starting_hex = dist == 0
 
-    local oil_chance = lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["crude-oil"].frequency, 0.05, 0.5)
-    local is_oil_hex = not state.is_starting_hex and math.random() < oil_chance
+    local resource_wc, is_well = hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
+    if not resource_wc then return end
 
-    if is_oil_hex then
-        state.is_oil = true
-        state.resources = {["crude-oil"] = 0}
+    state.is_resources = true
 
-        local amount = scaled_richness * 3000
-        local num_entities_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["crude-oil"].size, 1, 3))
-        local num_entities_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["crude-oil"].size, 3, 6))
+    if not is_starting_hex then
+        -- Based on the standard weighted choice, apply a random bias
+        local bias_wc = weighted_choice.copy(resource_wc)
+        local resource = weighted_choice.choice(resource_wc)
+
+        local bias_strength = lib.runtime_setting_value "resource-bias"
+
+        -- Make the selected resource more likely to be chosen
+        resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
+    end
+
+    local resource_names
+    if surface.name == "nauvis" then
+        resource_names = {"iron-ore", "copper-ore", "coal", "stone"}
+    elseif surface.name == "vulcanus" then
+        resource_names = {"vulcanus_coal", "calcite", "tungsten_ore"}
+    elseif surface.name == "fulgora" then
+        resource_names = {"scrap"}
+    elseif surface.name == "gleba" then
+        resource_names = {"stone"}
+    elseif surface.name == "aquilo" then
+        resource_names = {}
+    end
+
+    local total_resource_size = lib.sum_mgs(mgs.autoplace_controls, "size", resource_names)
+    local r = math.random()
+    local resource_stroke_width
+
+    local is_mixed
+    if surface.name ~= "aquilo" then
+        resource_stroke_width = 1 + math.floor(0.5 + r ^ 0.5 * (total_resource_size + dist * lib.runtime_setting_value("resource-width-per-dist-" .. surface.name)))
+
+        -- Bound the resource stroke width to the physical limits of the hexagon and its hex core
+        resource_stroke_width = math.min(resource_stroke_width, math.max(2, hex_grid_scale - stroke_width - 4), lib.runtime_setting_value("resource-width-max-" .. surface.name))
+
+        if is_starting_hex then
+            if surface.name == "nauvis" then
+                is_mixed = lib.runtime_setting_value "starting-resources-mixed"
+            else
+                is_mixed = true
+            end
+            resource_stroke_width = tonumber(lib.runtime_setting_value("starting-hex-resource-stroke-width-" .. surface.name)) or 2
+        else
+            is_mixed = lib.runtime_setting_value "default-resources-mixed"
+        end
+    end
+
+    local base_richness = 200 * lib.runtime_setting_value "base-resource-richness"
+    local scaled_richness = base_richness + dist * lib.runtime_setting_value("resource-richness-per-dist-" .. surface.name)
+
+    state.resources = {}
+
+    if is_well then
+        state.is_well = true
+
+        local num_entities_min
+        local num_entities_max
+        if surface.name == "nauvis" then
+            num_entities_min = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls["crude-oil"].size, 1, 3))
+            num_entities_max = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls["crude-oil"].size, 3, 6))
+        elseif surface.name == "vulcanus" then
+            num_entities_min = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls.sulfuric_acid_geyser.size, 1, 3))
+            num_entities_max = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls.sulfuric_acid_geyser.size, 3, 6))
+        elseif surface.name == "aquilo" then
+            local size = lib.sum_mgs(mgs.autoplace_controls, "size", {"crude-oil", "lithium-brine", "fluorine-vent"}) / 3
+
+            num_entities_min = math.floor(0.5 + 1 + 2 * size)
+            num_entities_max = math.floor(0.5 + 3 + 3 * size)
+        end
+
         local num_entities = math.random(num_entities_min, num_entities_max)
+        local amount = scaled_richness * 3000
         local radius = math.max(7, (hex_grid_scale - stroke_width) * 0.5)
         local rotation = math.random() * math.pi * 2
 
         for i = 1, num_entities do
+            local resource = weighted_choice.choice(resource_wc)
+            if not resource then
+                lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
+                return
+            end
+
             local angle = rotation + math.pi * 2 * i / num_entities
             local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
             local x = center.x + math.cos(angle) * radius
             local y = center.y + math.sin(angle) * radius
             local entity = surface.create_entity{
-                name = "crude-oil",
+                name = resource,
                 position = {x, y},
                 amount = amount * (0.8 + 0.2 * math.random()),
             }
             if entity then
-                state.resources["crude-oil"] = state.resources["crude-oil"] + entity.amount
+                state.resources[resource] = (state.resources[resource] or 0) + entity.amount
             end
         end
     else
-        state.resources = {["iron-ore"] = 0, ["copper-ore"] = 0, ["coal"] = 0, ["stone"] = 0, ["uranium-ore"] = 0}
-
-        local uranium_freq = lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["uranium-ore"].frequency)
-
-        local total_resource_freq = 0
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["iron-ore"].frequency)
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["copper-ore"].frequency)
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["coal"].frequency)
-        total_resource_freq = total_resource_freq + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["stone"].frequency)
-        total_resource_freq = total_resource_freq + uranium_freq
-
-        local uranium_chance = uranium_freq / total_resource_freq
-        local is_uranium = not state.is_starting_hex and math.random() < uranium_chance
-
-        if is_uranium then
-            -- remove all except uranium
-            weighted_choice.set_weight(resource_wc, "iron-ore", 0)
-            weighted_choice.set_weight(resource_wc, "copper-ore", 0)
-            weighted_choice.set_weight(resource_wc, "coal", 0)
-            weighted_choice.set_weight(resource_wc, "stone", 0)
-        else
-            -- remove uranium
-            weighted_choice.set_weight(resource_wc, "uranium-ore", 0)
-        end
-
         local pie_angles, hex_pos_rect, rotation
         if not is_mixed then
             pie_angles = lib.get_pie_angles(resource_wc)
@@ -1349,25 +1387,37 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             rotation = math.random() * math.pi * 2
         end
 
+        local inner_border_tiles = hex_grid.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
         for _, tile in pairs(inner_border_tiles) do
             if lib.is_land_tile(surface, tile) then
                 local resource
                 if is_mixed then
                     resource = weighted_choice.choice(resource_wc)
                     if not resource then
-                        lib.log_error("generate_hex_resources: weighed choice has zero weights")
+                        lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
                         return
                     end
                 else
                     local angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
                     resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
                 end
-                local amount_mean = scaled_richness * storage.hex_grid.nauvis_mgs_original.autoplace_controls[resource].richness
+                local amount_mean
+                if surface.name == "vulcanus" then
+                    if resource == "coal" then
+                        amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
+                    elseif resource == "tungsten-ore" then
+                        amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
+                    else
+                        amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
+                    end
+                else
+                    amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
+                end
                 local amount = math.floor(amount_mean * (0.8 + 0.2 * math.random()))
                 if amount > 0 then
                     local entity = surface.create_entity {name = resource, position = tile, amount = amount}
                     if entity then
-                        state.resources[resource] = state.resources[resource] + amount
+                        state.resources[resource] = (state.resources[resource] or 0) + amount
                     end
                 end
             end
@@ -1381,16 +1431,119 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     end
 end
 
+function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
+    local surface_id = lib.get_surface_id(surface)
+    surface = game.get_surface(surface_id)
+    if not surface then
+        lib.log_error("hex_grid.generate_hex_resources: No surface found")
+        return
+    end
+    local mgs = storage.hex_grid.mgs[surface.name]
+    local dist = hex_grid.distance(hex_pos, {q = 0, r = 0})
+    local is_starter_hex = dist == 0
+
+    -- Calculate frequencies
+    if surface.name == "nauvis" then
+        if is_starter_hex then
+            return storage.hex_grid.resource_weighted_choice.nauvis.resources, false
+        end
+        local well_names = {"crude-oil"}
+        local resource_names = {"iron-ore", "copper-ore", "coal", "stone"}
+
+        local can_be_uranium = dist >= lib.runtime_setting_value "min-uranium-dist"
+        if can_be_uranium then
+            table.insert(resource_names, "uranium-ore")
+        end
+
+        local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
+        local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", resource_names)
+        resource_freq = resource_freq * resource_freq / #resource_names
+
+        if math.random() > (well_freq + resource_freq) / (1 + #resource_names) then
+            return nil, nil
+        end
+
+        local is_well = math.random() < well_freq / (well_freq + resource_freq)
+        if is_well then
+            return storage.hex_grid.resource_weighted_choice.nauvis.wells, true
+        end
+
+        local is_uranium = can_be_uranium and math.random() < lib.remap_map_gen_setting(mgs.autoplace_controls["uranium-ore"].frequency) / resource_freq
+        if is_uranium then
+            return storage.hex_grid.resource_weighted_choice.nauvis.uranium, false
+        end
+
+        local wc = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.nauvis.resources)
+
+        -- Based on the standard weighted choice, apply a random bias
+        local bias_wc = weighted_choice.copy(wc)
+        local resource = weighted_choice.choice(wc)
+        local bias_strength = lib.runtime_setting_value "resource-bias"
+
+        -- Make the selected resource more likely to be chosen
+        resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
+
+        return bias_wc, false
+    elseif surface.name == "vulcanus" then
+        if is_starter_hex then
+            return storage.hex_grid.resource_weighted_choice.vulcanus.resources, false
+        end
+        local can_be_tungsten = dist >= lib.runtime_setting_value "min-tungsten-dist"
+
+        local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"sulfuric_acid_geyser"})
+        local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"vulcanus_coal", "calcite", "tungsten_ore"})
+
+        if math.random() > (well_freq + resource_freq) * 0.25 then
+            return nil, nil
+        end
+
+        local is_well = math.random() < well_freq / (well_freq + resource_freq)
+        if is_well then
+            return storage.hex_grid.resource_weighted_choice.vulcanus.wells, true
+        end
+
+        local wc
+
+        if can_be_tungsten then
+            wc = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.resources)
+        else
+            wc = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.non_tungsten)
+        end
+
+        -- Based on the standard weighted choice, apply a random bias
+        local bias_wc = weighted_choice.copy(wc)
+        local resource = weighted_choice.choice(wc)
+        local bias_strength = lib.runtime_setting_value "resource-bias"
+
+        -- Make the selected resource more likely to be chosen
+        resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
+
+        return bias_wc, false
+    elseif surface.name == "fulgora" then
+        local resource_names = {"scrap"}
+        local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"scrap"})
+    elseif surface.name == "gleba" then
+        local resource_names = {"stone"}
+        local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"stone"})
+    elseif surface.name == "aquilo" then
+        local well_names = {"crude-oil", "lithium-brine", "fluorine-vent"}
+        local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
+    else
+        lib.log_error("hex_grid.get_randomized_resource_weighted_choice: Unknown surface: " .. surface.name)
+        return
+    end
+end
+
 function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
-        lib.log_error("generate_hex_resources: No surface found")
+        lib.log_error("hex_grid.generate_hex_biters: No surface found")
         return false
     end
     surface = game.surfaces[surface_id]
 
-    local num_spawners_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["enemy-base"].size, 1, 3))
-    local num_spawners_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.nauvis_mgs_original.autoplace_controls["enemy-base"].size, 1, 5))
+    local num_spawners_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size, 1, 3))
+    local num_spawners_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size, 1, 5))
     local num_spawners = math.random(num_spawners_min, num_spawners_max)
     local num_worms = math.floor(0.4999 + num_spawners * (0.5 + math.random()))
     local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
@@ -1401,7 +1554,7 @@ end
 function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, num_worms)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
-        lib.log_error("generate_hex_resources: No surface found")
+        lib.log_error("hex_grid.spawn_enemy_base: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
@@ -1465,7 +1618,7 @@ end
 function hex_grid.generate_non_land_tiles(surface, hex_pos)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
-        lib.log_error("generate_non_land_tiles: No surface found")
+        lib.log_error("hex_grid.generate_non_land_tiles: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
@@ -1474,13 +1627,13 @@ function hex_grid.generate_non_land_tiles(surface, hex_pos)
     if surface.name == "nauvis" then
         tile_type = "deepwater"
     elseif surface.name == "vulcanus" then
-        tile_type = "lava-hot"
+        tile_type = "lava"
     elseif surface.name == "fulgora" then
-        tile_type = "oil-ocean"
+        tile_type = "oil-ocean-deep"
     elseif surface.name == "gleba" then
-        tile_type = "water" -- TODO BUG FIX this
+        tile_type = "gleba-deep-lake"
     elseif surface.name == "aquilo" then
-        tile_type = "ammoniacal-ocean"
+        tile_type = "ammoniacal-ocean-2"
     end
 
     hex_grid.set_hex_tiles(surface, hex_pos, tile_type, true)
@@ -1528,7 +1681,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
 
     local inv = lib.get_player_inventory(player)
     if not inv then
-        lib.log_error("can_claim_hex: No inventory found")
+        lib.log_error("hex_grid.can_claim_hex: No inventory found")
         return
     end
 
@@ -1556,7 +1709,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     local transformation = hex_grid.get_surface_transformation(surface)
 
     if not transformation then
-        lib.log_error("claim_hex: No transformation found")
+        lib.log_error("hex_grid.claim_hex: No transformation found")
         return
     end
 
@@ -1697,7 +1850,7 @@ function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_gri
     local transformation = hex_grid.get_surface_transformation(surface)
 
     if not transformation then
-        lib.log_error("on_chunk_generated: No transformation found")
+        lib.log_error("hex_grid.on_chunk_generated: No transformation found")
         return
     end
 
@@ -1734,13 +1887,13 @@ function hex_grid.spawn_hex_core(surface, position)
     local surface_id = lib.get_surface_id(surface)
     surface = game.surfaces[surface_id]
     if not surface then
-        lib.log_error("Invalid surface")
+        lib.log_error("hex_grid.spawn_hex_core: Invalid surface")
         return
     end
 
     local transformation = hex_grid.get_surface_transformation(surface_id)
     if not transformation then
-        lib.log_error("spawn_hex_core: No transformation found")
+        lib.log_error("hex_grid.spawn_hex_core: No transformation found")
         return
     end
 
@@ -1766,7 +1919,7 @@ function hex_grid.spawn_hex_core(surface, position)
     -- Hex core
     local hex_core = surface.create_entity {name = "hex-core", position = position, force = "player"}
     if not hex_core then
-        lib.log_error("Failed to spawn hex core")
+        lib.log_error("hex_grid.spawn_hex_core: Failed to spawn hex core")
         return
     end
     hex_core.destructible = false
@@ -1844,7 +1997,7 @@ function hex_grid.delete_hex_core(hex_core)
 end
 
 function hex_grid.supercharge_resources(hex_core)
-    for _, e in pairs(hex_grid.get_hex_resources(hex_core)) do
+    for _, e in pairs(hex_grid.get_hex_resource_entities(hex_core)) do
         e.amount = 4294967295
     end
 
@@ -1934,7 +2087,7 @@ end
 function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
-        lib.log_error("fill_edges_between_claimed_hexes: No surface found")
+        lib.log_error("hex_grid.fill_edges_between_claimed_hexes: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
@@ -1946,7 +2099,7 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
 
     local transformation = hex_grid.get_surface_transformation(surface_id)
     if not transformation then
-        lib.log_error("fill_edges_between_claimed_hexes: No transformation found")
+        lib.log_error("hex_grid.fill_edges_between_claimed_hexes: No transformation found")
         return
     end
 
@@ -2007,7 +2160,7 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
                         game_tile.name == "water" or 
                         game_tile.name == "deepwater" or 
                         game_tile.name == "oil-ocean" or 
-                        game_tile.name == "hot-lava" or 
+                        game_tile.name == "lava-hot" or 
                         game_tile.name == "ammoniacal-solution"
                     ) then
                         table.insert(edge_tiles, {x = tile.x, y = tile.y})
@@ -2027,7 +2180,7 @@ end
 function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
-        lib.log_error("fill_corners_between_claimed_hexes: No surface found")
+        lib.log_error("hex_grid.fill_corners_between_claimed_hexes: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
@@ -2039,7 +2192,7 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
     
     local transformation = hex_grid.get_surface_transformation(surface_id)
     if not transformation then
-        lib.log_error("fill_corners_between_claimed_hexes: No transformation found")
+        lib.log_error("hex_grid.fill_corners_between_claimed_hexes: No transformation found")
         return
     end
     
@@ -2130,7 +2283,7 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
                                         game_tile.name == "water" or 
                                         game_tile.name == "deepwater" or 
                                         game_tile.name == "oil-ocean" or 
-                                        game_tile.name == "hot-lava" or 
+                                        game_tile.name == "lava-hot" or 
                                         game_tile.name == "ammoniacal-solution"
                                     ) then
                                         table.insert(corner_tiles, {x = tile.x, y = tile.y})
@@ -2150,15 +2303,28 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
     end
 end
 
-function hex_grid.get_hex_resources(hex_core)
+function hex_grid.get_hex_resource_entities(hex_core)
     local transformation = hex_grid.get_surface_transformation(hex_core.surface)
-    if not transformation then return coin_tiers.from_base_value(0) end
+    if not transformation then return {} end
 
-    return hex_core.surface.find_entities_filtered {
+    local entities = hex_core.surface.find_entities_filtered {
         type = "resource",
         position = hex_core.position,
         radius = transformation.scale * storage.constants.ROOT_THREE_OVER_TWO + 0.5,
     }
+
+    -- local state = hex_grid.get_hex_state_from_core(hex_core)
+    -- if not state then return entities end
+
+    -- local inner_border_tiles = hex_grid.get_hex_border_tiles(state.position, transformation.scale, transformation.rotation, transformation.scale - transformation.stroke_width, transformation.stroke_width, false)
+    -- for i = #entities, 1, -1 do
+    --     local entity = entities[i]
+    --     if not inner_border_tiles[entity.position.x] or not inner_border_tiles[entity.position.x][entity.position.y] then
+    --         table.remove(entities, i)
+    --     end
+    -- end
+
+    return entities
 end
 
 function hex_grid.get_delete_core_cost(hex_core)
@@ -2176,10 +2342,10 @@ function hex_grid.get_supercharge_cost(hex_core)
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return coin_tiers.from_base_value(0) end
 
-    local entities = hex_grid.get_hex_resources(hex_core)
+    local entities = hex_grid.get_hex_resource_entities(hex_core)
 
     local base_cost
-    if state.is_oil then
+    if state.is_well then
         base_cost = lib.runtime_setting_value "supercharge-cost-per-well"
     else
         base_cost = lib.runtime_setting_value "supercharge-cost-per-tile"
@@ -2285,11 +2451,8 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
 end
 
 function hex_grid.reduce_biters(portion)
-    log("reducing biters by " .. portion)
     local transformation = hex_grid.get_surface_transformation "nauvis"
     if not transformation then return end
-
-    log(transformation.scale)
 
     storage.hex_grid.total_biter_multiplier = (storage.total_biter_multiplier or 1) * (1 - portion)
     local surface = game.surfaces.nauvis

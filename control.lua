@@ -64,7 +64,8 @@ script.on_init(function()
         surface_vals['hexaprism-coin'] = 100000 * surface_vals['meteor-coin']
     end
 
-    storage.hex_grid.nauvis_mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
+    local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
+    storage.hex_grid.mgs["nauvis"] = mgs_original
 
     local mgs = game.surfaces.nauvis.map_gen_settings
     mgs.autoplace_controls.water.size = 0
@@ -81,29 +82,25 @@ script.on_init(function()
 
     local iron_frequency = lib.runtime_setting_value "iron-ore-frequency"
     local copper_ore_frequency = lib.runtime_setting_value "copper-ore-frequency"
-    local coal_frequency = lib.runtime_setting_value "coal-frequency"
-    local stone_frequency = lib.runtime_setting_value "stone-frequency"
-    local uranium_ore_frequency = lib.runtime_setting_value "uranium-ore-frequency"
+    local coal_frequency = lib.runtime_setting_value "nauvis-coal-frequency"
+    local stone_frequency = lib.runtime_setting_value "nauvis-stone-frequency"
+    -- local uranium_ore_frequency = lib.runtime_setting_value "uranium-ore-frequency"
 
-    local mgso = storage.hex_grid.nauvis_mgs_original
     -- Define default nauvis resource randomization based on map gen settings frequencies
-    storage.hex_grid.nauvis_resource_weighted_choice = weighted_choice.new {
-        ["iron-ore"] = mgso.autoplace_controls["iron-ore"].size * iron_frequency,
-        ["copper-ore"] = mgso.autoplace_controls["copper-ore"].size * copper_ore_frequency,
-        ["coal"] = mgso.autoplace_controls["coal"].size * coal_frequency,
-        ["stone"] = mgso.autoplace_controls["stone"].size * stone_frequency,
-        ["uranium-ore"] = mgso.autoplace_controls["uranium-ore"].size * uranium_ore_frequency,
+    storage.hex_grid.resource_weighted_choice.nauvis = {}
+    storage.hex_grid.resource_weighted_choice.nauvis.resources = weighted_choice.new {
+        ["iron-ore"] = mgs_original.autoplace_controls["iron-ore"].size * iron_frequency,
+        ["copper-ore"] = mgs_original.autoplace_controls["copper-ore"].size * copper_ore_frequency,
+        ["coal"] = mgs_original.autoplace_controls["coal"].size * coal_frequency,
+        ["stone"] = mgs_original.autoplace_controls["stone"].size * stone_frequency,
+        -- ["uranium-ore"] = mgs_original.autoplace_controls["uranium-ore"].size * uranium_ore_frequency,
     }
-
-    -- log(serpent.block(storage.hex_grid.nauvis_resource_weighted_choice))
-
-    -- Resource randomization in starting hex
-    storage.hex_grid.starting_resource_weighted_choice = weighted_choice.copy(storage.hex_grid.nauvis_resource_weighted_choice)
-    weighted_choice.set_weight(storage.hex_grid.starting_resource_weighted_choice, "uranium-ore", 0)
-
-    -- Resource randomization without uranium
-    storage.hex_grid.non_uranium_resource_weighted_choice = weighted_choice.copy(storage.hex_grid.nauvis_resource_weighted_choice)
-    weighted_choice.set_weight(storage.hex_grid.non_uranium_resource_weighted_choice, "uranium-ore", 0)
+    storage.hex_grid.resource_weighted_choice.nauvis.wells = weighted_choice.new {
+        ["crude-oil"] = 1,
+    }
+    storage.hex_grid.resource_weighted_choice.nauvis.uranium = weighted_choice.new {
+        ["uranium-ore"] = 1,
+    }
 
     local temp = game.create_surface("hextorio-temp", mgs)
     temp.request_to_generate_chunks({0, 0}, 0)
@@ -274,6 +271,48 @@ script.on_event(defines.events.on_entity_died, function (event)
         if event.cause and (event.cause.name == "car" or event.cause.name == "tank") then
             event_system.trigger("spawner-rammed", event.entity, event.cause)
         end
+    end
+end)
+
+script.on_event(defines.events.on_surface_created, function (event)
+    local surface_id = event.surface_index
+    local surface = game.get_surface(surface_id)
+    if not surface then return end
+
+    local mgs_original = surface.map_gen_settings -- makes copy
+    storage.hex_grid.mgs[surface.name] = mgs_original
+
+    if surface.name == "vulcanus" then
+        local mgs = surface.map_gen_settings
+        mgs.autoplace_controls.vulcanus_coal.size = 0
+        mgs.autoplace_controls.calcite.size = 0
+        mgs.autoplace_controls.tungsten_ore.size = 0
+        mgs.autoplace_controls.sulfuric_acid_geyser.size = 0
+        mgs.autoplace_controls.vulcanus_volcanism.size = 0
+        mgs.autoplace_settings.tile.settings.lava.size = 0
+        mgs.autoplace_settings.tile.settings["lava-hot"].size = 0
+        surface.map_gen_settings = mgs
+
+        local coal_frequency = lib.runtime_setting_value "vulcanus-coal-frequency"
+        local calcite_frequency = lib.runtime_setting_value "calcite-frequency"
+        local tungsten_ore_frequency = lib.runtime_setting_value "tungsten-ore-frequency"
+
+        storage.hex_grid.resource_weighted_choice.vulcanus = {}
+        storage.hex_grid.resource_weighted_choice.vulcanus.resources = weighted_choice.new {
+            ["coal"] = mgs_original.autoplace_controls.vulcanus_coal.size * coal_frequency,
+            ["calcite"] = mgs_original.autoplace_controls.calcite.size * calcite_frequency,
+            ["tungsten-ore"] = mgs_original.autoplace_controls.tungsten_ore.size * tungsten_ore_frequency,
+        }
+        storage.hex_grid.resource_weighted_choice.vulcanus.wells = weighted_choice.new {
+            ["sulfuric-acid-geyser"] = 1,
+        }
+
+        -- Resource randomization in starting hex
+        storage.hex_grid.resource_weighted_choice.vulcanus.starting = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.resources)
+        weighted_choice.set_weight(storage.hex_grid.resource_weighted_choice.vulcanus.starting, "tungsten-ore", 0)
+
+        -- Resource randomization without tungsten
+        storage.hex_grid.resource_weighted_choice.vulcanus.non_tungsten = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.starting)
     end
 end)
 

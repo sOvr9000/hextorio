@@ -17,6 +17,8 @@ local all_commands = {
     {name = "add-trade", usage = "/add-trade <inputs> <outputs>", examples = {"/add-trade stone coal", "/add-trade [stone iron-plate] uranium-ore", "/add-trade plastic-bar [copper-plate copper-ore]"}},
     {name = "remove-trade", usage = "/remove-trade <index>", examples = {"/remove-trade 1"}},
     {name = "complete-quest", usage = "/complete-quest <quest-name>", examples = {"/complete-quest ground-zero", "/complete-quest find-some-trades"}},
+    {name = "tp-to-ship", usage = "/tp-to-ship"},
+    {name = "chart", usage = "/chart <surface> [range]", examples = {"/chart vulcanus", "/chart nauvis 500"}},
 }
 
 local public_commands = sets.new {
@@ -88,6 +90,11 @@ function on_command(player, command, params)
         if sp then
             space_platforms.generate_tier1_ship(sp)
         end
+    elseif command == "tp-to-ship" then
+        player.teleport({x = 0, y = 0}, "platform-1")
+    elseif command == "chart" then
+        local range = params[2] or 300
+        player.force.chart(params[1], {{-range, -range}, {range, range}})
     end
 
     event_system.trigger("command-" .. command, player, params)

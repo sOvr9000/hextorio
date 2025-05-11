@@ -10,7 +10,8 @@
 - make item value tooltip show for interplanetary items in hex core trades
 
 
+- add coin splitting buttons at the top
+
 
 BUGS:
-
-- fix the input loaders on sides of hex cores
+- rejoining a multiplayer game gives rewards repeatedly

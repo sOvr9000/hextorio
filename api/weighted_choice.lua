@@ -70,6 +70,10 @@ end
 
 -- Shallow copy a weighted choice object
 function weighted_choice.copy(wc)
+    if not wc then
+        lib.log_error("weighted_choice.copy: wc is nil")
+        return
+    end
     local new_wc = {}
     for item, weight in pairs(wc) do
         new_wc[item] = weight
@@ -82,7 +86,12 @@ end
 -- If bias > 0, the item weight will be adjusted to `wc[item] = wc[item] * bias`, which means that `item` is `bias` times as likely to be chosen.
 -- If bias = 0, the item weight will be unchanged.
 function weighted_choice.add_bias(wc, item, bias)
+    if not wc then
+        lib.log_error("weighted_choice.add_bias: wc is nil")
+        return
+    end
     local new_wc = weighted_choice.copy(wc)
+    if not new_wc then return end
     if bias == 0 then return new_wc end
 
     local old_value = new_wc[item]

@@ -10,6 +10,5 @@ require "prototypes.init"
 -- Disable planet discovery technologies until their hex tiles are implemented
 data.raw["technology"]["planet-discovery-fulgora"].enabled = false
 data.raw["technology"]["planet-discovery-gleba"].enabled = false
-data.raw["technology"]["planet-discovery-vulcanus"].enabled = false
 
 

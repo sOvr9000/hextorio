@@ -7,7 +7,7 @@ data:extend({
         default_value = 0.01,
         minimum_value = 0,
         maximum_value = 1.0,
-        order = "ga",
+        order = "ra",
     },
     {
         type = "double-setting",
@@ -16,7 +16,7 @@ data:extend({
         default_value = 0.01,
         minimum_value = 0,
         maximum_value = 1.0,
-        order = "gb",
+        order = "rb",
     },
     {
         type = "double-setting",
@@ -25,7 +25,7 @@ data:extend({
         default_value = 0.01,
         minimum_value = 0,
         maximum_value = 1.0,
-        order = "gc",
+        order = "rc",
     },
     {
         type = "double-setting",
@@ -34,6 +34,6 @@ data:extend({
         default_value = 0.01,
         minimum_value = 0,
         maximum_value = 1.0,
-        order = "gd",
+        order = "rd",
     },
 })

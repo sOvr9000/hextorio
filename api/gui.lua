@@ -1745,6 +1745,11 @@ function gui.on_supercharge_button_click(player, element)
     local hex_core = player.opened
     if not hex_core then return end
 
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    if state.is_infinite then return end
+
     local inv = lib.get_player_inventory(player)
     if not inv then return end
 
@@ -1758,6 +1763,7 @@ function gui.on_supercharge_button_click(player, element)
     coin_tiers.remove_coin_from_inventory(inv, coin)
 
     hex_grid.supercharge_resources(hex_core)
+    gui.update_hex_core(player)
 end
 
 function gui.on_trade_overview_item_clicked(player, element)

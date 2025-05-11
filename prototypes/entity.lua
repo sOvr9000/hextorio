@@ -3,7 +3,7 @@ local hex_core = table.deepcopy(data.raw.container["steel-chest"])
 
 hex_core.name = "hex-core"
 hex_core.impact_category = "stone"
-hex_core.inventory_size = 49
+hex_core.inventory_size = 89
 hex_core.collision_box = {
     {-2.35, -2.35},
     {2.35, 2.35},

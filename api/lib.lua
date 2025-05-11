@@ -8,8 +8,11 @@ local non_land_tile_names = {
     "water",
     "deepwater",
     "oil-ocean",
+    "oil-ocean-deep",
     "ammoniacal-solution",
-    "hot-lava",
+    "ammoniacal-solution-2",
+    "lava",
+    "lava-hot",
 }
 local non_land_tile_name_lookup = {}
 for _, name in pairs(non_land_tile_names) do
@@ -299,7 +302,7 @@ end
 -- Check if a tile at a given position is land
 function lib.is_land_tile(surface, tile_position)
     local tile = surface.get_tile(tile_position)
-    if not tile then return false end
+    if not tile or not tile.valid then return false end
     return not non_land_tile_name_lookup[tile.name]
 end
 
@@ -662,7 +665,7 @@ function lib.get_gps_str_from_hex_core(hex_core)
 end
 
 function lib.insert_endgame_armor(player)
-    player.insert{name = "construction-robot", count = 248}
+    player.insert{name = "construction-robot", quality="legendary", count = 248}
     player.insert{name="mech-armor", quality="legendary", count = 1}
 
     local mech_armor = player.get_inventory(5)[1].grid
@@ -672,7 +675,7 @@ function lib.insert_endgame_armor(player)
     for _ = 1, 3 do
         mech_armor.put({name = "battery-mk3-equipment", quality = "legendary"})
     end
-    mech_armor.put({name = "night-vision-equipment", quality = "legendary"})
+    mech_armor.put({name = "night-vision-equipment"})
     for _ = 1, 2 do
         mech_armor.put({name = "personal-roboport-mk2-equipment", quality = "legendary"})
     end
@@ -822,6 +825,30 @@ end
 ---@return boolean
 function lib.is_space_platform(surface)
     return surface.name:sub(1, 9) == "platform-"
+end
+
+function lib.sum_mgs(mgs, target, keys)
+    local sum = 0
+    for _, key in pairs(keys) do
+        if not mgs[key] then
+            lib.log_error("lib.sum_mgs: key \"" .. key .. "\" not found in " .. serpent.line(mgs))
+        elseif not mgs[key][target] then
+            lib.log_error("lib.sum_mgs: target \"" .. target .. "\" not found in " .. serpent.line(mgs[key]))
+        else
+            sum = sum + lib.remap_map_gen_setting(mgs[key][target])
+        end
+    end
+    return sum
+end
+
+function lib.flattened_position_array(arr)
+    local flat = {}
+    for x, Y in pairs(arr) do
+        for y, _ in pairs(Y) do
+            table.insert(flat, {x = x, y = y})
+        end
+    end
+    return flat
 end
 
 
