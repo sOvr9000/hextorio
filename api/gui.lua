@@ -589,6 +589,11 @@ function gui.give_item_tooltip(player, surface_name, element)
     elseif element.sprite:sub(1, 7) == "entity/" then
         item_name = element.sprite:sub(8)
         rich_type = "fluid"
+        if item_name == "sulfuric-acid-geyser" then
+            item_name = "sulfuric-acid"
+        elseif item_name == "fluorine-vent" then
+            item_name = "fluorine"
+        end
     else
         lib.log_error("gui.give_item_tooltip: Could not determine item name from sprite: " .. element.sprite)
         return
@@ -905,8 +910,8 @@ function gui.update_hex_core_resources(player)
             amount = 1000000000000
         end
         local sprite = "item/" .. resource_name
-        if state.is_oil then
-            sprite = "entity/crude-oil"
+        if state.is_well then
+            sprite = "entity/" .. resource_name
         end
         local resource = resources_flow.add {
             type = "sprite-button",
