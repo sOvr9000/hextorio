@@ -2437,7 +2437,7 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
             for _, state in pairs(Q) do
                 if state.trades and #state.trades == trades_per_hex then
                     local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
-                    if trade then
+                    if trade and trade.hex_core_state then
                         table.insert(added_trades, trade)
                     end
                 end
@@ -2481,6 +2481,9 @@ function hex_grid.reduce_biters(portion)
 end
 
 function hex_grid.get_trade_volume_base(surface_name)
+    if not storage.trades.trade_volume_base then
+        storage.trades.trade_volume_base = {}
+    end
     local val = storage.trades.trade_volume_base[surface_name]
     if not val then
         local surface_vals = item_values.get_item_values_for_surface(surface_name)

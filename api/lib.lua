@@ -863,6 +863,12 @@ function lib.is_t3_planet(surface_name)
     return surface_name == "aquilo"
 end
 
+function lib.update_table(t_base, t_update)
+    for k, v in pairs(t_update) do
+        t_base[k] = v
+    end
+end
+
 
 
 return lib

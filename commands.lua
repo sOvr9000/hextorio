@@ -63,6 +63,9 @@ function on_command(player, command, params)
 
             for _, starting_trades in pairs(storage.trades.starting_trades) do
                 for _, trade_items in pairs(starting_trades) do
+                    if type(trade_items[1]) == "string" then
+                        trade_items[1] = {trade_items[1]}
+                    end
                     for _, item_name in pairs(trade_items[1]) do
                         if not lib.is_coin(item_name) then
                             player.insert {
