@@ -817,6 +817,7 @@ function gui.update_hex_core(player)
         end
 
         frame["hex-control-flow"].visible = true
+        frame["hex-control-flow"]["teleport"].visible = player.character and state.hex_core and player.character.surface.name == state.hex_core.surface.name
         frame["hex-control-flow"]["unloader-filters"].enabled = true
         frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging"
         if not state.is_infinite then
@@ -1911,6 +1912,7 @@ end
 function gui.on_teleport_button_click(player, element)
     local hex_core = player.opened
     if not hex_core then return end
+    if hex_core.surface.name ~= player.surface.name then return end
 
     lib.teleport_player(player, hex_core.position, hex_core.surface)
 end
