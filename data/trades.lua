@@ -29,6 +29,7 @@ return {
     },
 
     discovered_items = {},
+    trade_volume_base = {},
 
     total_items_traded = {},
     total_items_sold = {},

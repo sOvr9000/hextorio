@@ -424,15 +424,21 @@ function trades.random_trade_item_names(surface_name, volume, params)
     end
 
     if #possible_items < 2 then
-        lib.log_error("Not enough items found near value " .. volume)
-        lib.log_error("Found: " .. serpent.line(possible_items))
+        lib.log_error("trades.random_trade_item_names: Not enough items found near value " .. volume .. "; found: " .. serpent.line(possible_items))
         return
     end
+
     local set = sets.new()
     for i = 1, 6 do
-        sets.add(set, possible_items[math.random(1, #possible_items)])
+        local item_name = table.remove(possible_items, math.random(1, #possible_items))
+        sets.add(set, item_name)
     end
     local trade_items = sets.to_array(set)
+
+    if #trade_items < 2 then
+        lib.log_error("trades.random_trade_item_names: Not enough items selected for trade")
+        return
+    end
 
     local input_item_names = {}
     local output_item_names = {}

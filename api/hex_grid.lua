@@ -1957,7 +1957,7 @@ function hex_grid.spawn_hex_core(surface, position)
     else
         local items_sorted_by_value = item_values.get_items_sorted_by_value(surface.name)
         local max_item_value = item_values.get_item_value(surface.name, items_sorted_by_value[#items_sorted_by_value])
-        local max_volume = lib.runtime_setting_value "trade-volume-per-dist-base" * (lib.runtime_setting_value "trade-volume-per-dist-exp" ^ dist)
+        local max_volume = hex_grid.get_trade_volume_base(surface.name) * (lib.runtime_setting_value "trade-volume-per-dist-exp" ^ dist)
         max_volume = math.min(max_volume, max_item_value)
         for i = 1, lib.runtime_setting_value "trades-per-hex" do
             local r = math.random()
@@ -2478,6 +2478,27 @@ function hex_grid.reduce_biters(portion)
             end
         end
     end
+end
+
+function hex_grid.get_trade_volume_base(surface_name)
+    local val = storage.trades.trade_volume_base[surface_name]
+    if not val then
+        local surface_vals = item_values.get_item_values_for_surface(surface_name)
+        if not surface_vals then
+            lib.log_error("hex_grid.get_trade_volume_base: Cannot find item values for surface " .. surface_name)
+            return 0
+        end
+
+        local min_val = math.huge
+        for item_name, value in pairs(surface_vals) do
+            if not lib.is_fluid(item_name) and not lib.is_coin(item_name) and value < min_val then
+                min_val = value
+            end
+        end
+        val = min_val * 5
+        storage.trades.trade_volume_base[surface_name] = val
+    end
+    return val
 end
 
 
