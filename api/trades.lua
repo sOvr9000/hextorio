@@ -461,6 +461,9 @@ function trades.random_trade_item_names(surface_name, volume, params)
         table.remove(output_item_names, 1)
     end
 
+    trades._check_coin_names_for_volume(input_item_names, volume)
+    trades._check_coin_names_for_volume(output_item_names, volume)
+
     return input_item_names, output_item_names
 end
 
@@ -763,6 +766,31 @@ end
 
 function trades.get_all_trades()
     return sets.to_array(trades.get_trades_lookup())
+end
+
+function trades.get_coin_name_for_trade_volume(trade_volume)
+    if type(trade_volume) == "number" then
+        if trade_volume < 10000000000 then -- use hex coin up to 10000x gravity coin's worth of hex coins
+            return "hex-coin"
+        elseif trade_volume < 1000000000000000 then -- use hex coin up to 10000x meteor coin's worth of gravity coins
+            return "gravity-coin"
+        elseif trade_volume < 100000000000000000000 then -- use hex coin up to 10000x heaxaprism coin's worth of gravity coins
+            return "meteor-coin"
+        else
+            return "hexaprism-coin"
+        end
+    else
+        -- TODO: trade_volume is a coin_tier object
+    end
+end
+
+function trades._check_coin_names_for_volume(list, volume)
+    -- Convert coin names to correct tier for trade volume
+    for _, item_name in pairs(list) do
+        if lib.is_coin(item_name) then
+            list[item_name] = trades.get_coin_name_for_trade_volume(volume)
+        end
+    end
 end
 
 
