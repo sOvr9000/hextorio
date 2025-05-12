@@ -533,6 +533,10 @@ function gui.hide_trade_overview(player)
     if not frame then return end
     frame.visible = false
     player.opened = nil
+
+    if storage.gui and storage.gui.trades_scroll_pane_update and storage.gui.trades_scroll_pane_update[player.name] then
+        storage.gui.trades_scroll_pane_update[player.name].finished = true
+    end
 end
 
 function gui.show_questbook(player)
@@ -639,18 +643,51 @@ function gui.give_trade_arrow_tooltip(element, trade)
     element.tooltip = s
 end
 
-function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
-    if not params then params = {} end
-    trades_scroll_pane.clear()
+function gui._process_trades_scroll_panes()
+    if not storage.gui then
+        storage.gui = {}
+    end
+    if not storage.gui.trades_scroll_pane_update then
+        storage.gui.trades_scroll_pane_update = {}
+    end
+    for player_name, process in pairs(storage.gui.trades_scroll_pane_update) do
+        if process.finished then
+            storage.gui.trades_scroll_pane_update[player_name] = nil
+        else
+            gui._update_trades_scroll_pane_tick(process)
+        end
+    end
+end
 
+function gui._update_trades_scroll_pane_tick(process)
+    if process.clear_mode then
+        -- local batch_size = 50
+        -- for i = math.min(#process.trades_scroll_pane.children, batch_size), 1, -1 do
+        --     process.trades_scroll_pane.children[i].destroy()
+        -- end
+        -- if #process.trades_scroll_pane.children == 0 then
+        --     process.clear_mode = false
+        -- end
+        process.trades_scroll_pane.clear()
+        process.clear_mode = false
+        return
+    end
+
+    local batch_size = 30
     local size = 40
-    for trade_number, trade in ipairs(trades_list) do
-        local trade_flow = trades_scroll_pane.add {
+
+    for trade_number = process.batch_idx, math.min(#process.trades_list, process.batch_idx + batch_size - 1) do
+        local trade = process.trades_list[trade_number]
+        if not trade then
+            lib.log_error("trade_number = " .. trade_number .. " is out of bounds for list of " .. #process.trades_list .. " trades")
+            break
+        end
+        local trade_flow = process.trades_scroll_pane.add {
             type = "flow",
             name = "trade-" .. trade_number,
             direction = "horizontal",
         }
-        if params.show_toggle_trade then
+        if process.params.show_toggle_trade then
             local checkbox = trade_flow.add {
                 type = "checkbox",
                 name = "toggle-trade-" .. trade_number,
@@ -662,7 +699,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             checkbox.style.top_margin = size / 2 + 1
             -- checkbox.style.top_margin = size / 2 - 5
         end
-        if params.show_tag_creator then
+        if process.params.show_tag_creator then
             local tag_button = trade_flow.add {
                 type = "sprite-button",
                 name = "tag-button-" .. trade_number,
@@ -672,7 +709,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             tag_button.style.top_margin = 10
             tag_button.tooltip = {"hex-core-gui.tag-button"}
         end
-        if params.show_core_finder then
+        if process.params.show_core_finder then
             local core_finder_button = trade_flow.add {
                 type = "sprite-button",
                 name = "core-finder-button-" .. trade_number,
@@ -707,7 +744,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
                     sprite = "item/" .. input_item.name,
                     number = input_item.count,
                 }
-                gui.give_item_tooltip(player, trade.surface_name, input)
+                gui.give_item_tooltip(process.player, trade.surface_name, input)
             else
                 total_empty = total_empty + 1
                 local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
@@ -721,7 +758,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             name = "trade-arrow",
             sprite = "trade-arrow",
         }
-        if params.show_productivity and trades.get_productivity(trade) > 0 then
+        if process.params.show_productivity and trades.get_productivity(trade) > 0 then
             local prod_bar = trade_frame.add {
                 type = "progressbar",
                 name = "prod-bar",
@@ -747,7 +784,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
                     sprite = "item/" .. output_item.name,
                     number = output_item.count,
                 }
-                gui.give_item_tooltip(player, trade.surface_name, output)
+                gui.give_item_tooltip(process.player, trade.surface_name, output)
             else
                 total_empty = total_empty + 1
                 local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
@@ -757,6 +794,29 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
             end
         end
     end
+
+    process.batch_idx = process.batch_idx + batch_size
+    if process.batch_idx > #process.trades_list then
+        process.finished = true
+    end
+end
+
+function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
+    if not params then params = {} end
+    if not storage.gui then
+        storage.gui = {}
+    end
+    if not storage.gui.trades_scroll_pane_update then
+        storage.gui.trades_scroll_pane_update = {}
+    end
+    storage.gui.trades_scroll_pane_update[player.name] = {
+        player = player,
+        trades_scroll_pane = trades_scroll_pane,
+        trades_list = trades_list,
+        params = params,
+        clear_mode = true,
+        batch_idx = 1,
+    }
 end
 
 function gui.generate_sprite_buttons(player, surface_name, flow, items, give_tooltip)
@@ -1137,82 +1197,46 @@ function gui.update_trade_overview(player)
     gui.update_player_trade_overview_filters(player)
     local filter = gui.get_player_trade_overview_filter(player)
 
-    -- lib.log(serpent.line(filter))
-
-    if not filter.planets then
-        filter.planets = sets.new {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
-    end
-
-    filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
-
-    -- local empty_input_filter = true
-    -- if filter.input_items then
-    --     empty_input_filter = next(filter.input_items) ~= nil
-    -- end
-
-    -- local empty_output_filter = true
-    -- if filter.output_items then
-    --     empty_output_filter = next(filter.output_items) ~= nil
-    -- end
-
-    local function filter_condition(trade)
-        if filter.input_items then
-            for _, input_item_name in pairs(filter.input_items) do
-                local found = false
-                for _, input in pairs(trade.input_items) do
-                    if input.name == input_item_name then
-                        found = true
-                    end
-                end
-                if not found then
-                    return false
-                end
+    local trades_set
+    if filter.input_items then
+        for _, item in pairs(filter.input_items) do
+            if trades_set then
+                trades_set = sets.intersection(trades_set, sets.new(trades.get_trades_by_input(item)))
+            else
+                trades_set = sets.new(trades.get_trades_by_input(item))
             end
         end
-
-        if filter.output_items then
-            for _, output_item_name in pairs(filter.output_items) do
-                local found = false
-                for _, output in pairs(trade.output_items) do
-                    if output.name == output_item_name then
-                        found = true
-                    end
-                end
-                if not found then
-                    return false
-                end
-            end
-        end
-
-        return true
     end
-
-    local trades_list = {}
-    -- lib.log(serpent.line(filter.planets))
-    for surface_id, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
-        local surface = game.get_surface(surface_id)
-        if surface then
-            local surface_name = surface.name
-            -- lib.log(surface_name)
-            if filter.planets[surface_name] then
-                for _, Q in pairs(surface_hexes) do
-                    for _, state in pairs(Q) do
-                        if not filter.show_claimed_only or state.claimed then
-                            if state.trades then
-                                -- lib.log(serpent.block(state.trades))
-                                for _, trade in pairs(state.trades) do
-                                    if filter_condition(trade) then
-                                        table.insert(trades_list, trade)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
+    if filter.output_items then
+        for _, item in pairs(filter.output_items) do
+            if trades_set then
+                trades_set = sets.intersection(trades_set, sets.new(trades.get_trades_by_output(item)))
+            else
+                trades_set = sets.new(trades.get_trades_by_output(item))
             end
         end
     end
 
+    if not trades_set then
+        trades_set = trades.get_trades_lookup()
+    end
+
+    local function filter_trade(trade)
+        if filter.planets_lookup and trade.surface_name then
+            if not filter.planets_lookup[trade.surface_name] then
+                sets.remove(trades_set, trade)
+            end
+        end
+        if filter.show_claimed_only and trade.hex_core_state and trade.hex_core_state.claimed then
+            sets.remove(trades_set, trade)
+        end
+    end
+
+    for trade, _ in pairs(trades_set) do
+        filter_trade(trade)
+    end
+
+    local trades_list = sets.to_array(trades_set)
     storage.trade_overview.trades[player.name] = trades_list
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
@@ -2134,6 +2158,8 @@ function gui.update_player_trade_overview_filters(player)
         filter.planets[planet_name] = planet_status.sprite == "check-mark-green"
     end
 
+    filter.planets_lookup = sets.new(filter.planets)
+
     filter.input_items = {}
     for i = 1, 3 do
         local input_item = trade_contents_frame["input-item-" .. i]
@@ -2157,6 +2183,8 @@ function gui.update_player_trade_overview_filters(player)
     if not next(filter.output_items) then
         filter.output_items = nil
     end
+
+    filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
 end
 
 function gui.is_descendant_of(element, parent_name)

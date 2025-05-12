@@ -695,7 +695,7 @@ function hex_grid.register_events()
         end
         local trade = state.trades[idx]
         player.print("Removed trade: " .. lib.get_trade_img_str(trade))
-        hex_grid.remove_trade(state, idx)
+        hex_grid.remove_trade_by_index(state, idx)
     end)
 
     event_system.register_callback("command-hextorio-debug", function(player, params)
@@ -865,6 +865,8 @@ function hex_grid.add_trade(hex_core_state, trade)
     trade.hex_core_state = hex_core_state
     table.insert(hex_core_state.trades, trades.copy_trade(trade))
 
+    trades.add_trade_to_tree(trade)
+
     hex_grid.update_hex_core_inventory_filters(hex_core_state)
 
     if hex_core_state.claimed then
@@ -874,16 +876,17 @@ function hex_grid.add_trade(hex_core_state, trade)
     quests.increment_progress_for_type("trades-found")
 end
 
-function hex_grid.remove_trade(hex_core_state, idx)
+function hex_grid.remove_trade_by_index(hex_core_state, idx)
     if not hex_core_state then
-        lib.log_error("hex_grid.add_trade: nil hex core state")
+        lib.log_error("hex_grid.remove_trade_by_index: nil hex core state")
         return
     end
     if idx <= 0 or idx > #hex_core_state.trades then
-        lib.log_error("hex_grid.remove_trade: invalid index " .. idx)
+        lib.log_error("hex_grid.remove_trade_by_index: invalid index " .. idx)
         return
     end
-    table.remove(hex_core_state.trades, idx)
+    local trade = table.remove(hex_core_state.trades, idx)
+    trades.remove_trade_from_tree(trade)
 end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
@@ -960,7 +963,7 @@ function hex_grid.switch_hex_core_mode(state, mode)
                     sets.add(all_outputs, output.name)
                 end
             end
-            hex_grid.remove_trade(state, i)
+            hex_grid.remove_trade_by_index(state, i)
         end
         local params = {target_efficiency = 0.1}
         for item_name, _ in pairs(all_outputs) do
@@ -983,7 +986,7 @@ function hex_grid.switch_hex_core_mode(state, mode)
                     sets.add(all_inputs, input.name)
                 end
             end
-            hex_grid.remove_trade(state, i)
+            hex_grid.remove_trade_by_index(state, i)
         end
         local params = {target_efficiency = 0.1}
         for item_name, _ in pairs(all_inputs) do

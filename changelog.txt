@@ -6,6 +6,8 @@ Date: 7/5/25
   Balancing:
     - Decreased the rate at which item values scale on Nauvis.
     - Reduced productivity bonuses to half, except for the quest reward.
+  Optimizations:
+    - Optimized trade overview.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.3
 Date: 7/5/25

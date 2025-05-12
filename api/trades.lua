@@ -672,6 +672,99 @@ function trades.get_random_volume_for_item(surface_name, item_name)
     return random_volume
 end
 
+function trades._check_tree_existence()
+    if not storage.trades.tree then
+        storage.trades.tree = {}
+    end
+    if not storage.trades.tree.by_input then
+        storage.trades.tree.by_input = {}
+    end
+    if not storage.trades.tree.by_output then
+        storage.trades.tree.by_output = {}
+    end
+    if not storage.trades.tree.all_trades_lookup then
+        storage.trades.tree.all_trades_lookup = {}
+    end
+end
+
+function trades.add_trade_to_tree(trade)
+    if not trade then
+        lib.log_error("trades.add_trade_to_tree: trade is nil")
+        return
+    end
+    trades._check_tree_existence()
+    for _, input in pairs(trade.input_items) do
+        if not storage.trades.tree.by_input[input.name] then
+            storage.trades.tree.by_input[input.name] = {}
+        end
+        table.insert(storage.trades.tree.by_input[input.name], trade)
+    end
+    for _, output in pairs(trade.output_items) do
+        if not storage.trades.tree.by_output[output.name] then
+            storage.trades.tree.by_output[output.name] = {}
+        end
+        table.insert(storage.trades.tree.by_output[output.name], trade)
+    end
+    storage.trades.tree.all_trades_lookup[trade] = true
+end
+
+function trades.remove_trade_from_tree(trade)
+    if not trade then
+        lib.log_error("trades.remove_trade_from_tree: trade is nil")
+        return
+    end
+    trades._check_tree_existence()
+    -- TODO: These subtrees should probably also index by trade object so that looping can be avoided; it's a potential optimization for the future
+    for _, input in pairs(trade.input_items) do
+        if storage.trades.tree.by_input[input.name] then
+            local _trades = storage.trades.tree.by_input[input.name]
+            for i = #_trades, 1, -1 do
+                if _trades[i] == trade then
+                    table.remove(_trades, i)
+                end
+            end
+        end
+    end
+    for _, output in pairs(trade.output_items) do
+        if storage.trades.tree.by_input[output.name] then
+            local _trades = storage.trades.tree.by_input[output.name]
+            for i = #_trades, 1, -1 do
+                if _trades[i] == trade then
+                    table.remove(_trades, i)
+                end
+            end
+        end
+    end
+    storage.trades.tree.all_trades_lookup[trade] = nil
+end
+
+function trades.get_trades_by_input(item_name)
+    if not item_name then
+        lib.log_error("trades.get_trades_by_input: item_name is nil")
+        return {}
+    end
+    trades._check_tree_existence()
+    return storage.trades.tree.by_input[item_name] or {}
+end
+
+function trades.get_trades_by_output(item_name)
+    if not item_name then
+        lib.log_error("trades.get_trades_by_output: item_name is nil")
+        return {}
+    end
+    trades._check_tree_existence()
+    return storage.trades.tree.by_output[item_name] or {}
+end
+
+function trades.get_trades_lookup()
+    trades._check_tree_existence()
+    return sets.copy(storage.trades.tree.all_trades_lookup)
+end
+
+function trades.get_all_trades()
+    return sets.to_array(trades.get_trades_lookup())
+end
+
 
 
 return trades

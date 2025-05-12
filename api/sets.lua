@@ -21,6 +21,10 @@ function sets.new(list)
     return set
 end
 
+function sets.copy(set)
+    return sets.new(set)
+end
+
 function sets.add(set, item)
     set[item] = true
 end

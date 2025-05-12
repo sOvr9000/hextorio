@@ -120,6 +120,7 @@ script.on_event(defines.events.on_tick, function (event)
             storage.events.intro_finished = true
         end
     end
+    gui._process_trades_scroll_panes()
 end)
 
 script.on_event(defines.events.on_chunk_generated, function(event)
