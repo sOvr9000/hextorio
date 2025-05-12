@@ -731,7 +731,7 @@ function gui._update_trades_scroll_pane_tick(process)
         trade_frame.style.width = 381 / 1.2
         local trade_table = trade_frame.add {
             type = "table",
-            name = "trade_table",
+            name = "trade-table",
             column_count = 7,
         }
         local total_empty = 0
@@ -1222,8 +1222,8 @@ function gui.update_trade_overview(player)
     end
 
     local function filter_trade(trade)
-        if filter.planets_lookup and trade.surface_name then
-            if not filter.planets_lookup[trade.surface_name] then
+        if filter.planets and trade.surface_name then
+            if not filter.planets[trade.surface_name] then
                 sets.remove(trades_set, trade)
             end
         end
@@ -1767,7 +1767,7 @@ function gui.on_sprite_button_click(player, element)
                 gui.on_unloader_filters_direction_click(player, element)
             elseif element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
                 gui.on_hex_mode_button_click(player, element)
-            elseif gui.is_descendant_of(element, "trade-overview") then
+            elseif gui.is_descendant_of(element, "trade-overview") and element.parent.name == "trade-table" then
                 gui.on_trade_overview_item_clicked(player, element)
             elseif gui.is_descendant_of(element, "hex-core") then
                 gui.on_hex_core_trade_item_clicked(player, element)
@@ -2157,8 +2157,6 @@ function gui.update_player_trade_overview_filters(player)
         local planet_status = planet_filter_flow["status"]
         filter.planets[planet_name] = planet_status.sprite == "check-mark-green"
     end
-
-    filter.planets_lookup = sets.new(filter.planets)
 
     filter.input_items = {}
     for i = 1, 3 do
