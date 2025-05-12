@@ -910,7 +910,7 @@ function gui.update_hex_core_resources(player)
             amount = 1000000000000
         end
         local sprite = "item/" .. resource_name
-        if state.is_well then
+        if state.is_well or state.is_oil then -- is_oil for <=0.2.3, should make this a function
             sprite = "entity/" .. resource_name
         end
         local resource = resources_flow.add {

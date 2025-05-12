@@ -100,6 +100,10 @@ function item_values.has_item_value(surface_name, item_name)
     return surface_vals[item_name] ~= nil
 end
 
+function item_values.is_item_interplanetary(surface_name, item_name)
+    return not item_values.has_item_value(surface_name, item_name)
+end
+
 function item_values.get_item_sell_value_bonus_from_rank(surface_name, item_name, rank_tier)
     local bonus_effect = item_ranks.get_rank_bonus_effect(rank_tier)
     local value = item_values.get_item_value(surface_name, item_name)

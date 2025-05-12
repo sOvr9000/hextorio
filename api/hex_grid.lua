@@ -888,23 +888,28 @@ end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.mode == "sink" or state.mode == "generator" then return end
+    if state.hex_core and item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
     if math.random() > 0.01 then return end
+
     local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume, {blacklist = sets.new {item_name}})
     if not input_names or not output_names then
         lib.log_error("hex_grid.apply_extra_trade_bonus: failed to get random trade item name from volume = " .. volume)
         return
     end
+
     local for_output = math.random() < 0.5
     if for_output then
         input_names, output_names = output_names, input_names
     end
+
     input_names[math.random(1, #input_names)] = item_name
+
     if for_output then
         input_names, output_names = output_names, input_names
     end
+
     local trade = trades.from_item_names(state.hex_core.surface.name, input_names, output_names)
     hex_grid.add_trade(state, trade)
-    -- game.print{"hextorio.bonus-trade", lib.get_gps_str_from_hex_core(state.hex_core), "[item=" .. item_name .. "]"}
     return trade
 end
 
@@ -2433,12 +2438,14 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
     local added_trades = {}
     local trades_per_hex = lib.runtime_setting_value "trades-per-hex"
     for surface_name, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
-        for _, Q in pairs(surface_hexes) do
-            for _, state in pairs(Q) do
-                if state.trades and #state.trades == trades_per_hex then
-                    local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
-                    if trade and trade.hex_core_state then
-                        table.insert(added_trades, trade)
+        if not item_values.is_item_interplanetary(surface_name, item_name) then
+            for _, Q in pairs(surface_hexes) do
+                for _, state in pairs(Q) do
+                    if state.trades and #state.trades == trades_per_hex then
+                        local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
+                        if trade and trade.hex_core_state then
+                            table.insert(added_trades, trade)
+                        end
                     end
                 end
             end
