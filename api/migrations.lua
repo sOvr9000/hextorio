@@ -9,6 +9,7 @@ local quests = require "api.quests"
 
 local data_item_ranks = require "data.item_ranks"
 local data_trade_overview = require "data.trade_overview"
+local data_item_values = require "data.item_values"
 local data_quests = require "data.quests"
 
 local migrations = {}
@@ -27,6 +28,7 @@ local versions = {
     "0.2.1",
     "0.2.2",
     "0.2.3",
+    "0.3.0",
 }
 
 local version_stepping = {}
@@ -123,9 +125,6 @@ local process_migration = {
 
         -- log(serpent.block(storage.quests))
 
-
-
-
         -- Reinitialize GUIs
         for _, player in pairs(game.players) do
             gui.reinitialize_everything(player)
@@ -171,6 +170,14 @@ local process_migration = {
                 end
             end
         end
+    end,
+    ["0.2.3"] = function()
+
+    end,
+    ["0.3.0"] = function()
+        storage.item_values.value_multipliers = data_item_values.value_multipliers
+        storage.item_values.values = data_item_values.values
+        log(serpent.block(storage.item_values.value_multipliers))
     end,
 }
 
