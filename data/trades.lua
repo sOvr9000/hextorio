@@ -23,6 +23,8 @@ return {
         vulcanus = {
             {{"calcite", "coal"}, "hex-coin"},
             {{"metallurgic-science-pack", "cliff-explosives"}, "hex-coin"},
+            {{"tungsten-ore", "advanced-circuit"}, {"tungsten-carbide", "processing-unit"}},
+            {{"cargo-bay"}, {"thruster", "asteroid-collector"}},
         },
     },
 
