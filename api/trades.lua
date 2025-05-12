@@ -430,6 +430,7 @@ function trades.random_trade_item_names(surface_name, volume, params)
 
     local set = sets.new()
     for i = 1, 6 do
+        if #possible_items == 0 then break end
         local item_name = table.remove(possible_items, math.random(1, #possible_items))
         sets.add(set, item_name)
     end
