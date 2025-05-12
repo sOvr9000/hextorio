@@ -119,15 +119,15 @@ function item_ranks.get_rank_bonus_effect(rank_tier)
         return
     end
     if rank_tier == 1 then
-        return 0.0
+        return 0.00
     elseif rank_tier == 2 then
-        return 0.1
+        return 0.05
     elseif rank_tier == 3 then
-        return 0.2
+        return 0.10
     elseif rank_tier == 4 then
-        return 0.3
+        return 0.15
     elseif rank_tier == 5 then
-        return 0.5
+        return 0.25
     end
     lib.log_error("item_ranks.get_rank_bonus_effect: rank_tier is out of range: " .. rank_tier)
 end

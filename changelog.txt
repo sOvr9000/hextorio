@@ -3,6 +3,9 @@ Version: 0.3.0
 Date: 7/5/25
   Major Features:
     - Added [planet=vulcanus]
+  Balancing:
+    - Decreased the rate at which item values scale on Nauvis.
+    - Reduced productivity bonuses to half, except for the quest reward.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.3
 Date: 7/5/25
