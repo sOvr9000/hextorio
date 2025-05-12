@@ -13,11 +13,17 @@
 
 return {
     starting_trades = {
-        {{"electronic-circuit", "stone-brick"}, {"hex-coin"}},
-        {{"copper-cable", "boiler"}, {"wood", "raw-fish"}},
-        {{"iron-plate", "copper-ore", "hex-coin"}, {"stone", "coal"}},
-        {{"low-density-structure"}, {"hex-coin"}},
-        {{"atomic-bomb"}, {"hex-coin"}},
+        nauvis = {
+            {{"electronic-circuit", "stone-brick"}, {"hex-coin"}},
+            {{"copper-cable", "boiler"}, {"wood", "raw-fish"}},
+            {{"iron-plate", "copper-ore", "hex-coin"}, {"stone", "coal"}},
+            {{"low-density-structure"}, {"hex-coin"}},
+            {{"atomic-bomb"}, {"hex-coin"}},
+        },
+        vulcanus = {
+            {{"calcite", "coal"}, "hex-coin"},
+            {{"metallurgic-science-pack", "cliff-explosives"}, "hex-coin"},
+        },
     },
 
     discovered_items = {},

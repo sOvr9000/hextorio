@@ -635,6 +635,10 @@ function lib.get_trade_img_str(trade)
 end
 
 function lib.is_coin(item_name)
+    if type(item_name) ~= "string" then
+        lib.log_error("lib.is_coin: item_name is not a string, received type: " .. type(item_name))
+        return false
+    end
     return item_name:sub(-5) == "-coin"
 end
 

@@ -20,20 +20,40 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
         lib.log_error("item_values.get_item_value: item_name is nil, defaulting to 1")
         return 1
     end
+    if type(surface_name) ~= "string" then
+        lib.log_error("item_values.get_item_value: surface_name is not a string, received type: " .. type(surface_name))
+        return 1
+    end
+    if type(item_name) ~= "string" then
+        lib.log_error("item_values.get_item_value: item_name is not a string, received type: " .. type(item_name))
+        return 1
+    end
+
     local surface_vals = item_values.get_item_values_for_surface(surface_name)
     if not surface_vals then
         lib.log_error("item_values.get_item_value: No item values for surface " .. surface_name .. ", defaulting to 1")
         return 1
     end
+
     local val = surface_vals[item_name]
     if not val then
         if allow_interplanetary == nil or allow_interplanetary then
             val = item_values.get_interplanetary_item_value(item_name)
         else
-            lib.log("Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
+            lib.log("item_values.get_item_value: Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
             val = 1
         end
     end
+
+    if val then
+        if not lib.is_coin(item_name) then
+            val = val * (storage.item_values.value_multipliers[surface_name] or 1)
+        end
+    else
+        lib.log("item_values.get_item_value: Could not find interplanetary value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
+        val = 1
+    end
+
     return val
 end
 

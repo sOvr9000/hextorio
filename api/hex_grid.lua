@@ -1951,7 +1951,7 @@ function hex_grid.spawn_hex_core(surface, position)
     state.trades = {}
     local hex_core_trades = {}
     if is_starting_hex then
-        for _, trade in pairs(storage.trades.starting_trades) do
+        for _, trade in pairs(storage.trades.starting_trades[surface.name]) do
             table.insert(hex_core_trades, trades.from_item_names(surface.name, table.unpack(trade)))
         end
     else
