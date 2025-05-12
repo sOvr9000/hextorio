@@ -37,6 +37,13 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
 
     local val = surface_vals[item_name]
     if not val then
+        if lib.is_coin(item_name) then
+            surface_vals["hex-coin"] = 10
+            surface_vals["gravity-coin"] = surface_vals["hex-coin"] * 100000
+            surface_vals["meteor-coin"] = surface_vals["gravity-coin"] * 100000
+            surface_vals["hexaprism-coin"] = surface_vals["meteor-coin"] * 100000 -- TODO: these valuse are too large for floating point precision, so coin_tiers will have to replace it eventually
+            return surface_vals[item_name]
+        end
         if allow_interplanetary == nil or allow_interplanetary then
             val = item_values.get_interplanetary_item_value(item_name)
         else

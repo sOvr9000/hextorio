@@ -57,13 +57,6 @@ script.on_init(function()
     storage.trade_overview = data_trade_overview
     storage.blueprints = data_blueprints
 
-    for _, surface_vals in pairs(storage.item_values.values) do
-        surface_vals['hex-coin'] = 10
-        surface_vals['gravity-coin'] = 100000 * surface_vals['hex-coin']
-        surface_vals['meteor-coin'] = 100000 * surface_vals['gravity-coin']
-        surface_vals['hexaprism-coin'] = 100000 * surface_vals['meteor-coin']
-    end
-
     local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
     storage.hex_grid.mgs["nauvis"] = mgs_original
 
