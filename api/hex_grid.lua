@@ -2422,7 +2422,10 @@ function hex_grid.update_all_trades()
             for _, state in pairs(Q) do
                 if state.trades then
                     for _, trade_id in pairs(state.trades) do
-                        trades.check_productivity(trades.get_trade_from_id(trade_id))
+                        local trade = trades.get_trade_from_id(trade_id)
+                        if trade then
+                            trades.check_productivity(trade)
+                        end
                     end
                 end
             end
