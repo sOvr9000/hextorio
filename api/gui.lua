@@ -676,6 +676,10 @@ function gui._update_trades_scroll_pane_tick(process)
     local batch_size = 30
     local size = 40
 
+    if game.is_multiplayer() then
+        batch_size = 20 -- slow down for slow connections like my own
+    end
+
     for trade_number = process.batch_idx, math.min(#process.trades_list, process.batch_idx + batch_size - 1) do
         local trade = process.trades_list[trade_number]
         if not trade then
