@@ -227,6 +227,7 @@ local process_migration = {
                         trades._check_coin_names_for_volume(output_names, volume)
                         hex_grid.remove_trade_by_index(state, i)
                         local new_trade = trades.from_item_names(trade.surface_name, input_names, output_names, params)
+                        new_trade.active = trade.active
                         table.insert(new_trades, new_trade)
                         -- trades.set_productivity(new_trade, trades.get_productivity(trade))
                         trades.set_current_prod_value(new_trade, trades.get_current_prod_value(trade))

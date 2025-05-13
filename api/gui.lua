@@ -1237,6 +1237,8 @@ function gui.update_trade_overview(player)
         trades_set = lib.shallow_copy(trades.get_trades_lookup())
     end
 
+    log(serpent.block(trades_set))
+
     local function filter_trade(i, trade)
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
