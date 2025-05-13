@@ -352,7 +352,21 @@ function gui.init_trade_overview(player)
 
     local show_only_claimed_flow = right_frame.add {type = "flow", name = "show-only-claimed", direction = "horizontal"}
     local toggle_show_only_claimed = show_only_claimed_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_show_only_claimed.style.top_margin = 3
     local toggle_show_only_claimed_label = show_only_claimed_flow.add {type = "label", name = "label", caption = {"hextorio-gui.show-only-claimed"}}
+
+    local exact_inputs_match_flow = right_frame.add {type = "flow", name = "exact-inputs-match", direction = "horizontal"}
+    local toggle_exact_inputs_match = exact_inputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_exact_inputs_match.tooltip = {"hextorio-gui.exact-inputs-match-tooltip"}
+    toggle_exact_inputs_match.style.top_margin = 3
+    local toggle_exact_inputs_match_label = exact_inputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact-inputs-match"}}
+    toggle_exact_inputs_match_label.tooltip = {"hextorio-gui.exact-inputs-match-tooltip"}
+    local exact_outputs_match_flow = right_frame.add {type = "flow", name = "exact-outputs-match", direction = "horizontal"}
+    local toggle_exact_outputs_match = exact_outputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_exact_outputs_match.style.top_margin = 3
+    toggle_exact_outputs_match.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
+    local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact-outputs-match"}}
+    toggle_exact_outputs_match_label.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
 
     trade_contents_label.style.font = "heading-2"
     processing_progress_bar.visible = false
@@ -398,6 +412,7 @@ function gui.init_trade_overview(player)
     trade_table_frame.style.natural_width = 700
 
     local trade_table = scroll_pane.add {type = "table", name = "table", column_count = 2}
+    trade_table.style.horizontal_spacing = 109 / 1.2
 end
 
 function gui.init_catalog(player)
@@ -1191,6 +1206,7 @@ function gui.update_trade_overview(player)
                     name = "status",
                     sprite = "check-mark-green",
                 }
+                surface_status.style.left_margin = 8
                 -- surface_status.style.width = 24
                 -- surface_status.style.height = 24
                 surface_status.style.size = {24, 24}
@@ -1249,23 +1265,43 @@ function gui.update_trade_overview(player)
     local function filter_trade(trade)
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
-                trades_set[trade.id] = nil
+                return true
             end
         end
-        if filter.show_claimed_only and trade.hex_core_state and trade.hex_core_state.claimed then
-            trades_set[trade.id] = nil
+        if filter.show_claimed_only and trade.hex_core_state and not trade.hex_core_state.claimed then
+            return true
         end
+        if filter.exact_inputs_match then
+            for _, input in pairs(trade.input_items) do
+                if not filter.input_items_lookup[input.name] then
+                    return true
+                end
+            end
+        end
+        if filter.exact_outputs_match then
+            for _, output in pairs(trade.output_items) do
+                if not filter.output_items_lookup[output.name] then
+                    return true
+                end
+            end
+        end
+        return false
     end
 
     -- At this point, trades_set cannot be nil and must be a lookup table that maps trade ids to trade objects.
-    for _, trade in ipairs(trades_set) do
-        filter_trade(trade)
+    for _, trade in pairs(trades_set) do
+        if filter_trade(trade) then
+            trades_set[trade.id] = nil
+        end
     end
 
     -- log("filtered trades:")
     -- log(lib.tostring_trades_array(trades.convert_trades_lookup_to_array(trades_set)))
 
     local trades_list = trades.convert_trades_lookup_to_array(trades_set)
+
+    -- Sort trades
+
     storage.trade_overview.trades[player.name] = trades_list
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
@@ -1717,7 +1753,7 @@ end
 function gui.on_checkbox_click(player, element)
     if element.name:sub(1, 12) == "toggle-trade" then
         gui.on_toggle_trade_checkbox_click(player, element)
-    elseif element.parent.name == "show-only-claimed" then
+    elseif element.parent.name == "show-only-claimed" or element.parent.name == "exact-inputs-match" or element.parent.name == "exact-outputs-match" then
         gui.on_trade_overview_filter_changed(player)
     end
 end
@@ -1936,6 +1972,8 @@ function gui.on_clear_filters_button_click(player, element)
     end
 
     filter_frame["right"]["show-only-claimed"]["checkbox"].state = false
+    filter_frame["right"]["exact-inputs-match"]["checkbox"].state = false
+    filter_frame["right"]["exact-outputs-match"]["checkbox"].state = false
 
     gui.on_trade_overview_filter_changed(player)
 end
@@ -2212,6 +2250,15 @@ function gui.update_player_trade_overview_filters(player)
     end
 
     filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
+    filter.exact_inputs_match = filter_frame["right"]["exact-inputs-match"]["checkbox"].state
+    filter.exact_outputs_match = filter_frame["right"]["exact-outputs-match"]["checkbox"].state
+
+    if filter.exact_inputs_match then
+        filter.input_items_lookup = sets.new(filter.input_items)
+    end
+    if filter.exact_outputs_match then
+        filter.output_items_lookup = sets.new(filter.output_items)
+    end
 end
 
 function gui.is_descendant_of(element, parent_name)

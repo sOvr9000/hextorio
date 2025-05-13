@@ -6,8 +6,10 @@ Date: 13/5/25
   Bugfixes:
     - Faraway hexes had no trades sometimes.
     - Trade overview input and output filtering weren't combining correctly.
+    - "Show claimed only" trade overview filter was showing only unclaimed trades.
   Features:
     - Trade overview now has options to filter for exact inputs or exact outputs.
+    - Trade overview now has sorting options for various metrics.
     - Items can now reach silver ranks. [img=silver-star]
     - Added more quests and rewards.
 ---------------------------------------------------------------------------------------------------
