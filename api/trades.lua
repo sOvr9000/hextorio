@@ -772,7 +772,7 @@ end
 
 function trades.get_trades_lookup()
     trades._check_tree_existence()
-    return storage.trades.tree.all_trades_lookup
+    return storage.trades.tree.all_trades_lookup or {}
 end
 
 function trades.get_all_trades()
@@ -795,6 +795,17 @@ function trades.get_trades_from_ids(trade_id_list)
         end
     end
     return _trades
+end
+
+---@param trade_id int|table
+---@return table|nil
+function trades.get_trade_from_id(trade_id)
+    if type(trade_id) == "table" and trades.is_trade_valid(trade_id) then return trade_id end
+    if type(trade_id) ~= "number" then
+        lib.log_error("trades.get_trade_from_id: trade_id is not a number, received type: " .. type(trade_id))
+        return
+    end
+    return trades.get_trades_lookup()[trade_id]
 end
 
 function trades.get_coin_name_for_trade_volume(trade_volume)

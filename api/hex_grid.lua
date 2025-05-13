@@ -693,7 +693,7 @@ function hex_grid.register_events()
             player.print("Failed to remove trade at index " .. idx)
             return
         end
-        local trade = state.trades[idx]
+        local trade = trades.get_trade_from_id(state.trades[idx])
         player.print("Removed trade: " .. lib.get_trade_img_str(trade))
         hex_grid.remove_trade_by_index(state, idx)
     end)
@@ -741,8 +741,8 @@ function hex_grid.register_events()
             local all_trades = {}
             for _, state in pairs(hex_grid.get_flattened_surface_hexes("nauvis")) do
                 if state.trades then
-                    for _, trade in pairs(state.trades) do
-                        table.insert(all_trades, trade)
+                    for _, trade_id in pairs(state.trades) do
+                        table.insert(all_trades, trades.get_trade_from_id(trade_id))
                     end
                 end
             end
@@ -863,7 +863,7 @@ function hex_grid.add_trade(hex_core_state, trade)
         return
     end
     trade.hex_core_state = hex_core_state
-    table.insert(hex_core_state.trades, trades.copy_trade(trade))
+    table.insert(hex_core_state.trades, trade.id)
 
     trades.add_trade_to_tree(trade)
 
@@ -885,8 +885,8 @@ function hex_grid.remove_trade_by_index(hex_core_state, idx)
         lib.log_error("hex_grid.remove_trade_by_index: invalid index " .. idx)
         return
     end
-    local trade = table.remove(hex_core_state.trades, idx)
-    trades.remove_trade_from_tree(trade)
+    local trade_id = table.remove(hex_core_state.trades, idx)
+    trades.remove_trade_from_tree(trades.get_trade_from_id(trade_id))
 end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
@@ -944,7 +944,7 @@ function hex_grid.apply_extra_trades_bonus(state)
 end
 
 function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
-    if not trades.set_trade_active(hex_core_state.trades[trade_index], flag) then return end
+    if not trades.set_trade_active(trades.get_trade_from_id(hex_core_state.trades[trade_index]), flag) then return end
     -- hex_grid.update_loader_filters(hex_core_state)
 end
 
@@ -958,7 +958,7 @@ function hex_grid.switch_hex_core_mode(state, mode)
     if mode == "generator" then
         local all_outputs = sets.new()
         for i = #state.trades, 1, -1 do
-            for _, output in pairs(state.trades[i].output_items) do
+            for _, output in pairs(trades.get_trade_from_id(state.trades[i]).output_items) do
                 if not lib.is_coin(output.name) then
                     sets.add(all_outputs, output.name)
                 end
@@ -974,7 +974,7 @@ function hex_grid.switch_hex_core_mode(state, mode)
     elseif mode == "sink" then
         local all_inputs = sets.new()
         for i = #state.trades, 1, -1 do
-            for _, input in pairs(state.trades[i].input_items) do
+            for _, input in pairs(trades.get_trade_from_id(state.trades[i]).input_items) do
                 if not lib.is_coin(input.name) then
                     sets.add(all_inputs, input.name)
                 end
@@ -1008,24 +1008,27 @@ function hex_grid.update_hex_core_inventory_filters(hex_core_state)
     -- Set filters for non-coin items in trades
     i = 1
     j = 0
-    for _, trade in pairs(hex_core_state.trades) do
-        for _, input in pairs(trade.input_items) do
-            if i - j > #inventory then break end
-            if input.name:sub(-5) == "-coin" then
-                j = j + 1
-            else
-                inventory.set_filter(i - j, {name = input.name, quality = "normal"})
+    for _, trade_id in pairs(hex_core_state.trades) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            for _, input in pairs(trade.input_items) do
+                if i - j > #inventory then break end
+                if input.name:sub(-5) == "-coin" then
+                    j = j + 1
+                else
+                    inventory.set_filter(i - j, {name = input.name, quality = "normal"})
+                end
+                i = i + 1
             end
-            i = i + 1
-        end
-        for _, output in pairs(trade.output_items) do
-            if i - j > #inventory then break end
-            if output.name:sub(-5) == "-coin" then
-                j = j + 1
-            else
-                inventory.set_filter(i - j, {name = output.name, quality = "normal"})
+            for _, output in pairs(trade.output_items) do
+                if i - j > #inventory then break end
+                if output.name:sub(-5) == "-coin" then
+                    j = j + 1
+                else
+                    inventory.set_filter(i - j, {name = output.name, quality = "normal"})
+                end
+                i = i + 1
             end
-            i = i + 1
         end
     end
 
@@ -1760,7 +1763,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
 
     -- Add trade items to catalog list
-    trades.discover_items_in_trades(state.trades)
+    trades.discover_items_in_trades(trades.get_trades_from_ids(state.trades))
 
     hex_grid.check_hex_span(surface, hex_pos)
     hex_grid.add_free_hex_claims(surface, -1)
@@ -2386,7 +2389,8 @@ function hex_grid.update_hex_core(state)
     if not inventory_input then return end
     local inventory_output = state.hex_core_output_inventory
     if not inventory_output then return end
-    for _, trade in pairs(state.trades) do
+    for _, trade_id in pairs(state.trades) do
+        local trade = trades.get_trade_from_id(trade_id)
         local num_batches = trades.get_num_batches_for_trade(inventory_input, inventory_output, trade)
         if num_batches > 0 then
             local total_removed, total_inserted = trades.trade_items(inventory_input, inventory_output, trade, num_batches)
@@ -2411,8 +2415,8 @@ function hex_grid.update_all_trades()
         for _, Q in pairs(surface_hexes) do
             for _, state in pairs(Q) do
                 if state.trades then
-                    for i, trade in ipairs(state.trades) do
-                        trades.check_productivity(trade)
+                    for _, trade_id in pairs(state.trades) do
+                        trades.check_productivity(trades.get_trade_from_id(trade_id))
                     end
                 end
             end

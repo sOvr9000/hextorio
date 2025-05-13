@@ -933,7 +933,7 @@ function gui.update_hex_core(player)
     frame["delete-core-confirmation"].visible = false
     frame["unloader-filters-flow"].visible = false
 
-    gui.update_trades_scroll_pane(player, frame.trades, state.trades, {show_toggle_trade=state.claimed, show_tag_creator=true, show_core_finder=false, show_productivity=true})
+    gui.update_trades_scroll_pane(player, frame.trades, trades.get_trades_from_ids(state.trades), {show_toggle_trade=state.claimed, show_tag_creator=true, show_core_finder=false, show_productivity=true})
     gui.update_hex_core_resources(player)
 end
 
@@ -1684,7 +1684,7 @@ function gui.on_trade_arrow_click(player, element)
         if not state then return end
 
         local trade_number = tonumber(element.parent.parent.parent.name:sub(7))
-        trade = state.trades[trade_number]
+        trade = trades.get_trade_from_id(state.trades[trade_number])
         if not trade then return end
 
         gps_str = hex_core.gps_tag
@@ -1989,7 +1989,7 @@ function gui.on_tag_button_click(player, element)
     if not state then return end
 
     local trade_number = tonumber(element.name:sub(12))
-    local trade = state.trades[trade_number]
+    local trade = trades.get_trade_from_id(state.trades[trade_number])
     local trade_str = lib.get_trade_img_str(trade)
 
     state.tags_created = (state.tags_created or -1) + 1
