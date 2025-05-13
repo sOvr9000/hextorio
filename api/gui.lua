@@ -1233,19 +1233,19 @@ function gui.update_trade_overview(player)
         trades_set = lib.shallow_copy(trades.get_trades_lookup())
     end
 
-    local function filter_trade(trade)
+    local function filter_trade(i, trade)
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
-                trades_set[trade.id] = nil
+                trades_set[i] = nil
             end
         end
         if filter.show_claimed_only and trade.hex_core_state and trade.hex_core_state.claimed then
-            trades_set[trade.id] = nil
+            trades_set[i] = nil
         end
     end
 
-    for _, trade in pairs(trades_set) do
-        filter_trade(trade)
+    for i, trade in ipairs(trades_set) do
+        filter_trade(i, trade)
     end
 
     local trades_list = {}
