@@ -217,19 +217,21 @@ local process_migration = {
                     if state.mode == "generator" or state.mode == "sink" then
                         params = {target_efficiency = 0.1}
                     end
+                    local new_trades = {}
                     for i = #state.trades, 1, -1 do
-                        storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
                         local trade = state.trades[i]
-                        trade.id = storage.trades.trade_id_ctr
                         local input_names, output_names = trades.get_item_names_from_trade(trade)
                         local volume = trades.get_volume_of_trade(trade.surface_name, trade)
                         trades._check_coin_names_for_volume(input_names, volume)
                         trades._check_coin_names_for_volume(output_names, volume)
                         hex_grid.remove_trade_by_index(state, i)
                         local new_trade = trades.from_item_names(trade.surface_name, input_names, output_names, params)
-                        hex_grid.add_trade(state, new_trade)
+                        table.insert(new_trades, new_trade)
                         -- trades.set_productivity(new_trade, trades.get_productivity(trade))
                         trades.set_current_prod_value(new_trade, trades.get_current_prod_value(trade))
+                    end
+                    for _, new_trade in pairs(new_trades) do
+                        hex_grid.add_trade(state, new_trade)
                     end
                 end
             end

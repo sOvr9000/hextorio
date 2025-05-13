@@ -885,7 +885,10 @@ function hex_grid.remove_trade_by_index(hex_core_state, idx)
         lib.log_error("hex_grid.remove_trade_by_index: invalid index " .. idx)
         return
     end
+
     local trade_id = table.remove(hex_core_state.trades, idx)
+    if type(trade_id) ~= "number" then return end -- migration from 0.2.3 saves
+
     trades.remove_trade_from_tree(trades.get_trade_from_id(trade_id))
 end
 

@@ -805,6 +805,7 @@ function trades.get_trade_from_id(trade_id)
         lib.log_error("trades.get_trade_from_id: trade_id is not a number, received type: " .. type(trade_id))
         if type(trade_id) == "table" then
             lib.log(serpent.block(trade_id))
+            error()
         end
         return
     end
