@@ -37,7 +37,9 @@ function trades.new(input_items, output_items, surface_name)
     if not surface_name then
         lib.log_error("trade has no specified surface name")
     end
+    storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
     local trade = {
+        id = storage.trades.trade_id_ctr,
         input_items = {},
         output_items = {},
         surface_name = surface_name,
@@ -505,6 +507,7 @@ end
 
 function trades.is_trade_valid(trade)
     if not trade then return false end
+    if not trade.id then return false end
     if not trade.input_items then return false end
     if not trade.output_items then return false end
     if not trade.surface_name then return false end
@@ -708,15 +711,15 @@ function trades.add_trade_to_tree(trade)
         if not storage.trades.tree.by_input[input.name] then
             storage.trades.tree.by_input[input.name] = {}
         end
-        table.insert(storage.trades.tree.by_input[input.name], trade)
+        table.insert(storage.trades.tree.by_input[input.name], trade.id)
     end
     for _, output in pairs(trade.output_items) do
         if not storage.trades.tree.by_output[output.name] then
             storage.trades.tree.by_output[output.name] = {}
         end
-        table.insert(storage.trades.tree.by_output[output.name], trade)
+        table.insert(storage.trades.tree.by_output[output.name], trade.id)
     end
-    storage.trades.tree.all_trades_lookup[trade] = true
+    storage.trades.tree.all_trades_lookup[trade.id] = trade
 end
 
 function trades.remove_trade_from_tree(trade)
@@ -730,23 +733,23 @@ function trades.remove_trade_from_tree(trade)
         if storage.trades.tree.by_input[input.name] then
             local _trades = storage.trades.tree.by_input[input.name]
             for i = #_trades, 1, -1 do
-                if _trades[i] == trade then
+                if _trades[i] == trade.id then
                     table.remove(_trades, i)
                 end
             end
         end
     end
     for _, output in pairs(trade.output_items) do
-        if storage.trades.tree.by_input[output.name] then
-            local _trades = storage.trades.tree.by_input[output.name]
+        if storage.trades.tree.by_output[output.name] then
+            local _trades = storage.trades.tree.by_output[output.name]
             for i = #_trades, 1, -1 do
-                if _trades[i] == trade then
+                if _trades[i] == trade.id then
                     table.remove(_trades, i)
                 end
             end
         end
     end
-    storage.trades.tree.all_trades_lookup[trade] = nil
+    storage.trades.tree.all_trades_lookup[trade.id] = nil
 end
 
 function trades.get_trades_by_input(item_name)
@@ -769,11 +772,29 @@ end
 
 function trades.get_trades_lookup()
     trades._check_tree_existence()
-    return sets.copy(storage.trades.tree.all_trades_lookup)
+    return storage.trades.tree.all_trades_lookup
 end
 
 function trades.get_all_trades()
-    return sets.to_array(trades.get_trades_lookup())
+    local all_trades = {}
+    for _, trade in pairs(trades.get_trades_lookup()) do
+        table.insert(all_trades, trade)
+    end
+    return all_trades
+end
+
+function trades.get_trades_from_ids(trade_id_list)
+    local _trades = {}
+    local lookup = trades.get_trades_lookup()
+    for _, trade_id in pairs(trade_id_list) do
+        local trade = lookup[trade_id]
+        if trade then
+            table.insert(_trades, trade)
+        else
+            lib.log_error("trades.get_trades_from_ids: trade_id " .. trade_id .. " not found in lookup")
+        end
+    end
+    return _trades
 end
 
 function trades.get_coin_name_for_trade_volume(trade_volume)

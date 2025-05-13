@@ -1197,46 +1197,61 @@ function gui.update_trade_overview(player)
     gui.update_player_trade_overview_filters(player)
     local filter = gui.get_player_trade_overview_filter(player)
 
+    local function intersection(trades_lookup1, trades_lookup2)
+        local result = {}
+        for trade_id, trade in pairs(trades_lookup1) do
+            if trades_lookup2[trade_id] then
+                result[trade_id] = trade
+            end
+        end
+        return result
+    end
+
     local trades_set
     if filter.input_items then
         for _, item in pairs(filter.input_items) do
             if trades_set then
-                trades_set = sets.intersection(trades_set, sets.new(trades.get_trades_by_input(item)))
+                trades_set = intersection(trades_set, lib.shallow_copy(trades.get_trades_by_input(item)))
             else
-                trades_set = sets.new(trades.get_trades_by_input(item))
+                trades_set = lib.shallow_copy(trades.get_trades_by_input(item))
             end
         end
     end
     if filter.output_items then
         for _, item in pairs(filter.output_items) do
             if trades_set then
-                trades_set = sets.intersection(trades_set, sets.new(trades.get_trades_by_output(item)))
+                trades_set = intersection(trades_set, lib.shallow_copy(trades.get_trades_by_output(item)))
             else
-                trades_set = sets.new(trades.get_trades_by_output(item))
+                trades_set = lib.shallow_copy(trades.get_trades_by_output(item))
             end
         end
     end
 
-    if not trades_set then
-        trades_set = trades.get_trades_lookup()
+    if trades_set then
+        trades_set = trades.get_trades_from_ids(trades_set)
+    else
+        trades_set = lib.shallow_copy(trades.get_trades_lookup())
     end
 
     local function filter_trade(trade)
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
-                sets.remove(trades_set, trade)
+                trades_set[trade.id] = nil
             end
         end
         if filter.show_claimed_only and trade.hex_core_state and trade.hex_core_state.claimed then
-            sets.remove(trades_set, trade)
+            trades_set[trade.id] = nil
         end
     end
 
-    for trade, _ in pairs(trades_set) do
+    for _, trade in pairs(trades_set) do
         filter_trade(trade)
     end
 
-    local trades_list = sets.to_array(trades_set)
+    local trades_list = {}
+    for _, trade in pairs(trades_set) do
+        table.insert(trades_list, trade)
+    end
     storage.trade_overview.trades[player.name] = trades_list
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]

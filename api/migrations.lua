@@ -218,7 +218,9 @@ local process_migration = {
                         params = {target_efficiency = 0.1}
                     end
                     for i = #state.trades, 1, -1 do
+                        storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
                         local trade = state.trades[i]
+                        trade.id = storage.trades.trade_id_ctr
                         local input_names, output_names = trades.get_item_names_from_trade(trade)
                         local volume = trades.get_volume_of_trade(trade.surface_name, trade)
                         trades._check_coin_names_for_volume(input_names, volume)

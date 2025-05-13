@@ -869,6 +869,14 @@ function lib.update_table(t_base, t_update)
     end
 end
 
+function lib.shallow_copy(t)
+    local copy = {}
+    for k, v in pairs(t) do
+        copy[k] = v
+    end
+    return copy
+end
+
 
 
 return lib
