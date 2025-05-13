@@ -1957,7 +1957,7 @@ function hex_grid.spawn_hex_core(surface, position)
         local items_sorted_by_value = item_values.get_items_sorted_by_value(surface.name)
         local max_item_value = item_values.get_item_value(surface.name, items_sorted_by_value[#items_sorted_by_value])
         local max_volume = hex_grid.get_trade_volume_base(surface.name) * (lib.runtime_setting_value "trade-volume-per-dist-exp" ^ dist)
-        max_volume = math.min(max_volume, max_item_value)
+        max_volume = math.min(max_volume, max_item_value * 0.5)
         for i = 1, lib.runtime_setting_value "trades-per-hex" do
             local r = math.random()
             local random_volume = math.max(1, (1 - r * r) * max_volume)
