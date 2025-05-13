@@ -19,6 +19,7 @@ local all_commands = {
     {name = "complete-quest", usage = "/complete-quest <quest-name>", examples = {"/complete-quest ground-zero", "/complete-quest find-some-trades"}},
     {name = "tp-to-ship", usage = "/tp-to-ship"},
     {name = "chart", usage = "/chart <surface> [range]", examples = {"/chart vulcanus", "/chart nauvis 500"}},
+    {name = "spawn-ship", usage = "/spawn-ship"},
 }
 
 local public_commands = sets.new {
@@ -100,6 +101,11 @@ function on_command(player, command, params)
     elseif command == "chart" then
         local range = params[2] or 300
         player.force.chart(params[1], {{-range, -range}, {range, range}})
+    elseif command == "spawn-ship" then
+        local sp = space_platforms.new("nauvis", "Hexaclysm")
+        if sp then
+            space_platforms.generate_tier1_ship(sp)
+        end
     end
 
     event_system.trigger("command-" .. command, player, params)

@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
-Date: 7/5/25
+Date: 12/5/25
   Major Features:
     - Added [planet=vulcanus]
   Balancing:
@@ -8,6 +8,8 @@ Date: 7/5/25
     - Reduced productivity bonuses to half, except for the quest reward.
   Optimizations:
     - Optimized trade overview.
+  Minor Features:
+    - Added commands /spawn-ship, /chart
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.3
 Date: 7/5/25
