@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 13/5/25
+  Major Features:
+    - Added [planet=fulgora]
+  Bugfixes:
+    - Faraway hexes had no trades sometimes.
+  Features:
+    - Trade overview now has options to filter for exact inputs or exact outputs.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 12/5/25
   Major Features:
