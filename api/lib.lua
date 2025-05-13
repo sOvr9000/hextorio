@@ -877,6 +877,51 @@ function lib.shallow_copy(t)
     return copy
 end
 
+---@param items {[int]: table}
+---@return string
+function lib.tostring_trade_items(items)
+    local s = "["
+    for i, item in ipairs(items) do
+        if i > 1 then
+            s = s .. " + "
+        end
+        s = s .. item.name .. " x" .. item.count
+    end
+    return s .. "]"
+end
+
+---@param trade table
+---@return string
+function lib.tostring_trade(trade)
+    local s = "[Trade (ID " .. trade.id .. ")"
+    s = s .. " | [" .. lib.tostring_trade_items(trade.input_items)
+    s = s .. " >> " .. lib.tostring_trade_items(trade.output_items) .. "]"
+    return s .. "]"
+end
+
+---@param trades {[int]: table}
+---@return string
+function lib.tostring_trades_array(trades)
+    local s = "["
+    for i, trade in ipairs(trades) do
+        s = s .. "\n\t" .. i .. ": " .. lib.tostring_trade(trade)
+    end
+    return s .. "\n]"
+end
+
+---@param filter table
+function lib.tostring_trade_filter(filter)
+    local s = "[Trade Filter"
+    if filter.input_items then
+        s = s .. " | Inputs: [" .. table.concat(filter.input_items, ", ") .. "]"
+    end
+    if filter.output_items then
+        s = s .. " | Outputs: [" .. table.concat(filter.output_items, ", ") .. "]"
+    end
+    -- TODO: show planet filter
+    return s .. "]"
+end
+
 
 
 return lib

@@ -1765,7 +1765,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
 
     -- Add trade items to catalog list
-    trades.discover_items_in_trades(trades.get_trades_from_ids(state.trades or {}))
+    trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
 
     hex_grid.check_hex_span(surface, hex_pos)
     hex_grid.add_free_hex_claims(surface, -1)

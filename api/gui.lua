@@ -937,7 +937,7 @@ function gui.update_hex_core(player)
     frame["delete-core-confirmation"].visible = false
     frame["unloader-filters-flow"].visible = false
 
-    gui.update_trades_scroll_pane(player, frame.trades, trades.get_trades_from_ids(state.trades), {show_toggle_trade=state.claimed, show_tag_creator=true, show_core_finder=false, show_productivity=true})
+    gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {show_toggle_trade=state.claimed, show_tag_creator=true, show_core_finder=false, show_productivity=true})
     gui.update_hex_core_resources(player)
 end
 
@@ -1203,9 +1203,9 @@ function gui.update_trade_overview(player)
 
     local function intersection(trades_lookup1, trades_lookup2)
         local result = {}
-        for trade_id, trade in pairs(trades_lookup1) do
+        for trade_id, _ in pairs(trades_lookup1) do
             if trades_lookup2[trade_id] then
-                result[trade_id] = trade
+                result[trade_id] = true
             end
         end
         return result
@@ -1215,49 +1215,57 @@ function gui.update_trade_overview(player)
     if filter.input_items then
         for _, item in pairs(filter.input_items) do
             if trades_set then
-                trades_set = intersection(trades_set, lib.shallow_copy(trades.get_trades_by_input(item)))
+                trades_set = intersection(trades_set, trades.get_trades_by_input(item))
             else
-                trades_set = lib.shallow_copy(trades.get_trades_by_input(item))
+                trades_set = trades.get_trades_by_input(item)
             end
         end
     end
     if filter.output_items then
         for _, item in pairs(filter.output_items) do
             if trades_set then
-                trades_set = intersection(trades_set, lib.shallow_copy(trades.get_trades_by_output(item)))
+                trades_set = intersection(trades_set, trades.get_trades_by_output(item))
             else
-                trades_set = lib.shallow_copy(trades.get_trades_by_output(item))
+                trades_set = trades.get_trades_by_output(item)
             end
         end
     end
 
+    -- log("initial filter by inputs and outputs (" .. lib.tostring_trade_filter(filter) .. "):")
+    -- At this point, trades_set is either nil or a lookup table that maps trade ids to boolean (true) values.
     if trades_set then
-        trades_set = trades.get_trades_from_ids(trades_set)
+        -- log(lib.tostring_trades_array(trades.convert_boolean_lookup_to_array(trades_set)))
+
+        -- Convert to lookup table mapping trade ids to trade objects.
+        trades_set = trades.convert_boolean_lookup_to_trades_lookup(trades_set)
+
+        -- log("converted trades list after initial filter:")
+        -- log(lib.tostring_trades_array(trades.convert_trades_lookup_to_array(trades_set)))
     else
+        -- log("no filter: using entire trade tree")
         trades_set = lib.shallow_copy(trades.get_trades_lookup())
     end
 
-    log(serpent.block(trades_set))
-
-    local function filter_trade(i, trade)
+    local function filter_trade(trade)
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
-                trades_set[i] = nil
+                trades_set[trade.id] = nil
             end
         end
         if filter.show_claimed_only and trade.hex_core_state and trade.hex_core_state.claimed then
-            trades_set[i] = nil
+            trades_set[trade.id] = nil
         end
     end
 
-    for i, trade in ipairs(trades_set) do
-        filter_trade(i, trade)
+    -- At this point, trades_set cannot be nil and must be a lookup table that maps trade ids to trade objects.
+    for _, trade in ipairs(trades_set) do
+        filter_trade(trade)
     end
 
-    local trades_list = {}
-    for _, trade in pairs(trades_set) do
-        table.insert(trades_list, trade)
-    end
+    -- log("filtered trades:")
+    -- log(lib.tostring_trades_array(trades.convert_trades_lookup_to_array(trades_set)))
+
+    local trades_list = trades.convert_trades_lookup_to_array(trades_set)
     storage.trade_overview.trades[player.name] = trades_list
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]

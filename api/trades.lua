@@ -666,6 +666,8 @@ function trades.increment_base_trade_productivity(prod)
     storage.trades.base_productivity = (storage.trades.base_productivity or 0) + prod
 end
 
+---Verify that the trade's productivity effect is correctly calculated from base productivity and its input and output item ranks.
+---@param trade table
 function trades.check_productivity(trade)
     trades.set_productivity(trade, trades.get_base_trade_productivity())
     for j, item in ipairs(trade.input_items) do
@@ -711,13 +713,13 @@ function trades.add_trade_to_tree(trade)
         if not storage.trades.tree.by_input[input.name] then
             storage.trades.tree.by_input[input.name] = {}
         end
-        table.insert(storage.trades.tree.by_input[input.name], trade.id)
+        storage.trades.tree.by_input[input.name][trade.id] = true
     end
     for _, output in pairs(trade.output_items) do
         if not storage.trades.tree.by_output[output.name] then
             storage.trades.tree.by_output[output.name] = {}
         end
-        table.insert(storage.trades.tree.by_output[output.name], trade.id)
+        storage.trades.tree.by_output[output.name][trade.id] = true
     end
     storage.trades.tree.all_trades_lookup[trade.id] = trade
 end
@@ -728,30 +730,22 @@ function trades.remove_trade_from_tree(trade)
         return
     end
     trades._check_tree_existence()
-    -- TODO: These subtrees should probably also index by trade object so that looping can be avoided; it's a potential optimization for the future
     for _, input in pairs(trade.input_items) do
         if storage.trades.tree.by_input[input.name] then
-            local _trades = storage.trades.tree.by_input[input.name]
-            for i = #_trades, 1, -1 do
-                if _trades[i] == trade.id then
-                    table.remove(_trades, i)
-                end
-            end
+            storage.trades.tree.by_input[input.name][trade.id] = nil
         end
     end
     for _, output in pairs(trade.output_items) do
         if storage.trades.tree.by_output[output.name] then
-            local _trades = storage.trades.tree.by_output[output.name]
-            for i = #_trades, 1, -1 do
-                if _trades[i] == trade.id then
-                    table.remove(_trades, i)
-                end
-            end
+            storage.trades.tree.by_output[output.name][trade.id] = nil
         end
     end
     storage.trades.tree.all_trades_lookup[trade.id] = nil
 end
 
+---Returns a lookup table, mapping trade ids to boolean (true) values, of all trades that consume the given item.
+---@param item_name string
+---@return {[int]: boolean}
 function trades.get_trades_by_input(item_name)
     if not item_name then
         lib.log_error("trades.get_trades_by_input: item_name is nil")
@@ -761,6 +755,9 @@ function trades.get_trades_by_input(item_name)
     return storage.trades.tree.by_input[item_name] or {}
 end
 
+---Returns a lookup table, mapping trade ids to boolean (true) values, of all trades that produce the given item.
+---@param item_name string
+---@return {[int]: boolean}
 function trades.get_trades_by_output(item_name)
     if not item_name then
         lib.log_error("trades.get_trades_by_output: item_name is nil")
@@ -770,11 +767,15 @@ function trades.get_trades_by_output(item_name)
     return storage.trades.tree.by_output[item_name] or {}
 end
 
+---Returns a lookup table, mapping trade ids to trade objects, of all trades in the current game.
+---@return {[int]: table}
 function trades.get_trades_lookup()
     trades._check_tree_existence()
-    return storage.trades.tree.all_trades_lookup or {}
+    return storage.trades.tree.all_trades_lookup
 end
 
+---Returns a normally indexed table of all trade objects in the current game.
+---@return {[int]: table}
 function trades.get_all_trades()
     local all_trades = {}
     for _, trade in pairs(trades.get_trades_lookup()) do
@@ -783,7 +784,11 @@ function trades.get_all_trades()
     return all_trades
 end
 
-function trades.get_trades_from_ids(trade_id_list)
+---Expects a normally indexed table of trade ids.
+---Returns a normally indexed table of trade objects.
+---@param trade_id_list {[int]: int}
+---@return {[int]: table}
+function trades.convert_trade_id_array_to_trade_array(trade_id_list)
     local _trades = {}
     local lookup = trades.get_trades_lookup()
     for _, trade_id in pairs(trade_id_list) do
@@ -793,6 +798,51 @@ function trades.get_trades_from_ids(trade_id_list)
         else
             lib.log_error("trades.get_trades_from_ids: trade_id " .. trade_id .. " not found in lookup")
         end
+    end
+    return _trades
+end
+
+---Expects a lookup table that maps trade ids to boolean (true) values.
+---Returns a normally indexed table of trade objects.
+---@param trades_lookup {[int]: boolean}
+---@return {[int]: table}
+function trades.convert_boolean_lookup_to_array(trades_lookup)
+    local _trades = {}
+    local lookup = trades.get_trades_lookup()
+    for trade_id, _ in pairs(trades_lookup) do
+        local trade = lookup[trade_id]
+        if trade then
+            table.insert(_trades, trade)
+        else
+            lib.log_error("trades.get_trades_array_from_trades_lookup: trade_id " .. trade_id .. " not found in lookup")
+        end
+    end
+    return _trades
+end
+
+---Converts a lookup table, which maps trade ids to boolean (true) values, to a lookup table which maps trade ids to trade objects.
+---@param boolean_lookup {[int]: boolean}
+---@return {[int]: table}
+function trades.convert_boolean_lookup_to_trades_lookup(boolean_lookup)
+    local trades_lookup = {}
+    local lookup = trades.get_trades_lookup()
+    for trade_id, _ in pairs(boolean_lookup) do
+        local trade = lookup[trade_id]
+        trades_lookup[trade_id] = trade
+        if not trade then
+            lib.log_error("trades.convert_boolean_lookup_to_trades_lookup: trade_id " .. trade_id .. " not found in lookup")
+        end
+    end
+    return trades_lookup
+end
+
+---Converts a lookup table, which maps trade ids to trade objects, to a normally indexed table of trade objects.
+---@param trades_lookup {[int]: table}
+---@return {[int]: table}
+function trades.convert_trades_lookup_to_array(trades_lookup)
+    local _trades = {}
+    for _, trade in pairs(trades_lookup) do
+        table.insert(_trades, trade)
     end
     return _trades
 end
