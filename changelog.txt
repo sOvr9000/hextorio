@@ -6,6 +6,8 @@ Date: 12/5/25
   Balancing:
     - Decreased the rate at which item values scale on Nauvis.
     - Reduced productivity bonuses to half, except for the quest reward.
+  Bugfixes:
+    - Fixed volume calculation for the extra trades added by bronze rank items.
   Optimizations:
     - Optimized trade overview.
   Minor Features:

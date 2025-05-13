@@ -2429,11 +2429,10 @@ end
 
 function hex_grid.apply_extra_trades_bonus_retro(item_name)
     if not lib.is_catalog_item(item_name) then return end
-    local rank = item_ranks.get_item_rank(item_name)
-    local volume = trades.get_random_volume_for_item(item_name)
     local added_trades = {}
     local trades_per_hex = lib.runtime_setting_value "trades-per-hex"
     for surface_name, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
+        local volume = trades.get_random_volume_for_item(surface_name, item_name)
         if not item_values.is_item_interplanetary(surface_name, item_name) then
             for _, Q in pairs(surface_hexes) do
                 for _, state in pairs(Q) do
