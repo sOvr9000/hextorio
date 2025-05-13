@@ -213,12 +213,27 @@ local process_migration = {
         for surface_id, _ in pairs(game.surfaces) do
             for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
                 if state.trades then
-                    for _, trade in pairs(state.trades) do
-                        trades.add_trade_to_tree(trade)
+                    local params
+                    if state.mode == "generator" or state.mode == "sink" then
+                        params = {target_efficiency = 0.1}
+                    end
+                    for i = #state.trades, 1, -1 do
+                        local trade = state.trades[i]
+                        local input_names, output_names = trades.get_item_names_from_trade(trade)
+                        local volume = trades.get_volume_of_trade(trade.surface_name, trade)
+                        trades._check_coin_names_for_volume(input_names, volume)
+                        trades._check_coin_names_for_volume(output_names, volume)
+                        hex_grid.remove_trade_by_index(state, i)
+                        local new_trade = trades.from_item_names(trade.surface_name, input_names, output_names, params)
+                        hex_grid.add_trade(state, new_trade)
+                        -- trades.set_productivity(new_trade, trades.get_productivity(trade))
+                        trades.set_current_prod_value(new_trade, trades.get_current_prod_value(trade))
                     end
                 end
             end
         end
+        
+        hex_grid.update_all_trades()
     end,
     ["0.3.0"] = function()
     end,

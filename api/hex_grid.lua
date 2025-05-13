@@ -965,16 +965,9 @@ function hex_grid.switch_hex_core_mode(state, mode)
             end
             hex_grid.remove_trade_by_index(state, i)
         end
-        local params = {target_efficiency = 0.1}
         for item_name, _ in pairs(all_outputs) do
-            local trade = trades.from_item_names(state.hex_core.surface.name, {"hex-coin"}, {item_name}, params) -- TODO: Implement target_efficiency
+            local trade = trades.from_item_names(state.hex_core.surface.name, {"hex-coin"}, {item_name}, {target_efficiency = 0.1})
             if trade then
-
-                -- TODO: when target_efficiency is implemented, remove the loop below
-                for _, input in pairs(trade.input_items) do
-                    input.count = math.floor(0.5 + input.count / params.target_efficiency)
-                end
-
                 hex_grid.add_trade(state, trade)
             end
         end
@@ -988,16 +981,9 @@ function hex_grid.switch_hex_core_mode(state, mode)
             end
             hex_grid.remove_trade_by_index(state, i)
         end
-        local params = {target_efficiency = 0.1}
         for item_name, _ in pairs(all_inputs) do
-            local trade = trades.from_item_names(state.hex_core.surface.name, {item_name}, {"hex-coin"}, params) -- TODO: Implement target_efficiency
+            local trade = trades.from_item_names(state.hex_core.surface.name, {item_name}, {"hex-coin"}, {target_efficiency = 0.1})
             if trade then
-
-                -- TODO: when target_efficiency is implemented, remove the loop below
-                for _, input in pairs(trade.input_items) do
-                    input.count = math.floor(0.5 + input.count / params.target_efficiency)
-                end
-
                 hex_grid.add_trade(state, trade)
             end
         end

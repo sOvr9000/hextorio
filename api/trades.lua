@@ -120,7 +120,11 @@ function trades.determine_best_output_counts(surface_name, trade, params)
 end
 
 function trades._try_set_output_counts(surface_name, trade, params)
-    local total_input_value = trades.get_input_value(surface_name, trade)
+    if not params.target_efficiency then
+        params.target_efficiency = 1
+    end
+
+    local total_input_value = trades.get_input_value(surface_name, trade) * params.target_efficiency
     local output_items_value = {}
 
     -- Initialize with values and minimal counts
@@ -150,7 +154,7 @@ function trades._try_set_output_counts(surface_name, trade, params)
         output_item.count = math.max(1, math.floor(target_count + 0.5))
     end
 
-    -- Hill climbing optimization to get closer to 1:1 ratio
+    -- Hill climbing optimization to get closer to target ratio
     local iterations = 0
     local max_iterations = 50
     local best_error = math.abs(trades.get_trade_value_ratio(surface_name, trade) - 1)
@@ -164,7 +168,7 @@ function trades._try_set_output_counts(surface_name, trade, params)
             -- Try incrementing
             output_item.count = output_item.count + 1
             local new_ratio = trades.get_trade_value_ratio(surface_name, trade)
-            local new_error = math.abs(new_ratio - 1)
+            local new_error = math.abs(new_ratio - params.target_efficiency)
 
             if new_error < best_error then
                 best_error = new_error
@@ -177,7 +181,7 @@ function trades._try_set_output_counts(surface_name, trade, params)
                 if output_item.count > 1 then
                     output_item.count = output_item.count - 1
                     new_ratio = trades.get_trade_value_ratio(surface_name, trade)
-                    new_error = math.abs(new_ratio - 1)
+                    new_error = math.abs(new_ratio - params.target_efficiency)
 
                     if new_error < best_error then
                         best_error = new_error
@@ -211,6 +215,10 @@ function trades.get_output_value(surface_name, trade)
         output_value = output_value + item_values.get_item_value(surface_name, output_item.name) * output_item.count
     end
     return output_value
+end
+
+function trades.get_volume_of_trade(surface_name, trade)
+    return (trades.get_input_value(surface_name, trade) + trades.get_output_value(surface_name, trade)) * 0.5
 end
 
 -- Return the ratio of values of the trade's outputs to its inputs
@@ -786,11 +794,23 @@ end
 
 function trades._check_coin_names_for_volume(list, volume)
     -- Convert coin names to correct tier for trade volume
-    for _, item_name in pairs(list) do
+    for i, item_name in ipairs(list) do
         if lib.is_coin(item_name) then
-            list[item_name] = trades.get_coin_name_for_trade_volume(volume)
+            list[i] = trades.get_coin_name_for_trade_volume(volume)
         end
     end
+end
+
+function trades.get_item_names_from_trade(trade)
+    local input_names = {}
+    local output_names = {}
+    for _, input in pairs(trade.input_items) do
+        table.insert(input_names, input.name)
+    end
+    for _, output in pairs(trade.output_items) do
+        table.insert(output_names, output.name)
+    end
+    return input_names, output_names
 end
 
 
