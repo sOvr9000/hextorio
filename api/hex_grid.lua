@@ -2431,15 +2431,18 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
     if not lib.is_catalog_item(item_name) then return end
     local added_trades = {}
     local trades_per_hex = lib.runtime_setting_value "trades-per-hex"
-    for surface_name, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
-        local volume = trades.get_random_volume_for_item(surface_name, item_name)
-        if not item_values.is_item_interplanetary(surface_name, item_name) then
-            for _, Q in pairs(surface_hexes) do
-                for _, state in pairs(Q) do
-                    if state.trades and #state.trades == trades_per_hex then
-                        local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
-                        if trade and trade.hex_core_state then
-                            table.insert(added_trades, trade)
+    for surface_id, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
+        local surface = game.get_surface(surface_id)
+        if surface then
+            local volume = trades.get_random_volume_for_item(surface.name, item_name)
+            if not item_values.is_item_interplanetary(surface.name, item_name) then
+                for _, Q in pairs(surface_hexes) do
+                    for _, state in pairs(Q) do
+                        if state.trades and #state.trades == trades_per_hex then
+                            local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
+                            if trade and trade.hex_core_state then
+                                table.insert(added_trades, trade)
+                            end
                         end
                     end
                 end
