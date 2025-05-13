@@ -803,6 +803,9 @@ function trades.get_trade_from_id(trade_id)
     if type(trade_id) == "table" and trades.is_trade_valid(trade_id) then return trade_id end
     if type(trade_id) ~= "number" then
         lib.log_error("trades.get_trade_from_id: trade_id is not a number, received type: " .. type(trade_id))
+        if type(trade_id) == "table" then
+            lib.log(serpent.block(trade_id))
+        end
         return
     end
     return trades.get_trades_lookup()[trade_id]

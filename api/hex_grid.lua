@@ -1737,7 +1737,6 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         storage.hex_grid.last_used_claim_tile = tile_name
     end
     hex_grid.set_hex_tiles(surface, hex_pos, tile_name)
-    -- log("claimed hex at " .. serpent.line(hex_pos) .. " / " .. serpent.line(hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation)))
 
     -- TODO: This check will never be necessary in the release.  It is needed right now for testing with "/claim q r"
     if hex_grid.can_hex_core_spawn(surface, hex_pos) then
@@ -1763,7 +1762,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
 
     -- Add trade items to catalog list
-    trades.discover_items_in_trades(trades.get_trades_from_ids(state.trades))
+    trades.discover_items_in_trades(trades.get_trades_from_ids(state.trades or {}))
 
     hex_grid.check_hex_span(surface, hex_pos)
     hex_grid.add_free_hex_claims(surface, -1)
@@ -1992,6 +1991,10 @@ function hex_grid.delete_hex_core(hex_core)
     event_system.trigger("hex-core-deleted", state)
 
     if not state then return end
+
+    for _, trade_id in pairs(state.trades) do
+        trades.remove_trade_from_tree(trades.get_trade_from_id(trade_id))
+    end
 
     state.trades = nil
     state.hex_core = nil
