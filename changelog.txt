@@ -5,7 +5,7 @@ Date: 14/5/25
     - Added [planet=fulgora].
     - Added tier 6 quality: hextreme.
   Balancing:
-    - Biter and spitter nests now increase in quality by distance on [planet=nauvis].
+    - Worms and nests now increase in quality by distance on [planet=nauvis].
   Modding:
     - Hextreme quality can be disabled if you want another mod to replace it.
 ---------------------------------------------------------------------------------------------------

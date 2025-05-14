@@ -315,6 +315,13 @@ data:extend({
     },
     {
         type = "double-setting",
+        name = "hextorio-tiles-per-quality",
+        setting_type = "runtime-global",
+        default_value = 8.0,
+        minimum_value = 1.0,
+    },
+    {
+        type = "double-setting",
         name = "hextorio-trade-volume-per-dist-exp",
         setting_type = "runtime-global",
         default_value = 1.1,

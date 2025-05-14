@@ -1581,22 +1581,29 @@ function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid
     end
     surface = game.surfaces[surface_id]
 
+    local dist = hex_grid.distance(hex_pos, {q=0, r=0})
+    local quality = hex_grid.get_quality_from_distance(dist)
+
     local num_spawners_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size, 1, 3))
     local num_spawners_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size, 1, 5))
     local num_spawners = math.random(num_spawners_min, num_spawners_max)
     local num_worms = math.floor(0.4999 + num_spawners * (0.5 + math.random()))
     local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
 
-    return hex_grid.spawn_enemy_base(surface, center, hex_grid_scale - stroke_width, num_spawners, num_worms)
+    return hex_grid.spawn_enemy_base(surface, center, hex_grid_scale - stroke_width, num_spawners, num_worms, quality)
 end
 
-function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, num_worms)
+function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, num_worms, quality)
     local surface_id = lib.get_surface_id(surface)
     if not surface_id then
         lib.log_error("hex_grid.spawn_enemy_base: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
+
+    if not quality then
+        quality = prototypes.quality.normal
+    end
 
     local wc_table = {}
     if math.random() < 0.5 then
@@ -1644,6 +1651,7 @@ function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, nu
                 name = entity_name,
                 position = pos,
                 force = "enemy",
+                quality = quality,
             }
             if entity then
                 any_spawned = true
@@ -1652,6 +1660,34 @@ function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, nu
     end
 
     return any_spawned
+end
+
+---@param dist number
+---@return LuaQualityPrototype
+function hex_grid.get_quality_from_distance(dist)
+    local target_i = math.floor(dist / lib.runtime_setting_value "tiles-per-quality") + 1
+    local i = 0
+    for _, quality in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
+        i = i + 1
+        if i == target_i then
+            return quality
+        end
+    end
+    return prototypes.quality.normal
+end
+
+---@param dist number
+---@return int
+function hex_grid.get_quality_tier_from_distance(dist)
+    local target_i = math.floor(dist / lib.runtime_setting_value "tiles-per-quality") + 1
+    local i = 0
+    for _ in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
+        i = i + 1
+        if i == target_i then
+            return i
+        end
+    end
+    return 1
 end
 
 function hex_grid.generate_non_land_tiles(surface, hex_pos)
@@ -1942,6 +1978,8 @@ function hex_grid.spawn_hex_core(surface, position)
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
 
+    local quality = hex_grid.get_quality_from_distance(dist)
+
     local entities = surface.find_entities_filtered {
         area = {{position.x - 2.5, position.y - 2.5}, {position.x + 2.5, position.y + 2.5}},
     }
@@ -1955,7 +1993,7 @@ function hex_grid.spawn_hex_core(surface, position)
     end
 
     -- Hex core
-    local hex_core = surface.create_entity {name = "hex-core", position = position, force = "player"}
+    local hex_core = surface.create_entity {name = "hex-core", position = position, force = "player", quality = quality}
     if not hex_core then
         lib.log_error("hex_grid.spawn_hex_core: Failed to spawn hex core")
         return
