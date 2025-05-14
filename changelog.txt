@@ -10,6 +10,8 @@ Date: 13/5/25
     - Trade overview now has sorting options for various metrics.
     - Trade overview now shows progress during processing of trades to be listed.
     - Trade overview trade content filters can now be swapped by clicking on the trade arrow between them.
+  Optimizations:
+    - Made trade overview loading less UPS-intensive.
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 12/5/25
