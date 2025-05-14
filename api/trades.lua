@@ -16,11 +16,9 @@ local trades = {}
 function trades.register_events()
     event_system.register_callback("command-discover-all", function(player, params)
         local items_list = {}
-        for surface_id, _ in pairs(game.surfaces) do
-            local surface = game.get_surface(surface_id)
-            if surface and surface.name ~= "space-platform" and surface.name ~= "hextorio-temp" then
-                local items_sorted_by_value = item_values.get_items_sorted_by_value(player.surface.name, true)
-                for _, item_name in pairs(items_sorted_by_value) do
+        for surface_name, vals in pairs(storage.item_values.values) do
+            for item_name, _ in pairs(vals) do
+                if not lib.is_coin(item_name) and lib.is_item(item_name) then
                     table.insert(items_list, item_name)
                 end
             end
