@@ -952,6 +952,15 @@ function lib.get_hextreme_or_next_highest_quality()
     return q
 end
 
+---@param quality LuaQualityPrototype
+---@return boolean
+function lib.is_tier6_quality(quality)
+    if prototypes.quality.legendary then
+        return prototypes.quality.legendary.next == quality
+    end
+    return false
+end
+
 
 
 return lib

@@ -151,5 +151,12 @@ return {
             prerequisites = {"ground-zero"},
             has_img = false,
         },
+        -- {
+        --     name = "freedom",
+        --     conditions = {{type = "research-tech", tech = "mech-armor"}},
+        --     rewards = {{type = "unlock-feature", value = "claim-walking"}},
+        --     prerequisites = {"sprawling-base"},
+        --     has_img = false,
+        -- },
     },
 }

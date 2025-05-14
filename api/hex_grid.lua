@@ -1213,7 +1213,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.water.size)) * 0.5
         end
     elseif surface.name == "vulcanus" then
-        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vuus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
+        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vuolcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
     elseif surface.name == "fulgora" then
         -- log(serpent.block(mgs))
         land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
@@ -1225,6 +1225,14 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0 or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
     local is_land = is_starting_hex or math.random() < land_chance
+
+    if surface.name == "nauvis" then
+        local quality = hex_grid.get_quality_from_distance(dist)
+        if lib.is_tier6_quality(quality) then
+            -- Spiritual successor to The Great Ring of Superchunks
+            is_land = false
+        end
+    end
 
     if is_starting_hex then
         if surface.name == "fulgora" then
@@ -1667,13 +1675,17 @@ end
 function hex_grid.get_quality_from_distance(dist)
     local target_i = math.floor(dist / lib.runtime_setting_value "tiles-per-quality") + 1
     local i = 0
-    for _, quality in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
+    local _name
+    for name, quality in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
         i = i + 1
-        if i == target_i then
-            return quality
+        if name ~= "quality-unknown" then
+            if i == target_i then
+                return quality
+            end
+            _name = name
         end
     end
-    return prototypes.quality.normal
+    return prototypes.quality[_name]
 end
 
 ---@param dist number
@@ -1681,13 +1693,18 @@ end
 function hex_grid.get_quality_tier_from_distance(dist)
     local target_i = math.floor(dist / lib.runtime_setting_value "tiles-per-quality") + 1
     local i = 0
-    for _ in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
+    local _name
+    for name, _ in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
         i = i + 1
-        if i == target_i then
+        if i == target_i and name ~= "quality-unknown" then
             return i
         end
+        _name = name
     end
-    return 1
+    if _name == "quality-unknown" then
+        i = i - 1
+    end
+    return i
 end
 
 function hex_grid.generate_non_land_tiles(surface, hex_pos)
