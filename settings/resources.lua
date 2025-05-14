@@ -284,7 +284,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-fulgora",
         setting_type = "runtime-global",
-        default_value = 0.25,
+        default_value = 0.125,
         order = "kcc",
     },
     {

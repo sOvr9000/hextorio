@@ -1217,12 +1217,13 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     elseif surface.name == "fulgora" then
         -- log(serpent.block(mgs))
         land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
-        land_chance = land_chance * land_chance
     end
-    land_chance = (1 - land_chance * land_chance) ^ 0.5
+    if surface.name ~= "fulgora" and surface.name ~= "aquilo" then
+        land_chance = (1 - land_chance * land_chance) ^ 0.5 -- basically turning a triangle into a circle
+    end
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
-    local is_starting_hex = dist == 0
+    local is_starting_hex = dist == 0 or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
     local is_land = is_starting_hex or math.random() < land_chance
 
     if is_starting_hex then
@@ -1235,6 +1236,18 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             }
         end
         state.is_starting_hex = true
+    else
+        if surface.name == "fulgora" then
+            -- Chance to spawn a fulgoran-ruin-vault
+            if math.random() < lib.runtime_setting_value "vault-chance" then
+                local transformation = hex_grid.get_surface_transformation("fulgora")
+                surface.create_entity {
+                    name = "fulgoran-ruin-vault",
+                    position = hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation),
+                    force = "neutral",
+                }
+            end
+        end
     end
 
     if is_land then
@@ -1344,6 +1357,10 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     end
 
     local base_richness = 200 * lib.runtime_setting_value "base-resource-richness"
+    if surface.name == "fulgora" then
+        base_richness = base_richness * 10
+    end
+
     local scaled_richness = base_richness + dist * lib.runtime_setting_value("resource-richness-per-dist-" .. surface.name)
 
     state.resources = {}
@@ -1533,8 +1550,17 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
         return bias_wc, false
     elseif surface.name == "fulgora" then
-        local resource_names = {"scrap"}
+        if is_starter_hex then
+            return storage.hex_grid.resource_weighted_choice.fulgora.resources, false
+        end
+
         local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"scrap"})
+        resource_freq = resource_freq * resource_freq
+        if math.random() > resource_freq then
+            return nil, nil
+        end
+
+        return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.fulgora.resources)
     elseif surface.name == "gleba" then
         local resource_names = {"stone"}
         local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"stone"})
@@ -2384,6 +2410,12 @@ function hex_grid.get_supercharge_cost(hex_core)
     end
 
     base_cost = base_cost * total_value * lib.runtime_setting_value "supercharge-cost-multiplier"
+
+    if hex_core.surface.name == "vulcanus" then
+        base_cost = base_cost * 10
+    elseif hex_core.surface.name == "fulgora" then
+        base_cost = base_cost * 75
+    end
 
     return coin_tiers.from_base_value(#entities * base_cost)
 end

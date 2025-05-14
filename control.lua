@@ -323,6 +323,11 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_settings.tile.settings["oil-ocean-shallow"].size = 0
         mgs.autoplace_settings.tile.settings["oil-ocean-deep"].size = 0
         surface.map_gen_settings = mgs
+
+        storage.hex_grid.resource_weighted_choice.fulgora = {}
+        storage.hex_grid.resource_weighted_choice.fulgora.resources = weighted_choice.new {
+            ["scrap"] = 1,
+        }
     end
 end)
 
