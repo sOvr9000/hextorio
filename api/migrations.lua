@@ -34,6 +34,7 @@ local versions = {
     "0.2.3",
     "0.3.0",
     "0.3.1",
+    "0.3.2",
 }
 
 local version_stepping = {}
@@ -244,7 +245,6 @@ local process_migration = {
     end,
     ["0.3.0"] = function()
         game.forces.player.technologies["planet-discovery-vulcanus"].enabled = true
-        game.forces.player.technologies["planet-discovery-fulgora"].enabled = true
 
         for _, tab_name in pairs {"by_input", "by_output"} do
             local new_table = {}
@@ -256,6 +256,9 @@ local process_migration = {
             end
             storage.trades.tree[tab_name] = new_table
         end
+    end,
+    ["0.3.1"] = function()
+        game.forces.player.technologies["planet-discovery-fulgora"].enabled = true
     end,
 }
 
