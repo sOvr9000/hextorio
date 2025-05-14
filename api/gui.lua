@@ -368,6 +368,19 @@ function gui.init_trade_overview(player)
     local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact-outputs-match"}}
     toggle_exact_outputs_match_label.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
 
+    right_frame.add {type = "line", direction = "horizontal"}
+
+    local sort_method_flow = right_frame.add {type = "flow", name = "sort-method", direction = "horizontal"}
+    local sort_method_label = sort_method_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sort-method"}}
+    local sort_method_dropdown = sort_method_flow.add {type = "drop-down", name = "dropdown", selected_index = 1, items = {{"trade-sort-method.distance-from-spawn"}, {"trade-sort-method.distance-from-character"}, {"trade-sort-method.total-item-value"}, {"trade-sort-method.num-inputs"}, {"trade-sort-method.num-outputs"}, {"trade-sort-method.productivity"}}}
+
+    local sort_direction = right_frame.add {
+        type = "switch",
+        name = "sort-direction",
+        left_label_caption = {"hextorio-gui.ascending"},
+        right_label_caption = {"hextorio-gui.descending"},
+    }
+
     trade_contents_label.style.font = "heading-2"
     processing_progress_bar.visible = false
 
@@ -1301,6 +1314,62 @@ function gui.update_trade_overview(player)
     local trades_list = trades.convert_trades_lookup_to_array(trades_set)
 
     -- Sort trades
+    local sort_func
+    if filter.sorting and filter.sorting.method then
+        if filter.sorting.method == "distance-from-spawn" then
+            local distances = {}
+            for _, trade in pairs(trades_list) do
+                if trade.hex_core_state then
+                    distances[trade.id] = hex_grid.distance(trade.hex_core_state.position, {q=0, r=0})
+                else
+                    distances[trade.id] = 0
+                end
+            end
+            sort_func = function(trade1, trade2)
+                return distances[trade1.id] < distances[trade2.id]
+            end
+        elseif filter.sorting.method == "distance-from-character" then
+            if player.character then
+                local transformation = hex_grid.get_surface_transformation(player.surface)
+                local char_pos = hex_grid.get_hex_containing(player.character.position, transformation.scale, transformation.rotation)
+                local distances = {}
+                for _, trade in pairs(trades_list) do
+                    if trade.hex_core_state then
+                        distances[trade.id] = hex_grid.distance(trade.hex_core_state.position, char_pos)
+                    else
+                        distances[trade.id] = 0
+                    end
+                end
+                sort_func = function(trade1, trade2)
+                    return distances[trade1.id] < distances[trade2.id]
+                end
+            end
+        elseif filter.sorting.method == "num-inputs" then
+            sort_func = function(trade1, trade2)
+                return #trade1.input_items < #trade2.input_items
+            end
+        elseif filter.sorting.method == "num-outputs" then
+            sort_func = function(trade1, trade2)
+                return #trade1.output_items < #trade2.output_items
+            end
+        elseif filter.sorting.method == "productivity" then
+            sort_func = function(trade1, trade2)
+                return trades.get_productivity(trade1) < trades.get_productivity(trade2)
+            end
+        elseif filter.sorting.method == "total-item-value" then
+            sort_func = function(trade1, trade2)
+                return trades.get_volume_of_trade(trade1.surface_name, trade1) < trades.get_volume_of_trade(trade2.surface_name, trade2)
+            end
+        end
+    end
+
+    if sort_func then
+        local directed_sort_func = sort_func
+        if not filter.sorting.ascending then
+            directed_sort_func = function(a, b) return sort_func(b, a) end
+        end
+        table.sort(trades_list, directed_sort_func)
+    end
 
     storage.trade_overview.trades[player.name] = trades_list
 
@@ -1684,6 +1753,15 @@ function gui.create_coin_tier(parent, name)
     return flow
 end
 
+function gui.on_gui_switch_state_changed(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if event.element.name == "sort-direction" then
+        gui.on_trade_sort_direction_changed(player, event.element)
+    end
+end
+
 function gui.on_gui_click(event)
     local player = game.get_player(event.player_index)
     if not player then return end
@@ -1769,6 +1847,10 @@ function gui.on_gui_item_selected(event)
     end
 end
 
+function gui.on_trade_sort_direction_changed(player, element)
+    gui.on_trade_overview_filter_changed(player)
+end
+
 function gui.on_listbox_item_selected(player, element)
     if element.name == "complete-list" or element.name == "incomplete-list" then
         gui.on_quest_name_selected(player, element)
@@ -1776,7 +1858,9 @@ function gui.on_listbox_item_selected(player, element)
 end
 
 function gui.on_dropdown_item_selected(player, element)
-
+    if element.parent.name == "sort-method" then
+        gui.on_trade_overview_filter_changed(player)
+    end
 end
 
 function gui.on_quest_name_selected(player, element)
@@ -2259,6 +2343,13 @@ function gui.update_player_trade_overview_filters(player)
     if filter.exact_outputs_match then
         filter.output_items_lookup = sets.new(filter.output_items)
     end
+
+    -- Sorting stuff
+    filter.sorting = {}
+
+    local sorting_dropdown = filter_frame["right"]["sort-method"]["dropdown"]
+    filter.sorting.method = sorting_dropdown.get_item(sorting_dropdown.selected_index)[1]:sub(19)
+    filter.sorting.ascending = filter_frame["right"]["sort-direction"].switch_state == "left"
 end
 
 function gui.is_descendant_of(element, parent_name)
