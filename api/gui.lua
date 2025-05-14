@@ -399,6 +399,9 @@ function gui.init_trade_overview(player)
         sprite = "trade-arrow",
     }
     trade_arrow.style.top_margin = 4
+    trade_arrow.tooltip = {"hextorio-gui.click-to-swap-sides"}
+    trade_arrow.style.width = 30 / 1.2
+    trade_arrow.style.height = 30 / 1.2
 
     for i = 1, 3 do
         local output_item = trade_contents_frame.add {
@@ -1840,7 +1843,10 @@ function gui.on_sprite_click(player, element)
 end
 
 function gui.on_trade_arrow_click(player, element)
-    if gui.is_descendant_of(element, "trade-contents-flow") then return end
+    if gui.is_descendant_of(element, "trade-contents-flow") then
+        gui.swap_trade_overview_content_filters(player)
+        return
+    end
 
     local trade, gps_str
     if gui.is_descendant_of(element, "trade-overview") then
@@ -2398,6 +2404,17 @@ function gui.update_player_trade_overview_filters(player)
     local sorting_dropdown = filter_frame["right"]["sort-method"]["dropdown"]
     filter.sorting.method = sorting_dropdown.get_item(sorting_dropdown.selected_index)[1]:sub(19)
     filter.sorting.ascending = filter_frame["right"]["sort-direction"].switch_state == "left"
+end
+
+function gui.swap_trade_overview_content_filters(player)
+    local filters = gui.get_player_trade_overview_filter(player)
+    local new_inputs = filters.output_items or {}
+    local new_outputs = filters.input_items or {}
+
+    -- Only trigger a refresh if necessary.
+    if not lib.tables_equal(sets.new(new_inputs), sets.new(new_outputs)) then
+        gui.set_trade_overview_item_filters(player, new_inputs, new_outputs)
+    end
 end
 
 function gui.is_descendant_of(element, parent_name)
