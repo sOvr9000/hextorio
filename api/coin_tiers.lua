@@ -7,11 +7,13 @@ local coin_tiers = {}
 
 -- Initialize a new coin object
 function coin_tiers.new(values)
-    values = values or {0, 0, 0, 0}
+    if not values or not next(values) then
+        values = {0, 0, 0, 0}
+    end
 
     -- If the values are indexed by coin names, then update values
-    if values["hex-coin"] then
-        values = {values["hex-coin"], values["gravity-coin"], values["meteor-coin"], values["hexaprism-coin"]}
+    if values["hex-coin"] or values["gravity-coin"] or values["meteor-coin"] or values["hexaprism-coin"] then
+        values = {values["hex-coin"] or 0, values["gravity-coin"] or 0, values["meteor-coin"] or 0, values["hexaprism-coin"] or 0}
     end
 
     -- Create the coin object with configuration
@@ -21,7 +23,23 @@ function coin_tiers.new(values)
         values = values,
     }
 
+    coin_tiers.verify_coin_object_structure(coin)
+
     return coin
+end
+
+function coin_tiers.verify_coin_object_structure(coin)
+    if #coin.values ~= coin.max_coin_tier then
+        lib.log_error("coin_tiers.verify_coin_object_structure: coin values array does not have " .. coin.max_coin_tier .. " values")
+    end
+    for k, v in pairs(coin.values) do
+        if type(k) ~= "number" or type(v) ~= "number" then
+            lib.log_error("coin_tiers.verify_coin_object_structure: coin values array has an invalid key-value pair: [" .. k .. "] = " .. v)
+        end
+    end
+    if coin.max_coin_tier == 0 then
+        lib.log_error("coin_tiers.verify_coin_object_structure: max coin tier is zero")
+    end
 end
 
 function coin_tiers.copy(coin)
@@ -31,6 +49,9 @@ function coin_tiers.copy(coin)
     for i = 1, coin.max_coin_tier do
         new_coin.values[i] = coin.values[i]
     end
+
+    coin_tiers.verify_coin_object_structure(new_coin)
+
     return new_coin
 end
 
@@ -71,9 +92,6 @@ function coin_tiers.normalized(coin)
         end
         lib.log_error("coin_tiers.normalized: Encountered negative coin value: " .. serpent.line(new_coin.values))
     end
-
-    -- This simple method doesn't work because the base values can be too large for integer arithmetic.
-    -- local new_coin = coin_tiers.from_base_value(coin_tiers.to_base_value(coin))
 
     return new_coin
 end

@@ -2480,39 +2480,89 @@ function hex_grid.update_all_hex_cores()
         for _, Q in pairs(surface_hexes) do
             for _, state in pairs(Q) do
                 if state.claimed then
-                    hex_grid.update_hex_core(state)
+                    hex_grid.process_hex_core_trades(state)
                 end
             end
         end
     end
 end
 
-function hex_grid.update_hex_core(state)
-    -- Check if trades can occur
+function hex_grid.process_hex_core_trades(state)
     if not state.trades then return end
     local inventory_input = state.hex_core_input_inventory
     if not inventory_input then return end
     local inventory_output = state.hex_core_output_inventory
     if not inventory_output then return end
-    for _, trade_id in pairs(state.trades) do
-        local trade = trades.get_trade_from_id(trade_id)
-        local num_batches = trades.get_num_batches_for_trade(inventory_input, inventory_output, trade)
-        if num_batches > 0 then
-            local total_removed, total_inserted = trades.trade_items(inventory_input, inventory_output, trade, num_batches)
-            for item_name, amount in pairs(total_removed) do
-                if not state.total_items_sold then
-                    state.total_items_sold = {}
-                end
-                state.total_items_sold[item_name] = (state.total_items_sold[item_name] or 0) + amount
-            end
-            for item_name, amount in pairs(total_inserted) do
-                if not state.total_items_bought then
-                    state.total_items_bought = {}
-                end
-                state.total_items_bought[item_name] = (state.total_items_bought[item_name] or 0) + amount
-            end
+
+    if hex_grid.try_unload_output_buffer(state) then
+        local _, _, remaining_to_insert = trades.process_trades_in_inventories(inventory_input, inventory_output, state.trades)
+        hex_grid.add_to_output_buffer(state, remaining_to_insert)
+    end
+end
+
+function hex_grid.add_to_output_buffer(state, items)
+    if not state.output_buffer then
+        state.output_buffer = {}
+    end
+    for item_name, count in pairs(items) do
+        if count <= 0 then
+            lib.log_error("hex_grid.add_to_output_buffer: Tried to add a negative amount of items to the output buffer: " .. serpent.block(items))
+        else
+            state.output_buffer[item_name] = (state.output_buffer[item_name] or 0) + count
         end
     end
+end
+
+function hex_grid.remove_from_output_buffer(state, items)
+    if not state.output_buffer then
+        state.output_buffer = {}
+    end
+    for item_name, count in pairs(items) do
+        state.output_buffer[item_name] = (state.output_buffer[item_name] or 0) - count
+        if state.output_buffer[item_name] <= 0 then
+            state.output_buffer[item_name] = nil
+        end
+    end
+end
+
+---Return whether the buffer is empty after unloading.
+---@param state table
+---@return boolean
+function hex_grid.try_unload_output_buffer(state)
+    if not state.output_buffer or not next(state.output_buffer) then return true end
+    local inventory_output = state.hex_core_output_inventory
+    if not inventory_output then return true end
+
+    local uninsertable = {}
+    for item_name, count in pairs(state.output_buffer) do
+        local ins = inventory_output.get_insertable_count {name = item_name}
+        if ins < count then
+            uninsertable[item_name] = ins
+        end
+    end
+    local to_insert
+    if next(uninsertable) then
+        local num_uninsertable = lib.table_length(uninsertable)
+        to_insert = {}
+        for item_name, count in pairs(uninsertable) do
+            to_insert[item_name] = math.max(1, math.floor(count / num_uninsertable))
+        end
+    end
+
+    local empty = true
+    for item_name, count in pairs(to_insert or state.output_buffer) do
+        -- "AND" with prev value of empty because it needs to stay false if it ever becomes false
+        local inserted = inventory_output.insert {name = item_name, count = math.min(1000000000, count)}
+        local remaining = state.output_buffer[item_name] - inserted
+        empty = empty and remaining == 0
+        if remaining > 0 then
+            state.output_buffer[item_name] = remaining
+        else
+            state.output_buffer[item_name] = nil
+        end
+    end
+
+    return empty
 end
 
 function hex_grid.update_all_trades()

@@ -961,6 +961,23 @@ function lib.is_tier6_quality(quality)
     return false
 end
 
+function lib.reservoir_sample_index(t)
+    local m = math.huge
+    local K
+    for k, v in pairs(t) do
+        local r = math.random()
+        if r < m then
+            m = r
+            K = k
+        end
+    end
+    return K
+end
+
+function lib.reservoir_sample(t)
+    return t[lib.reservoir_sample_index(t)]
+end
+
 
 
 return lib
