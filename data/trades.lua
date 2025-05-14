@@ -29,7 +29,7 @@ return {
         fulgora = {
             {{"holmium-ore"}, {"hex-coin"}},
             {{"electromagnetic-science-pack", "tesla-ammo"}, {"hex-coin"}},
-            {{"hex-coin", "scrap", "steel-plate"}, {"water-barrel"}},
+            {{"hex-coin", "scrap", "steel-plate"}, {"water-barrel"}}, -- S tier trade
         },
     },
 
