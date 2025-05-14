@@ -10,6 +10,8 @@ Date: 13/5/25
   Features:
     - Trade overview now has options to filter for exact inputs or exact outputs.
     - Trade overview now has sorting options for various metrics.
+    - Trade overview now shows progress during processing of trades to be listed.
+    - Trade overview trade content filters can now be swapped by clicking on the trade arrow between them.
     - Items can now reach silver ranks. [img=silver-star]
     - Added more quests and rewards.
 ---------------------------------------------------------------------------------------------------

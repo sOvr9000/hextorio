@@ -383,6 +383,7 @@ function gui.init_trade_overview(player)
 
     trade_contents_label.style.font = "heading-2"
     processing_progress_bar.visible = false
+    gui.auto_width(processing_progress_bar)
 
     for i = 1, 3 do
         local input_item = trade_contents_frame.add {
@@ -828,6 +829,17 @@ function gui._update_trades_scroll_pane_tick(process)
         end
     end
 
+    if process.for_trade_overview then
+        local processing_label = process.processing_flow["label"]
+        local progress_bar = process.processing_flow["progressbar"]
+        progress_bar.value = math.min(1, (process.batch_idx + batch_size - 1) / #process.trades_list)
+        progress_bar.visible = progress_bar.value < 1
+        processing_label.visible = not progress_bar.visible
+        if processing_label.visible then
+            processing_label.caption = {"hextorio-gui.processing-finished", #process.trades_list}
+        end
+    end
+
     process.batch_idx = process.batch_idx + batch_size
     if process.batch_idx > #process.trades_list then
         process.finished = true
@@ -846,7 +858,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
     if game.is_multiplayer() then
         tick_interval = 10
     end
-    storage.gui.trades_scroll_pane_update[player.name] = {
+    local process = {
         player = player,
         tick_interval = tick_interval,
         trades_scroll_pane = trades_scroll_pane,
@@ -854,7 +866,12 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
         params = params,
         clear_mode = true,
         batch_idx = 1,
+        for_trade_overview = gui.is_descendant_of(trades_scroll_pane, "trade-overview"),
     }
+    if process.for_trade_overview then
+        process.processing_flow = process.trades_scroll_pane.parent.parent.parent["filter-frame"]["left"]["processing-flow"]
+    end
+    storage.gui.trades_scroll_pane_update[player.name] = process
 end
 
 function gui.generate_sprite_buttons(player, surface_name, flow, items, give_tooltip)
