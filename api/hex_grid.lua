@@ -1116,7 +1116,7 @@ function hex_grid.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid
     elseif surface.name == "vulcanus" then
         tile_type = "lava-hot"
     elseif surface.name == "fulgora" then
-        tile_type = "oil-ocean"
+        tile_type = "oil-ocean-shallow"
     elseif surface.name == "gleba" then
         tile_type = "gleba-deep-lake"
     elseif surface.name == "aquilo" then
@@ -1213,7 +1213,11 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.water.size)) * 0.5
         end
     elseif surface.name == "vulcanus" then
-        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vulcanus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
+        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vuus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
+    elseif surface.name == "fulgora" then
+        -- log(serpent.block(mgs))
+        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
+        land_chance = land_chance * land_chance
     end
     land_chance = (1 - land_chance * land_chance) ^ 0.5
 
@@ -1222,6 +1226,14 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     local is_land = is_starting_hex or math.random() < land_chance
 
     if is_starting_hex then
+        if surface.name == "fulgora" then
+            surface.create_entity {
+                name = "fulgoran-ruin-attractor",
+                quality = lib.get_hextreme_or_next_highest_quality(),
+                position = {0, -5},
+                force = "player",
+            }
+        end
         state.is_starting_hex = true
     end
 
@@ -2169,7 +2181,7 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
                     if game_tile and game_tile.valid and (
                         game_tile.name == "water" or 
                         game_tile.name == "deepwater" or 
-                        game_tile.name == "oil-ocean" or 
+                        game_tile.name == "oil-ocean-shallow" or 
                         game_tile.name == "lava-hot" or 
                         game_tile.name == "ammoniacal-solution"
                     ) then
@@ -2292,7 +2304,7 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
                                     if game_tile and game_tile.valid and (
                                         game_tile.name == "water" or 
                                         game_tile.name == "deepwater" or 
-                                        game_tile.name == "oil-ocean" or 
+                                        game_tile.name == "oil-ocean-shallow" or 
                                         game_tile.name == "lava-hot" or 
                                         game_tile.name == "ammoniacal-solution"
                                     ) then

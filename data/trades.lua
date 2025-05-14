@@ -26,6 +26,11 @@ return {
             {{"tungsten-ore", "advanced-circuit"}, {"tungsten-carbide", "processing-unit"}},
             {{"cargo-bay"}, {"thruster", "asteroid-collector"}},
         },
+        fulgora = {
+            {{"holmium-ore"}, {"hex-coin"}},
+            {{"electromagnetic-science-pack", "tesla-ammo"}, {"hex-coin"}},
+            {{"hex-coin", "scrap", "steel-plate"}, {"water-barrel"}},
+        },
     },
 
     discovered_items = {},

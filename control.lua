@@ -117,6 +117,9 @@ script.on_event(defines.events.on_tick, function (event)
     if storage.events.has_game_started and not storage.events.intro_finished then
         if event.tick == storage.events.game_start_tick + 60 then
             game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
+            if not lib.is_hextreme_enabled() then
+                game.print(lib.color_localized_string({"hextorio.hextreme-disabled"}, "pink", "heading-1"))
+            end
             storage.events.intro_finished = true
         end
     end
@@ -311,6 +314,15 @@ script.on_event(defines.events.on_surface_created, function (event)
 
         -- Resource randomization without tungsten
         storage.hex_grid.resource_weighted_choice.vulcanus.non_tungsten = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.starting)
+    elseif surface.name == "fulgora" then
+        local mgs = surface.map_gen_settings
+        -- log(serpent.block(mgs))
+        mgs.autoplace_controls.scrap.size = 0
+        mgs.autoplace_controls.fulgora_islands.size = 0
+        mgs.autoplace_controls.fulgora_cliff.size = 0
+        mgs.autoplace_settings.tile.settings["oil-ocean-shallow"].size = 0
+        mgs.autoplace_settings.tile.settings["oil-ocean-deep"].size = 0
+        surface.map_gen_settings = mgs
     end
 end)
 

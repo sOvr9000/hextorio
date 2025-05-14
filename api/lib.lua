@@ -669,37 +669,36 @@ function lib.get_gps_str_from_hex_core(hex_core)
 end
 
 function lib.insert_endgame_armor(player)
-    player.insert{name = "construction-robot", quality="legendary", count = 248}
-    player.insert{name="mech-armor", quality="legendary", count = 1}
+    player.get_inventory(5).clear()
+    player.get_inventory(5).clear() -- has to be done twice IF the player inventory is too full
+
+    local q = lib.get_hextreme_or_next_highest_quality()
+
+    player.insert{name = "construction-robot", quality=q, count = 340}
+    player.insert{name="mech-armor", quality=q, count = 1}
 
     local mech_armor = player.get_inventory(5)[1].grid
-    for _ = 1, 6 do
-        mech_armor.put({name = "fusion-reactor-equipment", quality = "legendary"})
+    for _ = 1, 8 do
+        mech_armor.put({name = "fusion-reactor-equipment", quality = q})
     end
-    for _ = 1, 3 do
-        mech_armor.put({name = "battery-mk3-equipment", quality = "legendary"})
+    for _ = 1, 8 do
+        mech_armor.put({name = "battery-mk3-equipment", quality = q})
+    end
+    for _ = 1, 4 do
+        mech_armor.put({name = "personal-roboport-mk2-equipment", quality = q})
     end
     mech_armor.put({name = "night-vision-equipment"})
-    for _ = 1, 2 do
-        mech_armor.put({name = "personal-roboport-mk2-equipment", quality = "legendary"})
+    for _ = 1, 13 do
+        mech_armor.put({name = "personal-laser-defense-equipment", quality = q})
     end
-    for _ = 1, 6 do
-        mech_armor.put({name = "exoskeleton-equipment", quality = "legendary"})
+    for _ = 1, 9 do
+        mech_armor.put({name = "energy-shield-mk2-equipment", quality = q})
     end
-    for _ = 1, 2 do
-        mech_armor.put({name = "personal-roboport-mk2-equipment", quality = "legendary"})
+    for _ = 1, 9 do
+        mech_armor.put({name = "exoskeleton-equipment", quality = q})
     end
-    for _ = 1, 7 do
-        mech_armor.put({name = "energy-shield-mk2-equipment", quality = "legendary"})
-    end
-    for _ = 1, 7 do
-        mech_armor.put({name = "personal-laser-defense-equipment", quality = "legendary"})
-    end
-    for _ = 1, 7 do
-        mech_armor.put({name = "battery-mk3-equipment", quality = "legendary"})
-    end
-    for _ = 1, 5 do
-        mech_armor.put({name = "toolbelt-equipment", quality = "legendary"})
+    for _ = 1, 12 do
+        mech_armor.put({name = "toolbelt-equipment", quality = q})
     end
 end
 
@@ -920,6 +919,37 @@ function lib.tostring_trade_filter(filter)
     end
     -- TODO: show planet filter
     return s .. "]"
+end
+
+---@return LuaQualityPrototype|nil
+function lib.get_tier6_quality()
+    local leg = prototypes.quality.legendary
+    if not leg then
+        lib.log_error("lib.get_tier6_quality_name: Legendary doesn't exist?")
+        return
+    end
+    if not leg.next then
+        lib.log_error("lib.get_tier6_quality_name: Tier 6 quality doesn't exist?")
+    end
+    return leg.next
+end
+
+function lib.is_hextreme_enabled()
+    local q = lib.get_tier6_quality()
+    if not q then return false end
+    return q.name == "hextreme"
+end
+
+---@return LuaQualityPrototype
+function lib.get_hextreme_or_next_highest_quality()
+    local q = lib.get_tier6_quality()
+    if not q then
+        if prototypes.quality.legendary then
+            return prototypes.quality.legendary
+        end
+        return next(prototypes.quality)[2] -- probably never going to see this, but it's here just in case
+    end
+    return q
 end
 
 
