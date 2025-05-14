@@ -682,7 +682,9 @@ function gui._process_trades_scroll_panes()
         if process.finished then
             storage.gui.trades_scroll_pane_update[player_name] = nil
         else
-            gui._update_trades_scroll_pane_tick(process)
+            if game.tick % process.tick_interval == 0 then
+                gui._update_trades_scroll_pane_tick(process)
+            end
         end
     end
 end
@@ -701,13 +703,12 @@ function gui._update_trades_scroll_pane_tick(process)
         return
     end
 
-    local batch_size = 30
-    local size = 40
-
+    local batch_size = 150
     if game.is_multiplayer() then
-        batch_size = 20 -- slow down for slow connections like my own
+        batch_size = 100 -- slow down for slow connections like my own
     end
 
+    local size = 40
     for trade_number = process.batch_idx, math.min(#process.trades_list, process.batch_idx + batch_size - 1) do
         local trade = process.trades_list[trade_number]
         if not trade then
@@ -841,8 +842,13 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
     if not storage.gui.trades_scroll_pane_update then
         storage.gui.trades_scroll_pane_update = {}
     end
+    local tick_interval = 5
+    if game.is_multiplayer() then
+        tick_interval = 10
+    end
     storage.gui.trades_scroll_pane_update[player.name] = {
         player = player,
+        tick_interval = tick_interval,
         trades_scroll_pane = trades_scroll_pane,
         trades_list = trades_list,
         params = params,
