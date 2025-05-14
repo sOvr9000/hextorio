@@ -1332,7 +1332,12 @@ function gui.update_trade_overview(player)
                 end
             end
             sort_func = function(trade1, trade2)
-                return distances[trade1.id] < distances[trade2.id]
+                local a = distances[trade1.id]
+                local b = distances[trade2.id]
+                if a == b then
+                    return #trade1.output_items < #trade2.output_items
+                end
+                return a < b
             end
         elseif filter.sorting.method == "distance-from-character" then
             if player.character then
@@ -1347,20 +1352,40 @@ function gui.update_trade_overview(player)
                     end
                 end
                 sort_func = function(trade1, trade2)
-                    return distances[trade1.id] < distances[trade2.id]
+                    local a = distances[trade1.id]
+                    local b = distances[trade2.id]
+                    if a == b then
+                        return #trade1.output_items < #trade2.output_items
+                    end
+                    return a < b
                 end
             end
         elseif filter.sorting.method == "num-inputs" then
             sort_func = function(trade1, trade2)
-                return #trade1.input_items < #trade2.input_items
+                local a = #trade1.input_items
+                local b = #trade2.input_items
+                if a == b then
+                    return #trade1.output_items < #trade2.output_items
+                end
+                return a < b
             end
         elseif filter.sorting.method == "num-outputs" then
             sort_func = function(trade1, trade2)
-                return #trade1.output_items < #trade2.output_items
+                local a = #trade1.output_items
+                local b = #trade2.output_items
+                if a == b then
+                    return #trade1.input_items < #trade2.input_items
+                end
+                return a < b
             end
         elseif filter.sorting.method == "productivity" then
             sort_func = function(trade1, trade2)
-                return trades.get_productivity(trade1) < trades.get_productivity(trade2)
+                local a = trades.get_productivity(trade1)
+                local b = trades.get_productivity(trade2)
+                if a == b then
+                    return #trade1.output_items < #trade2.output_items
+                end
+                return a < b
             end
         elseif filter.sorting.method == "total-item-value" then
             sort_func = function(trade1, trade2)
