@@ -20,6 +20,7 @@ local all_commands = {
     {name = "tp-to-ship", usage = "/tp-to-ship"},
     {name = "chart", usage = "/chart <surface> [range]", examples = {"/chart vulcanus", "/chart nauvis 500"}},
     {name = "spawn-ship", usage = "/spawn-ship"},
+    {name = "skip-flight", usage = "/skip-flight"},
 }
 
 local public_commands = sets.new {
@@ -106,6 +107,18 @@ function on_command(player, command, params)
         if sp then
             space_platforms.generate_tier1_ship(sp)
         end
+    elseif command == "skip-flight" then
+        local sp = player.surface.platform
+        if not sp then
+            player.print({"hextorio.not-on-platform"})
+            return
+        end
+        if not sp.space_connection then
+            player.print({"hextorio.platform-no-destination"})
+            return
+        end
+
+        sp.distance = 1
     end
 
     event_system.trigger("command-" .. command, player, params)

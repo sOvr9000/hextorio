@@ -259,6 +259,9 @@ local process_migration = {
     end,
     ["0.3.1"] = function()
         game.forces.player.technologies["planet-discovery-fulgora"].enabled = true
+        storage.trades.starting_trades.fulgora = data_trades.starting_trades.fulgora
+        storage.item_values.values.vulcanus = data_item_values.values.vulcanus -- fixes crude oil barrel bug
+        storage.item_values.values.fulgora = data_item_values.values.fulgora
     end,
 }
 
