@@ -704,12 +704,17 @@ function gui._update_trades_scroll_pane_tick(process)
         -- end
         process.trades_scroll_pane.clear()
         process.clear_mode = false
-        return
+        if not process.immediate then
+            return
+        end
     end
 
     local batch_size = 150
     if game.is_multiplayer() then
         batch_size = 100 -- slow down for slow connections like my own
+    end
+    if process.immediate then
+        batch_size = #process.trades_list
     end
 
     local size = 40
@@ -873,6 +878,8 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
     }
     if process.for_trade_overview then
         process.processing_flow = process.trades_scroll_pane.parent.parent.parent["filter-frame"]["left"]["processing-flow"]
+    else
+        process.immediate = true
     end
     storage.gui.trades_scroll_pane_update[player.name] = process
 end
