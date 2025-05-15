@@ -264,7 +264,6 @@ return {
             ["construction-robot"] = 4518.0990873984238,
             ["copper-cable"] = 4.1820034869163472,
             ["copper-plate"] = 17.625614689635047,
-            ["crude-oil-barrel"] = 835.67172812976673,
             crusher = 118286.57458137466,
             ["decider-combinator"] = 361.51502452774389,
             ["defender-capsule"] = 2833.7055067045653,
