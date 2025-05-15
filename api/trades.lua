@@ -375,7 +375,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         end
     end
 
-    local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_tier, quality_cost_mult)
+    local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
     local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
     local remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
     coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed)
@@ -383,7 +383,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
 
     local total_inserted = {}
     local remaining_to_insert = {}
-    trade_coin = trades.get_output_coins_of_trade(trade, quality, quality_tier)
+    trade_coin = trades.get_output_coins_of_trade(trade, quality)
     local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches)
     for _, output_item in pairs(trade.output_items) do
         if not lib.is_coin(output_item.name) then
