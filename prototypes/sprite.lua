@@ -178,6 +178,27 @@ data:extend{
     },
     {
         type = "sprite",
+        name = "planet-fulgora",
+        filename = "__hextorio__/graphics/icons/starmap-planet-fulgora.png",
+        width = 96,
+        height = 96,
+    },
+    {
+        type = "sprite",
+        name = "planet-gleba",
+        filename = "__hextorio__/graphics/icons/starmap-planet-gleba.png",
+        width = 96,
+        height = 96,
+    },
+    {
+        type = "sprite",
+        name = "planet-aquilo",
+        filename = "__hextorio__/graphics/icons/starmap-planet-aquilo.png",
+        width = 96,
+        height = 96,
+    },
+    {
+        type = "sprite",
         name = "check-mark-green",
         filename = "__base__/graphics/icons/signal/signal-checked-green.png",
         width = 64,
