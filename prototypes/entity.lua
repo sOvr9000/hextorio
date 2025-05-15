@@ -29,6 +29,15 @@ hex_core.icon = "__hextorio__/graphics/icons/hex-core.png"
 hex_core.inventory_type = "with_filters_and_bar"
 hex_core.map_color = {0.9, 0.9, 0.9}
 
+hex_core.resistances = {
+    {
+        type = "electric",
+        percent = 100,
+    },
+}
+
+
+
 
 
 local hidden_loader = table.deepcopy(data.raw["loader-1x1"]["loader-1x1"])
@@ -42,6 +51,13 @@ hidden_loader.filter_count = 2
 hidden_loader.per_lane_filters = true
 hidden_loader.max_belt_stack_size = 4
 hidden_loader.adjustable_belt_stack_size = true
+
+hidden_loader.resistances = {
+    {
+        type = "electric",
+        percent = 100,
+    },
+}
 
 
 
