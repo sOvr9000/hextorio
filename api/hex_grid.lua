@@ -1248,11 +1248,20 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         if surface.name == "fulgora" then
             -- Chance to spawn a fulgoran-ruin-vault
             if math.random() < lib.runtime_setting_value "vault-chance" then
-                local transformation = hex_grid.get_surface_transformation("fulgora")
+                local transformation = hex_grid.get_surface_transformation "fulgora"
                 surface.create_entity {
                     name = "fulgoran-ruin-vault",
                     position = hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation),
                     force = "neutral",
+                }
+            elseif math.random() < lib.runtime_setting_value "fulgoran-attractor-chance" then
+                local transformation = hex_grid.get_surface_transformation "fulgora"
+                local pos = hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
+                pos = lib.vector_add(pos, lib.random_unit_vector(9))
+                surface.create_entity {
+                    name = "fulgoran-ruin-attractor",
+                    position = pos,
+                    force = "player",
                 }
             end
         end

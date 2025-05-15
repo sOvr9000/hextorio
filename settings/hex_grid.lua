@@ -315,6 +315,14 @@ data:extend({
     },
     {
         type = "double-setting",
+        name = "hextorio-fulgoran-attractor-chance",
+        setting_type = "runtime-global",
+        default_value = 0.25,
+        minimum_value = 0,
+        maximum_value = 1.0,
+    },
+    {
+        type = "double-setting",
         name = "hextorio-tiles-per-quality",
         setting_type = "runtime-global",
         default_value = 8.0,
