@@ -2241,6 +2241,10 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
             -- Calculate the threshold
             local threshold = center_dist_squared * threshold_multiplier
 
+            if surface.name == "fulgora" or surface.name == "aquilo" then
+                threshold = threshold * 0.78
+            end
+
             -- Get border tiles for both hexes
             local corners1 = hex_grid.get_hex_corners(hex_pos, transformation.scale, transformation.rotation)
             local corners2 = hex_grid.get_hex_corners(adj_hex, transformation.scale, transformation.rotation)
@@ -2296,6 +2300,8 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
         return
     end
     surface = game.surfaces[surface_id]
+
+    if surface.name == "fulgora" or surface.name == "aquilo" then return end
     
     -- If no tile type is specified, use the last claimed hex tile type
     if not tile_type then
