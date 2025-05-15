@@ -949,8 +949,8 @@ function gui.update_hex_core(player)
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["teleport"].visible = player.character and state.hex_core and player.character.surface.name == state.hex_core.surface.name
         frame["hex-control-flow"]["unloader-filters"].enabled = true
-        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging"
-        if not state.is_infinite then
+        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging" and not coin_tiers.is_zero(hex_grid.get_supercharge_cost(hex_core))
+        if frame["hex-control-flow"]["supercharge"].visible then
             frame["hex-control-flow"]["supercharge"].tooltip = {"",
                 lib.color_localized_string({"hex-core-gui.supercharge-tooltip-header"}, "orange", "heading-2"),
                 "\n",
