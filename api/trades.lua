@@ -364,6 +364,9 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     if not trade.active then return {}, {}, {}, input_coin end
     if num_batches <= 0 then return {}, {}, {}, input_coin end
 
+    -- TODO: Handle two flow statistics if input and output inventories are on different surfaces
+    local flow_statistics = game.forces.player.get_item_production_statistics(trade.surface_name)
+
     if not input_items or not input_coin then
         input_coin, input_items = trades.get_coins_and_items_of_inventory(inventory_input)
     end
@@ -373,18 +376,20 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         if not lib.is_coin(input_item.name) then
             local to_remove = math.min(input_item.count * num_batches, input_items[quality][input_item.name] or 0)
             if to_remove > 0 then
-                inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
+                local actually_removed = inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
                 if not total_removed[quality] then total_removed[quality] = {} end
-                total_removed[quality][input_item.name] = (total_removed[quality][input_item.name] or 0) + to_remove
-                trades.increment_total_sold(input_item.name, to_remove)
+                total_removed[quality][input_item.name] = (total_removed[quality][input_item.name] or 0) + actually_removed
+                trades.increment_total_sold(input_item.name, actually_removed)
+                flow_statistics.on_flow({name = input_item.name, quality = quality}, -actually_removed)
             end
         end
     end
 
     local trade_coin = trades.get_input_coins_of_trade(trade, quality)
-    local mult = coin_tiers.multiply(trade_coin, num_batches)
-    local remaining_coin = coin_tiers.subtract(input_coin, mult)
-    coin_tiers.remove_coin_from_inventory(inventory_input, mult)
+    local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
+    local remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
+    coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed)
+    flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
 
     local total_inserted = {}
     local remaining_to_insert = {}
@@ -393,17 +398,21 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     for _, output_item in pairs(trade.output_items) do
         if not lib.is_coin(output_item.name) then
             local to_insert = output_item.count * total_output_batches
-            local inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
+            local actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
             if not total_inserted[quality] then total_inserted[quality] = {} end
-            total_inserted[quality][output_item.name] = (total_inserted[quality][output_item.name] or 0) + inserted
-            if inserted < to_insert then
+            total_inserted[quality][output_item.name] = (total_inserted[quality][output_item.name] or 0) + actually_inserted
+            if actually_inserted < to_insert then
                 if not remaining_to_insert[quality] then remaining_to_insert[quality] = {} end
-                remaining_to_insert[quality][output_item.name] = (remaining_to_insert[quality][output_item.name] or 0) + to_insert - inserted
+                remaining_to_insert[quality][output_item.name] = (remaining_to_insert[quality][output_item.name] or 0) + to_insert - actually_inserted
             end
             trades.increment_total_bought(output_item.name, to_insert)
+            flow_statistics.on_flow({name = output_item.name, quality = quality}, to_insert) -- Track entire stacks being inserted into both the output inventory and the buffer (remaining_to_insert).
         end
     end
-    coin_tiers.add_coin_to_inventory(inventory_input, coin_tiers.multiply(trade_coin, total_output_batches))
+
+    local coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
+    coin_tiers.add_coin_to_inventory(inventory_input, coins_added)
+    flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
 
     event_system.trigger("trade-processed", trade)
     return total_removed, total_inserted, remaining_to_insert, remaining_coin
