@@ -7,7 +7,7 @@ local lib = {}
 local non_land_tile_names = {
     "water",
     "deepwater",
-    "oil-ocean",
+    "oil-ocean-shallow",
     "oil-ocean-deep",
     "ammoniacal-solution",
     "ammoniacal-solution-2",
