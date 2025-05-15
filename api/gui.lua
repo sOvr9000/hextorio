@@ -648,11 +648,11 @@ function gui.give_item_tooltip(player, surface_name, element)
 
     element.tooltip = {"",
         rank_str,
-        "[font=heading-2][color=green]",
+        "[img=planet-" .. surface_name .. "] [font=heading-2][color=green]",
         {"hextorio-gui.item-value"},
         "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. "]x1 = ",
         coin_tiers.coin_to_text(scaled_value, false, 4),
-        "\n\n[font=heading-2][color=yellow]",
+        "\n\n[img=planet-" .. surface_name .. "] [font=heading-2][color=yellow]",
         {"hextorio-gui.stack-value-total"},
         "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. "]x" .. item_count .. " = ",
         coin_tiers.coin_to_text(item_count * scaled_value, false, nil)
