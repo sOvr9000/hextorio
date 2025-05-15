@@ -26,6 +26,7 @@ Date: 15/5/25
     - Press Y to claim the hex core under your mouse pointer.
   Optimizations:
     - Optimized trade batch calculation.
+    - Optimized global hex core trade processing.
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 13/5/25
