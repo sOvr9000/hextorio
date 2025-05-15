@@ -124,6 +124,14 @@ function lib.table_length(t)
     return count
 end
 
+function lib.table_reversed(t)
+    local reversed = {}
+    for i = #t, 1, -1 do
+        reversed[#t - i + 1] = t[i]
+    end
+    return reversed
+end
+
 function lib.is_empty_table(t)
     for _ in pairs(t) do return false end
     return true
@@ -950,6 +958,17 @@ function lib.get_hextreme_or_next_highest_quality()
         return next(prototypes.quality)[2] -- probably never going to see this, but it's here just in case
     end
     return q
+end
+
+---@param quality string
+function lib.get_quality_tier(quality)
+    local prot = prototypes.quality.normal
+    local tier = 1
+    while prot.name ~= quality do
+        prot = prot.next
+        tier = tier + 1
+    end
+    return tier
 end
 
 ---@param quality LuaQualityPrototype

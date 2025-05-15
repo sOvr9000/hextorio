@@ -2504,11 +2504,16 @@ function hex_grid.add_to_output_buffer(state, items)
     if not state.output_buffer then
         state.output_buffer = {}
     end
-    for item_name, count in pairs(items) do
-        if count <= 0 then
-            lib.log_error("hex_grid.add_to_output_buffer: Tried to add a negative amount of items to the output buffer: " .. serpent.block(items))
-        else
-            state.output_buffer[item_name] = (state.output_buffer[item_name] or 0) + count
+    for quality, _items in pairs(items) do
+        if not state.output_buffer[quality] then
+            state.output_buffer[quality] = {}
+        end
+        for item_name, count in pairs(_items) do
+            if count <= 0 then
+                lib.log_error("hex_grid.add_to_output_buffer: Tried to add a negative amount of items to the output buffer: " .. serpent.block(_items))
+            else
+                state.output_buffer[quality][item_name] = (state.output_buffer[quality][item_name] or 0) + count
+            end
         end
     end
 end
@@ -2517,10 +2522,15 @@ function hex_grid.remove_from_output_buffer(state, items)
     if not state.output_buffer then
         state.output_buffer = {}
     end
-    for item_name, count in pairs(items) do
-        state.output_buffer[item_name] = (state.output_buffer[item_name] or 0) - count
-        if state.output_buffer[item_name] <= 0 then
-            state.output_buffer[item_name] = nil
+    for quality, _items in pairs(items) do
+        if not state.output_buffer[quality] then
+            state.output_buffer[quality] = {}
+        end
+        for item_name, count in pairs(_items) do
+            state.output_buffer[quality][item_name] = (state.output_buffer[quality][item_name] or 0) - count
+            if state.output_buffer[quality][item_name] <= 0 then
+                state.output_buffer[quality][item_name] = nil
+            end
         end
     end
 end
@@ -2534,31 +2544,44 @@ function hex_grid.try_unload_output_buffer(state)
     if not inventory_output then return true end
 
     local uninsertable = {}
-    for item_name, count in pairs(state.output_buffer) do
-        local ins = inventory_output.get_insertable_count {name = item_name}
-        if ins < count then
-            uninsertable[item_name] = ins
+    for quality, buf in pairs(state.output_buffer) do
+        for item_name, count in pairs(buf) do
+            local ins = inventory_output.get_insertable_count {name = item_name, quality = quality}
+            if ins < count then
+                if not uninsertable[quality] then
+                    uninsertable[quality] = {}
+                end
+                uninsertable[quality][item_name] = ins
+            end
         end
     end
+    local num_uninsertable = 0
+    for _, unins in pairs(state.output_buffer) do
+        num_uninsertable = num_uninsertable + lib.table_length(unins)
+    end
     local to_insert
-    if next(uninsertable) then
-        local num_uninsertable = lib.table_length(uninsertable)
-        to_insert = {}
-        for item_name, count in pairs(uninsertable) do
-            to_insert[item_name] = math.max(1, math.floor(count / num_uninsertable))
+    if num_uninsertable > 0 then
+        for quality, unins in pairs(uninsertable) do
+            if not to_insert then to_insert = {} end
+            if not to_insert[quality] then to_insert[quality] = {} end
+            for item_name, count in pairs(unins) do
+                to_insert[quality][item_name] = math.max(1, math.floor(count / num_uninsertable))
+            end
         end
     end
 
     local empty = true
-    for item_name, count in pairs(to_insert or state.output_buffer) do
-        -- "AND" with prev value of empty because it needs to stay false if it ever becomes false
-        local inserted = inventory_output.insert {name = item_name, count = math.min(1000000000, count)}
-        local remaining = state.output_buffer[item_name] - inserted
-        empty = empty and remaining == 0
-        if remaining > 0 then
-            state.output_buffer[item_name] = remaining
-        else
-            state.output_buffer[item_name] = nil
+    for quality, counts in pairs(to_insert or state.output_buffer) do
+        for item_name, count in pairs(counts) do
+            -- "AND" with prev value of empty because it needs to stay false if it ever becomes false
+            local inserted = inventory_output.insert {name = item_name, count = math.min(1000000000, count), quality = quality}
+            local remaining = state.output_buffer[quality][item_name] - inserted
+            empty = empty and remaining == 0
+            if remaining > 0 then
+                state.output_buffer[quality][item_name] = remaining
+            else
+                state.output_buffer[quality][item_name] = nil
+            end
         end
     end
 

@@ -276,61 +276,71 @@ function trades.get_productivity_bonus_str(trade)
     return str
 end
 
-function trades.get_input_coins_of_trade(trade)
-    local coins = {}
+function trades.get_input_coins_of_trade(trade, quality)
+    if not quality then quality = "normal" end
+    local values = {}
     for _, input_item in pairs(trade.input_items) do
         if lib.is_coin(input_item.name) then
-            coins[input_item.name] = input_item.count
+            values[input_item.name] = input_item.count
         end
     end
-    return coin_tiers.new(coins)
+    local coin = coin_tiers.new(values)
+    coin = coin_tiers.multiply(coin, 10 ^ (lib.get_quality_tier(quality) - 1))
+    return coin
 end
 
-function trades.get_output_coins_of_trade(trade)
-    local coins = {}
-    for _, input_item in pairs(trade.output_items) do
-        if lib.is_coin(input_item.name) then
-            coins[input_item.name] = input_item.count
+function trades.get_output_coins_of_trade(trade, quality)
+    if not quality then quality = "normal" end
+    local values = {}
+    for _, output_item in pairs(trade.output_items) do
+        if lib.is_coin(output_item.name) then
+            values[output_item.name] = output_item.count
         end
     end
-    return coin_tiers.new(coins)
+    local coin = coin_tiers.new(values)
+    coin = coin_tiers.multiply(coin, 10 ^ (lib.get_quality_tier(quality) - 1))
+    return coin
 end
 
--- Check whether a trade can occur at least once within an inventory
-function trades.can_trade_items(inventory, trade)
-    if not trade.active then return false end
+-- -- Check whether a trade can occur at least once within an inventory
+-- function trades.can_trade_items(inventory, trade)
+--     if not trade.active then return false end
 
-    for _, input_item in pairs(trade.input_items) do
-        if not lib.is_coin(input_item.name) then
-            local count = inventory.get_item_count(input_item.name)
-            if count < input_item.count then
-                return false
-            end
-        end
-    end
+--     for _, input_item in pairs(trade.input_items) do
+--         if not lib.is_coin(input_item.name) then
+--             local count = inventory.get_item_count(input_item.name)
+--             if count < input_item.count then
+--                 return false
+--             end
+--         end
+--     end
 
-    local inventory_coin, trade_coin = trades.get_input_coins_of_trade(trade)
-    if inventory_coin and trade_coin then
-        if coin_tiers.lt(inventory_coin, trade_coin) then
-            return false
-        end
-    end
+--     local inventory_coin, trade_coin = trades.get_input_coins_of_trade(trade)
+--     if inventory_coin and trade_coin then
+--         if coin_tiers.lt(inventory_coin, trade_coin) then
+--             return false
+--         end
+--     end
 
-    return true
-end
+--     return true
+-- end
 
 -- Check how many batches of (how many times) a trade can occur within an inventory
-function trades.get_num_batches_for_trade(input_items, input_coin, trade, max_items_per_output)
+function trades.get_num_batches_for_trade(input_items, input_coin, trade, quality, max_items_per_output)
     if not trade.active then return 0 end
 
+    if not quality then
+        quality = "normal"
+    end
+
     if not max_items_per_output then
-        max_items_per_output = 10000
+        max_items_per_output = trade.max_items_per_output or 10000
     end
 
     local num_batches = math.huge
     for _, input_item in pairs(trade.input_items) do
         if not lib.is_coin(input_item.name) then
-            num_batches = math.min(math.floor((input_items[input_item.name] or 0) / input_item.count), num_batches)
+            num_batches = math.min(math.floor(((input_items[quality] or {})[input_item.name] or 0) / input_item.count), num_batches)
         end
     end
 
@@ -341,14 +351,16 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, max_it
         end
     end
 
-    local trade_coin = trades.get_input_coins_of_trade(trade)
-    num_batches = math.min(math.floor(coin_tiers.divide_coins(input_coin, trade_coin)), num_batches)
+    local trade_coin = trades.get_input_coins_of_trade(trade, quality)
+    if not coin_tiers.is_zero(trade_coin) then
+        num_batches = math.min(math.floor(coin_tiers.divide_coins(input_coin, trade_coin)), num_batches)
+    end
 
     return num_batches
 end
 
 -- Trade items within an inventory
-function trades.trade_items(inventory_input, inventory_output, trade, num_batches, input_items, input_coin)
+function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, input_items, input_coin)
     if not trade.active then return {}, {}, {}, input_coin end
     if num_batches <= 0 then return {}, {}, {}, input_coin end
 
@@ -359,31 +371,34 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local total_removed = {}
     for _, input_item in pairs(trade.input_items) do
         if not lib.is_coin(input_item.name) then
-            local to_remove = math.min(input_item.count * num_batches, input_items[input_item.name] or 0)
+            local to_remove = math.min(input_item.count * num_batches, input_items[quality][input_item.name] or 0)
             if to_remove > 0 then
-                inventory_input.remove {name = input_item.name, count = to_remove}
-                total_removed[input_item.name] = (total_removed[input_item.name] or 0) + to_remove
+                inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
+                if not total_removed[quality] then total_removed[quality] = {} end
+                total_removed[quality][input_item.name] = (total_removed[quality][input_item.name] or 0) + to_remove
                 trades.increment_total_sold(input_item.name, to_remove)
             end
         end
     end
 
-    local trade_coin = trades.get_input_coins_of_trade(trade)
+    local trade_coin = trades.get_input_coins_of_trade(trade, quality)
     local mult = coin_tiers.multiply(trade_coin, num_batches)
     local remaining_coin = coin_tiers.subtract(input_coin, mult)
     coin_tiers.remove_coin_from_inventory(inventory_input, mult)
 
     local total_inserted = {}
     local remaining_to_insert = {}
-    trade_coin = trades.get_output_coins_of_trade(trade)
+    trade_coin = trades.get_output_coins_of_trade(trade, quality)
     local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches)
     for _, output_item in pairs(trade.output_items) do
         if not lib.is_coin(output_item.name) then
             local to_insert = output_item.count * total_output_batches
-            local inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert)}
-            total_inserted[output_item.name] = (total_inserted[output_item.name] or 0) + inserted
+            local inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
+            if not total_inserted[quality] then total_inserted[quality] = {} end
+            total_inserted[quality][output_item.name] = (total_inserted[quality][output_item.name] or 0) + inserted
             if inserted < to_insert then
-                remaining_to_insert[output_item.name] = (remaining_to_insert[output_item.name] or 0) + to_insert - inserted
+                if not remaining_to_insert[quality] then remaining_to_insert[quality] = {} end
+                remaining_to_insert[quality][output_item.name] = (remaining_to_insert[quality][output_item.name] or 0) + to_insert - inserted
             end
             trades.increment_total_bought(output_item.name, to_insert)
         end
@@ -885,12 +900,7 @@ function trades.get_coins_and_items_of_inventory(inv)
         if lib.is_coin(stack.name) then
             input_coin_values[stack.name] = stack.count
         else
-            local quality
-            if not stack.quality then
-                quality = "normal"
-            else
-                quality = stack.quality
-            end
+            local quality = stack.quality or "normal"
             if not all_items_lookup[quality] then
                 all_items_lookup[quality] = {}
             end
@@ -918,21 +928,29 @@ function trades.process_trades_in_inventories(input_inv, output_inv, trade_ids, 
     local _remaining_to_insert = {}
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
-        local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, max_items_per_output)
-        if num_batches > 0 then
-            local total_removed, total_inserted, remaining_to_insert, remaining_coin = trades.trade_items(input_inv, output_inv, trade, num_batches, all_items_lookup, input_coin)
-            input_coin = remaining_coin
-            for item_name, amount in pairs(total_removed) do
-                _total_removed[item_name] = (_total_removed[item_name] or 0) + amount
-            end
-            for item_name, amount in pairs(total_inserted) do
-                _total_inserted[item_name] = (_total_inserted[item_name] or 0) + amount
-            end
-            for item_name, amount in pairs(remaining_to_insert) do
-                _remaining_to_insert[item_name] = (_remaining_to_insert[item_name] or 0) + amount
+        if trade then
+            for _, quality in pairs(trade.allowed_qualities or {"normal", "uncommon", "rare", "epic", "legendary", "hextreme"}) do
+                local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, max_items_per_output)
+                if num_batches > 0 then
+                    local total_removed, total_inserted, remaining_to_insert, remaining_coin = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, all_items_lookup, input_coin)
+                    input_coin = remaining_coin
+                    if not _total_removed[quality] then _total_removed[quality] = {} end
+                    for item_name, amount in pairs(total_removed[quality] or {}) do
+                        _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
+                    end
+                    if not _total_inserted[quality] then _total_inserted[quality] = {} end
+                    for item_name, amount in pairs(total_inserted[quality] or {}) do
+                        _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
+                    end
+                    if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
+                    for item_name, amount in pairs(remaining_to_insert[quality] or {}) do
+                        _remaining_to_insert[quality][item_name] = (_remaining_to_insert[quality][item_name] or 0) + amount
+                    end
+                end
             end
         end
     end
+
     return _total_removed, _total_inserted, _remaining_to_insert
 end
 
