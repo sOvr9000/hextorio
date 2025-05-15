@@ -2466,7 +2466,7 @@ function hex_grid.get_supercharge_cost(hex_core)
     if state.is_well then
         base_cost = lib.runtime_setting_value "supercharge-cost-per-well"
     else
-        base_cost = lib.runtime_setting_value "supercharge-cost-per-tile"
+        base_cost = lib.runtime_setting_e "supercharge-cost-per-tile"
     end
 
     local total_value = 0
@@ -2491,18 +2491,27 @@ function hex_grid.get_supercharge_cost(hex_core)
 end
 
 function hex_grid.update_all_hex_cores()
+    local quality_cost_multipliers = {}
+    local mult = lib.runtime_setting_value "quality-cost-multiplier"
+    for quality_name, _ in pairs(prototypes.quality) do
+        if quality_name == "normal" then
+            quality_cost_multipliers[quality_name] = 1
+        else
+            quality_cost_multipliers[quality_name] = mult
+        end
+    end
     for surface, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
         for _, Q in pairs(surface_hexes) do
             for _, state in pairs(Q) do
                 if state.claimed then
-                    hex_grid.process_hex_core_trades(state)
+                    hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
                 end
             end
         end
     end
 end
 
-function hex_grid.process_hex_core_trades(state)
+function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
     if not state.trades then return end
     local inventory_input = state.hex_core_input_inventory
     if not inventory_input then return end
@@ -2510,7 +2519,7 @@ function hex_grid.process_hex_core_trades(state)
     if not inventory_output then return end
 
     if hex_grid.try_unload_output_buffer(state) then
-        local _, _, remaining_to_insert = trades.process_trades_in_inventories(inventory_input, inventory_output, state.trades)
+        local _, _, remaining_to_insert = trades.process_trades_in_inventories(inventory_input, inventory_output, state.trades, quality_cost_multipliers)
         hex_grid.add_to_output_buffer(state, remaining_to_insert)
     end
 end
