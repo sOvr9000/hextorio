@@ -1223,8 +1223,8 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
-    local is_starting_hex = dist == 0 or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
-    local is_land = is_starting_hex or math.random() < land_chance
+    local is_starting_hex = dist == 0
+    local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
 
     if surface.name == "nauvis" then
         local quality = hex_grid.get_quality_from_distance(dist)
