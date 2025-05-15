@@ -962,12 +962,18 @@ end
 
 ---@param quality string
 function lib.get_quality_tier(quality)
+    if not storage.quality_tiers then storage.quality_tiers = {} end
+    local tier = storage.quality_tiers[quality]
+    if tier then
+        return tier
+    end
+    tier = 1
     local prot = prototypes.quality.normal
-    local tier = 1
     while prot.name ~= quality do
         prot = prot.next
         tier = tier + 1
     end
+    storage.quality_tiers[quality] = tier
     return tier
 end
 
