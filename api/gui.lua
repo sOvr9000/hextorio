@@ -73,6 +73,17 @@ function gui.register_events()
             end
         end
     end)
+
+    event_system.register_callback("hex-claimed", function(state)
+        local hex_core = state.hex_core
+        if not hex_core or not hex_core.valid then return end
+
+        for _, player in pairs(game.connected_players) do
+            if player.opened == hex_core then
+                gui.update_hex_core(player)
+            end
+        end
+    end)
 end
 
 function gui.reinitialize_everything(player)
@@ -180,7 +191,7 @@ function gui.init_hex_core(player)
     local free_hexes_remaining = claim_flow.add {type = "label", name = "free-hexes-remaining"}
     local claim_price = gui.create_coin_tier(claim_flow, "claim-price")
     local claim_hex = claim_flow.add {type = "button", name = "claim-hex", caption = {"hex-core-gui.claim-hex"}, style = "confirm_button"}
-    claim_hex.tooltip = nil
+    claim_hex.tooltip = {"hex-core-gui.claim-hex-tooltip"}
 
     local claimed_by = hex_core_gui.add {type = "label", name = "claimed-by", caption = {"hex-core-gui.claimed-by"}}
     claimed_by.style.font = "heading-2"
@@ -911,7 +922,6 @@ function gui.update_hex_core(player)
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
 
-    frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation"
     frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion"
 
     if state.claimed then
@@ -947,7 +957,7 @@ function gui.update_hex_core(player)
         end
 
         frame["hex-control-flow"].visible = true
-        frame["hex-control-flow"]["teleport"].visible = player.character and state.hex_core and player.character.surface.name == state.hex_core.surface.name
+        frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation" and player.character and state.hex_core and player.character.surface.name == state.hex_core.surface.name
         frame["hex-control-flow"]["unloader-filters"].enabled = true
         frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging" and not coin_tiers.is_zero(hex_grid.get_supercharge_cost(hex_core))
         if frame["hex-control-flow"]["supercharge"].visible then
@@ -2221,7 +2231,6 @@ function gui.on_claim_hex_button_click(player)
     end
 
     hex_grid.claim_hex(hex_core.surface, hex_pos, player)
-    gui.update_hex_core(player)
 end
 
 function gui.on_questbook_button_click(player)

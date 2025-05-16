@@ -22,8 +22,8 @@ Date: 15/5/25
   Minor Features:
     - Planets now show in item tooltips to indicate that the item value is strongly tied to that planet.
   Ease of use:
-    - Press T to teleport to the hex core under your mouse pointer.
-    - Press Y to claim the hex core under your mouse pointer.
+    - Press T (default keybind) to teleport to the hex core under your mouse pointer.
+    - Press Y (default keybind) to claim the hex core under your mouse pointer.
   Optimizations:
     - Optimized trade batch calculation.
     - Optimized global hex core trade processing.

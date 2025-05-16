@@ -1841,10 +1841,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     end
     hex_grid.set_hex_tiles(surface, hex_pos, tile_name)
 
-    -- TODO: This check will never be necessary in the release.  It is needed right now for testing with "/claim q r"
-    if hex_grid.can_hex_core_spawn(surface, hex_pos) then
-        hex_grid.spawn_hex_core(surface, hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
-    end
+    hex_grid.spawn_hex_core(surface, hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
 
     local fill_tile_name
     if by_player then
@@ -1860,7 +1857,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         storage.hex_grid.last_used_edge_fill_tile = fill_tile_name
     end
 
-    -- Fill in the edges between claimed hexes
+    -- Fil the edges between claimed hexes
     hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, fill_tile_name)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
 
@@ -1870,6 +1867,8 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     hex_grid.check_hex_span(surface, hex_pos)
     hex_grid.add_free_hex_claims(surface, -1)
     quests.increment_progress_for_type("claimed-hexes", 1)
+
+    event_system.trigger("hex-claimed", state)
 end
 
 -- Claim hexes within a range, covering water as well
@@ -2466,7 +2465,7 @@ function hex_grid.get_supercharge_cost(hex_core)
     if state.is_well then
         base_cost = lib.runtime_setting_value "supercharge-cost-per-well"
     else
-        base_cost = lib.runtime_setting_e "supercharge-cost-per-tile"
+        base_cost = lib.runtime_setting_value "supercharge-cost-per-tile"
     end
 
     local total_value = 0
