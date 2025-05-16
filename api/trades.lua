@@ -913,8 +913,8 @@ end
 ---@param input_inv LuaInventory
 ---@param output_inv LuaInventory
 ---@param trade_ids {[int]: int}
----@param quality_cost_multipliers {[string]: number}
----@param max_items_per_output int
+---@param quality_cost_multipliers {[string]: number} | nil
+---@param max_items_per_output int | nil
 ---@return {[string]: int}, {[string]: int}, {[string]: int}
 function trades.process_trades_in_inventories(input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
     -- Check if trades can occur
