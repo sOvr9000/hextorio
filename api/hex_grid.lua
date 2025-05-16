@@ -2008,11 +2008,9 @@ function hex_grid.spawn_hex_core(surface, position)
     local entities = surface.find_entities_filtered {
         area = {{position.x - 2.5, position.y - 2.5}, {position.x + 2.5, position.y + 2.5}},
     }
-    -- lib.log("Spawning hex core. Found " .. #entities .. " entities in area")
 
     for _, e in pairs(entities) do
-        if e.type ~= "character" then
-            -- lib.log("Destroying entity: " .. serpent.line(e))
+        if e.valid and e.type ~= "character" then
             e.destroy()
         end
     end
@@ -2074,7 +2072,6 @@ function hex_grid.spawn_hex_core(surface, position)
     end
 
     hex_grid.apply_extra_trades_bonus(state)
-
     hex_grid.update_hex_core_inventory_filters(state)
 
     return hex_core
@@ -2088,7 +2085,9 @@ function hex_grid.delete_hex_core(hex_core)
 
     local entities = hex_core.surface.find_entities_filtered {name = "hex-core-loader", radius = 3, position = hex_core.position}
     for _, e in pairs(entities) do
-        e.destroy()
+        if e.valid then
+            e.destroy()
+        end
     end
 
     hex_core.destroy()
@@ -2144,10 +2143,12 @@ function hex_grid.generate_loaders(hex_core_state)
         area = {{position.x - 2, position.y - 2}, {position.x + 2, position.y + 2}},
     }
     for _, e in pairs(entities) do
-        if e.loader_filter_mode == "whitelist" then
-            filters[lib.position_to_string(e.position)] = get_filters(e)
+        if e.valid then
+            if e.loader_filter_mode == "whitelist" then
+                filters[lib.position_to_string(e.position)] = get_filters(e)
+            end
+            e.destroy()
         end
-        e.destroy()
     end
 
     local dx = 1
@@ -2430,6 +2431,13 @@ function hex_grid.get_hex_resource_entities(hex_core)
         radius = transformation.scale * storage.constants.ROOT_THREE_OVER_TWO + 0.5,
     }
 
+    -- Filter out invalid entities
+    for i = #entities, 1, -1 do
+        if not entities[i].valid then
+            table.remove(entities, i)
+        end
+    end
+
     -- local state = hex_grid.get_hex_state_from_core(hex_core)
     -- if not state then return entities end
 
@@ -2679,7 +2687,9 @@ function hex_grid.reduce_biters(portion)
                     radius = transformation.scale,
                 }
                 for _, e in pairs(entities) do
-                    e.destroy()
+                    if e.valid then
+                        e.destroy()
+                    end
                 end
             end
         end
