@@ -346,7 +346,7 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
 end
 
 -- Trade items within an inventory
-function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, input_items, input_coin)
+function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, quality_cost_mult, input_items, input_coin)
     if not trade.active then return {}, {}, {}, input_coin end
     if num_batches <= 0 then return {}, {}, {}, input_coin end
 
@@ -358,7 +358,6 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     end
 
     quality = quality or "normal"
-    quality_tier = quality_tier or lib.get_quality_tier(quality)
     quality_cost_mult = quality_cost_mult or 1
 
     local total_removed = {}
@@ -914,6 +913,8 @@ end
 ---@param input_inv LuaInventory
 ---@param output_inv LuaInventory
 ---@param trade_ids {[int]: int}
+---@param quality_cost_multipliers {[string]: number}
+---@param max_items_per_output int
 ---@return {[string]: int}, {[string]: int}, {[string]: int}
 function trades.process_trades_in_inventories(input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
     -- Check if trades can occur
@@ -934,7 +935,7 @@ function trades.process_trades_in_inventories(input_inv, output_inv, trade_ids, 
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
                 if num_batches > 0 then
-                    local total_removed, total_inserted, remaining_to_insert, remaining_coin = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, all_items_lookup, input_coin)
+                    local total_removed, total_inserted, remaining_to_insert, remaining_coin = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin)
                     input_coin = remaining_coin
                     if not _total_removed[quality] then _total_removed[quality] = {} end
                     for item_name, amount in pairs(total_removed[quality] or {}) do

@@ -876,7 +876,7 @@ function hex_grid.add_trade(hex_core_state, trade)
 
     trade.allowed_qualities = {}
     local quality_tier = lib.get_quality_tier(hex_core.quality.name)
-    for tier = 1, quality_tier do
+    for tier = quality_tier, 1, -1 do
         table.insert(trade.allowed_qualities, lib.get_quality_at_tier(tier))
     end
 
