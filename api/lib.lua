@@ -1002,6 +1002,27 @@ function lib.get_quality_at_tier(quality_tier)
     return quality
 end
 
+---@return {[string]: number}
+function lib.get_quality_cost_multipliers()
+    local mults = {normal = 1}
+    local mult = tonumber(lib.runtime_setting_value "quality-cost-multiplier")
+    for quality_name, _ in pairs(prototypes.quality) do
+        if quality_name == "normal" then
+            mults[quality_name] = 1
+        else
+            mults[quality_name] = mult
+        end
+    end
+    return mults
+end
+
+---@param quality string
+---@return number
+function lib.get_quality_cost_multiplier(quality)
+    if quality == "normal" then return 1 end
+    return tonumber(lib.runtime_setting_value "quality-cost-multiplier") or 1
+end
+
 ---@param quality LuaQualityPrototype
 ---@return boolean
 function lib.is_tier6_quality(quality)
@@ -1026,6 +1047,24 @@ end
 
 function lib.reservoir_sample(t)
     return t[lib.reservoir_sample_index(t)]
+end
+
+function lib.get_tier_of_coin_name(coin_name)
+    if coin_name == "hex-coin" then
+        return 1
+    elseif coin_name == "gravity-coin" then
+        return 2
+    elseif coin_name == "meteor-coin" then
+        return 3
+    elseif coin_name == "hexaprism-coin" then
+        return 4
+    end
+    lib.log_error("lib.get_tier_of_coin_name: Cannot determine the tier of " .. coin_name)
+    return  1
+end
+
+function lib.get_quality_value_scale(quality)
+    return 9 ^ (lib.get_quality_tier(quality) - 1)
 end
 
 

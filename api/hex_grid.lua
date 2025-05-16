@@ -1224,7 +1224,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.water.size)) * 0.5
         end
     elseif surface.name == "vulcanus" then
-        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vuolcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
+        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vulcanus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
     elseif surface.name == "fulgora" then
         -- log(serpent.block(mgs))
         land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
@@ -2509,16 +2509,8 @@ function hex_grid.get_supercharge_cost(hex_core)
 end
 
 function hex_grid.update_all_hex_cores()
-    local quality_cost_multipliers = {}
-    local mult = lib.runtime_setting_value "quality-cost-multiplier"
-    for quality_name, _ in pairs(prototypes.quality) do
-        if quality_name == "normal" then
-            quality_cost_multipliers[quality_name] = 1
-        else
-            quality_cost_multipliers[quality_name] = mult
-        end
-    end
-    for surface, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
+    local quality_cost_multipliers = lib.get_quality_cost_multipliers()
+    for _, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
         for _, Q in pairs(surface_hexes) do
             for _, state in pairs(Q) do
                 if state.claimed then

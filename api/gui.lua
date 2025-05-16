@@ -244,8 +244,20 @@ function gui.init_hex_core(player)
 
     hex_core_gui.add {type = "line", direction = "horizontal"}
 
-    local trades_header = hex_core_gui.add {type = "label", name = "trades-header", caption = {"hex-core-gui.trades-header"}}
-    trades_header.style.font = "heading-1"
+    local trades_header_flow = hex_core_gui.add {type = "flow", name = "trades-header", direction = "horizontal"}
+    local trades_header_label = trades_header_flow.add {type = "label", name = "label", caption = {"hex-core-gui.trades-header"}}
+    trades_header_label.style.font = "heading-1"
+
+    local quality_locales = {}
+    for quality_name, _ in pairs(prototypes.quality) do
+        if quality_name ~= "quality-unknown" then
+            table.insert(quality_locales, {"", "[img=quality." .. quality_name .. "] ", {"quality-name." .. quality_name}})
+        end
+    end
+    local quality_dropdown = trades_header_flow.add {type = "drop-down", name = "quality-dropdown", items = quality_locales, selected_index = 1}
+
+    gui.add_info(hex_core_gui, {"hex-core-gui.trades-quality-info"}, "trades-quality-info")
+    gui.add_warning(hex_core_gui, {"hex-core-gui.trades-quality-warning"}, "trades-quality-warning")
 
     local trades_scroll_pane = hex_core_gui.add {type = "scroll-pane", name = "trades", direction = "vertical"}
     trades_scroll_pane.style.horizontally_stretchable = true
@@ -646,10 +658,17 @@ function gui.give_item_tooltip(player, surface_name, element)
         return
     end
 
+    local quality = element.quality
+    if quality then
+        quality = quality.name
+    else
+        quality = "normal"
+    end
+
     local hex_coin_value = item_values.get_item_value(surface_name, "hex-coin")
     local item_count = element.number or 1
     local value = item_values.get_item_value(surface_name, item_name)
-    local scaled_value = value / hex_coin_value
+    local scaled_value = value / hex_coin_value * lib.get_quality_value_scale(quality)
 
     local rank_str = {""}
     if lib.is_catalog_item(item_name) then
@@ -661,18 +680,21 @@ function gui.give_item_tooltip(player, surface_name, element)
         rank_str,
         "[img=planet-" .. surface_name .. "] [font=heading-2][color=green]",
         {"hextorio-gui.item-value"},
-        "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. "]x1 = ",
+        "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. ",quality=" .. quality .. "]x1 = ",
         coin_tiers.coin_to_text(scaled_value, false, 4),
         "\n\n[img=planet-" .. surface_name .. "] [font=heading-2][color=yellow]",
         {"hextorio-gui.stack-value-total"},
-        "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. "]x" .. item_count .. " = ",
+        "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. ",quality=" .. quality .. "]x" .. item_count .. " = ",
         coin_tiers.coin_to_text(item_count * scaled_value, false, nil)
     }
 end
 
-function gui.give_trade_arrow_tooltip(element, trade)
+function gui.give_trade_arrow_tooltip(element, trade, quality, quality_cost_mult)
+    quality = quality or "normal"
+    quality_cost_mult = quality_cost_mult or 1
+
     local s = {"",
-        trades.get_total_values_str(trade),
+        trades.get_total_values_str(trade, quality, quality_cost_mult),
     }
     local prod = trades.get_productivity(trade)
     if prod > 0 then
@@ -706,13 +728,6 @@ end
 
 function gui._update_trades_scroll_pane_tick(process)
     if process.clear_mode then
-        -- local batch_size = 50
-        -- for i = math.min(#process.trades_scroll_pane.children, batch_size), 1, -1 do
-        --     process.trades_scroll_pane.children[i].destroy()
-        -- end
-        -- if #process.trades_scroll_pane.children == 0 then
-        --     process.clear_mode = false
-        -- end
         process.trades_scroll_pane.clear()
         process.clear_mode = false
         if not process.immediate then
@@ -728,124 +743,13 @@ function gui._update_trades_scroll_pane_tick(process)
         batch_size = #process.trades_list
     end
 
-    local size = 40
     for trade_number = process.batch_idx, math.min(#process.trades_list, process.batch_idx + batch_size - 1) do
         local trade = process.trades_list[trade_number]
         if not trade then
             lib.log_error("trade_number = " .. trade_number .. " is out of bounds for list of " .. #process.trades_list .. " trades")
             break
         end
-        local trade_flow = process.trades_scroll_pane.add {
-            type = "flow",
-            name = "trade-" .. trade_number,
-            direction = "horizontal",
-        }
-        if process.params.show_toggle_trade then
-            local checkbox = trade_flow.add {
-                type = "checkbox",
-                name = "toggle-trade-" .. trade_number,
-                state = trade.active,
-            }
-            checkbox.tooltip = {"hex-core-gui.trade-checkbox-tooltip"}
-            -- checkbox.style.left_margin = 10
-            checkbox.style.left_margin = 5
-            checkbox.style.top_margin = size / 2 + 1
-            -- checkbox.style.top_margin = size / 2 - 5
-        end
-        if process.params.show_tag_creator then
-            local tag_button = trade_flow.add {
-                type = "sprite-button",
-                name = "tag-button-" .. trade_number,
-                sprite = "utility/show_tags_in_map_view",
-            }
-            -- tag_button.style.left_margin = 5
-            tag_button.style.top_margin = 10
-            tag_button.tooltip = {"hex-core-gui.tag-button"}
-        end
-        if process.params.show_core_finder then
-            local core_finder_button = trade_flow.add {
-                type = "sprite-button",
-                name = "core-finder-button-" .. trade_number,
-                sprite = "utility/gps_map_icon",
-            }
-            -- core_finder_button.style.left_margin = 5
-            core_finder_button.style.top_margin = 10
-            core_finder_button.tooltip = {"hextorio-gui.core-finder-button"}
-        end
-        local trade_frame = trade_flow.add {
-            type = "frame",
-            name = "frame",
-            direction = "vertical",
-        }
-        trade_frame.style.left_margin = 10
-        trade_frame.style.natural_height = (size + 20) / 1.2 - 5
-        -- trade_frame.style.horizontally_stretchable = true
-        -- gui.auto_width(trade_frame)
-        trade_frame.style.width = 381 / 1.2
-        local trade_table = trade_frame.add {
-            type = "table",
-            name = "trade-table",
-            column_count = 7,
-        }
-        local total_empty = 0
-        for i = 1, 3 do
-            if i <= #trade.input_items then
-                local input_item = trade.input_items[i]
-                local input = trade_table.add {
-                    type = "sprite-button",
-                    name = "input-" .. tostring(i) .. "-" .. input_item.name,
-                    sprite = "item/" .. input_item.name,
-                    number = input_item.count,
-                }
-                gui.give_item_tooltip(process.player, trade.surface_name, input)
-            else
-                total_empty = total_empty + 1
-                local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
-                empty.style.natural_width = size / 1.2
-                empty.style.natural_height = size / 1.2
-                empty.ignored_by_interaction = true
-            end
-        end
-        local trade_arrow_sprite = trade_table.add {
-            type = "sprite",
-            name = "trade-arrow",
-            sprite = "trade-arrow",
-        }
-        if process.params.show_productivity and trades.get_productivity(trade) > 0 then
-            local prod_bar = trade_frame.add {
-                type = "progressbar",
-                name = "prod-bar",
-                value = trades.get_current_prod_value(trade),
-                style = "bonus_progressbar",
-            }
-            prod_bar.style.horizontally_squashable = true
-            prod_bar.style.horizontally_stretchable = true
-        end
-
-        trade_arrow_sprite.style.width = size / 1.2
-        trade_arrow_sprite.style.height = size / 1.2
-        trade_arrow_sprite.style.top_margin = 2
-        gui.give_trade_arrow_tooltip(trade_arrow_sprite, trade)
-
-        for i = 1, 3 do
-            local j = 4 - i
-            if j <= #trade.output_items then
-                local output_item = trade.output_items[j]
-                local output = trade_table.add {
-                    type = "sprite-button",
-                    name = "output-" .. tostring(i) .. "-" .. tostring(output_item.name),
-                    sprite = "item/" .. output_item.name,
-                    number = output_item.count,
-                }
-                gui.give_item_tooltip(process.player, trade.surface_name, output)
-            else
-                total_empty = total_empty + 1
-                local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
-                empty.style.natural_width = size / 1.2
-                empty.style.natural_height = size / 1.2
-                empty.ignored_by_interaction = true
-            end
-        end
+        gui.add_trade_elements(process.player, process.trades_scroll_pane, trade, trade_number, process.params)
     end
 
     if process.for_trade_overview then
@@ -862,6 +766,152 @@ function gui._update_trades_scroll_pane_tick(process)
     process.batch_idx = process.batch_idx + batch_size
     if process.batch_idx > #process.trades_list then
         process.finished = true
+    end
+end
+
+function gui.add_trade_elements(player, element, trade, trade_number, params)
+    local size = 40
+
+    local trade_flow = element.add {
+        type = "flow",
+        name = "trade-" .. trade_number,
+        direction = "horizontal",
+    }
+
+    if params.show_toggle_trade then
+        local checkbox = trade_flow.add {
+            type = "checkbox",
+            name = "toggle-trade-" .. trade_number,
+            state = trade.active,
+        }
+        checkbox.tooltip = {"hex-core-gui.trade-checkbox-tooltip"}
+        -- checkbox.style.left_margin = 10
+        checkbox.style.left_margin = 5
+        checkbox.style.top_margin = size / 2 + 1
+        -- checkbox.style.top_margin = size / 2 - 5
+    end
+
+    if params.show_tag_creator then
+        local tag_button = trade_flow.add {
+            type = "sprite-button",
+            name = "tag-button-" .. trade_number,
+            sprite = "utility/show_tags_in_map_view",
+        }
+        -- tag_button.style.left_margin = 5
+        tag_button.style.top_margin = 10
+        tag_button.tooltip = {"hex-core-gui.tag-button"}
+    end
+
+    if params.show_core_finder then
+        local core_finder_button = trade_flow.add {
+            type = "sprite-button",
+            name = "core-finder-button-" .. trade_number,
+            sprite = "utility/gps_map_icon",
+        }
+        -- core_finder_button.style.left_margin = 5
+        core_finder_button.style.top_margin = 10
+        core_finder_button.tooltip = {"hextorio-gui.core-finder-button"}
+    end
+
+    local quality_to_show = params.quality_to_show or "normal"
+    local quality_cost_multipliers = lib.get_quality_cost_multipliers()
+    local quality_cost_mult = quality_cost_multipliers[quality_to_show]
+
+    local trade_frame = trade_flow.add {
+        type = "frame",
+        name = "frame",
+        direction = "vertical",
+    }
+    trade_frame.style.left_margin = 10
+    trade_frame.style.natural_height = (size + 20) / 1.2 - 5
+    -- trade_frame.style.horizontally_stretchable = true
+    -- gui.auto_width(trade_frame)
+    trade_frame.style.width = 381 / 1.2
+
+    local trade_table = trade_frame.add {
+        type = "table",
+        name = "trade-table",
+        column_count = 7,
+    }
+
+    local total_empty = 0
+    for i = 1, 3 do
+        if i <= #trade.input_items then
+            local input_item = trade.input_items[i]
+            local input = trade_table.add {
+                type = "sprite-button",
+                name = "input-" .. tostring(i) .. "-" .. input_item.name,
+                sprite = "item/" .. input_item.name,
+                number = input_item.count,
+            }
+            if lib.is_coin(input_item.name) then
+                local coin = trades.get_input_coins_of_trade(trade, quality_to_show, quality_cost_mult)
+                local coin_name = trades.get_coin_name_for_trade_volume(coin_tiers.to_base_value(coin) * item_values.get_item_value(trade.surface_name, input_item.name))
+                local base_value, other_value = coin_tiers.to_base_values(coin, lib.get_tier_of_coin_name(coin_name))
+                input.number = math.ceil(other_value)
+                input.sprite = "item/" .. coin_name
+            else
+                input.quality = quality_to_show
+            end
+            gui.give_item_tooltip(player, trade.surface_name, input)
+        else
+            total_empty = total_empty + 1
+            local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
+            empty.style.natural_width = size / 1.2
+            empty.style.natural_height = size / 1.2
+            empty.ignored_by_interaction = true
+        end
+    end
+
+    local trade_arrow_sprite = trade_table.add {
+        type = "sprite",
+        name = "trade-arrow",
+        sprite = "trade-arrow",
+    }
+
+    if params.show_productivity and trades.get_productivity(trade) > 0 then
+        local prod_bar = trade_frame.add {
+            type = "progressbar",
+            name = "prod-bar",
+            value = trades.get_current_prod_value(trade),
+            style = "bonus_progressbar",
+        }
+        prod_bar.style.horizontally_squashable = true
+        prod_bar.style.horizontally_stretchable = true
+    end
+
+    trade_arrow_sprite.style.width = size / 1.2
+    trade_arrow_sprite.style.height = size / 1.2
+    trade_arrow_sprite.style.top_margin = 2
+    gui.give_trade_arrow_tooltip(trade_arrow_sprite, trade, quality_to_show, quality_cost_mult)
+
+    for i = 1, 3 do
+        local j = 4 - i
+        if j <= #trade.output_items then
+            local output_item = trade.output_items[j]
+            local output = trade_table.add {
+                type = "sprite-button",
+                name = "output-" .. tostring(i) .. "-" .. tostring(output_item.name),
+                sprite = "item/" .. output_item.name,
+                number = output_item.count,
+            }
+            if lib.is_coin(output_item.name) then
+                local coin = trades.get_output_coins_of_trade(trade, quality_to_show)
+                local coin_name = trades.get_coin_name_for_trade_volume(coin_tiers.to_base_value(coin) * item_values.get_item_value(trade.surface_name, output_item.name))
+                local base_value, other_value = coin_tiers.to_base_values(coin, lib.get_tier_of_coin_name(coin_name))
+                output.number = other_value
+                output.sprite = "item/" .. coin_name
+            else
+                output.quality = quality_to_show
+            end
+            gui.give_item_tooltip(player, trade.surface_name, output)
+        else
+            total_empty = total_empty + 1
+            local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
+            empty.style.natural_width = size / 1.2
+            empty.style.natural_height = size / 1.2
+            empty.ignored_by_interaction = true
+        end
     end
 end
 
@@ -1008,7 +1058,23 @@ function gui.update_hex_core(player)
     frame["delete-core-confirmation"].visible = false
     frame["unloader-filters-flow"].visible = false
 
-    gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {show_toggle_trade=state.claimed, show_tag_creator=true, show_core_finder=false, show_productivity=true})
+    local quality_dropdown = frame["trades-header"]["quality-dropdown"]
+    local quality_locale = quality_dropdown.get_item(math.max(1, quality_dropdown.selected_index))[3][1]
+    local quality_name = quality_locale:sub(14)
+
+    frame["trades-quality-info"].visible = quality_name ~= "normal"
+    frame["trades-quality-warning"].visible = quality_name ~= "normal"
+    if frame["trades-quality-warning"].visible then
+        frame["trades-quality-warning"].caption = gui.get_warning_caption {"hex-core-gui.trades-quality-warning", lib.format_percentage(lib.get_quality_cost_multiplier(quality_name) - 1, 0, false)}
+    end
+
+    gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
+        show_toggle_trade = state.claimed,
+        show_tag_creator = true,
+        show_core_finder = false,
+        show_productivity = true,
+        quality_to_show = quality_name,
+    })
     gui.update_hex_core_resources(player)
 end
 
@@ -1504,10 +1570,28 @@ function gui.add_info(element, info_id, name)
     local info = element.add {
         type = "label",
         name = name,
-        caption = {"", "[color=117,218,251][img=virtual-signal.signal-info] ", info_id, "[.color]"},
+        caption = gui.get_info_caption(info_id),
     }
     info.style.single_line = false
     gui.auto_width(info)
+end
+
+function gui.add_warning(element, info_id, name)
+    local info = element.add {
+        type = "label",
+        name = name,
+        caption = gui.get_warning_caption(info_id),
+    }
+    info.style.single_line = false
+    gui.auto_width(info)
+end
+
+function gui.get_info_caption(info_id)
+    return {"", "[color=117,218,251][img=virtual-signal.signal-info] ", info_id, "[.color]"}
+end
+
+function gui.get_warning_caption(info_id)
+    return {"", "[color=255,255,64][img=utility.warning_icon] ", info_id, "[.color]"}
 end
 
 function gui.add_sprite_buttons(element, item_stacks, name_prefix)
@@ -1931,7 +2015,13 @@ end
 function gui.on_dropdown_item_selected(player, element)
     if element.parent.name == "sort-method" then
         gui.on_trade_overview_filter_changed(player)
+    elseif element.name == "quality-dropdown" then
+        gui.on_quality_dropdown_selected(player, element)
     end
+end
+
+function gui.on_quality_dropdown_selected(player, element)
+    gui.update_hex_core(player)
 end
 
 function gui.on_quest_name_selected(player, element)

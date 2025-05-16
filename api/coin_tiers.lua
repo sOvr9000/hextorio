@@ -233,6 +233,19 @@ function coin_tiers.to_base_value(coin)
     return total
 end
 
+-- Get the total value in terms of the lowest tier and the provided tier
+function coin_tiers.to_base_values(coin, base_tier)
+    local total = 0
+    local multiplier = 1
+    
+    for i = 1, coin.max_coin_tier do
+        total = total + coin.values[i] * multiplier
+        multiplier = multiplier * coin.tier_scaling
+    end
+    
+    return total, total * coin.tier_scaling ^ (1 - base_tier)
+end
+
 -- Create a coin from a value in the lowest tier
 function coin_tiers.from_base_value(value, tier_scaling, max_coin_tier)
     local coin = coin_tiers.new()

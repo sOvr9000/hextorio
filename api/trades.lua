@@ -200,19 +200,28 @@ function trades._try_set_output_counts(surface_name, trade, params)
 end
 
 -- Return the value of the trade's inputs
-function trades.get_input_value(surface_name, trade)
+function trades.get_input_value(surface_name, trade, quality, quality_cost_mult)
+    quality = quality or "normal"
+    quality_cost_mult = quality_cost_mult or 1
     local input_value = 0
+    local quality_value_scale = lib.get_quality_value_scale(quality)
     for _, input_item in pairs(trade.input_items) do
-        input_value = input_value + item_values.get_item_value(surface_name, input_item.name) * input_item.count
+        local value = item_values.get_item_value(surface_name, input_item.name) * input_item.count * quality_value_scale
+        if lib.is_coin(input_item.name) then
+            value = value * quality_cost_mult
+        end
+        input_value = input_value + value
     end
     return input_value
 end
 
 -- Return the value of the trade's outputs
-function trades.get_output_value(surface_name, trade)
+function trades.get_output_value(surface_name, trade, quality)
+    quality = quality or "normal"
     local output_value = 0
+    local quality_value_scale = lib.get_quality_value_scale(quality)
     for _, output_item in pairs(trade.output_items) do
-        output_value = output_value + item_values.get_item_value(surface_name, output_item.name) * output_item.count
+        output_value = output_value + item_values.get_item_value(surface_name, output_item.name) * output_item.count * quality_value_scale
     end
     return output_value
 end
@@ -226,10 +235,10 @@ function trades.get_trade_value_ratio(surface_name, trade)
     return trades.get_output_value(surface_name, trade) / trades.get_input_value(surface_name, trade)
 end
 
-function trades.get_total_values_str(trade)
+function trades.get_total_values_str(trade, quality, quality_cost_mult)
     local coin_value = item_values.get_item_value("nauvis", "hex-coin")
-    local total_input_value = trades.get_input_value(trade.surface_name, trade) / coin_value
-    local total_output_value = trades.get_output_value(trade.surface_name, trade) / coin_value
+    local total_input_value = trades.get_input_value(trade.surface_name, trade, quality, quality_cost_mult) / coin_value
+    local total_output_value = trades.get_output_value(trade.surface_name, trade, quality) / coin_value
     return {"",
         {"hextorio-gui.total-input-value", coin_tiers.coin_to_text(total_input_value)},
         "\n",
@@ -286,11 +295,7 @@ function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
         end
     end
     local coin = coin_tiers.new(values)
-    local quality_tier = lib.get_quality_tier(quality)
-    local mult = 10 ^ (quality_tier - 1)
-    if quality_tier > 1 then
-        mult = mult * quality_cost_mult
-    end
+    local mult = lib.get_quality_value_scale(quality) * quality_cost_mult
     coin = coin_tiers.multiply(coin, mult)
     return coin
 end
@@ -304,8 +309,7 @@ function trades.get_output_coins_of_trade(trade, quality)
         end
     end
     local coin = coin_tiers.new(values)
-    local quality_tier = lib.get_quality_tier(quality)
-    coin = coin_tiers.multiply(coin, 10 ^ (quality_tier - 1))
+    coin = coin_tiers.multiply(coin, lib.get_quality_value_scale(quality))
     return coin
 end
 
@@ -855,11 +859,11 @@ end
 
 function trades.get_coin_name_for_trade_volume(trade_volume)
     if type(trade_volume) == "number" then
-        if trade_volume < 10000000000 then -- use hex coin up to 10000x gravity coin's worth of hex coins
+        if trade_volume < 1000000000 then -- use hex coin up to 1000x gravity coin's worth of hex coins
             return "hex-coin"
-        elseif trade_volume < 1000000000000000 then -- use hex coin up to 10000x meteor coin's worth of gravity coins
+        elseif trade_volume < 100000000000000 then -- use hex coin up to 1000x meteor coin's worth of gravity coins
             return "gravity-coin"
-        elseif trade_volume < 100000000000000000000 then -- use hex coin up to 10000x heaxaprism coin's worth of gravity coins
+        elseif trade_volume < 10000000000000000000 then -- use hex coin up to 1000x heaxaprism coin's worth of gravity coins
             return "meteor-coin"
         else
             return "hexaprism-coin"
