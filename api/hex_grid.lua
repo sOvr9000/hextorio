@@ -855,19 +855,30 @@ end
 -- Add a trade to a hex core.
 function hex_grid.add_trade(hex_core_state, trade)
     if not hex_core_state then
-        lib.log_error("hex_grid.add_trade: nil hex core state")
+        lib.log_error("hex_grid.add_trade: hex core state is nil")
         return
     end
     if not trades.is_trade_valid(trade) then
         lib.log_error("hex_grid.add_trade: trade is invalid")
         return
     end
+    local hex_core = hex_core_state.hex_core
+    if not hex_core then
+        lib.log_error("hex_grid.add_trade: hex core is nil in hex core state")
+        return
+    end
+
     trade.hex_core_state = hex_core_state
     table.insert(hex_core_state.trades, trade.id)
 
     trades.add_trade_to_tree(trade)
-
     hex_grid.update_hex_core_inventory_filters(hex_core_state)
+
+    trade.allowed_qualities = {}
+    local quality_tier = lib.get_quality_tier(hex_core.quality.name)
+    for tier = 1, quality_tier do
+        table.insert(trade.allowed_qualities, lib.get_quality_at_tier(tier))
+    end
 
     if hex_core_state.claimed then
         trades.discover_items_in_trades {trade}

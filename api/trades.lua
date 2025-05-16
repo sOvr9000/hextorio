@@ -286,8 +286,8 @@ function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
         end
     end
     local coin = coin_tiers.new(values)
-    local mult = 10 ^ (quality_tier - 1)
     local quality_tier = lib.get_quality_tier(quality)
+    local mult = 10 ^ (quality_tier - 1)
     if quality_tier > 1 then
         mult = mult * quality_cost_mult
     end
@@ -930,7 +930,7 @@ function trades.process_trades_in_inventories(input_inv, output_inv, trade_ids, 
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
         if trade then
-            for _, quality in pairs(trade.allowed_qualities or {"normal", "uncommon", "rare", "epic", "legendary", "hextreme"}) do
+            for _, quality in pairs(trade.allowed_qualities or {"normal"}) do
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
                 if num_batches > 0 then

@@ -964,17 +964,42 @@ end
 function lib.get_quality_tier(quality)
     if not storage.quality_tiers then storage.quality_tiers = {} end
     local tier = storage.quality_tiers[quality]
-    if tier then
-        return tier
-    end
+    if tier then return tier end
+
     tier = 1
     local prot = prototypes.quality.normal
     while prot.name ~= quality do
         prot = prot.next
+        if not prot then
+            lib.log_error("lib.get_quality_tier: quality " .. quality .. " doesn't exist")
+            break
+        end
         tier = tier + 1
     end
+
     storage.quality_tiers[quality] = tier
     return tier
+end
+
+---@param quality_tier int
+---@return string
+function lib.get_quality_at_tier(quality_tier)
+    if not storage.quality_by_tier then storage.quality_by_tier = {} end
+    local quality = storage.quality_by_tier[quality_tier]
+    if quality then return quality end
+
+    local prot = prototypes.quality.normal
+    for i = 1, quality_tier - 1 do
+        if not prot.next then
+            lib.log_error("lib.get_quality_at_tier: tier " .. quality_tier .. " doesn't exist")
+            break
+        end
+        prot = prot.next
+    end
+
+    quality = prot.name
+    storage.quality_by_tier[quality_tier] = quality
+    return quality
 end
 
 ---@param quality LuaQualityPrototype
