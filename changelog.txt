@@ -11,6 +11,7 @@ Date: 15/5/25
   Bugfixes:
     - Fixed blinking trades in hex cores.
     - [item=crude-oil-barrel] no longer shows up in trades on [planet=vulcanus].
+    - Fixed uncommon crash caused by the spawning of hex cores.
   Features:
     - Trades now work on a per-quality basis.
         Normal in, normal out. Rare in, rare out, etc.
