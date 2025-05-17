@@ -10,7 +10,7 @@ local function on_claim_tool_used(player, entities)
         local hex_pos = hex_grid.get_hex_containing(e.position, transformation.scale, transformation.rotation)
         if e.name == "hex-core" then
             if hex_grid.can_claim_hex(player, e.surface, hex_pos) then
-                hex_grid.claim_hex(e.surface, hex_pos, player)
+                hex_grid.add_hex_to_claim_queue(e.surface, hex_pos, player)
             end
         end
     end

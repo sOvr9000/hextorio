@@ -171,6 +171,10 @@ script.on_nth_tick(60, function()
     end
 end)
 
+script.on_nth_tick(20, function()
+    hex_grid.process_claim_queue()
+end)
+
 script.on_nth_tick(120, function()
     hex_grid.update_all_hex_cores()
 end)

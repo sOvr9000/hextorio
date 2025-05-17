@@ -779,7 +779,7 @@ end
 -- Get or create surface storage
 function hex_grid.get_surface_hexes(surface)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.get_surface_hexes: surface not found: " .. tostring(surface))
         surface_id = 0
     end
@@ -1603,7 +1603,7 @@ end
 
 function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.generate_hex_biters: No surface found")
         return false
     end
@@ -1623,7 +1623,7 @@ end
 
 function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, num_worms, quality)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.spawn_enemy_base: No surface found")
         return
     end
@@ -1729,7 +1729,7 @@ end
 
 function hex_grid.generate_non_land_tiles(surface, hex_pos)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.generate_non_land_tiles: No surface found")
         return
     end
@@ -1782,8 +1782,14 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
     local state = hex_grid.get_hex_state(surface, hex_pos)
     if state.claimed then return false end
 
-    if not state.is_land and not allow_nonland then return end
+    local surface_id = lib.get_surface_id(surface)
+    if surface_id == -1 then
+        lib.log_error("hex_grid.add_hex_to_claim_queue: No surface found")
+        return
+    end
+    surface = game.surfaces[surface_id]
 
+    if not state.is_land and not allow_nonland then return end
     if hex_grid.get_free_hex_claims(surface.name) > 0 then return true end
 
     local coin = state.claim_price
@@ -1806,7 +1812,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
     if state.claimed then return end
-
+    if not state.hex_core then return end
     if not state.is_land and not allow_nonland then return end
 
     state.claimed = true
@@ -1882,6 +1888,42 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     event_system.trigger("hex-claimed", state)
 end
 
+function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland)
+    if not storage.hex_grid.claim_queue then
+        storage.hex_grid.claim_queue = {}
+    end
+
+    local surface_id = lib.get_surface_id(surface)
+    if surface_id == -1 then
+        lib.log_error("hex_grid.add_hex_to_claim_queue: No surface found")
+        return
+    end
+    surface = game.surfaces[surface_id]
+
+    local state = hex_grid.get_hex_state(surface, hex_pos)
+    if not state then return end
+    if hex_grid.is_claimed_or_in_queue(state) then return end
+
+    state.is_in_claim_queue = true
+
+    table.insert(storage.hex_grid.claim_queue, {
+        surface_name = surface.name,
+        hex_pos = hex_pos,
+        by_player = by_player,
+        alow_nonland = allow_nonland,
+    })
+end
+
+function hex_grid.process_claim_queue()
+    if not storage.hex_grid.claim_queue then
+        storage.hex_grid.claim_queue = {}
+    end
+    if not next(storage.hex_grid.claim_queue) then return end
+
+    local params = table.remove(storage.hex_grid.claim_queue, 1)
+    hex_grid.claim_hex(params.surface_name, params.hex_pos, params.by_player, params.allow_nonland)
+end
+
 -- Claim hexes within a range, covering water as well
 function hex_grid.claim_hexes_range(surface, hex_pos, range, by_player, allow_nonland)
     hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, hex_pos, allow_nonland)
@@ -1892,21 +1934,25 @@ function hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, center_po
     if dist > range then return end
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
-    if not state.claimed then
-        hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
+    if not hex_grid.is_claimed_or_in_queue(state) then
+        hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland)
     end
 
     for _, adj_hex in pairs(hex_grid.get_adjacent_hexes(hex_pos)) do
         local adj_state = hex_grid.get_hex_state(surface, adj_hex)
-        if not adj_state.claimed then
+        if not hex_grid.is_claimed_or_in_queue(adj_state) then
             hex_grid._claim_hexes_dfs(surface, adj_hex, range, by_player, center_pos, allow_nonland)
         end
     end
 end
 
+function hex_grid.is_claimed_or_in_queue(state)
+    return state.claimed or state.is_in_claim_queue
+end
+
 function hex_grid.check_hex_span(surface, hex_pos)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.check_hex_span: No surface found")
         return
     end
@@ -1926,7 +1972,7 @@ end
 
 function hex_grid.add_free_hex_claims(surface, amount)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.add_free_hex_claims: No surface found")
         return
     end
@@ -1939,7 +1985,7 @@ end
 
 function hex_grid.get_free_hex_claims(surface)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.get_free_hex_claims: No surface found")
         return
     end
@@ -2209,7 +2255,7 @@ end
 -- Fill edges between adjacent claimed hexes using sum of squared distances method
 function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.fill_edges_between_claimed_hexes: No surface found")
         return
     end
@@ -2306,7 +2352,7 @@ end
 -- Finds and fills corners where three claimed hexes meet
 function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type)
     local surface_id = lib.get_surface_id(surface)
-    if not surface_id then
+    if surface_id == -1 then
         lib.log_error("hex_grid.fill_corners_between_claimed_hexes: No surface found")
         return
     end

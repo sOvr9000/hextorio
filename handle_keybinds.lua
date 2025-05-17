@@ -56,7 +56,7 @@ script.on_event("claim-hex-core", function(event)
         return
     end
 
-    hex_grid.claim_hex(surface, hex_pos, player, false)
+    hex_grid.add_hex_to_claim_queue(surface, hex_pos, player, false)
 end)
 
 
