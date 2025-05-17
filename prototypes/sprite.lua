@@ -251,7 +251,6 @@ data:extend{
 }
 
 local data_quests = require "data.quests"
-local quest_names = {}
 
 local quest_sprites = {}
 for _, quest_def in pairs(data_quests.quest_defs) do

@@ -21,6 +21,7 @@ Date: 15/5/25
         (This is a default mod setting to prevent an infinite coin exploit.)
     - Dropdown added to hex cores for viewing trades with different qualities on the items, particularly used to see how coin inputs and outputs are affected by quality.
     - Production statistics now include the statistics of currently active trading on each surface.
+    - Added selection tool for claiming hexes.
   Minor Features:
     - Planets now show in item tooltips to indicate that the item value is strongly tied to that planet.
   Ease of use:

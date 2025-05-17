@@ -23,6 +23,7 @@ quests.register_events()
 
 require "commands"
 require "handle_keybinds"
+require "handle_selections"
 
 local data_constants = require "data.constants"
 local data_events = require "data.events"
