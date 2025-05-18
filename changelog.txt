@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
-Date: 17/5/25
+Date: 18/5/25
   Major Features:
     - Added [planet=fulgora].
     - Added tier 6 quality: hextreme.
