@@ -3,6 +3,7 @@ local lib = require "api.lib"
 local event_system = require "api.event_system"
 local space_platforms = require "api.space_platforms"
 local sets = require "api.sets"
+local coin_tiers = require "api.coin_tiers"
 
 
 
@@ -21,6 +22,8 @@ local all_commands = {
     {name = "chart", usage = "/chart <surface> [range]", examples = {"/chart vulcanus", "/chart nauvis 500"}},
     {name = "spawn-ship", usage = "/spawn-ship"},
     {name = "skip-flight", usage = "/skip-flight"},
+    {name = "hex-pool-size", usage = "/hex-pool-size <size>", examples = {"/hex-pool-size 100"}},
+    {name = "add-coins", usage = "/add-coins [amount]", examples = {"/add-coins", "/add-coins 100000"}},
 }
 
 local public_commands = sets.new {
@@ -119,6 +122,8 @@ function on_command(player, command, params)
         end
 
         sp.distance = 1
+    elseif command == "add-coins" then
+        coin_tiers.add_coin_to_inventory(lib.get_player_inventory(player), coin_tiers.from_base_value(params[1] or 1000000000000000))
     end
 
     event_system.trigger("command-" .. command, player, params)

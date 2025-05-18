@@ -262,6 +262,8 @@ local process_migration = {
         storage.trades.starting_trades.fulgora = data_trades.starting_trades.fulgora
         storage.item_values.values.vulcanus = data_item_values.values.vulcanus -- fixes crude oil barrel bug
         storage.item_values.values.fulgora = data_item_values.values.fulgora
+        storage.hex_grid.pool_size = 50
+        -- hex_grid.setup_pool()
     end,
 }
 

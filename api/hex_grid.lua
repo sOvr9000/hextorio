@@ -736,6 +736,10 @@ function hex_grid.register_events()
         hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, true) -- claim by server
     end)
 
+    event_system.register_callback("command-hex-pool-size", function(player, params)
+        hex_grid.set_pool_size(params[1])
+    end)
+
     event_system.register_callback("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" and value == "catalog" then
             local all_trades = {}
@@ -1808,7 +1812,10 @@ end
 
 -- Claim a hex and spawn hex cores in adjacent hexes if possible.
 function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
-    if by_player and not hex_grid.can_claim_hex(by_player, surface, hex_pos) then return end
+    if by_player and not hex_grid.can_claim_hex(by_player, surface, hex_pos) then
+        hex_grid.remove_hex_from_claim_queue(surface, hex_pos)
+        return
+    end
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
     if state.claimed then return end
@@ -1874,6 +1881,8 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         storage.hex_grid.last_used_edge_fill_tile = fill_tile_name
     end
 
+    hex_grid.add_to_pool(state)
+
     -- Fil the edges between claimed hexes
     hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, fill_tile_name)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
@@ -1886,6 +1895,8 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     quests.increment_progress_for_type("claimed-hexes", 1)
 
     event_system.trigger("hex-claimed", state)
+
+    state.is_in_claim_queue = nil
 end
 
 function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland)
@@ -1912,6 +1923,31 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
         by_player = by_player,
         alow_nonland = allow_nonland,
     })
+end
+
+function hex_grid.remove_hex_from_claim_queue(surface, hex_pos)
+    local state = hex_grid.get_hex_state(surface, hex_pos)
+    state.is_in_claim_queue = nil
+
+    if not storage.hex_grid.claim_queue then return end
+
+    local surface_id = lib.get_surface_id(surface)
+    if surface_id == -1 then
+        lib.log_error("hex_grid.add_hex_to_claim_queue: No surface found")
+        return
+    end
+    surface = game.surfaces[surface_id]
+
+    local key
+    for i, params in pairs(storage.hex_grid.claim_queue) do
+        if params.surface_name == surface.name and params.hex_pos.q == hex_pos.q and params.hex_pos.r == hex_pos.r then
+            key = i
+        end
+    end
+
+    if not key then return end
+
+    table.remove(storage.hex_grid.claim_queue, key)
 end
 
 function hex_grid.process_claim_queue()
@@ -2139,6 +2175,10 @@ function hex_grid.delete_hex_core(hex_core)
     if not hex_core or not hex_core.valid then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then
+        lib.log_error("hex_grid.delete_hex_core: hex core has no state")
+        return
+    end
 
     local entities = hex_core.surface.find_entities_filtered {name = "hex-core-loader", radius = 3, position = hex_core.position}
     for _, e in pairs(entities) do
@@ -2147,6 +2187,7 @@ function hex_grid.delete_hex_core(hex_core)
         end
     end
 
+    hex_grid.remove_from_pool(state)
     hex_core.destroy()
     event_system.trigger("hex-core-deleted", state)
 
@@ -2554,17 +2595,185 @@ function hex_grid.get_supercharge_cost(hex_core)
     return coin_tiers.from_base_value(#entities * base_cost)
 end
 
-function hex_grid.update_all_hex_cores()
+function hex_grid.process_hex_core_pool()
+    if not storage.hex_grid.pool then
+        hex_grid.setup_pool()
+        return
+    end
+
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
-    for _, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
-        for _, Q in pairs(surface_hexes) do
-            for _, state in pairs(Q) do
+
+    storage.hex_grid.cur_pool_idx = (storage.hex_grid.cur_pool_idx or 0) % #storage.hex_grid.pool + 1
+    local pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
+    for _, pool_params in pairs(pool) do
+        local state = hex_grid.get_hex_state_from_pool_params(pool_params)
+        hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
+    end
+end
+
+function hex_grid.setup_pool()
+    local pool = storage.hex_grid.pool
+    if not pool then
+        pool = {}
+        storage.hex_grid.pool = pool
+    end
+    local cur_pool = {}
+    for surface_id, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
+        for q, Q in pairs(surface_hexes) do
+            for r, state in pairs(Q) do
                 if state.claimed then
-                    hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
+                    if #pool >= storage.hex_grid.pool_size then
+                        table.insert(pool, cur_pool)
+                        cur_pool = {}
+                    end
+                    table.insert(cur_pool, {surface_id = surface_id, q = q, r = r})
                 end
             end
         end
     end
+    table.insert(pool, cur_pool)
+end
+
+---@param state table
+---@param pool_idx int | nil
+function hex_grid.add_to_pool(state, pool_idx)
+    if not state.hex_core then
+        lib.log_error("hex_grid.add_to_pool: state has no hex core (was the core deleted?)")
+        return
+    end
+
+    if not storage.hex_grid.pool then
+        hex_grid.setup_pool()
+    end
+
+    if not next(storage.hex_grid.pool) then
+        table.insert(storage.hex_grid.pool, {})
+    end
+
+    if not pool_idx then
+        -- Select first unfilled pool
+        for idx, pool in pairs(storage.hex_grid.pool) do
+            if #pool < storage.hex_grid.pool_size then
+                pool_idx = idx
+                break
+            end
+        end
+        if not pool_idx then
+            table.insert(storage.hex_grid.pool, {})
+            pool_idx = #storage.hex_grid.pool
+        end
+    end
+
+    local pool = storage.hex_grid.pool[pool_idx]
+    if not pool then
+        if pool_idx ~= #storage.hex_grid.pool + 1 then
+            lib.log("hex_grid.add_to_pool: pool index out of range; assuming new pool creation")
+            pool_idx = #storage.hex_grid.pool + 1
+        end
+        pool = {}
+        storage.hex_grid.pool[pool_idx] = pool
+    end
+
+    local pool_params = {
+        surface_id = state.hex_core.surface.index,
+        q = state.position.q,
+        r = state.position.r,
+    }
+
+    table.insert(pool, pool_params)
+end
+
+---@param state table
+---@param pool_idx int | nil
+---@param idx_in_pool int | nil
+function hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
+    if not storage.hex_grid.pool then return end
+    if not state.hex_core then
+        lib.log_error("hex_grid.remove_from_pool: state has no hex core (was the core deleted?)")
+        return
+    end
+
+    local surface_id = state.hex_core.surface.index
+
+    if not pool_idx then
+        -- Find pool with this state
+        for idx, pool in pairs(storage.hex_grid.pool) do
+            for idx2, pool_params in pairs(pool) do
+                if pool_params.surface_id == surface_id then
+                    pool_idx = idx
+                    idx_in_pool = idx2
+                    break
+                end
+            end
+            if pool_idx then break end
+        end
+        if not pool_idx then return end
+    end
+
+    local pool = storage.hex_grid.pool[pool_idx]
+    if not pool then
+        lib.log_error("hex_grid.remove_from_pool: pool not found at pool index = " .. pool_idx)
+        return
+    end
+
+    if not idx_in_pool then
+        for idx2, pool_params in pairs(pool) do
+            if pool_params.surface_id == surface_id then
+                idx_in_pool = idx2
+                break
+            end
+        end
+        if not idx_in_pool then return end
+    end
+
+    if idx_in_pool <= 0 or idx_in_pool > #pool then
+        lib.log_error("hex_grid.remove_from_pool: params not found at index = " .. idx_in_pool .. " in pool at pool index = " .. pool_idx)
+        return
+    end
+
+    table.remove(pool, idx_in_pool)
+end
+
+---@param state table
+---@param pool_idx int | nil
+---@param idx_in_pool int | nil
+function hex_grid.relocate_state_in_pool(state, pool_idx, idx_in_pool)
+    hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
+    hex_grid.add_to_pool(state)
+end
+
+function hex_grid.verify_pool_sizes()
+    local size = storage.hex_grid.pool_size
+    for pool_idx, pool in pairs(storage.hex_grid.pool) do
+        if #pool > size then
+            for idx_in_pool = #pool, size + 1, -1 do
+                local params = pool[idx_in_pool]
+                local state = hex_grid.get_hex_state_from_pool_params(params)
+                hex_grid.relocate_state_in_pool(state, pool_idx, idx_in_pool)
+            end
+        end
+    end
+end
+
+---@param size int
+function hex_grid.set_pool_size(size)
+    if size < 1 then
+        lib.log_error("hex_grid.set_pool_size: size is too small")
+        return
+    end
+
+    storage.hex_grid.pool_size = size
+    hex_grid.verify_pool_sizes()
+
+    -- BUG: The first pool size seems to be incorrect sometimes on larger saves.
+    -- log("num pools: " .. #storage.hex_grid.pool)
+    -- for _, pool in pairs(storage.hex_grid.pool) do
+    --     log("pool size: " .. #pool)
+    -- end
+end
+
+function hex_grid.get_hex_state_from_pool_params(params)
+    return hex_grid.get_hex_state(params.surface_id, {q = params.q, r = params.r})
 end
 
 function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
