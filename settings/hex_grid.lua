@@ -391,7 +391,7 @@ data:extend({
         type = "int-setting",
         name = "hextorio-hex-stroke-width-fulgora",
         setting_type = "startup",
-        default_value = 18,
+        default_value = 9,
         minimum_value = 2,
         maximum_value = 32,
         order = "zcc",
