@@ -5,6 +5,8 @@ Date: 19/5/25
     - Added hexic belts.
     - Added technology to unlock hextreme quality.
     - Added tier 4 modules.
+  Changes:
+    - Moved splitters and underground belts to their own subgroups, making it much easier to find the three belt types for each tier in the crafting and item selection menus.
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 18/5/25
