@@ -33,4 +33,34 @@ hexaprism_coin.auto_recycle = false
 hexaprism_coin.subgroup = "other"
 hexaprism_coin.hidden = false
 
-data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin})
+-- BELTS
+local hexic_transport_belt = table.deepcopy(data.raw["item"]["transport-belt"])
+hexic_transport_belt.name = "hexic-transport-belt"
+hexic_transport_belt.default_import_location = "aquilo"
+hexic_transport_belt.color_hint.text = "5"
+hexic_transport_belt.icon = "__hextorio__/graphics/icons/hexic-transport-belt.png"
+hexic_transport_belt.order = "a[transport-belt]-d[turbo-transport-belt-2]"
+hexic_transport_belt.place_result = "hexic-transport-belt"
+hexic_transport_belt.weight = 20000
+
+local hexic_underground_belt = table.deepcopy(data.raw["item"]["underground-belt"])
+hexic_underground_belt.name = "hexic-underground-belt"
+hexic_underground_belt.default_import_location = "aquilo"
+hexic_underground_belt.color_hint.text = "5"
+hexic_underground_belt.icon = "__hextorio__/graphics/icons/hexic-underground-belt.png"
+hexic_underground_belt.order = "b[underground-belt]-d[turbo-underground-belt-2]"
+hexic_underground_belt.place_result = "hexic-underground-belt"
+hexic_underground_belt.weight = 40000
+
+local hexic_splitter = table.deepcopy(data.raw["item"]["splitter"])
+hexic_splitter.name = "hexic-splitter"
+hexic_splitter.default_import_location = "aquilo"
+hexic_splitter.color_hint.text = "5"
+hexic_splitter.icon = "__hextorio__/graphics/icons/hexic-splitter.png"
+hexic_splitter.order = "c[splitter]-d[turbo-splitter-2]"
+hexic_splitter.place_result = "hexic-splitter"
+hexic_splitter.weight = 20000
+
+
+
+data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter})

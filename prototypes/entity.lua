@@ -21,7 +21,6 @@ hex_core.picture = {
             width = 416,
             height = 474,
             scale = 0.4,
-            -- offset = {}
         }
     }
 }
@@ -61,6 +60,57 @@ hidden_loader.resistances = {
 
 
 
--- data:extend({hex_core, hidden_loader, hex_core_output_chest})
-data:extend({hex_core, hidden_loader})
--- data:extend({hex_core, hex_core_output_chest})
+-- BELTS
+local hexic_transport_belt = table.deepcopy(data.raw["transport-belt"]["turbo-transport-belt"])
+hexic_transport_belt.name = "hexic-transport-belt"
+hexic_transport_belt.speed = hexic_transport_belt.speed * 1.5
+hexic_transport_belt.belt_animation_set.animation_set.filename = "__hextorio__/graphics/entity/hexic-transport-belt/hexic-transport-belt.png"
+hexic_transport_belt.belt_animation_set.frozen_patch.filename = "__hextorio__/graphics/entity/hexic-transport-belt/hexic-transport-belt-frozen.png"
+hexic_transport_belt.corpse = "turbo-transport-belt-remnants" -- TODO
+hexic_transport_belt.minable.result = "hexic-transport-belt"
+hexic_transport_belt.max_health = 200
+hexic_transport_belt.icon = "__hextorio__/graphics/icons/hexic-transport-belt.png"
+hexic_transport_belt.related_underground_belt = "hexic-underground-belt"
+data.raw["transport-belt"]["turbo-transport-belt"].next_upgrade = "hexic-transport-belt"
+
+local hexic_underground_belt = table.deepcopy(data.raw["underground-belt"]["turbo-underground-belt"])
+hexic_underground_belt.name = "hexic-underground-belt"
+hexic_underground_belt.speed = hexic_transport_belt.speed
+hexic_underground_belt.belt_animation_set.animation_set.filename = "__hextorio__/graphics/entity/hexic-transport-belt/hexic-transport-belt.png"
+hexic_underground_belt.belt_animation_set.frozen_patch.filename = "__hextorio__/graphics/entity/hexic-transport-belt/hexic-transport-belt-frozen.png"
+hexic_underground_belt.corpse = "turbo-underground-belt-remnants" -- TODO
+hexic_underground_belt.minable.result = "hexic-underground-belt"
+hexic_underground_belt.max_health = 200
+hexic_underground_belt.icon = "__hextorio__/graphics/icons/hexic-underground-belt.png"
+hexic_underground_belt.max_distance = 15
+hexic_underground_belt.structure.back_patch.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure-back-patch.png"
+hexic_underground_belt.structure.front_patch.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure-front-patch.png"
+hexic_underground_belt.structure.direction_in.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure.png"
+hexic_underground_belt.structure.direction_out.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure.png"
+hexic_underground_belt.structure.direction_in_side_loading.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure.png"
+hexic_underground_belt.structure.direction_out_side_loading.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure.png"
+hexic_underground_belt.localised_description = data.raw["underground-belt"]["underground-belt"].localised_description
+data.raw["underground-belt"]["turbo-underground-belt"].next_upgrade = "hexic-underground-belt"
+
+local hexic_splitter = table.deepcopy(data.raw["splitter"]["turbo-splitter"])
+hexic_splitter.name = "hexic-splitter"
+hexic_splitter.speed = hexic_transport_belt.speed
+hexic_splitter.belt_animation_set.animation_set.filename = "__hextorio__/graphics/entity/hexic-transport-belt/hexic-transport-belt.png"
+hexic_splitter.belt_animation_set.frozen_patch.filename = "__hextorio__/graphics/entity/hexic-transport-belt/hexic-transport-belt-frozen.png"
+hexic_splitter.corpse = "turbo-splitter-remnants" -- TODO
+hexic_splitter.minable.result = "hexic-splitter"
+hexic_splitter.max_health = 200
+hexic_splitter.icon = "__hextorio__/graphics/icons/hexic-splitter.png"
+hexic_splitter.related_transport_belt = "hexic-transport-belt"
+hexic_splitter.structure.east.filename = "__hextorio__/graphics/entity/hexic-splitter/hexic-splitter-east.png"
+hexic_splitter.structure.north.filename = "__hextorio__/graphics/entity/hexic-splitter/hexic-splitter-north.png"
+hexic_splitter.structure.south.filename = "__hextorio__/graphics/entity/hexic-splitter/hexic-splitter-south.png"
+hexic_splitter.structure.west.filename = "__hextorio__/graphics/entity/hexic-splitter/hexic-splitter-west.png"
+hexic_splitter.structure_patch.east.filename = "__hextorio__/graphics/entity/hexic-splitter/hexic-splitter-east-top_patch.png"
+hexic_splitter.structure_patch.west.filename = "__hextorio__/graphics/entity/hexic-splitter/hexic-splitter-west-top_patch.png"
+hexic_splitter.localised_description = data.raw["splitter"]["splitter"].localised_description
+data.raw["splitter"]["turbo-splitter"].next_upgrade = "hexic-splitter"
+
+
+
+data:extend({hex_core, hidden_loader, hexic_transport_belt, hexic_underground_belt, hexic_splitter})
