@@ -60,6 +60,7 @@ for _, module_type in pairs {"speed", "productivity", "efficiency", "quality"} d
     r.name = "hexa-" .. module_type .. "-module"
     -- r.icon = "__hextorio__/graphics/icons/hexa-" .. module_type .. "-module.png"
     r.enabled = false
+    r.category = "electromagnetics"
     local amount = {[module_type] = 3}
     r.ingredients = {
         {type = "item", name = "speed-module-3", amount = amount["speed"] or 1},

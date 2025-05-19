@@ -41,7 +41,7 @@ hexic_transport_belt.name = "hexic-transport-belt"
 hexic_transport_belt.default_import_location = "aquilo"
 hexic_transport_belt.color_hint.text = "5"
 hexic_transport_belt.icon = "__hextorio__/graphics/icons/hexic-transport-belt.png"
-hexic_transport_belt.order = "a[transport-belt]-d[turbo-transport-belt-2]"
+hexic_transport_belt.order = "a[transport-belt]-e[hexic-transport-belt]"
 hexic_transport_belt.place_result = "hexic-transport-belt"
 hexic_transport_belt.weight = 20000
 
@@ -50,7 +50,7 @@ hexic_underground_belt.name = "hexic-underground-belt"
 hexic_underground_belt.default_import_location = "aquilo"
 hexic_underground_belt.color_hint.text = "5"
 hexic_underground_belt.icon = "__hextorio__/graphics/icons/hexic-underground-belt.png"
-hexic_underground_belt.order = "b[underground-belt]-d[turbo-underground-belt-2]"
+hexic_underground_belt.order = "b[underground-belt]-e[hexic-underground-belt]"
 hexic_underground_belt.place_result = "hexic-underground-belt"
 hexic_underground_belt.weight = 40000
 
@@ -59,7 +59,7 @@ hexic_splitter.name = "hexic-splitter"
 hexic_splitter.default_import_location = "aquilo"
 hexic_splitter.color_hint.text = "5"
 hexic_splitter.icon = "__hextorio__/graphics/icons/hexic-splitter.png"
-hexic_splitter.order = "c[splitter]-d[turbo-splitter-2]"
+hexic_splitter.order = "c[splitter]-e[hexic-splitter]"
 hexic_splitter.place_result = "hexic-splitter"
 hexic_splitter.weight = 20000
 
