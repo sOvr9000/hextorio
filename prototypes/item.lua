@@ -61,6 +61,24 @@ hexic_splitter.order = "c[splitter]-d[turbo-splitter-2]"
 hexic_splitter.place_result = "hexic-splitter"
 hexic_splitter.weight = 20000
 
+-- MODULES
+local module_effects = {
+    speed = {consumption = 1.0, quality = -0.35, speed = 1.0},
+    productivity = {consumption = 1.2, pollution = 0.15, productivity = 0.16, speed = -0.25},
+    efficiency = {consumption = -0.80},
+    quality = {quality = 0.40, speed = -0.08},
+}
 
+local modules = {}
+for _, module_type in pairs {{"a", "speed"}, {"c", "productivity"}, {"c", "efficiency"}, {"d", "quality"}} do
+    local m = table.deepcopy(data.raw["module"][module_type[2] .. "-module-3"])
+    m.name = "hexa-" .. module_type[2] .. "-module"
+    -- m.icon = "__hextorio__/graphics/icons/hexa-" .. module_type[2] .. "-module.png"
+    m.order = module_type[1] .. "[" .. module_type[2] .. "]-c[" .. module_type[2] .. "-module-4]"
+    m.tier = 4
+    m.effect = module_effects[module_type[2]]
+    table.insert(modules, m)
+end
+data:extend(modules)
 
 data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter})

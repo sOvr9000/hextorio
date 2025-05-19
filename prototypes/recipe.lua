@@ -54,5 +54,26 @@ hexic_splitter.results = {
 hexic_splitter.energy_required = 8
 
 
+local module_recipes = {}
+for _, module_type in pairs {"speed", "productivity", "efficiency", "quality"} do
+    local r = table.deepcopy(data.raw["recipe"][module_type .. "-module-3"])
+    r.name = "hexa-" .. module_type .. "-module"
+    -- r.icon = "__hextorio__/graphics/icons/hexa-" .. module_type .. "-module.png"
+    r.enabled = false
+    local amount = {[module_type] = 9}
+    r.ingredients = {
+        {type = "item", name = "speed-module-3", amount = amount["speed"] or 3},
+        {type = "item", name = "productivity-module-3", amount = amount["productivity"] or 3},
+        {type = "item", name = "efficiency-module-3", amount = amount["efficiency"] or 3},
+        {type = "item", name = "quality-module-3", amount = amount["quality"] or 3},
+    }
+    r.results = {
+        {type = "item", name = "hexa-" .. module_type .. "-module", amount = 1},
+    }
+    r.energy_required = 120
+    table.insert(module_recipes, r)
+end
+data:extend(module_recipes)
+
 
 data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter})
