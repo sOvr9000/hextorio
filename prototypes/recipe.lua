@@ -60,16 +60,21 @@ for _, module_type in pairs {"speed", "productivity", "efficiency", "quality"} d
     r.name = "hexa-" .. module_type .. "-module"
     -- r.icon = "__hextorio__/graphics/icons/hexa-" .. module_type .. "-module.png"
     r.enabled = false
-    local amount = {[module_type] = 9}
+    local amount = {[module_type] = 3}
     r.ingredients = {
-        {type = "item", name = "speed-module-3", amount = amount["speed"] or 3},
-        {type = "item", name = "productivity-module-3", amount = amount["productivity"] or 3},
-        {type = "item", name = "efficiency-module-3", amount = amount["efficiency"] or 3},
-        {type = "item", name = "quality-module-3", amount = amount["quality"] or 3},
+        {type = "item", name = "speed-module-3", amount = amount["speed"] or 1},
+        {type = "item", name = "productivity-module-3", amount = amount["productivity"] or 1},
+        {type = "item", name = "efficiency-module-3", amount = amount["efficiency"] or 1},
+        {type = "item", name = "quality-module-3", amount = amount["quality"] or 1},
+        {type = "fluid", name = "fluoroketone-cold", amount = 200},
     }
+    local product_name = "hexa-" .. module_type .. "-module"
     r.results = {
-        {type = "item", name = "hexa-" .. module_type .. "-module", amount = 1},
+        {type = "item", name = product_name, amount = 1},
+        {type = "fluid", name = "fluoroketone-hot", amount = 100, temperature = 180},
     }
+    r.main_product = product_name
+    r.always_show_made_in = true
     r.energy_required = 120
     table.insert(module_recipes, r)
 end
