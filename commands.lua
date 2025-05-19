@@ -95,6 +95,7 @@ function on_command(player, command, params)
 
         -- Enable cheat mode (spawn in items instead of crafting them)
         player.cheat_mode = true
+        player.clear_recipe_notifications()
 
         local sp = space_platforms.new("nauvis", "Hexaclysm")
         if sp then
