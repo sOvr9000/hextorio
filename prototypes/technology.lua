@@ -20,6 +20,7 @@ transport_belt_capacity_3.unit = {
     },
 }
 
+---@diagnostic disable-next-line: assign-type-mismatch
 data:extend({transport_belt_capacity_3})
 data:extend({
     {

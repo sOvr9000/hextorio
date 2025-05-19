@@ -35,7 +35,7 @@ hexic_underground_belt.results = {
 }
 hexic_underground_belt.energy_required = 8
 
-local hexic_splitter = table.deepcopy(data.raw["recipe"]["turbo-splitter"])
+local hexic_splitter = table.deepcopy(data.raw["recipe"]["turbo-splitter"]) --[[@as data.RecipePrototype]]
 hexic_splitter.name = "hexic-splitter"
 hexic_splitter.icon = "__hextorio__/graphics/icons/hexic-splitter.png"
 hexic_splitter.enabled = false
@@ -76,4 +76,5 @@ end
 data:extend(module_recipes)
 
 
+---@diagnostic disable-next-line: assign-type-mismatch
 data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter})

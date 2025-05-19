@@ -1,4 +1,5 @@
 
+-- COINS
 local hex_coin = table.deepcopy(data.raw["item"]["coin"])
 hex_coin.name = "hex-coin"
 hex_coin.icon = "__hextorio__/graphics/icons/hex-coin.png"
@@ -33,6 +34,7 @@ hexaprism_coin.auto_recycle = false
 hexaprism_coin.subgroup = "other"
 hexaprism_coin.hidden = false
 
+
 -- BELTS
 local hexic_transport_belt = table.deepcopy(data.raw["item"]["transport-belt"])
 hexic_transport_belt.name = "hexic-transport-belt"
@@ -61,6 +63,7 @@ hexic_splitter.order = "c[splitter]-d[turbo-splitter-2]"
 hexic_splitter.place_result = "hexic-splitter"
 hexic_splitter.weight = 20000
 
+
 -- MODULES
 local module_effects = {
     speed = {consumption = 1.0, quality = -0.35, speed = 1.0},
@@ -81,4 +84,6 @@ for _, module_type in pairs {{"a", "speed"}, {"c", "productivity"}, {"c", "effic
 end
 data:extend(modules)
 
+
+---@diagnostic disable-next-line: assign-type-mismatch
 data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter})
