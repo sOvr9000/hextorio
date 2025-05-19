@@ -1,7 +1,7 @@
 
 local lib = require "api.lib"
 
-if not lib.startup_setting_value "disable-hextreme-quality" then
+if lib.data.is_hextreme_enabled() then
     local hextreme = {
         type = "quality",
         name = "hextreme",

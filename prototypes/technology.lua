@@ -1,4 +1,8 @@
 
+local lib = require "api.lib"
+
+
+
 local transport_belt_capacity_3 = table.deepcopy(data.raw["technology"]["transport-belt-capacity-1"])
 transport_belt_capacity_3.name = "transport-belt-capacity-3"
 transport_belt_capacity_3.prerequisites = {"transport-belt-capacity-2"}
@@ -19,9 +23,46 @@ transport_belt_capacity_3.unit = {
         {"promethium-science-pack", 1},
     },
 }
-
 ---@diagnostic disable-next-line: assign-type-mismatch
 data:extend({transport_belt_capacity_3})
+
+
+if lib.data.is_hextreme_enabled() then
+    data:extend({
+        {
+            type = "technology",
+            name = "hextreme-quality",
+            icon = "__hextorio__/graphics/technology/hextreme-quality.png",
+            icon_size = 256,
+            prerequisites = {"promethium-science-pack", "legendary-quality"},
+            unit = {
+                count = 5000,
+                time = 60,
+                ingredients = {
+                    {"automation-science-pack", 1},
+                    {"logistic-science-pack", 1},
+                    {"chemical-science-pack", 1},
+                    {"production-science-pack", 1},
+                    {"utility-science-pack", 1},
+                    {"space-science-pack", 1},
+                    {"metallurgic-science-pack", 1},
+                    {"electromagnetic-science-pack", 1},
+                    {"agricultural-science-pack", 1},
+                    {"cryogenic-science-pack", 1},
+                    {"promethium-science-pack", 1},
+                },
+            },
+            effects = {
+                {
+                    type  = "unlock-quality",
+                    quality = "hextreme",
+                },
+            },
+        },
+    })
+end
+
+
 data:extend({
     {
         type = "technology",
@@ -57,37 +98,6 @@ data:extend({
             {
                 type  = "unlock-recipe",
                 recipe = "hexic-splitter",
-            },
-        },
-    },
-
-    {
-        type = "technology",
-        name = "hextreme-quality",
-        icon = "__hextorio__/graphics/technology/hextreme-quality.png",
-        icon_size = 256,
-        prerequisites = {"promethium-science-pack"},
-        unit = {
-            count = 5000,
-            time = 60,
-            ingredients = {
-                {"automation-science-pack", 1},
-                {"logistic-science-pack", 1},
-                {"chemical-science-pack", 1},
-                {"production-science-pack", 1},
-                {"utility-science-pack", 1},
-                {"space-science-pack", 1},
-                {"metallurgic-science-pack", 1},
-                {"electromagnetic-science-pack", 1},
-                {"agricultural-science-pack", 1},
-                {"cryogenic-science-pack", 1},
-                {"promethium-science-pack", 1},
-            },
-        },
-        effects = {
-            {
-                type  = "unlock-quality",
-                quality = "hextreme",
             },
         },
     },

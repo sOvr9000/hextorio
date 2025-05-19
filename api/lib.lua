@@ -1,6 +1,6 @@
 local sets = require "api.sets"
 
-local lib = {}
+local lib = {data = {}}
 
 
 
@@ -946,6 +946,10 @@ function lib.is_hextreme_enabled()
     local q = lib.get_tier6_quality()
     if not q then return false end
     return q.name == "hextreme"
+end
+
+function lib.data.is_hextreme_enabled()
+    return not lib.startup_setting_value "disable-hextreme-quality"
 end
 
 ---@return LuaQualityPrototype
