@@ -7,6 +7,8 @@ Date: 19/5/25
     - Added tier 4 modules.
   Changes:
     - Moved splitters and underground belts to their own subgroups, making it much easier to find the three belt types for each tier in the crafting and item selection menus.
+  Optimizations:
+    - Slightly optimized player iteration for large multiplayer games.
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 18/5/25

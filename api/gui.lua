@@ -30,7 +30,7 @@ function gui.register_events()
     end)
     event_system.register_callback("trade-processed", function(trade)
         if not trade.hex_core_state or not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then return end
-        for _, player in pairs(game.players) do
+        for _, player in pairs(game.connected_players) do
             if player.opened == trade.hex_core_state.hex_core then
                 gui.update_hex_core(player)
             end
@@ -52,14 +52,14 @@ function gui.register_events()
     end)
 
     event_system.register_callback("quest-revealed", function(quest)
-        for _, player in pairs(game.players) do
+        for _, player in pairs(game.connected_players) do
             gui.update_quest_lists(player, quest)
             gui.update_questbook(player)
         end
     end)
 
     event_system.register_callback("quest-completed", function(quest)
-        for _, player in pairs(game.players) do
+        for _, player in pairs(game.connected_players) do
             gui.update_quest_lists(player, quest)
             gui.update_questbook(player)
         end
@@ -67,7 +67,7 @@ function gui.register_events()
 
     event_system.register_callback("hex-core-deleted", function(state)
         if not state then return end
-        for _, player in pairs(game.players) do
+        for _, player in pairs(game.connected_players) do
             if player.gui.screen["trade-overview"].visible then
                 gui.update_trade_overview(player)
             end

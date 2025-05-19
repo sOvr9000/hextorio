@@ -9,7 +9,7 @@ local events = {}
 
 -- Called when the game is ready to start
 function events.on_game_started()
-    for _, player in pairs(game.players) do
+    for _, player in pairs(game.connected_players) do
         lib.unstuck_player(player)
     end
 
@@ -17,7 +17,7 @@ function events.on_game_started()
     storage.events.has_game_started = true
     storage.events.is_ready_to_start = false
 
-    for _, player in pairs(game.players) do
+    for _, player in pairs(game.connected_players) do
         -- Make sure that all players have a character
         if not player.character then
             lib.log("Creating character for player " .. player.name)
@@ -52,7 +52,7 @@ function events.on_nauvis_generating()
 
     -- Teleport players to temporary surface
     lib.log("Teleporting players to temporary surface")
-    for _, player in pairs(game.players) do
+    for _, player in pairs(game.connected_players) do
         if player and player.valid then
             -- Check for items in inventory
             storage.events.player_starter_inv = {}
@@ -86,7 +86,7 @@ end
 function events.on_nauvis_generated()
     -- Teleport players to Nauvis
     lib.log("Teleporting players to Nauvis")
-    for _, player in pairs(game.players) do
+    for _, player in pairs(game.connected_players) do
         lib.log("(pre-teleport) player character is nil: " .. tostring(player.character == nil))
         if player.character then
             lib.log("(pre-teleport) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
@@ -101,7 +101,7 @@ function events.on_nauvis_generated()
     -- Delete temporary surface
     game.delete_surface(game.surfaces["hextorio-temp"])
 
-    for _, player in pairs(game.players) do
+    for _, player in pairs(game.connected_players) do
         lib.log("(post-surface deletion) player character is nil: " .. tostring(player.character == nil))
         if player.character then
             lib.log("(post-surface deletion) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
