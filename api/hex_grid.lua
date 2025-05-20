@@ -878,11 +878,7 @@ function hex_grid.add_trade(hex_core_state, trade)
     trades.add_trade_to_tree(trade)
     hex_grid.update_hex_core_inventory_filters(hex_core_state)
 
-    trade.allowed_qualities = {}
-    local quality_tier = lib.get_quality_tier(hex_core.quality.name)
-    for tier = quality_tier, 1, -1 do
-        table.insert(trade.allowed_qualities, lib.get_quality_at_tier(tier))
-    end
+    hex_grid.set_trade_allowed_qualities(hex_core, trade)
 
     if hex_core_state.claimed then
         trades.discover_items_in_trades {trade}
@@ -1012,6 +1008,14 @@ function hex_grid.switch_hex_core_mode(state, mode)
 
     state.mode = mode
     return true
+end
+
+function hex_grid.set_trade_allowed_qualities(hex_core, trade)
+    trade.allowed_qualities = {}
+    local quality_tier = lib.get_quality_tier(hex_core.quality.name)
+    for tier = quality_tier, 1, -1 do
+        table.insert(trade.allowed_qualities, lib.get_quality_at_tier(tier))
+    end
 end
 
 function hex_grid.update_hex_core_inventory_filters(hex_core_state)
@@ -2281,6 +2285,13 @@ function hex_grid.set_quality(hex_core, quality)
 
     for _, player in pairs(update_players) do
         player.opened = new_hex_core
+    end
+
+    for _, trade_id in pairs(state.trades or {}) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            hex_grid.set_trade_allowed_qualities(new_hex_core, trade)
+        end
     end
 end
 
