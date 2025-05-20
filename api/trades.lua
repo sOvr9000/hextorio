@@ -227,12 +227,16 @@ function trades.get_output_value(surface_name, trade, quality)
 end
 
 function trades.get_volume_of_trade(surface_name, trade)
-    return (trades.get_input_value(surface_name, trade) + trades.get_output_value(surface_name, trade)) * 0.5
+    return trades.get_total_value_of_trade(surface_name, trade) * 0.5
 end
 
 -- Return the ratio of values of the trade's outputs to its inputs
 function trades.get_trade_value_ratio(surface_name, trade)
     return trades.get_output_value(surface_name, trade) / trades.get_input_value(surface_name, trade)
+end
+
+function trades.get_total_value_of_trade(surface_name, trade, quality, quality_cost_mult)
+    return trades.get_input_value(surface_name, trade, quality, quality_cost_mult) + trades.get_output_value(surface_name, trade, quality)
 end
 
 function trades.get_total_values_str(trade, quality, quality_cost_mult)

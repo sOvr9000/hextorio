@@ -213,6 +213,8 @@ function gui.init_hex_core(player)
     local generator_mode = hex_control_flow.add {type = "sprite-button", name = "generator-mode", sprite = "gravity-coin"}
     generator_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.generator-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.generator-mode-tooltip-body"}}
 
+    local upgrade_quality = hex_control_flow.add {type = "sprite-button", name = "upgrade-quality", sprite = "quality/uncommon"}
+
     local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/deconstruction_mark"}
 
     local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
@@ -1030,6 +1032,22 @@ function gui.update_hex_core(player)
 
         frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil and quests.is_feature_unlocked "sink-mode"
         frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil and quests.is_feature_unlocked "generator-mode"
+
+        local next_quality = hex_core.quality.next
+        if next_quality then
+            local next_quality_tier = lib.get_quality_tier(next_quality.name) + 1
+            frame["hex-control-flow"]["upgrade-quality"].visible = lib.is_quality_tier_unlocked(next_quality_tier)
+            if frame["hex-control-flow"]["upgrade-quality"].visible then
+                frame["hex-control-flow"]["upgrade-quality"].sprite = "quality/" .. next_quality.name
+                frame["hex-control-flow"]["upgrade-quality"].tooltip = {"",
+                    lib.color_localized_string({"hex-core-gui.upgrade-quality-tooltip-header"}, "green", "heading-2"),
+                    "\n",
+                    {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_quality_upgrade_cost(hex_core))},
+                }
+            end
+        else
+            frame["hex-control-flow"]["upgrade-quality"].visible = false
+        end
     else
         frame["claim-flow"].visible = true
         frame["claimed-by"].visible = false
@@ -2071,6 +2089,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_confirmation_button_click(player, element)
     elseif element.name == "unloader-filters" then
         gui.on_unloader_filters_button_click(player, element)
+    elseif element.name == "upgrade-quality" then
+        gui.on_upgrade_quality_button_click(player, element)
     else
         if element.parent then
             if element.parent.name == "unloader-filters-flow" then
@@ -2095,6 +2115,26 @@ function gui.on_sprite_button_click(player, element)
             end
         end
     end
+end
+
+function gui.on_upgrade_quality_button_click(player, element)
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    local inv = lib.get_player_inventory(player)
+    if not inv then return end
+
+    local coin = hex_grid.get_quality_upgrade_cost(hex_core)
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    if coin_tiers.gt(coin, inv_coin) then
+        player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
+        return
+    end
+
+    coin_tiers.remove_coin_from_inventory(inv, coin)
+
+    hex_grid.upgrade_quality(hex_core)
+    gui.update_hex_core(player)
 end
 
 function gui.on_supercharge_button_click(player, element)

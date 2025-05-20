@@ -1071,6 +1071,12 @@ function lib.get_quality_value_scale(quality)
     return 9 ^ (lib.get_quality_tier(quality) - 1)
 end
 
+function lib.is_quality_tier_unlocked(quality_tier)
+    local quality = lib.get_quality_at_tier(quality_tier)
+    if not quality then return false end
+    return game.forces.player.is_quality_unlocked(quality)
+end
+
 
 
 return lib

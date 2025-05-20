@@ -2215,6 +2215,89 @@ function hex_grid.supercharge_resources(hex_core)
     state.is_infinite = true
 end
 
+function hex_grid.set_quality(hex_core, quality)
+    if not hex_core then
+        lib.log_error("hex_grid.set_quality: hex core is nil")
+        return
+    end
+    if not quality then
+        lib.log_error("hex_grid.set_quality: quality is nil")
+        return
+    end
+
+    -- Destroy old entity, spawn new one in with higher quality.
+    -- Transfer all old inventory items to new entity.
+    -- Transfer slot filters
+    -- Update all relevant players' opened entities to new entity.
+    -- Update state.hex_core
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    local position = hex_core.position
+    local surface = hex_core.surface
+    local inv = hex_core.get_inventory(defines.inventory.chest)
+    if not inv then return end
+
+    local old_inv_len = #inv
+
+    local filters = {}
+    for i = 1, #inv do
+        filters[i] = inv.get_filter(i)
+    end
+
+    local update_players = {}
+    for _, player in pairs(game.connected_players) do
+        if player.opened == hex_core then
+            table.insert(update_players, player)
+        end
+    end
+
+    local contents = inv.get_contents()
+
+    hex_core.destroy()
+
+    local new_hex_core = surface.create_entity {
+        name = "hex-core",
+        position = position,
+        quality = quality,
+        force = "player",
+    }
+
+    if not new_hex_core then return end
+    new_hex_core.destructible = false
+
+    state.hex_core = new_hex_core
+    state.hex_core_input_inventory = new_hex_core.get_inventory(defines.inventory.chest)
+    state.hex_core_output_inventory = state.hex_core_input_inventory
+
+    for i = 1, math.min(old_inv_len, #state.hex_core_input_inventory) do
+        state.hex_core_input_inventory.set_filter(i, filters[i])
+    end
+
+    for _, item_stack in pairs(contents) do
+        state.hex_core_input_inventory.insert(item_stack)
+    end
+
+    for _, player in pairs(update_players) do
+        player.opened = new_hex_core
+    end
+end
+
+function hex_grid.upgrade_quality(hex_core)
+    if not hex_core then
+        lib.log_error("hex_grid.upgrade_quality: hex core is nil")
+        return
+    end
+
+    local next_quality = hex_core.quality.next
+    if not next_quality then
+        lib.log_error("hex_grid.upgrade_quality: hex core is already at max quality")
+        return
+    end
+    hex_grid.set_quality(hex_core, next_quality)
+end
+
 function hex_grid.generate_loaders(hex_core_state)
     if not hex_core_state.hex_core then return end
 
@@ -2551,19 +2634,19 @@ function hex_grid.get_hex_resource_entities(hex_core)
 end
 
 function hex_grid.get_delete_core_cost(hex_core)
-    if not hex_core or not hex_core.valid then return coin_tiers.from_base_value(0) end
+    if not hex_core or not hex_core.valid then return coin_tiers.new() end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
-    if not state then return coin_tiers.from_base_value(0) end
+    if not state then return coin_tiers.new() end
 
-    return state.claim_price or coin_tiers.from_base_value(0)
+    return state.claim_price or coin_tiers.new()
 end
 
 function hex_grid.get_supercharge_cost(hex_core)
-    if not hex_core or not hex_core.valid then return coin_tiers.from_base_value(0) end
+    if not hex_core or not hex_core.valid then return coin_tiers.new() end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
-    if not state then return coin_tiers.from_base_value(0) end
+    if not state then return coin_tiers.new() end
 
     local entities = hex_grid.get_hex_resource_entities(hex_core)
 
@@ -2593,6 +2676,31 @@ function hex_grid.get_supercharge_cost(hex_core)
     end
 
     return coin_tiers.from_base_value(#entities * base_cost)
+end
+
+function hex_grid.get_quality_upgrade_cost(hex_core)
+    if not hex_core or not hex_core.valid then return coin_tiers.new() end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return coin_tiers.new() end
+
+    local quality = hex_core.quality.next
+    if not quality then return coin_tiers.new() end
+
+    quality = quality.name
+    local mult = lib.get_quality_value_scale(quality)
+    local quality_cost_mult = lib.get_quality_cost_multiplier(quality)
+
+    local base_cost = 0
+    for _, trade_id in pairs(state.trades or {}) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            local volume = trades.get_total_value_of_trade(trade.surface_name, trade, quality, quality_cost_mult)
+            base_cost = base_cost + volume
+        end
+    end
+
+    return coin_tiers.multiply(coin_tiers.from_base_value(base_cost), mult)
 end
 
 function hex_grid.process_hex_core_pool()
