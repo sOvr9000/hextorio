@@ -31,6 +31,16 @@ return {
             {{"electromagnetic-science-pack", "tesla-ammo"}, {"hex-coin"}},
             {{"hex-coin", "scrap", "steel-plate"}, {"water-barrel"}}, -- S tier trade
         },
+        gleba = {
+            {{"copper-ore", "yumako-mash"}, {"hex-coin"}},
+            {{"iron-ore", "jelly"}, {"hex-coin"}},
+            {{"agricultural-science-pack", "rocket-turret"}, {"hex-coin"}},
+            {{"yumako-mash", "jelly", "hex-coin"}, {"carbon-fiber", "nutrients"}},
+            {{"spidertron", "efficiency-module-3"}, {"productivity-module-3", "hex-coin"}},
+        },
+        aquilo = {
+            {{"cryogenic-science-pack", "quantum-processor"}, {"hex-coin"}},
+        },
     },
 
     discovered_items = {},

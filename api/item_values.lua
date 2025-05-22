@@ -9,6 +9,15 @@ local item_values = {}
 function item_values.init()
     storage.item_values.recipe_tree = lib.get_recipe_tree()
     storage.item_values.recipe_graph = lib.get_recipe_graph(storage.item_values.recipe_tree)
+
+    -- Log spoilable items.
+    local spoilable = {}
+    for _, item_name in pairs(storage.item_values.recipe_graph.all_items) do
+        if lib.is_spoilable(item_name) then
+            table.insert(spoilable, item_name)
+        end
+    end
+    log(serpent.block(spoilable))
 end
 
 function item_values.get_item_value(surface_name, item_name, allow_interplanetary)

@@ -1234,7 +1234,10 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     elseif surface.name == "vulcanus" then
         land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vulcanus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
     elseif surface.name == "fulgora" then
-        -- log(serpent.block(mgs))
+        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
+    elseif surface.name == "gleba" then
+        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.gleba_water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_water.size)) * 0.5
+    elseif surface.name == "aquilo" then
         land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
     end
     if surface.name ~= "fulgora" and surface.name ~= "aquilo" then
@@ -1305,6 +1308,23 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 if is_biter_hex then
                     if hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
                         state.is_biters = true
+                    end
+                end
+            end
+        elseif surface.name == "gleba" then
+            local min_pentapod_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
+            local is_pentapod_hex = not is_starting_hex and dist >= min_pentapod_distance
+            if is_pentapod_hex then
+                local pentapod_chance = lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency)
+
+                if storage.hex_grid.total_pentapod_multiplier then
+                    pentapod_chance = pentapod_chance * storage.hex_grid.total_pentapod_multiplier
+                end
+
+                is_pentapod_hex = math.random() < pentapod_chance
+                if is_pentapod_hex then
+                    if hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
+                        state.is_pentapods = true
                     end
                 end
             end
@@ -1629,6 +1649,25 @@ function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid
     return hex_grid.spawn_enemy_base(surface, center, hex_grid_scale - stroke_width, num_spawners, num_worms, quality)
 end
 
+function hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+    local surface_id = lib.get_surface_id(surface)
+    if surface_id == -1 then
+        lib.log_error("hex_grid.generate_hex_biters: No surface found")
+        return false
+    end
+    surface = game.surfaces[surface_id]
+
+    local dist = hex_grid.distance(hex_pos, {q=0, r=0})
+    local quality = hex_grid.get_quality_from_distance(dist)
+
+    local num_rafts_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 3))
+    local num_rafts_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 5))
+    local num_rafts = math.random(num_rafts_min, num_rafts_max)
+    local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+
+    return hex_grid.spawn_enemy_base(surface, center, hex_grid_scale - stroke_width, num_rafts, 0, quality)
+end
+
 function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, num_worms, quality)
     local surface_id = lib.get_surface_id(surface)
     if surface_id == -1 then
@@ -1641,29 +1680,41 @@ function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, nu
         quality = prototypes.quality.normal
     end
 
-    local wc_table = {}
-    if math.random() < 0.5 then
-        wc_table["biter-spawner"] = math.floor(num_spawners / 2)
-        wc_table["spitter-spawner"] = num_spawners - wc_table["biter-spawner"]
-    else
-        wc_table["spitter-spawner"] = math.floor(num_spawners / 2)
-        wc_table["biter-spawner"] = num_spawners - wc_table["spitter-spawner"]
-    end
+    local entity_counts = {}
 
-    local worm_type = "behemoth-worm-turret"
     local evo = game.forces.player.get_evolution_factor(surface)
-    if evo < 0.25 then
-        worm_type = "small-worm-turret"
-    elseif evo < 0.50 then
-        worm_type = "medium-worm-turret"
-    elseif evo < 0.75 then
-        worm_type = "big-worm-turret"
+    if surface.name == "nauvis" then
+        if math.random() < 0.5 then
+            entity_counts["biter-spawner"] = math.floor(num_spawners / 2)
+            entity_counts["spitter-spawner"] = num_spawners - entity_counts["biter-spawner"]
+        else
+            entity_counts["spitter-spawner"] = math.floor(num_spawners / 2)
+            entity_counts["biter-spawner"] = num_spawners - entity_counts["spitter-spawner"]
+        end
+
+        local worm_type = "behemoth-worm-turret"
+        if evo < 0.25 then
+            worm_type = "small-worm-turret"
+        elseif evo < 0.50 then
+            worm_type = "medium-worm-turret"
+        elseif evo < 0.75 then
+            worm_type = "big-worm-turret"
+        end
+        entity_counts[worm_type] = num_worms
+    elseif surface.name == "gleba" then
+        local chance = lib.runtime_setting_value "small-egg-raft-chance"
+        for _ = 1, num_spawners do
+            if math.random() < chance then
+                entity_counts["gleba-spawner-small"] = (entity_counts["gleba-spawner-small"] or 0) + 1
+            else
+                entity_counts["gleba-spawner"] = (entity_counts["gleba-spawner"] or 0) + 1
+            end
+        end
     end
-    wc_table[worm_type] = num_worms
 
     local entity_table = {}
-    for name, count in pairs(wc_table) do
-        for i = 1, count do
+    for name, count in pairs(entity_counts) do
+        for _ = 1, count do
             table.insert(entity_table, name)
         end
     end

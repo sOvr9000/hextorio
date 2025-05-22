@@ -1077,6 +1077,14 @@ function lib.is_quality_tier_unlocked(quality_tier)
     return game.forces.player.is_quality_unlocked(quality)
 end
 
+---@param item_name string
+---@return boolean
+function lib.is_spoilable(item_name)
+    local prot = prototypes.item[item_name]
+    if not prot then return false end
+    return prot.get_spoil_ticks() > 0
+end
+
 
 
 return lib
