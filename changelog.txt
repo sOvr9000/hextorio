@@ -8,6 +8,8 @@ Date: 19/5/25
     - Hex cores can now be upgraded in quality.
     - Added [planet=gleba].
     - Added [planet=aquilo].
+  Features:
+    - Items can now be ranked up to the silver star rank. [img=rank-3]
   Changes:
     - Moved splitters and underground belts to their own subgroups, making it much easier to find the three belt types for each tier in the crafting and item selection menus.
     - Removed tree seeds from trade generation on [planet=nauvis].
