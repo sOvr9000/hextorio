@@ -1315,7 +1315,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             local min_pentapod_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
             local is_pentapod_hex = not is_starting_hex and dist >= min_pentapod_distance
             if is_pentapod_hex then
-                local pentapod_chance = lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency)
+                local pentapod_chance = math.sqrt(lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency))
 
                 if storage.hex_grid.total_pentapod_multiplier then
                     pentapod_chance = pentapod_chance * storage.hex_grid.total_pentapod_multiplier
