@@ -9,6 +9,7 @@ local non_land_tile_names = {
     "deepwater",
     "oil-ocean-shallow",
     "oil-ocean-deep",
+    "gleba-deep-lake",
     "ammoniacal-solution",
     "ammoniacal-solution-2",
     "lava",
@@ -288,8 +289,13 @@ function lib.get_player_inventory(player)
     lib.log_error("get_player_inventory: could not find inventory of player")
 end
 
--- Turn a map gen setting between 0.16667 and 6 into a number between 0 and 1, or to a specified range
+---Turn a map gen setting between 0.16667 and 6 into a number between 0 and 1, or to a specified range
+---@param x number|nil
+---@param to_min number | nil
+---@param to_max number | nil
+---@return number
 function lib.remap_map_gen_setting(x, to_min, to_max)
+    if not x then return ((to_min or 0) + (to_max or 1)) * 0.5 end
     local v = math.log(x, 6) * 0.5 + 0.5
     if to_min and to_max then
         return to_min + (to_max - to_min) * v
