@@ -9,7 +9,8 @@ Date: 19/5/25
     - Added [planet=gleba].
     - Added [planet=aquilo].
   Features:
-    - Items can now be ranked up to the silver star rank. [img=rank-3]
+    - Items can now be ranked up to the silver and gold star ranks. [img=rank-2] -> [img=rank-3] -> [img=rank-4]
+    - Added unique bonuses for silver and gold star ranks.
   Changes:
     - Moved splitters and underground belts to their own subgroups, making it much easier to find the three belt types for each tier in the crafting and item selection menus.
     - Removed tree seeds from trade generation on [planet=nauvis].
