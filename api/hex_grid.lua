@@ -2516,10 +2516,11 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
                     -- Check if it's a water tile
                     local game_tile = surface.get_tile(tile.x, tile.y)
                     if game_tile and game_tile.valid and (
-                        game_tile.name == "water" or 
-                        game_tile.name == "deepwater" or 
-                        game_tile.name == "oil-ocean-shallow" or 
-                        game_tile.name == "lava-hot" or 
+                        game_tile.name == "water" or
+                        game_tile.name == "deepwater" or
+                        game_tile.name == "oil-ocean-shallow" or
+                        game_tile.name == "lava-hot" or
+                        game_tile.name == "gleba-deep-lake" or
                         game_tile.name == "ammoniacal-solution"
                     ) then
                         table.insert(edge_tiles, {x = tile.x, y = tile.y})
@@ -2641,10 +2642,11 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
                                     -- Check if it's a water tile
                                     local game_tile = surface.get_tile(tile.x, tile.y)
                                     if game_tile and game_tile.valid and (
-                                        game_tile.name == "water" or 
-                                        game_tile.name == "deepwater" or 
-                                        game_tile.name == "oil-ocean-shallow" or 
-                                        game_tile.name == "lava-hot" or 
+                                        game_tile.name == "water" or
+                                        game_tile.name == "deepwater" or
+                                        game_tile.name == "oil-ocean-shallow" or
+                                        game_tile.name == "lava-hot" or
+                                        game_tile.name == "gleba-deep-lake" or
                                         game_tile.name == "ammoniacal-solution"
                                     ) then
                                         table.insert(corner_tiles, {x = tile.x, y = tile.y})
