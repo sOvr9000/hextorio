@@ -34,9 +34,9 @@ return {
         gleba = {
             {{"copper-ore", "yumako-mash"}, {"hex-coin"}},
             {{"iron-ore", "jelly"}, {"hex-coin"}},
-            {{"agricultural-science-pack", "rocket-turret"}, {"hex-coin"}},
+            {{"agricultural-science-pack", "carbon-fiber"}, {"hex-coin"}},
             {{"yumako-mash", "jelly", "hex-coin"}, {"carbon-fiber", "nutrients"}},
-            {{"spidertron", "efficiency-module-3"}, {"productivity-module-3", "hex-coin"}},
+            {{"spidertron", "efficiency-module-3"}, {"productivity-module-3", "rocket-turret"}},
         },
         aquilo = {
             {{"cryogenic-science-pack", "quantum-processor"}, {"hex-coin"}},
