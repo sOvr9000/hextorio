@@ -1384,7 +1384,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     elseif surface.name == "fulgora" then
         resource_names = {"scrap"}
     elseif surface.name == "gleba" then
-        resource_names = {"stone"}
+        resource_names = {"gleba_stone"}
     elseif surface.name == "aquilo" then
         resource_names = {}
     end
