@@ -2962,13 +2962,14 @@ end
 
 function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
     if not state.trades then return end
+    if not state.hex_core then return end
     local inventory_input = state.hex_core_input_inventory
     if not inventory_input then return end
     local inventory_output = state.hex_core_output_inventory
     if not inventory_output then return end
 
     if hex_grid.try_unload_output_buffer(state) then
-        local _, _, remaining_to_insert = trades.process_trades_in_inventories(inventory_input, inventory_output, state.trades, quality_cost_multipliers)
+        local _, _, remaining_to_insert = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
         hex_grid.add_to_output_buffer(state, remaining_to_insert)
     end
 end

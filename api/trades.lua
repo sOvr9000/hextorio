@@ -918,13 +918,14 @@ function trades.get_coins_and_items_of_inventory(inv)
 end
 
 ---Process all trades from one inventory to another.
+---@param surface_name string
 ---@param input_inv LuaInventory
 ---@param output_inv LuaInventory
 ---@param trade_ids {[int]: int}
 ---@param quality_cost_multipliers {[string]: number} | nil
 ---@param max_items_per_output int | nil
 ---@return {[string]: int}, {[string]: int}, {[string]: int}
-function trades.process_trades_in_inventories(input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
+function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
     -- Check if trades can occur
     local total_items = input_inv.get_item_count()
     if total_items == 0 then return {}, {}, {} end
@@ -962,7 +963,37 @@ function trades.process_trades_in_inventories(input_inv, output_inv, trade_ids, 
         end
     end
 
+    trades._postprocess_items_sold(surface_name, _total_removed)
     return _total_removed, _total_inserted, _remaining_to_insert
+end
+
+function trades._postprocess_items_sold(surface_name, total_sold)
+    for quality, item_names in pairs(total_sold) do
+        local tier = lib.get_quality_tier(quality)
+        if tier >= 3 then
+            -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
+            for item_name, _ in pairs(item_names) do
+                local rank = item_ranks.get_item_rank(item_name)
+                if rank == 2 then
+                    -- A bronze rank item was sold at rare+ quality.
+                    item_ranks.rank_up(item_name)
+                end
+            end
+        end
+        -- Don't use elseif because one trade can possibly trigger multiple rank-ups (although that's an unlikely case).
+        if tier >= 4 then
+            -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
+            for item_name, _ in pairs(item_names) do
+                if not item_values.has_item_value(surface_name, item_name) then
+                    local rank = item_ranks.get_item_rank(item_name)
+                    if rank == 3 then
+                        -- A silver rank item was sold at epic+ quality on a planet where it cannot be naturally produced.
+                        item_ranks.rank_up(item_name)
+                    end
+                end
+            end
+        end
+    end
 end
 
 
