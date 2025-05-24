@@ -702,7 +702,10 @@ function lib.insert_endgame_armor(player)
         mech_armor.put({name = "personal-roboport-mk2-equipment", quality = q})
     end
     mech_armor.put({name = "night-vision-equipment"})
-    for _ = 1, 13 do
+    for _ = 1, 3 do
+        mech_armor.put({name = "discharge-defense-equipment", quality = q})
+    end
+    for _ = 1, 10 do
         mech_armor.put({name = "personal-laser-defense-equipment", quality = q})
     end
     for _ = 1, 9 do
