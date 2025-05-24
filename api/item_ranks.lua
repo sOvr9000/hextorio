@@ -142,6 +142,20 @@ function item_ranks.get_total_item_rank()
     return total
 end
 
+function item_ranks.get_items_at_rank(from_rank, to_rank)
+    if not to_rank then to_rank = math.huge end
+    if not from_rank then from_rank = 1 end
+
+    local item_names = {}
+    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if rank_obj.rank >= from_rank and rank_obj.rank <= to_rank then
+            table.insert(item_names, item_name)
+        end
+    end
+
+    return item_names
+end
+
 
 
 return item_ranks

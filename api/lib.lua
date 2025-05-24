@@ -133,6 +133,18 @@ function lib.table_reversed(t)
     return reversed
 end
 
+-- Combine tables with integral indices, returning a new table.
+function lib.table_extend(t1, t2)
+    local t = {}
+    for i = 1, #t1 do
+        table.insert(t, table.deepcopy(t1[i]))
+    end
+    for i = 1, #t2 do
+        table.insert(t, table.deepcopy(t2[i]))
+    end
+    return t
+end
+
 function lib.is_empty_table(t)
     for _ in pairs(t) do return false end
     return true
@@ -570,18 +582,6 @@ function lib.tostring_sigfigs(number, sigfigs)
     end
 
     return sign .. result
-end
-
--- Combine tables with integral indices
-function lib.table_extend(t1, t2)
-    local t = {}
-    for i = 1, #t1 do
-        table.insert(t, table.deepcopy(t1[i]))
-    end
-    for i = 1, #t2 do
-        table.insert(t, table.deepcopy(t2[i]))
-    end
-    return t
 end
 
 -- Converts a number of ticks to a formatted time string with zero components omitted

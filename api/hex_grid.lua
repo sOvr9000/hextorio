@@ -936,7 +936,10 @@ function hex_grid.apply_extra_trades_bonus(state)
     local surface_values = item_values.get_item_values_for_surface(surface.name)
     if surface_values then
         local added_trades = {}
-        for item_name, _ in pairs(surface_values) do
+        local item_names_set = sets.new(sets.to_array(surface_values))
+        local silver_items = sets.new(item_ranks.get_items_at_rank(3))
+        item_names_set = sets.union(item_names_set, silver_items)
+        for item_name, _ in pairs(item_names_set) do
             if lib.is_catalog_item(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
                 local rank = item_ranks.get_item_rank(item_name)
                 if rank >= 2 then
