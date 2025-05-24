@@ -680,7 +680,6 @@ function hex_grid.register_events()
             player.print("Failed to generate trade with inputs = " .. serpent.line(params[1]) .. ", outputs = " .. serpent.line(params[2]))
             return
         end
-        log(serpent.block(trade))
         hex_grid.add_trade(state, trade)
     end)
 

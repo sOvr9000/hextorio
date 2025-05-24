@@ -1744,6 +1744,8 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
         table.insert(rank_up_localized_str, "[item=" .. item_name .. ",quality=rare]")
     elseif rank_obj.rank == 3 then
         table.insert(rank_up_localized_str, "[item=" .. item_name .. ",quality=epic]")
+    elseif rank_obj.rank == 4 then
+        table.insert(rank_up_localized_str, "[item=" .. item_name .. ",quality=hextreme]")
     end
 
     local rank_up_instructions = inspect_frame.add {
