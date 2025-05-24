@@ -516,15 +516,16 @@ function trades.is_trade_valid(trade)
     if type(trade.output_items) ~= "table" then return false end
     local all_items = table.pack(table.unpack(trade.input_items), table.unpack(trade.output_items))
     all_items.n = nil -- weird thing from Lua idk
-    -- lib.log(serpent.block(all_items))
-    for _, input in pairs(all_items) do
-        if type(input) ~= "table" then return false end
-        if not input.name then return false end
-        if type(input.name) ~= "string" then return false end
-        if not input.count then return false end
-        if type(input.count) ~= "number" then return false end
-        if input.count <= 0 then return false end
-        if not item_values.has_item_value(trade.surface_name, input.name) then return false end
+    for _, item in pairs(all_items) do
+        if type(item) ~= "table" then return false end
+        if not item.name then return false end
+        if type(item.name) ~= "string" then return false end
+        if not item.count then return false end
+        if type(item.count) ~= "number" then return false end
+        if item.count <= 0 then return false end
+
+        -- This does not need to be checked since items are allowed to have interplanetary values.
+        -- if not item_values.has_item_value(trade.surface_name, item.name) then return false end
     end
     return true
 end
