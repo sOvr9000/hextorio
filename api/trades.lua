@@ -964,25 +964,29 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
         end
     end
 
-    trades._postprocess_items_sold(surface_name, _total_removed)
+    trades._postprocess_items_traded(surface_name, _total_removed, "sold")
+    trades._postprocess_items_traded(surface_name, _total_inserted, "bought")
     return _total_removed, _total_inserted, _remaining_to_insert
 end
 
-function trades._postprocess_items_sold(surface_name, total_sold)
-    for quality, item_names in pairs(total_sold) do
+function trades._postprocess_items_traded(surface_name, total_traded, trade_type)
+    local process_again = {}
+    for quality, item_names in pairs(total_traded) do
         local tier = lib.get_quality_tier(quality)
-        if tier >= 3 then
+        if tier >= 3 and trade_type == "sold" then
             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
-            for item_name, _ in pairs(item_names) do
+            for item_name, count in pairs(item_names) do
                 local rank = item_ranks.get_item_rank(item_name)
                 if rank == 2 then
                     -- A bronze rank item was sold at rare+ quality.
                     item_ranks.rank_up(item_name)
+                    if not process_again[quality] then
+                        process_again[quality] = {}
+                    end
+                    process_again[quality][item_name] = count
                 end
             end
-        end
-        -- Don't use elseif because one trade can possibly trigger multiple rank-ups (although that's an unlikely case).
-        if tier >= 4 then
+        elseif tier >= 4 then -- can be trade type can be either
             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
             for item_name, _ in pairs(item_names) do
                 if not item_values.has_item_value(surface_name, item_name) then
@@ -994,6 +998,10 @@ function trades._postprocess_items_sold(surface_name, total_sold)
                 end
             end
         end
+    end
+    if next(process_again) then
+        trades._postprocess_items_traded(surface_name, process_again, "sold")
+        trades._postprocess_items_traded(surface_name, process_again, "bought")
     end
 end
 
