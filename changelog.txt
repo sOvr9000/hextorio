@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.3.3
+Version: 0.4.0
 Date: 24/5/25
   Major Features:
     - Added hexic belts.
@@ -8,9 +8,10 @@ Date: 24/5/25
     - Hex cores can now be upgraded in quality.
     - Added [planet=gleba].
     - Added [planet=aquilo].
+    - Added the Quantum Bazaar.
   Features:
-    - Items can now be ranked up to the silver and gold star ranks. [img=rank-2] -> [img=rank-3] -> [img=rank-4]
-    - Added unique bonuses for silver and gold star ranks.
+    - Items can now be ranked up to the silver, gold, and red star ranks. [img=rank-2] -> [img=rank-3] -> [img=rank-4] -> [img=rank-5]
+    - Added unique bonuses for silver, gold, and red star ranks.
   Changes:
     - Moved splitters and underground belts to their own subgroups, making it much easier to find the three belt types (belt, underground, splitter) for each tier in the crafting and item selection menus.
     - Removed tree seeds from trade generation on [planet=nauvis].

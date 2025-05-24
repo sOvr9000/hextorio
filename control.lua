@@ -278,6 +278,16 @@ script.on_event(defines.events.on_entity_died, function (event)
         if event.cause and (event.cause.name == "car" or event.cause.name == "tank") then
             event_system.trigger("spawner-rammed", event.entity, event.cause)
         end
+    elseif event.entity.name == "space-platform-hub" then
+        local inv = event.entity.get_inventory(defines.inventory.hub_main)
+        if inv then
+            local contents = inv.get_contents()
+            for _, item in pairs(contents) do
+                if lib.get_quality_tier(item.quality) >= 6 and item_ranks.get_item_rank(item.name) == 4 then
+                    item_ranks.rank_up(item.name)
+                end
+            end
+        end
     end
 end)
 
