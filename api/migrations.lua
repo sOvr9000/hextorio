@@ -35,6 +35,7 @@ local versions = {
     "0.3.0",
     "0.3.1",
     "0.3.2",
+    "0.4.0",
 }
 
 local version_stepping = {}
@@ -263,7 +264,11 @@ local process_migration = {
         storage.item_values.values.vulcanus = data_item_values.values.vulcanus -- fixes crude oil barrel bug
         storage.item_values.values.fulgora = data_item_values.values.fulgora
         storage.hex_grid.pool_size = 50
-        -- hex_grid.setup_pool()
+    end,
+    ["0.3.2"] = function()
+        game.forces.player.technologies["planet-discovery-gleba"].enabled = true
+        storage.trades.starting_trades.gleba = data_trades.starting_trades.gleba
+        storage.item_values.values = data_item_values.values
     end,
 }
 
