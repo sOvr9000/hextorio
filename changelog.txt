@@ -15,7 +15,7 @@ Date: 25/5/25
   Changes:
     - Moved splitters and underground belts to their own subgroups, making it much easier to find the three belt types (belt, underground, splitter) for each tier in the crafting and item selection menus.
     - Removed tree seeds from trade generation on [planet=nauvis].
-    - Removed discharge defense equipment from trade generation on [planet=nauvis], added to [planet=fulgora]. (IT IS BUFFED)
+    - Removed discharge defense equipment from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
   Balancing:
     - Buffed [item=discharge-defense-equipment]. It now functons as a portable tesla turret like Wube Software would have originally intended, given that it has always been an electric beam weapon.
   Optimizations:
