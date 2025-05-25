@@ -222,7 +222,7 @@ local process_migration = {
                     local new_trades = {}
                     for i = #state.trades, 1, -1 do
                         local trade = state.trades[i]
-                        local input_names, output_names = trades.get_item_names_from_trade(trade)
+                        local input_names, output_names = trades.get_input_output_item_names_of_trade(trade)
                         local volume = trades.get_volume_of_trade(trade.surface_name, trade)
                         trades._check_coin_names_for_volume(input_names, volume)
                         trades._check_coin_names_for_volume(output_names, volume)

@@ -702,6 +702,9 @@ function trades._check_tree_existence()
     if not storage.trades.tree.all_trades_lookup then
         storage.trades.tree.all_trades_lookup = {}
     end
+    if not storage.trades.recoverable then
+        storage.trades.recoverable = {}
+    end
 end
 
 function trades.add_trade_to_tree(trade)
@@ -725,7 +728,8 @@ function trades.add_trade_to_tree(trade)
     storage.trades.tree.all_trades_lookup[trade.id] = trade
 end
 
-function trades.remove_trade_from_tree(trade)
+function trades.remove_trade_from_tree(trade, recoverable)
+    if recoverable == nil then recoverable = true end
     if not trade then
         lib.log_error("trades.remove_trade_from_tree: trade is nil")
         return
@@ -741,7 +745,22 @@ function trades.remove_trade_from_tree(trade)
             storage.trades.tree.by_output[output.name][trade.id] = nil
         end
     end
-    storage.trades.tree.all_trades_lookup[trade.id] = nil
+    if recoverable then
+        storage.trades.recoverable[trade.id] = true
+    else
+        storage.trades.tree.all_trades_lookup[trade.id] = nil
+    end
+end
+
+function trades.recover_trade(trade)
+    if not trade then
+        lib.log_error("trades.recover_trade: trade is nil")
+        return
+    end
+    trades._check_tree_existence()
+    if not storage.trades.recoverable[trade.id] then return end
+    trades.add_trade_to_tree(trade)
+    storage.trades.recoverable[trade.id] = nil
 end
 
 ---Returns a lookup table, mapping trade ids to boolean (true) values, of all trades that consume the given item.
@@ -775,14 +794,24 @@ function trades.get_trades_lookup()
     return storage.trades.tree.all_trades_lookup
 end
 
----Returns a normally indexed table of all trade objects in the current game.
+---Returns a normally indexed table of all trade objects in the current game, skipping over the trades that were deleted but recoverable if only_existent is true.
+---@param only_existent boolean
 ---@return {[int]: table}
-function trades.get_all_trades()
+function trades.get_all_trades(only_existent)
+    if only_existent == nil then only_existent = true end
     local all_trades = {}
-    for _, trade in pairs(trades.get_trades_lookup()) do
-        table.insert(all_trades, trade)
+    for trade_id, trade in pairs(trades.get_trades_lookup()) do
+        if not only_existent or not storage.tree.recoverable[trade_id] then
+            table.insert(all_trades, trade)
+        end
     end
     return all_trades
+end
+
+---Returns a normally indexed table of all ids of the trades that were deleted from hex cores and haven't yet been relocated via the gold star bonus effect.
+---@return {[int]: int}
+function trades.get_recoverable_trades()
+    return sets.to_array(storage.trades.recoverable)
 end
 
 ---Expects a normally indexed table of trade ids.
@@ -862,6 +891,62 @@ function trades.get_trade_from_id(trade_id)
     return trades.get_trades_lookup()[trade_id]
 end
 
+function trades.has_item_as_input(trade, item_name)
+    if not trade then
+        lib.log_error("trades.has_item_as_input: trade is nil")
+        return false
+    end
+    if not item_name then
+        lib.log_error("trades.has_item_as_input: item_name is nil")
+        return true
+    end
+    if lib.is_coin(item_name) then
+        for _, input in pairs(trade.input_items) do
+            if lib.is_coin(input.name) then
+                return true
+            end
+        end
+    else
+        -- return storage.trades.tree.by_input[item_name] ~= nil and storage.trades.tree.by_input[item_name][trade.id] ~= nil
+        for _, input in pairs(trade.input_items) do
+            if input.name == item_name then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function trades.has_item_as_output(trade, item_name)
+    if not trade then
+        lib.log_error("trades.has_item_as_output: trade is nil")
+        return false
+    end
+    if not item_name then
+        lib.log_error("trades.has_item_as_output: item_name is nil")
+        return true
+    end
+    if lib.is_coin(item_name) then
+        for _, output in pairs(trade.output_items) do
+            if lib.is_coin(output.name) then
+                return true
+            end
+        end
+    else
+        -- return storage.trades.tree.by_output[item_name] ~= nil and storage.trades.tree.by_output[item_name][trade.id] ~= nil
+        for _, output in pairs(trade.output_items) do
+            if output.name == item_name then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function trades.has_item(trade, item_name)
+    return trades.has_item_as_input(trade, item_name) or trades.has_item_as_output(trade, item_name)
+end
+
 function trades.get_coin_name_for_trade_volume(trade_volume)
     if type(trade_volume) == "number" then
         if trade_volume < 1000000000 then -- use hex coin up to 1000x gravity coin's worth of hex coins
@@ -887,7 +972,7 @@ function trades._check_coin_names_for_volume(list, volume)
     end
 end
 
-function trades.get_item_names_from_trade(trade)
+function trades.get_input_output_item_names_of_trade(trade)
     local input_names = {}
     local output_names = {}
     for _, input in pairs(trade.input_items) do
@@ -897,6 +982,17 @@ function trades.get_item_names_from_trade(trade)
         table.insert(output_names, output.name)
     end
     return input_names, output_names
+end
+
+function trades.get_item_names_in_trade(trade)
+    local item_names = {}
+    for _, input in pairs(trade.input_items) do
+        table.insert(item_names, input.name)
+    end
+    for _, output in pairs(trade.output_items) do
+        table.insert(item_names, output.name)
+    end
+    return item_names
 end
 
 function trades.get_coins_and_items_of_inventory(inv)

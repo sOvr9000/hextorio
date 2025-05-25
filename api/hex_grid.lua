@@ -664,8 +664,11 @@ end
 
 function hex_grid.register_events()
     event_system.register_callback("item-rank-up", function(item_name)
-        if item_ranks.get_item_rank(item_name) == 2 then
+        local rank = item_ranks.get_item_rank(item_name)
+        if rank == 2 then
             hex_grid.apply_extra_trades_bonus_retro(item_name)
+        elseif rank == 4 then
+            hex_grid.recover_trades_retro(item_name)
         end
         hex_grid.update_all_trades()
     end)
@@ -2260,12 +2263,17 @@ function hex_grid.delete_hex_core(hex_core)
 
     if not state then return end
 
+    state.hex_core = nil
+
     for _, trade_id in pairs(state.trades) do
-        trades.remove_trade_from_tree(trades.get_trade_from_id(trade_id))
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            trades.remove_trade_from_tree(trade)
+            hex_grid.try_recover_trade(trade, nil, false)
+        end
     end
 
     state.trades = nil
-    state.hex_core = nil
     state.input_loaders = nil
     state.output_loaders = nil
     state.deleted = true
@@ -3079,6 +3087,31 @@ function hex_grid.update_all_trades()
     end
 end
 
+function hex_grid.get_states_with_fewest_trades(surface_name, claimed_only)
+    if claimed_only == nil then claimed_only = true end
+    local states = {}
+    local num_trades = math.huge
+    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+        if state.hex_core and (state.claimed or not claimed_only) then
+            if state.trades and #state.trades > 0 then
+                if #state.trades < num_trades then
+                    num_trades = #state.trades
+                    states = {state}
+                elseif #state.trades == num_trades then
+                    table.insert(states, state)
+                end
+            else
+                if num_trades > 0 then
+                    states = {state}
+                else
+                    table.insert(states, state)
+                end
+            end
+        end
+    end
+    return states
+end
+
 function hex_grid.apply_extra_trades_bonus_retro(item_name)
     if not lib.is_catalog_item(item_name) then return end
     local added_trades = {}
@@ -3111,6 +3144,50 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
         end
         game.print({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"})
         game.print(hex_cores_str)
+    end
+end
+
+function hex_grid.try_recover_trade(trade, states, notify)
+    local continue = false
+    for _, item_name in pairs(trades.get_item_names_in_trade(trade)) do
+        if lib.is_catalog_item(item_name) then
+            local rank = item_ranks.get_item_rank(item_name)
+            if rank >= 4 then
+                continue = true
+                break
+            end
+        end
+    end
+    if not continue then return end
+    if not states then
+        states = hex_grid.get_states_with_fewest_trades(trade.surface_name)
+    end
+    if #states > 0 then
+        local state = states[math.random(1, #states)]
+        hex_grid.add_trade(state, trade)
+        if notify then
+            game.print({"hextorio.trade-recovered", lib.get_trade_img_str(trade), lib.get_gps_str_from_hex_core(state.hex_core)})
+        end
+    else
+        -- This should never happen, but it's here just in case.
+        lib.log_error("hex_grid.try_recover_trade: No states found with minimal trades.")
+    end
+end
+
+function hex_grid.recover_trades_retro(item_name)
+    if not lib.is_catalog_item(item_name) then return end
+
+    for _, surface in pairs(game.surfaces) do
+        if not lib.is_space_platform(surface) then
+            local states = hex_grid.get_states_with_fewest_trades(surface.name)
+            for _, trade_id in pairs(trades.get_recoverable_trades()) do
+                local trade = trades.get_trade_from_id(trade_id)
+                if trades.has_item(trade, item_name) then
+                    trades.recover_trade(trade)
+                    hex_grid.try_recover_trade(trade, states, true)
+                end
+            end
+        end
     end
 end
 
