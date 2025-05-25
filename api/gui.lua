@@ -484,7 +484,6 @@ function gui.init_catalog(player)
         "aquilo",
     } do
         local items_sorted_by_value = item_values.get_items_sorted_by_value(surface_name, true)
-        -- lib.log(serpent.block(items_sorted_by_value))
 
         if i > 1 then
             scroll_pane.add {type = "line", direction = "horizontal"}
@@ -1714,39 +1713,41 @@ function gui.update_catalog_inspect_frame(player)
             caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, color_rich_text .. lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false) .. "[.color]"}},
         }
         rank_bonus_unique.style.single_line = false
-        gui.auto_width_height(rank_bonus_unique)
+        gui.auto_width(rank_bonus_unique)
     end
 
-    inspect_frame.add {type = "line", direction = "horizontal"}
+    if rank_obj.rank < 5 then
+        inspect_frame.add {type = "line", direction = "horizontal"}
 
-    local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
+        local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
 
-    if rank_obj.rank == 1 then
-        if trades.get_total_bought(selection.item_name) > 0 then
-            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
-        else
-            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
+        if rank_obj.rank == 1 then
+            if trades.get_total_bought(selection.item_name) > 0 then
+                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
+            else
+                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
+            end
+            if trades.get_total_sold(selection.item_name) > 0 then
+                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
+            else
+                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
+            end
+        elseif rank_obj.rank == 2 then
+            table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=rare]")
+        elseif rank_obj.rank == 3 then
+            table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=epic]")
+        elseif rank_obj.rank == 4 then
+            table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=hextreme]")
         end
-        if trades.get_total_sold(selection.item_name) > 0 then
-            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
-        else
-            table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
-        end
-    elseif rank_obj.rank == 2 then
-        table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=rare]")
-    elseif rank_obj.rank == 3 then
-        table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=epic]")
-    elseif rank_obj.rank == 4 then
-        table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=hextreme]")
+
+        local rank_up_instructions = inspect_frame.add {
+            type = "label",
+            name = "rank-up-instructions",
+            caption = {"", lib.get_rank_img_str(rank_obj.rank + 1) .. "\n", rank_up_localized_str},
+        }
+        rank_up_instructions.style.single_line = false
+        gui.auto_width_height(rank_up_instructions)
     end
-
-    local rank_up_instructions = inspect_frame.add {
-        type = "label",
-        name = "rank-up-instructions",
-        caption = {"", lib.get_rank_img_str(math.min(5, (rank_obj.rank + 1))) .. "\n", rank_up_localized_str},
-    }
-    rank_up_instructions.style.single_line = false
-    gui.auto_width_height(rank_up_instructions)
 
     if rank_obj.rank == 1 then
         gui.add_info(inspect_frame, {"hextorio-gui.buying-info"}, "info-buying")
