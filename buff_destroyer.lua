@@ -7,7 +7,7 @@ destroyer.attack_parameters.range = 27
 destroyer.time_to_live = 14400 -- 2 minutes, double vanilla flavor
 destroyer.localised_name = {"item-name.tesla-destroyer"}
 destroyer.speed = 0.05
-destroyer.friction = 0.05
+destroyer.friction = 0.03
 
 -- Adjust recipe
 local recipe = data.raw["recipe"]["destroyer-capsule"]
@@ -22,7 +22,7 @@ tech.unit = {
     ingredients = tesla_tech.unit.ingredients,
     time = tesla_tech.unit.time,
 }
-tech.prerequisites = {"tesla-weapons"}
+table.insert(tech.prerequisites, "tesla-weapons")
 tech.localised_name = {"item-name.tesla-destroyer"}
 tech.localised_description = {"item-description.tesla-destroyer"}
 

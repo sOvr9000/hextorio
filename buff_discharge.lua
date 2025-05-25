@@ -26,6 +26,6 @@ tech.unit = {
     ingredients = tesla_tech.unit.ingredients,
     time = tesla_tech.unit.time,
 }
-tech.prerequisites = {"tesla-weapons"}
+table.insert(tech.prerequisites, "tesla-weapons")
 tech.localised_name = {"item-name.tesla-discharge-defense-equipment"}
 tech.localised_description = {"item-description.tesla-discharge-defense-equipment"}
