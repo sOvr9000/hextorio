@@ -3,7 +3,7 @@
 local destroyer = data.raw["combat-robot"]["destroyer"]
 destroyer.attack_parameters = table.deepcopy(data.raw["electric-turret"]["tesla-turret"].attack_parameters)
 destroyer.attack_parameters.damage_modifier = 0.125
-destroyer.attack_parameters.cooldown = 10
+destroyer.attack_parameters.cooldown = 20 -- vanilla
 -- destroyer.attack_parameters.range = 27 -- default 30 is fine
 destroyer.time_to_live = 14400 -- 2 minutes, double vanilla flavor
 destroyer.localised_name = {"item-name.tesla-destroyer"}

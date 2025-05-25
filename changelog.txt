@@ -17,6 +17,7 @@ Date: 25/5/25
     - Removed discharge defense equipment from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
   Balancing:
     - Buffed [item=discharge-defense-equipment]. It now functions as a personal tesla turret like Wube Software would have originally intended, given that it has always been an electric beam weapon.
+    - Buffed [item=destroyer-capsule]. It now functions as a flying tesla turret like Wube Software would have originally intended, given that it has always used an electric beam weapon.
   Optimizations:
     - Slightly optimized player iteration for large multiplayer games.
 ---------------------------------------------------------------------------------------------------
