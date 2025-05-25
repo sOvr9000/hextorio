@@ -3,7 +3,7 @@
 local discharge = data.raw["active-defense-equipment"]["discharge-defense-equipment"]
 discharge.attack_parameters = table.deepcopy(data.raw["electric-turret"]["tesla-turret"].attack_parameters)
 discharge.attack_parameters.ammo_type.energy_consumption = "75kJ" -- 50% more than personal laser shots
-discharge.attack_parameters.damage_modifier = 0.25
+discharge.attack_parameters.damage_modifier = 0.5
 discharge.attack_parameters.range = 12
 discharge.automatic = true
 discharge.localised_name = {"item-name.tesla-discharge-defense-equipment"}
