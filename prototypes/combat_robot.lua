@@ -16,7 +16,7 @@ demolisher.attack_parameters.ammo_type = {
             type = "instant",
             target_effects = {
                 type = "damage",
-                damage = {amount = 1500, type = "physical"},
+                damage = {amount = 750, type = "physical"},
             },
         },
     },
