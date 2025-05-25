@@ -841,10 +841,13 @@ function lib.tables_equal(tab1, tab2)
     return true
 end
 
----@param surface LuaSurface
+---@param surface LuaSurface|string
 ---@return boolean
 function lib.is_space_platform(surface)
-    return surface.name:sub(1, 9) == "platform-"
+    if type(surface) ~= "string" then
+        return lib.is_space_platform(surface.name)
+    end
+    return surface:sub(1, 9) == "platform-"
 end
 
 function lib.sum_mgs(mgs, target, keys)
@@ -1076,6 +1079,8 @@ function lib.get_tier_of_coin_name(coin_name)
     return  1
 end
 
+---@param quality string
+---@return number
 function lib.get_quality_value_scale(quality)
     return 9 ^ (lib.get_quality_tier(quality) - 1)
 end
@@ -1092,6 +1097,12 @@ function lib.is_spoilable(item_name)
     local prot = prototypes.item[item_name]
     if not prot then return false end
     return prot.get_spoil_ticks() > 0
+end
+
+function lib.get_stack_size(item_name)
+    local prot = prototypes.item[item_name]
+    if not prot then return 1 end
+    return prot.stack_size
 end
 
 

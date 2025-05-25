@@ -151,6 +151,13 @@ return {
             prerequisites = {"ground-zero"},
             has_img = false,
         },
+        {
+            name = "its-just-a-scratch",
+            conditions = {{type = "items-at-rank-5", progress_requirement = 1}},
+            rewards = {{type = "unlock-feature", value = "quantum-bazaar"}},
+            prerequisites = {"catalog-initiate"},
+            has_img = false,
+        },
         -- {
         --     name = "freedom",
         --     conditions = {{type = "research-tech", tech = "mech-armor"}},

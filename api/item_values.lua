@@ -20,7 +20,7 @@ function item_values.init()
     -- log(serpent.block(spoilable))
 end
 
-function item_values.get_item_value(surface_name, item_name, allow_interplanetary)
+function item_values.get_item_value(surface_name, item_name, allow_interplanetary, quality_name)
     if not surface_name then
         lib.log_error("item_values.get_item_value: surface_name is nil, defaulting to 1")
         return 1
@@ -38,6 +38,15 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
         return 1
     end
 
+    if allow_interplanetary == nil then
+        allow_interplanetary = true
+    end
+
+    if not quality_name then
+        quality_name = "normal"
+    end
+    local quality_mult = lib.get_quality_value_scale(quality_name)
+
     local surface_vals = item_values.get_item_values_for_surface(surface_name)
     if not surface_vals then
         lib.log_error("item_values.get_item_value: No item values for surface " .. surface_name .. ", defaulting to 1")
@@ -51,9 +60,9 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
             surface_vals["gravity-coin"] = surface_vals["hex-coin"] * 100000
             surface_vals["meteor-coin"] = surface_vals["gravity-coin"] * 100000
             surface_vals["hexaprism-coin"] = surface_vals["meteor-coin"] * 100000 -- TODO: these valuse are too large for floating point precision, so coin_tiers will have to replace it eventually
-            return surface_vals[item_name]
+            return surface_vals[item_name] * quality_mult
         end
-        if allow_interplanetary == nil or allow_interplanetary then
+        if allow_interplanetary then
             val = item_values.get_interplanetary_item_value(item_name)
         else
             lib.log("item_values.get_item_value: Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
@@ -70,7 +79,7 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
         val = 1
     end
 
-    return val
+    return val * quality_mult
 end
 
 -- Get the value of an item for any surface.

@@ -248,6 +248,34 @@ data:extend{
         width = 256,
         height = 256,
     },
+    {
+        type = "sprite",
+        name = "backpack",
+        filename = "__hextorio__/graphics/icons/backpack.png",
+        width = 64,
+        height = 64,
+    },
+    {
+        type = "sprite",
+        name = "hand",
+        filename = "__hextorio__/graphics/icons/hand.png",
+        width = 64,
+        height = 64,
+    },
+    {
+        type = "sprite",
+        name = "stack-one",
+        filename = "__hextorio__/graphics/icons/stack-one.png",
+        width = 64,
+        height = 64,
+    },
+    {
+        type = "sprite",
+        name = "stack-full",
+        filename = "__hextorio__/graphics/icons/stack-full.png",
+        width = 64,
+        height = 64,
+    },
 }
 
 local data_quests = require "data.quests"

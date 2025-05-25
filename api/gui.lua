@@ -2,6 +2,7 @@ local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
 local item_values = require "api.item_values"
 local coin_tiers  = require "api.coin_tiers"
+local inventories = require "api.inventories"
 local item_ranks = require "api.item_ranks"
 local trades = require "api.trades"
 local sets = require "api.sets"
@@ -250,13 +251,7 @@ function gui.init_hex_core(player)
     local trades_header_label = trades_header_flow.add {type = "label", name = "label", caption = {"hex-core-gui.trades-header"}}
     trades_header_label.style.font = "heading-1"
 
-    local quality_locales = {}
-    for quality_name, _ in pairs(prototypes.quality) do
-        if quality_name ~= "quality-unknown" then
-            table.insert(quality_locales, {"", "[img=quality." .. quality_name .. "] ", {"quality-name." .. quality_name}})
-        end
-    end
-    local quality_dropdown = trades_header_flow.add {type = "drop-down", name = "quality-dropdown", items = quality_locales, selected_index = 1}
+    local quality_dropdown = gui.create_quality_dropdown(trades_header_flow)
 
     gui.add_info(hex_core_gui, {"hex-core-gui.trades-quality-info"}, "trades-quality-info")
     gui.add_warning(hex_core_gui, {"hex-core-gui.trades-quality-warning"}, "trades-quality-warning")
@@ -470,7 +465,7 @@ function gui.init_catalog(player)
 
     local flow = frame.add {type = "flow", name = "flow", direction = "horizontal"}
 
-    local catalog_frame = flow.add {type = "frame", name = "catalog-frame", direction = "vertical"}
+    local catalog_frame = flow.add {type = "flow", name = "catalog-frame", direction = "vertical"}
     gui.auto_width_height(catalog_frame)
 
     local scroll_pane = catalog_frame.add {type = "scroll-pane", name = "scroll-pane"}
@@ -1077,8 +1072,7 @@ function gui.update_hex_core(player)
     frame["unloader-filters-flow"].visible = false
 
     local quality_dropdown = frame["trades-header"]["quality-dropdown"]
-    local quality_locale = quality_dropdown.get_item(math.max(1, quality_dropdown.selected_index))[3][1]
-    local quality_name = quality_locale:sub(14)
+    local quality_name = gui.get_quality_name_from_dropdown(quality_dropdown)
 
     frame["trades-quality-info"].visible = quality_name ~= "normal"
     frame["trades-quality-warning"].visible = quality_name ~= "normal"
@@ -1581,7 +1575,8 @@ function gui.update_catalog(player, selected_item_surface, selected_item_name)
         end
     end
 
-    gui.update_catalog_inspect_frame(player, selected_item_surface, selected_item_name)
+    local selection = gui.get_catalog_selection(player)
+    gui.set_catalog_selection(player, selected_item_surface, selected_item_name, selection.bazaar_quality)
 end
 
 function gui.add_info(element, info_id, name)
@@ -1635,7 +1630,7 @@ function gui.set_player_current_quest_selected(player, quest_name)
     storage.quests.players_quest_selected[player.name] = quest_name
 end
 
-function gui.update_catalog_inspect_frame(player, surface_name, item_name)
+function gui.update_catalog_inspect_frame(player)
     local frame = player.gui.screen["catalog"]
     if not frame then
         gui.init_catalog(player)
@@ -1644,12 +1639,9 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
 
     local inspect_frame = frame["flow"]["inspect-frame"]
 
-    if not trades.is_item_discovered(item_name) then
-        item_name = nil
-    end
-    if not item_name then return end
-
-    local rank_obj = item_ranks.get_rank_obj(item_name)
+    gui.verify_catalog_storage(player)
+    local selection = storage.catalog.current_selection[player.name]
+    local rank_obj = item_ranks.get_rank_obj(selection.item_name)
     if not rank_obj then return end
 
     inspect_frame.clear()
@@ -1665,7 +1657,7 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     local rank_label1 = rank_flow.add {
         type = "label",
         name = "label1",
-        caption = "[font=heading-1][img=item." .. item_name .. "][.font]",
+        caption = "[font=heading-1][img=item." .. selection.item_name .. "][.font]",
     }
 
     local rank_label2 = rank_flow.add {
@@ -1678,7 +1670,7 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     local rank_label3 = rank_flow.add {
         type = "label",
         name = "label3",
-        caption = "[font=heading-1][img=item." .. item_name .. "][.font]",
+        caption = "[font=heading-1][img=item." .. selection.item_name .. "][.font]",
     }
     rank_label3.style.left_margin = 73 / 1.2
 
@@ -1730,28 +1722,28 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
     local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
 
     if rank_obj.rank == 1 then
-        if trades.get_total_bought(item_name) > 0 then
+        if trades.get_total_bought(selection.item_name) > 0 then
             table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
         else
             table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
         end
-        if trades.get_total_sold(item_name) > 0 then
+        if trades.get_total_sold(selection.item_name) > 0 then
             table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
         else
             table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
         end
     elseif rank_obj.rank == 2 then
-        table.insert(rank_up_localized_str, "[item=" .. item_name .. ",quality=rare]")
+        table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=rare]")
     elseif rank_obj.rank == 3 then
-        table.insert(rank_up_localized_str, "[item=" .. item_name .. ",quality=epic]")
+        table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=epic]")
     elseif rank_obj.rank == 4 then
-        table.insert(rank_up_localized_str, "[item=" .. item_name .. ",quality=hextreme]")
+        table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=hextreme]")
     end
 
     local rank_up_instructions = inspect_frame.add {
         type = "label",
         name = "rank-up-instructions",
-        caption = {"", "\n" .. lib.get_rank_img_str(math.min(5, (rank_obj.rank + 1))) .. "\n", rank_up_localized_str, "\n"},
+        caption = {"", lib.get_rank_img_str(math.min(5, (rank_obj.rank + 1))) .. "\n", rank_up_localized_str},
     }
     rank_up_instructions.style.single_line = false
     gui.auto_width_height(rank_up_instructions)
@@ -1761,6 +1753,110 @@ function gui.update_catalog_inspect_frame(player, surface_name, item_name)
         gui.add_info(inspect_frame, {"hextorio-gui.selling-info"}, "info-selling")
     elseif rank_obj.rank == 2 or rank_obj.rank == 3 then
         gui.add_info(inspect_frame, {"hextorio-gui.higher-qualities-count"}, "info-qualities")
+    end
+
+    if rank_obj.rank == 5 then
+        inspect_frame.add {type = "line", direction = "horizontal"}
+        local quantum_bazaar_header = inspect_frame.add {
+            type = "label",
+            name = "quantum-bazaar-header",
+            caption = lib.color_localized_string({"hextorio-gui.quantum-bazaar"}, "[color=180,255,0]", "heading-1"),
+        }
+        local quantum_bazaar = inspect_frame.add {
+            type = "flow",
+            name = "quantum-bazaar",
+            direction = "horizontal",
+        }
+        local left_flow = quantum_bazaar.add {
+            type = "flow",
+            name = "left",
+            direction = "vertical",
+        }
+
+        quantum_bazaar.add {type = "line", direction = "vertical"}
+
+        local right_flow = quantum_bazaar.add {
+            type = "table",
+            name = "right",
+            column_count = 2,
+        }
+
+        local quality_dropdown = gui.create_quality_dropdown(left_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality))
+        gui.auto_width(quality_dropdown)
+
+        local coin_tier = gui.create_coin_tier(left_flow, "coin-tier")
+        local buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+
+        local stack_size = lib.get_stack_size(selection.item_name)
+        local buy_stack_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, stack_size))
+        local sell_inv_coin = inventories.get_total_coin_value(player.character.surface.name, lib.get_player_inventory(player), 5)
+
+        buy_one_coin = coin_tiers.ceil(buy_one_coin)
+        gui.update_coin_tier(coin_tier, buy_one_coin)
+
+        local sell_in_hand = right_flow.add {
+            type = "sprite-button",
+            name = "sell-in-hand",
+            sprite = "hand",
+        }
+        sell_in_hand.tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.sell-in-hand-header"}, "green", "heading-2"),
+            "\n",
+            {"quantum-bazaar.sell-in-hand-info"},
+        }
+
+        local sell_inventory = right_flow.add {
+            type = "sprite-button",
+            name = "sell-inventory",
+            sprite = "backpack",
+        }
+        sell_inventory.tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.sell-inventory-header"}, "yellow", "heading-2"),
+            "\n",
+            {"quantum-bazaar.sell-inventory-info", coin_tiers.coin_to_text(sell_inv_coin)},
+        }
+
+        local buy_one = right_flow.add {
+            type = "sprite-button",
+            name = "buy-one",
+            sprite = "stack-one",
+        }
+        buy_one.tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.buy-one", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", coin_tiers.coin_to_text(buy_one_coin)}, "cyan"),
+        }
+
+        local buy_stack = right_flow.add {
+            type = "sprite-button",
+            name = "buy-stack",
+            sprite = "stack-full",
+        }
+        buy_stack.tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", stack_size, coin_tiers.coin_to_text(buy_stack_coin)}, "purple"),
+        }
+
+        local elem_filter_items = sets.new()
+        for _, surface in pairs(game.surfaces) do
+            if not lib.is_space_platform(surface) then
+                local values = item_values.get_items_sorted_by_value(surface.name, true, false)
+                for _, name in pairs(values) do
+                    if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then
+                        sets.add(elem_filter_items, name)
+                    end
+                end
+            end
+        end
+        local elem_filters = {}
+        for name, _ in pairs(elem_filter_items) do
+            table.insert(elem_filters, {filter = "name", name = name})
+        end
+
+        local selected_item = right_flow.add {
+            type = "choose-elem-button",
+            name = "selected-item",
+            elem_type = "item",
+            elem_filters = elem_filters,
+            item = selection.item_name,
+        }
     end
 end
 
@@ -1874,7 +1970,7 @@ function gui.update_coin_tier(flow, coin)
     -- gravity_coin_sprite.number = coin.values[2]
     -- gravity_coin_sprite.visible = visible
 
-    -- Don't show any zeros unless it's a totla of zero coins.
+    -- Don't show any zeros unless it's a total of zero coins.
     local coin_names = {"hex-coin", "gravity-coin", "meteor-coin", "hexaprism-coin"}
     for i = 1, 4 do
         local coin_sprite = flow[coin_names[i]]
@@ -1925,6 +2021,17 @@ function gui.create_coin_tier(parent, name)
     hexaprism_coin_sprite.number = 0
 
     return flow
+end
+
+function gui.create_quality_dropdown(parent, name, selected_index)
+    local quality_locales = {}
+    for quality_name, _ in pairs(prototypes.quality) do
+        if quality_name ~= "quality-unknown" then
+            table.insert(quality_locales, {"", "[img=quality." .. quality_name .. "] ", {"quality-name." .. quality_name}})
+        end
+    end
+
+    return parent.add {type = "drop-down", name = name or "quality-dropdown", items = quality_locales, selected_index = selected_index or 1}
 end
 
 function gui.on_gui_switch_state_changed(event)
@@ -2043,7 +2150,21 @@ function gui.on_dropdown_item_selected(player, element)
 end
 
 function gui.on_quality_dropdown_selected(player, element)
-    gui.update_hex_core(player)
+    if gui.is_descendant_of(element, "hex-core") then
+        gui.update_hex_core(player)
+    elseif gui.is_descendant_of(element, "catalog") then
+        gui.on_quantum_bazaar_changed(player, element)
+    end
+end
+
+function gui.on_quantum_bazaar_changed(player, element)
+    local selection = gui.get_catalog_selection(player)
+    if element.name == "quality-dropdown" then
+        selection.bazaar_quality = gui.get_quality_name_from_dropdown(element)
+    elseif element.name == "selected-item" then
+        selection.item_name = element.elem_value
+    end
+    gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
 function gui.on_quest_name_selected(player, element)
@@ -2105,6 +2226,8 @@ function gui.on_sprite_button_click(player, element)
                 gui.on_trade_overview_item_clicked(player, element)
             elseif gui.is_descendant_of(element, "hex-core") then
                 gui.on_hex_core_trade_item_clicked(player, element)
+            elseif gui.is_descendant_of(element, "quantum-bazaar") then
+                gui.on_quantum_bazaar_button_clicked(player, element)
             else -- this is just horribly ugly, maybe I'll clean it up later
                 if element.parent.parent then
                     if element.parent.parent.name == "planet-flow" then
@@ -2119,6 +2242,59 @@ function gui.on_sprite_button_click(player, element)
             end
         end
     end
+end
+
+function gui.on_quantum_bazaar_button_clicked(player, element)
+    if element.name == "sell-in-hand" then
+        local item_stack = player.cursor_stack
+        if not item_stack then
+            player.print(lib.color_localized_string({"hextorio.no-item-in-hand"}, "red"))
+            return
+        end
+
+        if item_ranks.get_item_rank(item_stack.name) < 5 then
+            player.print(lib.color_localized_string({"hextorio.item-rank-too-low"}, "red"))
+            return
+        end
+
+        local inv = player.get_main_inventory()
+        if not inv then return end
+
+        local item_value = item_values.get_item_value(player.character.surface.name, item_stack.name, true, item_stack.quality.name) * item_stack.count
+        local received_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin")))
+
+        coin_tiers.add_coin_to_inventory(inv, received_coin)
+        item_stack.clear()
+    elseif element.name == "sell-inventory" then
+        local inv = player.get_main_inventory()
+        if not inv then return end
+
+        local received_coin = coin_tiers.ceil(inventories.get_total_coin_value(player.character.surface.name, inv, 5))
+        inventories.remove_items_of_rank(inv, 5)
+        coin_tiers.add_coin_to_inventory(inv, received_coin)
+    elseif element.name == "buy-one" or element.name == "buy-stack" then
+        local inv = player.get_main_inventory()
+        if not inv then return end
+
+        local selection = gui.get_catalog_selection(player)
+        local count = 1
+        if element.name == "buy-stack" then
+            count = lib.get_stack_size(selection.item_name)
+        end
+
+        local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
+        local coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
+        local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+        if coin_tiers.gt(coin, inv_coin) then
+            player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
+            return
+        end
+
+        coin_tiers.remove_coin_from_inventory(inv, coin)
+        lib.safe_insert(player, {name = selection.item_name, count = count, quality = selection.bazaar_quality})
+    end
+
+    gui.update_catalog_inspect_frame(player)
 end
 
 function gui.on_upgrade_quality_button_click(player, element)
@@ -2403,9 +2579,10 @@ function gui.on_frame_close_button_click(player, button)
 end
 
 function gui.on_catalog_item_click(player, button)
+    local selection = gui.get_catalog_selection(player)
     local item_name = button.parent.name:sub(11)
     local surface_name = button.parent.parent.name:sub(7)
-    gui.update_catalog_inspect_frame(player, surface_name, item_name)
+    gui.set_catalog_selection(player, surface_name, item_name, selection.bazaar_quality)
 end
 
 function gui.on_trade_overview_filter_changed(player)
@@ -2449,6 +2626,8 @@ function gui.on_gui_elem_changed(event)
 
     if event.element.name:sub(1, 11) == "input-item-" or event.element.name:sub(1, 12) == "output-item-" then
         gui.on_trade_overview_filter_changed(player)
+    elseif gui.is_descendant_of(event.element, "catalog") then
+        gui.on_quantum_bazaar_changed(player, event.element)
     end
 end
 
@@ -2587,6 +2766,38 @@ end
 function gui.auto_width_height(element)
     gui.auto_width(element)
     gui.auto_height(element)
+end
+
+function gui.verify_catalog_storage(player)
+    if not storage.catalog then
+        storage.catalog = {}
+    end
+    if not storage.catalog.current_selection then
+        storage.catalog.current_selection = {}
+    end
+    if player then
+        if not storage.catalog.current_selection[player.name] then
+            storage.catalog.current_selection[player.name] = {surface_name = "nauvis", item_name = "stone", bazaar_quality = "normal"}
+        end
+    end
+end
+
+function gui.set_catalog_selection(player, surface_name, item_name, bazaar_quality)
+    gui.verify_catalog_storage(player)
+    local selection = storage.catalog.current_selection[player.name]
+    selection.surface_name = surface_name
+    selection.item_name = item_name
+    selection.bazaar_quality = bazaar_quality
+    gui.update_catalog_inspect_frame(player)
+end
+
+function gui.get_catalog_selection(player)
+    gui.verify_catalog_storage(player)
+    return storage.catalog.current_selection[player.name]
+end
+
+function gui.get_quality_name_from_dropdown(element)
+    return element.get_item(math.max(1, element.selected_index))[3][1]:sub(14)
 end
 
 

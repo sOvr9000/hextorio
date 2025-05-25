@@ -160,7 +160,7 @@ function coin_tiers.divide(coin, divisor)
         remainder = (current % divisor) * coin.tier_scaling
     end
 
-    if coin_tiers.is_zero(result) then
+    if coin_tiers.is_zero(result) and not coin_tiers.is_zero(coin) then
         result.values[1] = 1
     end
     
@@ -267,10 +267,26 @@ function coin_tiers.from_base_value(value, tier_scaling, max_coin_tier)
     return coin
 end
 
+function coin_tiers.ceil(coin)
+    local norm = coin_tiers.normalized(coin)
+    if norm.values[1] ~= math.ceil(norm.values[1]) then
+        norm.values[1] = math.ceil(norm.values[1])
+    end
+    return norm
+end
+
+function coin_tiers.floor(coin)
+    local norm = coin_tiers.normalized(coin)
+    if norm.values[1] ~= math.floor(norm.values[1]) then
+        norm.values[1] = math.floor(norm.values[1])
+    end
+    return norm
+end
+
 -- Get a coin object from the inventory
 function coin_tiers.get_coin_from_inventory(inventory)
     if not inventory then
-        error("get_coin_from_inventory: inventory is nil")
+        error("coin_tiers.get_coin_from_inventory: inventory is nil")
         return coin_tiers.new()
     end
     local coin = coin_tiers.new()
