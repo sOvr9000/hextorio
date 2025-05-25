@@ -1,4 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.1
+Date: 26/5/25
+  Major Features:
+    - Added [planet=aquilo].
+    - Sentient Spider is now partly functional.
+  Features:
+    - Added more quests and rewards.
+  Balancing:
+    - Teleportation is now unlocked after reaching space.
+    - Supercharging is now unlocked from [planet=vulcanus].
+  Bugfixes:
+    - Took destroyer capsules out from trade generation on [planet=nauvis].
+---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 25/5/25
   Major Features:
