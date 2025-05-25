@@ -269,6 +269,8 @@ local process_migration = {
         game.forces.player.technologies["planet-discovery-gleba"].enabled = true
         storage.trades.starting_trades.gleba = data_trades.starting_trades.gleba
         storage.item_values.values = data_item_values.values
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
     end,
 }
 

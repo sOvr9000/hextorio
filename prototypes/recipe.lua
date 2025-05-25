@@ -101,5 +101,28 @@ local demolisher_recipe = {
     enabled = false,
 }
 
+local sentient_spider_recipe = {
+    type = "recipe",
+    name = "sentient-spider",
+    category = "cryogenics",
+    ingredients = {
+        {type = "item", name = "fusion-reactor", amount = 1},
+        {type = "item", name = "fusion-generator", amount = 2},
+        {type = "item", name = "quantum-processor", amount = 250},
+        {type = "item", name = "spidertron", amount = 1},
+        {type = "item", name = "raw-fish", amount = 100},
+        {type = "item", name = "promethium-asteroid-chunk", amount = 1},
+        {type = "fluid", name = "fluoroketone-cold", amount = 1000},
+        {type = "fluid", name = "lubricant", amount = 1000},
+    },
+    results = {
+        {type = "item", name = "sentient-spider", amount = 1},
+        {type = "fluid", name = "fluoroketone-hot", amount = 500, temperature = 180},
+    },
+    main_product = "sentient-spider",
+    energy_required = 240,
+    enabled = false,
+}
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe})
+data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe})

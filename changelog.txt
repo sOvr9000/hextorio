@@ -4,6 +4,7 @@ Date: 25/5/25
   Major Features:
     - Added [planet=gleba].
     - Added the Quantum Bazaar.
+    - Added the Sentient Spider. (not yet programmed, but a separate entity for now)
   Features:
     - Hex cores can now be upgraded in quality.
     - Items can now be ranked up to the silver, gold, and red star ranks. [img=rank-2] -> [img=rank-3] -> [img=rank-4] -> [img=rank-5]

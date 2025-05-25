@@ -93,6 +93,10 @@ demolisher_capsule.order = "g[demolisher-capsule]"
 demolisher_capsule.localised_name = nil
 demolisher_capsule.localised_description = nil
 
+local sentient_spider = table.deepcopy(data.raw["item-with-entity-data"]["spidertron"])
+sentient_spider.name = "sentient-spider"
+sentient_spider.place_result = "sentient-spider"
+sentient_spider.order = "b[personal-transport]-d[sentient-spider]-a[spider]"
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_capsule})
+data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_capsule, sentient_spider})

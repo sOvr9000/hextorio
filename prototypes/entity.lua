@@ -112,6 +112,9 @@ hexic_splitter.localised_description = data.raw["splitter"]["splitter"].localise
 data.raw["splitter"]["turbo-splitter"].next_upgrade = "hexic-splitter"
 
 
+local sentient_spider = table.deepcopy(data.raw["spider-vehicle"]["spidertron"])
+sentient_spider.name = "sentient-spider"
+
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hex_core, hidden_loader, hexic_transport_belt, hexic_underground_belt, hexic_splitter})
+data:extend({hex_core, hidden_loader, hexic_transport_belt, hexic_underground_belt, hexic_splitter, sentient_spider})

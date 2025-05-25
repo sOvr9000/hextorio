@@ -3,11 +3,11 @@ local lib = require "api.lib"
 
 
 
-local transport_belt_capacity_3 = table.deepcopy(data.raw["technology"]["transport-belt-capacity-1"])
+local transport_belt_capacity_3 = table.deepcopy(data.raw["technology"]["transport-belt-capacity-2"])
 transport_belt_capacity_3.name = "transport-belt-capacity-3"
-transport_belt_capacity_3.prerequisites = {"transport-belt-capacity-2"}
+transport_belt_capacity_3.prerequisites = {"transport-belt-capacity-2", "hexic-logistics"}
 transport_belt_capacity_3.unit = {
-    count = 2000,
+    count = 5000,
     time = 60,
     ingredients = {
         {"automation-science-pack", 1},
@@ -23,8 +23,40 @@ transport_belt_capacity_3.unit = {
         {"promethium-science-pack", 1},
     },
 }
+table.insert(transport_belt_capacity_3.effects, {
+    type = "bulk-inserter-capacity-bonus",
+    modifier = 4,
+})
+
+local sentient_spider = table.deepcopy(data.raw["technology"]["spidertron"])
+sentient_spider.name = "sentient-spider"
+sentient_spider.prerequisites = {"spidertron", "promethium-science-pack"}
+sentient_spider.unit = {
+    count = 5000,
+    time = 60,
+    ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"promethium-science-pack", 1},
+    },
+}
+sentient_spider.effects = {
+    {
+        type = "unlock-recipe",
+        recipe = "sentient-spider",
+    }
+}
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({transport_belt_capacity_3})
+data:extend({transport_belt_capacity_3, sentient_spider})
 
 
 if lib.data.is_hextreme_enabled() then
