@@ -1029,7 +1029,7 @@ function gui.update_hex_core(player)
 
         local next_quality = hex_core.quality.next
         if next_quality then
-            local next_quality_tier = lib.get_quality_tier(next_quality.name) + 1
+            local next_quality_tier = lib.get_quality_tier(next_quality.name)
             frame["hex-control-flow"]["upgrade-quality"].visible = lib.is_quality_tier_unlocked(next_quality_tier)
             if frame["hex-control-flow"]["upgrade-quality"].visible then
                 frame["hex-control-flow"]["upgrade-quality"].sprite = "quality/" .. next_quality.name
