@@ -82,5 +82,24 @@ end
 data:extend(module_recipes)
 
 
+local demolisher_recipe = {
+    type = "recipe",
+    name = "demolisher-capsule",
+    category = "metallurgy",
+    ingredients = {
+        {type = "item", name = "destroyer-capsule", amount = 6},
+        {type = "item", name = "quantum-processor", amount = 10},
+        {type = "item", name = "railgun-ammo", amount = 20},
+        {type = "item", name = "railgun", amount = 1},
+        {type = "fluid", name = "molten-copper", amount = 1000},
+        {type = "fluid", name = "molten-iron", amount = 1000},
+    },
+    results = {
+        {type = "item", name = "demolisher-capsule", amount = 1},
+    },
+    energy_required = 1,
+    enabled = false,
+}
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter})
+data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe})

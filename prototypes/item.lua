@@ -85,5 +85,14 @@ end
 data:extend(modules)
 
 
+-- Combat robot capsules
+local demolisher_capsule = table.deepcopy(data.raw["capsule"]["destroyer-capsule"])
+demolisher_capsule.name = "demolisher-capsule"
+demolisher_capsule.capsule_action.attack_parameters.ammo_type.action[1].action_delivery.projectile = "demolisher-capsule"
+demolisher_capsule.order = "g[demolisher-capsule]"
+demolisher_capsule.localised_name = nil
+demolisher_capsule.localised_description = nil
+
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter})
+data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_capsule})

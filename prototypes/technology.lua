@@ -63,6 +63,40 @@ if lib.data.is_hextreme_enabled() then
 end
 
 
+local demolisher = table.deepcopy(data.raw["technology"]["destroyer"])
+demolisher.name = "demolisher"
+demolisher.unit = {
+    count = 5000,
+    time = 60,
+    ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+    },
+}
+demolisher.prerequisites = {"destroyer", "railgun"}
+demolisher.effects = {
+    {
+        type  = "unlock-recipe",
+        recipe = "demolisher-capsule",
+    },
+}
+demolisher.localised_name = nil
+demolisher.localised_description = nil
+
+
+---@diagnostic disable-next-line: assign-type-mismatch
+data:extend({demolisher})
+
+
+
 data:extend({
     {
         type = "technology",
