@@ -2,13 +2,12 @@
 Version: 0.4.0
 Date: 25/5/25
   Major Features:
-    - Added hexic belts.
+    - Added [planet=gleba].
+    - Added hexic (tier 5) belts.
     - Added technology to unlock hextreme quality.
     - Added tier 4 modules.
-    - Hex cores can now be upgraded in quality.
-    - Added [planet=gleba].
-    - Added [planet=aquilo].
     - Added the Quantum Bazaar.
+    - Hex cores can now be upgraded in quality.
   Features:
     - Items can now be ranked up to the silver, gold, and red star ranks. [img=rank-2] -> [img=rank-3] -> [img=rank-4] -> [img=rank-5]
     - Added unique bonuses for silver, gold, and red star ranks.
@@ -17,7 +16,7 @@ Date: 25/5/25
     - Removed tree seeds from trade generation on [planet=nauvis].
     - Removed discharge defense equipment from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
   Balancing:
-    - Buffed [item=discharge-defense-equipment]. It now functons as a portable tesla turret like Wube Software would have originally intended, given that it has always been an electric beam weapon.
+    - Buffed [item=discharge-defense-equipment]. It now functions as a personal tesla turret like Wube Software would have originally intended, given that it has always been an electric beam weapon.
   Optimizations:
     - Slightly optimized player iteration for large multiplayer games.
 ---------------------------------------------------------------------------------------------------
