@@ -232,7 +232,7 @@ script.on_event(defines.events.on_player_changed_position, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    if not lib.player_is_in_remote_view(player) then
+    if game.tick > 1000 and not lib.player_is_in_remote_view(player) then
         player.surface.request_to_generate_chunks(player.position, 8)
     end
 end)
