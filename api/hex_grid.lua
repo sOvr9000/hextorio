@@ -1714,7 +1714,7 @@ function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid
     surface = game.surfaces[surface_id]
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
-    local quality = hex_grid.get_quality_from_distance(dist)
+    local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
     local num_spawners_min = math.floor(0.5 + lib.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 3))
     local num_spawners_max = math.floor(0.5 + lib.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 5))
@@ -1734,7 +1734,7 @@ function hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_g
     surface = game.surfaces[surface_id]
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
-    local quality = hex_grid.get_quality_from_distance(dist)
+    local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
     local num_rafts_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 3))
     local num_rafts_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 5))
@@ -1827,8 +1827,8 @@ end
 
 ---@param dist number
 ---@return LuaQualityPrototype
-function hex_grid.get_quality_from_distance(dist)
-    local target_i = math.floor(dist / lib.runtime_setting_value "tiles-per-quality") + 1
+function hex_grid.get_quality_from_distance(surface_name, dist)
+    local target_i = math.floor(dist / lib.runtime_setting_value("tiles-per-quality-" .. surface_name)) + 1
     local i = 0
     local _name
     for name, quality in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
@@ -1845,8 +1845,8 @@ end
 
 ---@param dist number
 ---@return int
-function hex_grid.get_quality_tier_from_distance(dist)
-    local target_i = math.floor(dist / lib.runtime_setting_value "tiles-per-quality") + 1
+function hex_grid.get_quality_tier_from_distance(surface_name, dist)
+    local target_i = math.floor(dist / lib.runtime_setting_value("tiles-per-quality-" .. surface_name)) + 1
     local i = 0
     local _name
     for name, _ in pairs(prototypes.quality) do -- trusting that the quality table is sorted by quality "level" (it seems to be so)
@@ -2253,7 +2253,7 @@ function hex_grid.spawn_hex_core(surface, position)
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
 
-    local quality = hex_grid.get_quality_from_distance(dist)
+    local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
     local entities = surface.find_entities_filtered {
         area = {{position.x - 2.5, position.y - 2.5}, {position.x + 2.5, position.y + 2.5}},
