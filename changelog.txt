@@ -7,6 +7,8 @@ Date: 26/5/25
     - Took destroyer capsules out from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
     - Fixed terrain generation bug that deformed hexes on all planets.
     - Fixed interplanetary value calculation.
+  Optimizations:
+    - Hexes are generated farther in advance, making them load more smoothly when zoomed out and moving at fast speeds.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 25/5/25
