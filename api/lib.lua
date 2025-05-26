@@ -1106,6 +1106,27 @@ function lib.is_player_editor_like(player)
     return player.controller_type == defines.controllers.god or player.controller_type == defines.controllers.editor
 end
 
+function lib.get_chunk_pos_from_tile_position(pos)
+    return {x = math.floor((pos.x or pos[1]) / 32), y = math.floor((pos.y or pos[2]) / 32)}
+end
+
+function lib.get_area_for_chunk_position(chunk_pos)
+    return {
+        left_top = {
+            x = chunk_pos.x * 32,
+            y = chunk_pos.y * 32,
+        },
+        right_bottom = {
+            x = chunk_pos.x * 32 + 31,
+            y = chunk_pos.y * 32 + 31,
+        },
+    }
+end
+
+function lib.player_is_in_remote_view(player)
+    return player.controller_type == defines.controllers.remote
+end
+
 
 
 return lib
