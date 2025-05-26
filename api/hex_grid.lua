@@ -1929,6 +1929,10 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
     if not state.is_land and not allow_nonland then return end
     if hex_grid.get_free_hex_claims(surface.name) > 0 then return true end
 
+    if lib.is_player_editor_like(player) then
+        return true
+    end
+
     local coin = state.claim_price
     if not coin or coin_tiers.is_zero(coin) then
         return true
@@ -1983,7 +1987,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         tile_name = lib.player_setting_value(by_player, "claimed-hex-tile")
 
         -- Purchase
-        if hex_grid.get_free_hex_claims(surface) == 0 then
+        if hex_grid.get_free_hex_claims(surface) == 0 and not lib.is_player_editor_like(by_player) then
             coin_tiers.remove_coin_from_inventory(lib.get_player_inventory(by_player), state.claim_price)
         end
     end

@@ -1102,6 +1102,10 @@ function lib.get_stack_size(item_name)
     return prot.stack_size
 end
 
+function lib.is_player_editor_like(player)
+    return player.controller_type == defines.controllers.god or player.controller_type == defines.controllers.editor
+end
+
 
 
 return lib
