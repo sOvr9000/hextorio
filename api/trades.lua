@@ -76,6 +76,17 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
         output_item_names = {output_item_names}
     end
 
+    for i = 1, #input_item_names do
+        if lib.is_coin(input_item_names[i]) then
+            input_item_names[i] = "hex-coin"
+        end
+    end
+    for i = 1, #output_item_names do
+        if lib.is_coin(output_item_names[i]) then
+            output_item_names[i] = "hex-coin"
+        end
+    end
+
     local max_value = 0
     for _, item_name in pairs(input_item_names) do
         max_value = math.max(max_value, item_values.get_item_value(surface_name, item_name))

@@ -419,6 +419,34 @@ function coin_tiers.get_tier_of_base_value(base_value)
     return 1
 end
 
+function coin_tiers.get_tier_for_display(coin)
+    coin = coin_tiers.normalized(coin)
+    local passed = false
+    for i = coin.max_coin_tier, 1, -1 do
+        if coin.values[i] > 1000 then
+            return i
+        elseif coin.values[i] > 0 then
+            if passed then
+                return i
+            end
+            passed = true
+        end
+    end
+    return 1
+end
+
+function coin_tiers.get_name_of_tier(tier)
+    if tier <= 1 then
+        return "hex-coin"
+    elseif tier == 2 then
+        return "gravity-coin"
+    elseif tier == 3 then
+        return "meteor-coin"
+    else
+        return "hexaprism-coin"
+    end
+end
+
 function coin_tiers.shift_tier(coin, shift)
     if shift == 0 then return coin_tiers.copy(coin) end
     local new_coin = coin_tiers.new()

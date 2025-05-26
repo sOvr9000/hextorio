@@ -842,8 +842,9 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
             }
             if lib.is_coin(input_item.name) then
                 local coin = trades.get_input_coins_of_trade(trade, quality_to_show, quality_cost_mult)
-                local coin_name = trades.get_coin_name_for_trade_volume(coin_tiers.to_base_value(coin) * item_values.get_item_value(trade.surface_name, input_item.name))
-                local base_value, other_value = coin_tiers.to_base_values(coin, lib.get_tier_of_coin_name(coin_name))
+                local tier = coin_tiers.get_tier_for_display(coin)
+                local coin_name = coin_tiers.get_name_of_tier(tier)
+                local base_value, other_value = coin_tiers.to_base_values(coin, tier)
                 input.number = math.ceil(other_value)
                 input.sprite = "item/" .. coin_name
             else
@@ -893,8 +894,9 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
             }
             if lib.is_coin(output_item.name) then
                 local coin = trades.get_output_coins_of_trade(trade, quality_to_show)
-                local coin_name = trades.get_coin_name_for_trade_volume(coin_tiers.to_base_value(coin) * item_values.get_item_value(trade.surface_name, output_item.name))
-                local base_value, other_value = coin_tiers.to_base_values(coin, lib.get_tier_of_coin_name(coin_name))
+                local tier = coin_tiers.get_tier_for_display(coin)
+                local coin_name = coin_tiers.get_name_of_tier(tier)
+                local base_value, other_value = coin_tiers.to_base_values(coin, tier)
                 output.number = other_value
                 output.sprite = "item/" .. coin_name
             else
