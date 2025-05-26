@@ -169,6 +169,30 @@ function item_values.get_item_values_for_surface(surface_name)
     return surface_vals
 end
 
+function item_values.get_expanded_item_values_for_surface(surface_name)
+    if not surface_name then
+        lib.log_error("item_values.get_expanded_item_values_for_surface: surface_name is nil")
+        return
+    end
+    if not storage.item_values.expanded_values then
+        storage.item_values.expanded_values = {}
+    end
+    local surface_vals = storage.item_values.expanded_values[surface_name]
+    if surface_vals then
+        return surface_vals
+    end
+    surface_vals = {}
+    for _, _surface_vals in pairs(storage.item_values.values) do
+        for item_name, _ in pairs(_surface_vals) do
+            if not surface_vals[item_name] then
+                surface_vals[item_name] = item_values.get_item_value(surface_name, item_name, true)
+            end
+        end
+    end
+    storage.item_values.expanded_values[surface_name] = surface_vals
+    return surface_vals
+end
+
 function item_values.get_items_sorted_by_value(surface_name, items_only, allow_coins)
     if allow_coins == nil then
         allow_coins = true
@@ -191,17 +215,28 @@ function item_values.get_items_sorted_by_value(surface_name, items_only, allow_c
 end
 
 -- Return a list of item names whose values are within a ratio range of a center value
-function item_values.get_items_near_value(surface_name, center_value, max_ratio, items_only, allow_coins)
-    local item_names = {}
-    local lower_bound = center_value / max_ratio
-    local upper_bound = center_value * max_ratio
-    local surface_vals = item_values.get_item_values_for_surface(surface_name)
+function item_values.get_items_near_value(surface_name, center_value, max_ratio, items_only, allow_coins, allow_interplanetary)
+    if allow_interplanetary == nil then allow_interplanetary = false end
+    if allow_coins == nil then allow_coins = true end
+
+    local surface_vals
+    if allow_interplanetary then
+        surface_vals = item_values.get_expanded_item_values_for_surface(surface_name)
+    else
+        surface_vals = item_values.get_item_values_for_surface(surface_name)
+    end
+
     if not surface_vals then
         lib.log_error("item_values.get_items_near_value: No item values for surface " .. surface_name .. ", defaulting to empty table")
         return {}
     end
+
+    local item_names = {}
+    local lower_bound = center_value / max_ratio
+    local upper_bound = center_value * max_ratio
+
     for item_name, value in pairs(surface_vals) do
-        if value <= upper_bound and value >= lower_bound and (not items_only or prototypes.item[item_name]) and (item_name:sub(-5) ~= "-coin" or allow_coins == true or allow_coins == nil) then
+        if value <= upper_bound and value >= lower_bound and (not items_only or lib.is_item(item_name)) and (allow_coins or not lib.is_coin(item_name)) then
             table.insert(item_names, item_name)
         end
     end

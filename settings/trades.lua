@@ -9,6 +9,14 @@ data:extend({
         maximum_value = 10,
     },
     {
+        type = "int-setting",
+        name = "hextorio-trades-per-hex-aquilo",
+        setting_type = "runtime-global",
+        default_value = 5,
+        minimum_value = 0,
+        maximum_value = 10,
+    },
+    {
         type = "double-setting",
         name = "hextorio-coin-trade-chance",
         setting_type = "runtime-global",

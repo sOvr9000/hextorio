@@ -415,9 +415,16 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     return total_removed, total_inserted, remaining_to_insert, remaining_coin
 end
 
-function trades.random_trade_item_names(surface_name, volume, params)
+function trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary)
     if not params then params = {} end
-    local possible_items = item_values.get_items_near_value(surface_name, volume, 10, true, false)
+    if allow_interplanetary == nil then allow_interplanetary = false end
+
+    local ratio = 10
+    if surface_name == "aquilo" then
+        ratio = 100
+    end
+
+    local possible_items = item_values.get_items_near_value(surface_name, volume, ratio, true, false, allow_interplanetary)
 
     -- Apply whitelist filter
     if params.whitelist then
@@ -479,7 +486,7 @@ end
 
 -- Generate a random trade
 function trades.random(surface_name, volume)
-    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume)
+    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, surface_name == "aquilo")
 
     if not input_item_names or not output_item_names then
         lib.log("trades.random: Not enough items centered around the value " .. volume)
@@ -685,8 +692,10 @@ end
 
 function trades.get_random_volume_for_item(surface_name, item_name)
     local volume = item_values.get_item_value(surface_name, item_name)
-    local random_volume = volume * (3 + 7 * math.random())
-    return random_volume
+    if surface_name == "aquilo" then
+        return volume * (3 + 97 * math.random())
+    end
+    return volume * (3 + 7 * math.random())
 end
 
 function trades._check_tree_existence()

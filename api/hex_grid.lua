@@ -954,7 +954,7 @@ function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.hex_core and item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
     if math.random() > 0.01 then return end
 
-    local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume, {blacklist = sets.new {item_name}})
+    local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume, {blacklist = sets.new {item_name}}, state.hex_core.surface.name == "aquilo")
     if not input_names or not output_names then
         lib.log_error("hex_grid.apply_extra_trade_bonus: failed to get random trade item name from volume = " .. volume)
         return
