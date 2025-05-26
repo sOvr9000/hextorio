@@ -5,6 +5,7 @@ Date: 26/5/25
     - Added [planet=aquilo].
   Bugfixes:
     - Took destroyer capsules out from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
+    - Fixed terrain generation bug that deformed hexes on all planets.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 25/5/25
