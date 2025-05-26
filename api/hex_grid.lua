@@ -523,6 +523,49 @@ function hex_grid.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_gr
     return overlapping_hexes
 end
 
+---Return a normally indexed table of chunk positions which overlap with the given hex.
+---@param hex_pos {q: int, r: int}
+---@param hex_grid_scale number
+---@param hex_grid_rotation number
+---@return {[int]: {x: int, y: int}}
+function hex_grid.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
+    local chunks = {}
+    local minx, miny, maxx, maxy
+    for _, vertex in pairs(hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)) do
+        local x, y = math.floor(vertex.x), math.floor(vertex.y)
+        if not minx then
+            minx = x
+            miny = y
+        else
+            minx = math.min(minx, x)
+            miny = math.min(miny, y)
+        end
+        if not maxx then
+            maxx = x
+            maxy = y
+        else
+            maxx = math.max(maxx, x)
+            maxy = math.max(maxy, y)
+        end
+    end
+    local chunk_size = 32
+    local chunk_minx = math.floor(minx / chunk_size) * chunk_size
+    local chunk_miny = math.floor(miny / chunk_size) * chunk_size
+    local chunk_maxx = math.ceil(maxx / chunk_size) * chunk_size
+    local chunk_maxy = math.ceil(maxy / chunk_size) * chunk_size
+    for x = chunk_minx, chunk_maxx, chunk_size do
+        for y = chunk_miny, chunk_maxy, chunk_size do
+            local top_left = {x = x, y = y}
+            local bottom_right = {x = x + chunk_size, y = y + chunk_size}
+            if does_hex_overlap_rect(hex_pos, hex_grid_scale, hex_grid_rotation, top_left, bottom_right) then
+                -- Convert world coordinates back to chunk coordinates
+                table.insert(chunks, {x = x / chunk_size, y = y / chunk_size})
+            end
+        end
+    end
+    return chunks
+end
+
 -- Get all integer rectangular coordinates within a hex, excluding the border
 function hex_grid.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     -- Default values
@@ -1244,7 +1287,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     elseif surface.name == "gleba" then
         land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.gleba_water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_water.size)) * 0.5
     elseif surface.name == "aquilo" then
-        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
+        land_chance = 0.45
     end
     if surface.name ~= "fulgora" and surface.name ~= "aquilo" then
         land_chance = (1 - land_chance * land_chance) ^ 0.5 -- basically turning a triangle into a circle
@@ -1340,6 +1383,11 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     state.generated = true
+
+    local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+    if hex_grid.can_hex_core_spawn(surface, hex_pos) then
+        hex_grid.spawn_hex_core(surface, center)
+    end
 end
 
 -- Generate a small ring of mixed resources right up to the border of the hex
@@ -1576,9 +1624,9 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         local bias_strength = lib.runtime_setting_value "resource-bias"
 
         -- Make the selected resource more likely to be chosen
-        resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
+        local resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
 
-        return bias_wc, false
+        return resource_wc, false
     elseif surface.name == "vulcanus" then
         if is_starter_hex then
             return storage.hex_grid.resource_weighted_choice.vulcanus.starting, false
@@ -1612,9 +1660,9 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         local bias_strength = lib.runtime_setting_value "resource-bias"
 
         -- Make the selected resource more likely to be chosen
-        resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
+        local resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
 
-        return bias_wc, false
+        return resource_wc, false
     elseif surface.name == "fulgora" then
         if is_starter_hex then
             return storage.hex_grid.resource_weighted_choice.fulgora.resources, false
@@ -1636,8 +1684,23 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
         return weighted_choice.new {stone = 1}, false
     elseif surface.name == "aquilo" then
-        local well_names = {"crude-oil", "lithium-brine", "fluorine-vent"}
+        local well_names = {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}
         local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
+        if math.random() > well_freq then
+            return nil, nil
+        end
+
+        local wc = storage.hex_grid.resource_weighted_choice.aquilo.wells
+        
+        -- Based on the standard weighted choice, apply a random bias
+        local bias_wc = weighted_choice.copy(wc)
+        local resource = weighted_choice.choice(wc)
+        local bias_strength = lib.runtime_setting_value "resource-bias"
+
+        -- Make the selected resource more likely to be chosen
+        local resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
+
+        return resource_wc, true
     else
         lib.log_error("hex_grid.get_randomized_resource_weighted_choice: Unknown surface: " .. surface.name)
         return
@@ -2128,20 +2191,43 @@ function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_gri
         top_left, bottom_right, hex_grid_scale, hex_grid_rotation
     )
 
-    -- Initialize each overlapping hex if not already generated
+    -- Try to initialize each overlapping hex if not already generated
     for _, hex_pos in pairs(overlapping_hexes) do
         if storage.events.has_game_started or storage.events.is_nauvis_generating then
-            hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-
-            local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
-            if lib.is_position_in_rect(center, top_left, bottom_right) and hex_grid.can_hex_core_spawn(surface, hex_pos) then
-                hex_grid.spawn_hex_core(surface, center)
+            -- Only initialize if possible
+            if hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation) then
+                hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+                hex_grid.initialize_adjacent_hexes(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
             end
         end
     end
 
     -- Return the hexes that were processed for this chunk
     return overlapping_hexes
+end
+
+function hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation)
+    local surface_id = lib.get_surface_id(surface)
+    surface = game.surfaces[surface_id]
+
+    -- Only return true if all overlapping chunks are generated
+    for _, chunk_pos in pairs(hex_grid.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)) do
+        if not surface.is_chunk_generated(chunk_pos) then
+            return false
+        end
+    end
+    return true
+end
+
+function hex_grid.initialize_adjacent_hexes(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+    for _, adj in pairs(hex_grid.get_adjacent_hexes(hex_pos)) do
+        local state = hex_grid.get_hex_state(surface, adj)
+        if not state.generated then
+            if hex_grid.can_initialize_hex(surface, adj, hex_grid_scale, hex_grid_rotation) then
+                hex_grid.initialize_hex(surface, adj, hex_grid_scale, hex_grid_rotation, stroke_width)
+            end
+        end
+    end
 end
 
 -- Spawn a hex core at the given position
@@ -2467,6 +2553,8 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
     end
     surface = game.surfaces[surface_id]
 
+    if surface.name == "aquilo" then return end
+
     -- If no tile type is specified, use the last claimed hex tile type
     if not tile_type then
         tile_type = storage.hex_grid.last_used_claim_tile or "refined-concrete"
@@ -2504,7 +2592,7 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
             -- Calculate the threshold
             local threshold = center_dist_squared * threshold_multiplier
 
-            if surface.name == "fulgora" or surface.name == "aquilo" then
+            if surface.name == "fulgora" then
                 threshold = threshold * 0.78
             end
 
@@ -2757,6 +2845,8 @@ function hex_grid.get_supercharge_cost(hex_core)
         base_cost = base_cost * 10
     elseif hex_core.surface.name == "fulgora" then
         base_cost = base_cost * 75
+    elseif hex_core.surface.name == "aquilo" then
+        base_cost = base_cost * 12345
     end
 
     return coin_tiers.from_base_value(#entities * base_cost)

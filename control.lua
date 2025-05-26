@@ -345,7 +345,6 @@ script.on_event(defines.events.on_surface_created, function (event)
         }
     elseif surface.name == "gleba" then
         local mgs = surface.map_gen_settings
-        -- log(serpent.block(mgs))
         mgs.autoplace_controls.gleba_stone.size = 0
         mgs.autoplace_controls.gleba_water.size = 0
         mgs.autoplace_settings.tile.settings["gleba-deep-lake"].size = 0
@@ -357,17 +356,23 @@ script.on_event(defines.events.on_surface_created, function (event)
         }
     elseif surface.name == "aquilo" then
         local mgs = surface.map_gen_settings
-        log(serpent.block(mgs))
-        mgs.autoplace_controls.scrap.size = 0
-        mgs.autoplace_controls.fulgora_islands.size = 0
-        mgs.autoplace_controls.fulgora_cliff.size = 0
-        mgs.autoplace_settings.tile.settings["oil-ocean-shallow"].size = 0
-        mgs.autoplace_settings.tile.settings["oil-ocean-deep"].size = 0
+        mgs.autoplace_controls.aquilo_crude_oil.size = 0
+        mgs.autoplace_controls.lithium_brine.size = 0
+        mgs.autoplace_controls.fluorine_vent.size = 0
+        mgs.autoplace_settings.tile.settings["ammoniacal-ocean"].size = 0
+        mgs.autoplace_settings.tile.settings["ammoniacal-ocean-2"].size = 0
+        mgs.autoplace_settings.tile.settings["brash-ice"].size = 0
         surface.map_gen_settings = mgs
 
-        storage.hex_grid.resource_weighted_choice.fulgora = {}
-        storage.hex_grid.resource_weighted_choice.fulgora.resources = weighted_choice.new {
-            ["scrap"] = 1,
+        local crude_oil_frequency = lib.runtime_setting_value "aquilo-crude-oil-frequency"
+        local lithium_brine_frequency = lib.runtime_setting_value "lithium-brine-frequency"
+        local fluorine_vent_frequency = lib.runtime_setting_value "fluorine-vent-frequency"
+
+        storage.hex_grid.resource_weighted_choice.aquilo = {}
+        storage.hex_grid.resource_weighted_choice.aquilo.wells = weighted_choice.new {
+            ["crude-oil"] = mgs_original.autoplace_controls.aquilo_crude_oil.size * crude_oil_frequency,
+            ["lithium-brine"] = mgs_original.autoplace_controls.lithium_brine.size * lithium_brine_frequency,
+            ["fluorine-vent"] = mgs_original.autoplace_controls.fluorine_vent.size * fluorine_vent_frequency,
         }
     end
 end)
