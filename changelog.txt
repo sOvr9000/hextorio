@@ -11,6 +11,7 @@ Date: 26/5/25
     - Fixed terrain generation bug that deformed hexes on all planets.
     - Fixed interplanetary value calculation.
     - Fixed resource bias calculation.
+    - Fixed that large coin values in trades were showing as the wrong tier of coin.
   Optimizations:
     - Hexes are generated farther in advance, making them load more smoothly when zoomed out and moving at fast speeds.
 ---------------------------------------------------------------------------------------------------
