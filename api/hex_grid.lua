@@ -2290,7 +2290,7 @@ function hex_grid.spawn_hex_core(surface, position)
     if lib.is_t2_planet(surface.name) then -- vulcanus, fulgora, gleba
         state.claim_price = coin_tiers.shift_tier(state.claim_price, 1)
     elseif lib.is_t3_planet(surface.name) then -- aquilo
-        state.claim_price = coin_tiers.shift_tier(state.claim_price, 2)
+        state.claim_price = coin_tiers.multiply(state.claim_price, state.claim_price.tier_scaling ^ 1.5)
     end
 
     hex_grid.generate_loaders(state)
