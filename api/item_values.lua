@@ -235,7 +235,8 @@ function item_values.get_items_near_value(surface_name, center_value, max_ratio,
     local lower_bound = center_value / max_ratio
     local upper_bound = center_value * max_ratio
 
-    for item_name, value in pairs(surface_vals) do
+    for item_name, _ in pairs(surface_vals) do
+        local value = item_values.get_item_value(surface_name, item_name) -- Ensure that multipliers apply
         if value <= upper_bound and value >= lower_bound and (not items_only or lib.is_item(item_name)) and (allow_coins or not lib.is_coin(item_name)) then
             table.insert(item_names, item_name)
         end
