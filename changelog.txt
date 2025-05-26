@@ -3,6 +3,9 @@ Version: 0.4.1
 Date: 26/5/25
   Major Features:
     - Added [planet=aquilo].
+  Minor Features:
+    - Item/fluid names now show in the custom tooltips seen in trades and initial resources UI.
+    - A tooltip now shows for coin amounts if they are abbreviated with units like "k" or "M".
   Changes:
     - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have three trades per hex instead of two.
     - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have finite planet size.

@@ -1988,10 +1988,16 @@ function gui.update_coin_tier(flow, coin)
         else
             coin_sprite.visible = false
         end
+        if coin.values[i] >= 1000 then
+            coin_sprite.tooltip = coin.values[i]
+        else
+            coin_sprite.tooltip = nil
+        end
     end
 
     if coin_tiers.is_zero(coin) then
         flow['hex-coin'].visible = true
+        flow['hex-coin'].number = 0
     end
 end
 
@@ -2001,28 +2007,24 @@ function gui.create_coin_tier(parent, name)
     flow.name = name or "coins"
 
     local hex_coin_sprite = flow.add {type = "sprite-button", sprite = "hex-coin"}
-    hex_coin_sprite.ignored_by_interaction = true
     hex_coin_sprite.name = "hex-coin"
     hex_coin_sprite.style.width = 40
     hex_coin_sprite.style.height = 40
     hex_coin_sprite.number = 1
 
     local gravity_coin_sprite = flow.add {type = "sprite-button", sprite = "gravity-coin"}
-    gravity_coin_sprite.ignored_by_interaction = true
     gravity_coin_sprite.name = "gravity-coin"
     gravity_coin_sprite.style.width = 40
     gravity_coin_sprite.style.height = 40
     gravity_coin_sprite.number = 0
 
     local meteor_coin_sprite = flow.add {type = "sprite-button", sprite = "meteor-coin"}
-    meteor_coin_sprite.ignored_by_interaction = true
     meteor_coin_sprite.name = "meteor-coin"
     meteor_coin_sprite.style.width = 40
     meteor_coin_sprite.style.height = 40
     meteor_coin_sprite.number = 0
 
     local hexaprism_coin_sprite = flow.add {type = "sprite-button", sprite = "hexaprism-coin"}
-    hexaprism_coin_sprite.ignored_by_interaction = true
     hexaprism_coin_sprite.name = "hexaprism-coin"
     hexaprism_coin_sprite.style.width = 40
     hexaprism_coin_sprite.style.height = 40
