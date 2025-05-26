@@ -431,9 +431,9 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
     if allow_interplanetary == nil then allow_interplanetary = false end
 
     local ratio = 10
-    if surface_name == "aquilo" then
-        ratio = 100
-    end
+    -- if surface_name == "aquilo" then
+    --     ratio = 100
+    -- end
 
     local possible_items = item_values.get_items_near_value(surface_name, volume, ratio, true, false, allow_interplanetary)
 
