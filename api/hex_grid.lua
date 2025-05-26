@@ -1293,16 +1293,13 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         land_chance = (1 - land_chance * land_chance) ^ 0.5 -- basically turning a triangle into a circle
     end
 
+    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
     local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
 
-    if surface.name == "nauvis" then
-        local quality = hex_grid.get_quality_from_distance(dist)
-        if lib.is_tier6_quality(quality) then
-            -- Spiritual successor to The Great Ring of Superchunks
-            is_land = false
-        end
+    if dist > planet_size then
+        is_land = false
     end
 
     if is_starting_hex then
@@ -1692,7 +1689,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         end
 
         local wc = storage.hex_grid.resource_weighted_choice.aquilo.wells
-        
+
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
         local resource = weighted_choice.choice(wc)
@@ -2255,7 +2252,6 @@ function hex_grid.spawn_hex_core(surface, position)
     if state.hex_core then return end
 
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
-    local is_starting_hex = dist == 0
 
     local quality = hex_grid.get_quality_from_distance(dist)
 
@@ -2301,21 +2297,35 @@ function hex_grid.spawn_hex_core(surface, position)
     hex_grid.generate_loaders(state)
 
     state.trades = {}
+    hex_grid.add_initial_trades(state)
+
+    return hex_core
+end
+
+function hex_grid.add_initial_trades(state)
+    local dist = hex_grid.distance(state.position, {q=0, r=0})
+    local is_starting_hex = dist == 0
+
     local hex_core_trades = {}
     if is_starting_hex then
-        for _, trade in pairs(storage.trades.starting_trades[surface.name]) do
-            table.insert(hex_core_trades, trades.from_item_names(surface.name, table.unpack(trade)))
+        for _, trade in pairs(storage.trades.starting_trades[state.hex_core.surface.name]) do
+            table.insert(hex_core_trades, trades.from_item_names(state.hex_core.surface.name, table.unpack(trade)))
         end
     else
-        local items_sorted_by_value = item_values.get_items_sorted_by_value(surface.name)
-        local max_item_value = item_values.get_item_value(surface.name, items_sorted_by_value[#items_sorted_by_value])
-        local max_volume = hex_grid.get_trade_volume_base(surface.name) * (lib.runtime_setting_value "trade-volume-per-dist-exp" ^ dist)
+        local planet_size = lib.runtime_setting_value("planet-size-" .. state.hex_core.surface.name)
+        local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. state.hex_core.surface.name)
+
+        local items_sorted_by_value = item_values.get_items_sorted_by_value(state.hex_core.surface.name, false)
+        local max_item_value = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[#items_sorted_by_value])
+
+        local base = hex_grid.get_trade_volume_base(state.hex_core.surface.name)
+        local exponent = (max_item_value / base) ^ (1 / planet_size)
+        local max_volume = base * (exponent ^ dist)
         max_volume = math.min(max_volume, max_item_value * 0.5)
-        local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. surface.name)
-        for i = 1, trades_per_hex do
+        for _ = 1, trades_per_hex do
             local r = math.random()
             local random_volume = math.max(1, (1 - r * r) * max_volume)
-            local trade = trades.random(surface.name, random_volume)
+            local trade = trades.random(state.hex_core.surface.name, random_volume)
             if trade then
                 table.insert(hex_core_trades, trade)
             end
@@ -2327,9 +2337,6 @@ function hex_grid.spawn_hex_core(surface, position)
     end
 
     hex_grid.apply_extra_trades_bonus(state)
-    hex_grid.update_hex_core_inventory_filters(state)
-
-    return hex_core
 end
 
 -- Delete a hex core entity and its trades, but keep the ground tiles.

@@ -5,10 +5,12 @@ Date: 26/5/25
     - Added [planet=aquilo].
   Changes:
     - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have three trades per hex instead of two.
+    - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have finite planet size.
   Bugfixes:
     - Took destroyer capsules out from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
     - Fixed terrain generation bug that deformed hexes on all planets.
     - Fixed interplanetary value calculation.
+    - Fixed resource bias calculation.
   Optimizations:
     - Hexes are generated farther in advance, making them load more smoothly when zoomed out and moving at fast speeds.
 ---------------------------------------------------------------------------------------------------
