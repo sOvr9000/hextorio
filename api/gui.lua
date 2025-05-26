@@ -672,15 +672,20 @@ function gui.give_item_tooltip(player, surface_name, element)
         rank_str = {"", lib.color_localized_string({"hextorio-gui.rank"}, "white", "heading-1"), " " , lib.get_rank_img_str(rank), "\n\n"}
     end
 
+    local item_img_rich_text = "[" .. rich_type .. "=" .. item_name .. ",quality=" .. quality .. "]"
+
     element.tooltip = {"",
+        item_img_rich_text,
+        prototypes[rich_type][item_name].localised_name,
+        "\n-=-=-=-=-=-=-=-=-\n",
         rank_str,
         "[img=planet-" .. surface_name .. "] [font=heading-2][color=green]",
         {"hextorio-gui.item-value"},
-        "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. ",quality=" .. quality .. "]x1 = ",
+        "[.color][.font]\n" .. item_img_rich_text .. "x1 = ",
         coin_tiers.coin_to_text(scaled_value, false, 4),
         "\n\n[img=planet-" .. surface_name .. "] [font=heading-2][color=yellow]",
         {"hextorio-gui.stack-value-total"},
-        "[.color][.font]\n[" .. rich_type .. "=" .. item_name .. ",quality=" .. quality .. "]x" .. item_count .. " = ",
+        "[.color][.font]\n" .. item_img_rich_text .. "x" .. item_count .. " = ",
         coin_tiers.coin_to_text(item_count * scaled_value, false, nil)
     }
 end
