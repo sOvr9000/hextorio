@@ -703,9 +703,6 @@ end
 
 function trades.get_random_volume_for_item(surface_name, item_name)
     local volume = item_values.get_item_value(surface_name, item_name)
-    if surface_name == "aquilo" then
-        return volume * (3 + 97 * math.random())
-    end
     return volume * (3 + 7 * math.random())
 end
 
