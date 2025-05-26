@@ -1287,7 +1287,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     elseif surface.name == "gleba" then
         land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.gleba_water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_water.size)) * 0.5
     elseif surface.name == "aquilo" then
-        land_chance = 0.45
+        land_chance = 0.60
     end
     if surface.name ~= "fulgora" and surface.name ~= "aquilo" then
         land_chance = (1 - land_chance * land_chance) ^ 0.5 -- basically turning a triangle into a circle
@@ -1686,6 +1686,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
     elseif surface.name == "aquilo" then
         local well_names = {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}
         local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
+        well_freq = well_freq * well_freq / 3
         if math.random() > well_freq then
             return nil, nil
         end
@@ -2310,7 +2311,8 @@ function hex_grid.spawn_hex_core(surface, position)
         local max_item_value = item_values.get_item_value(surface.name, items_sorted_by_value[#items_sorted_by_value])
         local max_volume = hex_grid.get_trade_volume_base(surface.name) * (lib.runtime_setting_value "trade-volume-per-dist-exp" ^ dist)
         max_volume = math.min(max_volume, max_item_value * 0.5)
-        for i = 1, lib.runtime_setting_value "trades-per-hex" do
+        local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. surface.name)
+        for i = 1, trades_per_hex do
             local r = math.random()
             local random_volume = math.max(1, (1 - r * r) * max_volume)
             local trade = trades.random(surface.name, random_volume)

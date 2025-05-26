@@ -2,7 +2,7 @@
 data:extend({
     {
         type = "int-setting",
-        name = "hextorio-trades-per-hex",
+        name = "hextorio-trades-per-hex-nauvis",
         setting_type = "runtime-global",
         default_value = 2,
         minimum_value = 0,
@@ -10,9 +10,33 @@ data:extend({
     },
     {
         type = "int-setting",
+        name = "hextorio-trades-per-hex-vulcanus",
+        setting_type = "runtime-global",
+        default_value = 3,
+        minimum_value = 0,
+        maximum_value = 10,
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-trades-per-hex-fulgora",
+        setting_type = "runtime-global",
+        default_value = 3,
+        minimum_value = 0,
+        maximum_value = 10,
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-trades-per-hex-gleba",
+        setting_type = "runtime-global",
+        default_value = 3,
+        minimum_value = 0,
+        maximum_value = 10,
+    },
+    {
+        type = "int-setting",
         name = "hextorio-trades-per-hex-aquilo",
         setting_type = "runtime-global",
-        default_value = 5,
+        default_value = 6,
         minimum_value = 0,
         maximum_value = 10,
     },

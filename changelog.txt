@@ -3,6 +3,8 @@ Version: 0.4.1
 Date: 26/5/25
   Major Features:
     - Added [planet=aquilo].
+  Changes:
+    - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have three trades per hex instead of two.
   Bugfixes:
     - Took destroyer capsules out from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
     - Fixed terrain generation bug that deformed hexes on all planets.
