@@ -14,7 +14,7 @@ return {
         vulcanus = 4,
         fulgora = 8,
         gleba = 16,
-        aquilo = 32,
+        aquilo = 512,
     },
 
     values = {

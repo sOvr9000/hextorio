@@ -64,7 +64,7 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
             return surface_vals[item_name] * quality_mult
         end
         if allow_interplanetary then
-            val = item_values.get_interplanetary_item_value(item_name)
+            val = item_values.get_interplanetary_item_value(surface_name, item_name)
         else
             lib.log("item_values.get_item_value: Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
             val = 1
@@ -85,18 +85,21 @@ end
 
 -- Get the value of an item for any surface.
 -- The returned value is a large multiple of the minimum value of the item across all surfaces.
-function item_values.get_interplanetary_item_value(item_name)
+function item_values.get_interplanetary_item_value(surface_name, item_name)
     if storage.item_values.interplanetary_values[item_name] then
         return storage.item_values.interplanetary_values[item_name]
     end
 
     local min_value = math.huge
     local min_surface_name
-    for surface_name, surface_vals in pairs(storage.item_values.values) do
+    for _surface_name, surface_vals in pairs(storage.item_values.values) do
         local val = surface_vals[item_name]
-        if val and val < min_value then
-            min_value = val
-            min_surface_name = surface_name
+        if val then
+            val = val * (storage.item_values.value_multipliers[_surface_name] or 1)
+            if val < min_value then
+                min_value = val
+                min_surface_name = _surface_name
+            end
         end
     end
 
@@ -105,7 +108,14 @@ function item_values.get_interplanetary_item_value(item_name)
         return 1
     end
 
-    storage.item_values.interplanetary_values[item_name] = min_value * lib.runtime_setting_value "interplanetary-mult"
+    local mult
+    if surface_name == "aquilo" then
+        mult = lib.runtime_setting_value "interplanetary-mult-aquilo"
+    else
+        mult = lib.runtime_setting_value "interplanetary-mult"
+    end
+
+    storage.item_values.interplanetary_values[item_name] = min_value * mult
     return storage.item_values.interplanetary_values[item_name]
 end
 
