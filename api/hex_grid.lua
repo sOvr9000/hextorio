@@ -1489,7 +1489,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             num_entities_min = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls.sulfuric_acid_geyser.size, 1, 3))
             num_entities_max = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls.sulfuric_acid_geyser.size, 3, 6))
         elseif surface.name == "aquilo" then
-            local size = lib.sum_mgs(mgs.autoplace_controls, "size", {"crude-oil", "lithium-brine", "fluorine-vent"}) / 3
+            local size = lib.sum_mgs(mgs.autoplace_controls, "size", {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}) / 3
 
             num_entities_min = math.floor(0.5 + 1 + 2 * size)
             num_entities_max = math.floor(0.5 + 3 + 3 * size)
