@@ -3293,7 +3293,7 @@ function hex_grid.recover_trades_retro(item_name)
             local states = hex_grid.get_states_with_fewest_trades(surface.name)
             for _, trade_id in pairs(trades.get_recoverable_trades()) do
                 local trade = trades.get_trade_from_id(trade_id)
-                if trades.has_item(trade, itame) then
+                if trades.has_item(trade, item_name) then
                     trades.recover_trade(trade)
                     hex_grid.try_recover_trade(trade, states, true)
                 end
