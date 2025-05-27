@@ -67,6 +67,7 @@ for _, module_type in pairs {"speed", "productivity", "efficiency", "quality"} d
         {type = "item", name = "productivity-module-3", amount = amount["productivity"] or 1},
         {type = "item", name = "efficiency-module-3", amount = amount["efficiency"] or 1},
         {type = "item", name = "quality-module-3", amount = amount["quality"] or 1},
+        {type = "item", name = "hexaprism", amount = 1},
         {type = "fluid", name = "fluoroketone-cold", amount = 200},
     }
     local product_name = "hexa-" .. module_type .. "-module"
@@ -111,7 +112,7 @@ local sentient_spider_recipe = {
         {type = "item", name = "quantum-processor", amount = 250},
         {type = "item", name = "spidertron", amount = 1},
         {type = "item", name = "raw-fish", amount = 100},
-        {type = "item", name = "promethium-asteroid-chunk", amount = 1},
+        {type = "item", name = "hexaprism", amount = 1},
         {type = "fluid", name = "fluoroketone-cold", amount = 1000},
         {type = "fluid", name = "lubricant", amount = 1000},
     },
