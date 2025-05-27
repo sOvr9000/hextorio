@@ -109,5 +109,15 @@ hexaprism.stack_size = 10
 hexaprism.default_import_location = "nauvis"
 hexaprism.weight = 100000
 
+local crystalline_fuel = table.deepcopy(data.raw["item"]["nuclear-fuel"])
+crystalline_fuel.name = "crystalline-fuel"
+crystalline_fuel.icon = "__hextorio__/graphics/icons/crystalline-fuel.png"
+crystalline_fuel.pictures.layers[1].filename = "__hextorio__/graphics/icons/crystalline-fuel.png"
+crystalline_fuel.order = "r[uranium-processing]-f[crystalline-fuel]"
+crystalline_fuel.default_import_location = "nauvis"
+crystalline_fuel.fuel_value = "6GJ"
+crystalline_fuel.fuel_acceleration_multiplier = 3
+crystalline_fuel.fuel_top_speed_multiplier = 1.36
+
 ---@diagnostic disable-next-line: assign-type-mismatch
 data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_capsule, sentient_spider, hexaprism})

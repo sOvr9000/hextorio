@@ -154,10 +154,26 @@ energized_thruster_oxidizer.ingredients = {
     {type = "fluid", name = "water", amount = 1000},
 }
 energized_thruster_oxidizer.results = {
-    {type = "fluid", name = "thruster-fuel", amount = 15000},
+    {type = "fluid", name = "thruster-oxidizer", amount = 15000},
 }
 energized_thruster_oxidizer.energy_required = 15
 energized_thruster_oxidizer.localised_name = nil
 
+local crystalline_fuel = table.deepcopy(data.raw["recipe"]["nuclear-fuel"])
+crystalline_fuel.name = "crystalline-fuel"
+crystalline_fuel.enabled = false
+crystalline_fuel.category = "cryogenics"
+crystalline_fuel.icon = "__hextorio__/graphics/icons/crystalline-fuel.png"
+crystalline_fuel.ingredients = {
+    {type = "item", name = "nuclear-fuel", amount = 1},
+    {type = "item", name = "hexaprism", amount = 2},
+    {type = "fluid", name = "fluoroketone-cold", amount = 100},
+}
+crystalline_fuel.results = {
+    {type = "fluid", name = "crystalline-fuel", amount = 1},
+    {type = "fluid", name = "fluoroketone-hot", amount = 50, temperature = 180},
+}
+crystalline_fuel.energy_required = 120
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe, energized_thruster_fuel, energized_thruster_oxidizer})
+data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe, energized_thruster_fuel, energized_thruster_oxidizer, crystalline_fuel})
