@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1
-Date: 26/5/25
+Date: 27/5/25
   Major Features:
     - Added [planet=aquilo].
     - Added endgame resource on [planet=nauvis].
