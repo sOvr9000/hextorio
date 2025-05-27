@@ -1126,7 +1126,8 @@ function hex_grid.set_tile(surface, position, tile_type)
 end
 
 -- Set the tile type for a list of positions
-function hex_grid.set_tiles(surface, positions, tile_type)
+function hex_grid.set_tiles(surface, positions, tile_type, ignore_tiles)
+    if not ignore_tiles then ignore_tiles = {} end
     local surface_id = lib.get_surface_id(surface)
     surface = game.surfaces[surface_id]
     if not surface then
@@ -1136,7 +1137,10 @@ function hex_grid.set_tiles(surface, positions, tile_type)
 
     local tiles = {}
     for _, position in pairs(positions) do
-        table.insert(tiles, {name = tile_type, position = position})
+        local cur_tile = surface.get_tile(position.x, position.y)
+        if not cur_tile.valid or not ignore_tiles[cur_tile.name] then
+            table.insert(tiles, {name = tile_type, position = position})
+        end
     end
     surface.set_tiles(tiles)
 end
@@ -1157,7 +1161,7 @@ function hex_grid.set_hex_tiles(surface, hex_pos, tile_type, overwrite_water)
 
     local positions = hex_grid.get_hex_tile_positions(hex_pos, transformation.scale, transformation.rotation, transformation.stroke_width)
 
-    hex_grid.set_tiles(surface, positions, tile_type)
+    hex_grid.set_tiles(surface, positions, tile_type, storage.hex_grid.gleba_ignore_tiles)
 end
 
 -- Generate tiles along the border of a hex

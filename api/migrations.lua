@@ -15,6 +15,7 @@ local data_item_values = require "data.item_values"
 local data_quests = require "data.quests"
 local data_blueprints = require "data.blueprints"
 local data_trades = require "data.trades"
+local data_hex_grid = require "data.hex_grid"
 
 local migrations = {}
 
@@ -36,6 +37,7 @@ local versions = {
     "0.3.1",
     "0.3.2",
     "0.4.0",
+    "0.4.1",
 }
 
 local version_stepping = {}
@@ -271,6 +273,9 @@ local process_migration = {
         storage.item_values.values = data_item_values.values
         storage.quests.quest_defs = data_quests.quest_defs
         quests.reinitialize_everything()
+    end,
+    ["0.4.0"] = function()
+        storage.hex_grid.gleba_ignore_tiles = data_hex_grid.gleba_ignore_tiles
     end,
 }
 
