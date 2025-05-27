@@ -1408,6 +1408,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         return
     end
 
+    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
     local dist = hex_grid.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
 
@@ -1428,7 +1429,9 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     end
 
     local resource_names
+    local is_hexaprism = false
     if surface.name == "nauvis" then
+        is_hexaprism = dist >= planet_size
         resource_names = {"iron-ore", "copper-ore", "coal", "stone"}
     elseif surface.name == "vulcanus" then
         resource_names = {"vulcanus_coal", "calcite", "tungsten_ore"}
@@ -1528,32 +1531,37 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         local inner_border_tiles = hex_grid.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
         for _, tile in pairs(inner_border_tiles) do
             if lib.is_land_tile(surface, tile) then
-                local resource
-                if is_mixed then
-                    resource = weighted_choice.choice(resource_wc)
-                    if not resource then
-                        lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
-                        return
-                    end
+                local resource, amount
+                if is_hexaprism then
+                    resource = "hexaprism"
+                    amount = 1
                 else
-                    local angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
-                    resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
-                end
-                local amount_mean
-                if surface.name == "vulcanus" then
-                    if resource == "coal" then
-                        amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
-                    elseif resource == "tungsten-ore" then
-                        amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
+                    if is_mixed then
+                        resource = weighted_choice.choice(resource_wc)
+                        if not resource then
+                            lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
+                            return
+                        end
+                    else
+                        local angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
+                        resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
+                    end
+                    local amount_mean
+                    if surface.name == "vulcanus" then
+                        if resource == "coal" then
+                            amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
+                        elseif resource == "tungsten-ore" then
+                            amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
+                        else
+                            amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
+                        end
+                    elseif surface.name == "gleba" then
+                        amount_mean = scaled_richness * mgs.autoplace_controls.gleba_stone.richness
                     else
                         amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
                     end
-                elseif surface.name == "gleba" then
-                    amount_mean = scaled_richness * mgs.autoplace_controls.gleba_stone.richness
-                else
-                    amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
+                    amount = math.floor(amount_mean * (0.8 + 0.4 * math.random()))
                 end
-                local amount = math.floor(amount_mean * (0.8 + 0.2 * math.random()))
                 if amount > 0 then
                     local entity = surface.create_entity {name = resource, position = tile, amount = amount}
                     if entity then
