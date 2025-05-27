@@ -170,7 +170,7 @@ crystalline_fuel.ingredients = {
     {type = "fluid", name = "fluoroketone-cold", amount = 100},
 }
 crystalline_fuel.results = {
-    {type = "fluid", name = "crystalline-fuel", amount = 1},
+    {type = "item", name = "crystalline-fuel", amount = 1},
     {type = "fluid", name = "fluoroketone-hot", amount = 50, temperature = 180},
 }
 crystalline_fuel.energy_required = 120
