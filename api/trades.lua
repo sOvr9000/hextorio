@@ -138,6 +138,14 @@ function trades._try_set_output_counts(surface_name, trade, params)
     local total_input_value = trades.get_input_value(surface_name, trade) * params.target_efficiency
     local output_items_value = {}
 
+    -- Temporarily convert hex coin to proper coin tier
+    local coin_name = coin_tiers.get_name_of_tier(coin_tiers.get_tier_for_display(coin_tiers.from_base_value(total_input_value)))
+    for i, output_item in ipairs(trade.output_items) do
+        if lib.is_coin(output_item.name) then
+            trade.output_items[i].name = coin_name
+        end
+    end
+
     -- Initialize with values and minimal counts
     for i, output_item in ipairs(trade.output_items) do
         output_items_value[i] = item_values.get_item_value(surface_name, output_item.name)
@@ -147,8 +155,13 @@ function trades._try_set_output_counts(surface_name, trade, params)
     -- Handle single output item case specially
     if #trade.output_items == 1 then
         local output_item = trade.output_items[1]
-        local item_value = output_items_value[1]
-        output_item.count = math.max(1, math.floor((total_input_value / item_value) + 0.5))
+        if lib.is_coin(trade.output_items[1].name) then
+            output_item.name = "hex-coin"
+            output_item.count = math.floor(0.5 + total_input_value / item_values.get_item_value("nauvis", "hex-coin"))
+        else
+            local item_value = output_items_value[1]
+            output_item.count = math.max(1, math.floor((total_input_value / item_value) + 0.5))
+        end
         return
     end
 
@@ -207,6 +220,15 @@ function trades._try_set_output_counts(surface_name, trade, params)
 
         -- Exit if no improvements in this iteration
         if not improved then break end
+    end
+
+    -- Convert any coins back down to lowest tier
+    for i, output_item in ipairs(trade.output_items) do
+        if lib.is_coin(output_item.name) then
+            local tier = lib.get_tier_of_coin_name(output_item.name)
+            trade.output_items[i].name = "hex-coin"
+            trade.output_items[i].count = trade.output_items[i].count * coin_tiers.get_scale_of_tier(tier)
+        end
     end
 end
 

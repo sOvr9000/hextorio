@@ -3293,7 +3293,7 @@ function hex_grid.recover_trades_retro(item_name)
             local states = hex_grid.get_states_with_fewest_trades(surface.name)
             for _, trade_id in pairs(trades.get_recoverable_trades()) do
                 local trade = trades.get_trade_from_id(trade_id)
-                if trades.has_item(trade, item_name) then
+                if trades.has_item(trade, itame) then
                     trades.recover_trade(trade)
                     hex_grid.try_recover_trade(trade, states, true)
                 end
@@ -3335,7 +3335,12 @@ function hex_grid.get_trade_volume_base(surface_name)
     end
     local val = storage.trades.trade_volume_base[surface_name]
     if val then return val end
-    val = item_values.get_item_value(item_values.get_items_sorted_by_value(surface_name, true, false)[1] or "stone")
+    local min_item = item_values.get_items_sorted_by_value(surface_name, true, false)[1]
+    if not min_item then
+        lib.log_error("hex_grid.get_trade_volume_base: No minimal item found, defaulting to 1")
+        return 1
+    end
+    val = item_values.get_item_value(surface_name, min_item)
     storage.trades.trade_volume_base[surface_name] = val
     return val
 end

@@ -435,6 +435,10 @@ function coin_tiers.get_tier_for_display(coin)
     return 1
 end
 
+function coin_tiers.get_scale_of_tier(tier)
+    return 100000 ^ (tier - 1)
+end
+
 function coin_tiers.get_name_of_tier(tier)
     if tier <= 1 then
         return "hex-coin"
