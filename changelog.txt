@@ -13,6 +13,7 @@ Date: 26/5/25
   Changes:
     - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have three trades per hex instead of two.
     - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have finite planet size.
+    - Sentient spider and demolisher techs now also require [item=military-science-pack].
   Bugfixes:
     - Took destroyer capsules out from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
     - Fixed terrain generation bug that deformed hexes on all planets.
