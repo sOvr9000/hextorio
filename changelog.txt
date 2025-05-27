@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.2
+Date: 28/5/25
+  Major Features:
+    - Added dungeons.
+  Bugfixes:
+    - Fixed the factoriopedia simulation for hexaprisms.
+---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 27/5/25
   Major Features:
