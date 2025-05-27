@@ -4,7 +4,7 @@ Date: 28/5/25
   Major Features:
     - Added dungeons.
   Bugfixes:
-    - Fixed the factoriopedia simulation for hexaprisms.
+    - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1

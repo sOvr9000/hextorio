@@ -90,6 +90,14 @@ hexic_underground_belt.structure.direction_out.sheet.filename = "__hextorio__/gr
 hexic_underground_belt.structure.direction_in_side_loading.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure.png"
 hexic_underground_belt.structure.direction_out_side_loading.sheet.filename = "__hextorio__/graphics/entity/hexic-underground-belt/hexic-underground-belt-structure.png"
 hexic_underground_belt.localised_description = data.raw["underground-belt"]["underground-belt"].localised_description
+hexic_underground_belt.factoriopedia_simulation.init = [[
+game.simulation.camera_position = {0, 0.5}
+game.simulation.camera_zoom = 1.5
+game.surfaces[1].create_entities_from_blueprint_string {
+    string = "0eNqVkM8KgzAMxt8l5ypMrFhfZYzhn+ACmkpthyK++1I97LDDtlOar8n3S7JBMwScHLGHagNqLc9QXTeYqed6iBrXI0IFD1yoTQJ36HpnJSYNDh52BSTaAtVlvylA9uQJT48jWe8cxgadFKgvXgomO0u75cgVy8SkWsEqD51qIXXksD3/cwV+naIZ8RTiHB+87G+e/gFngz94six5HEV5X1DBE918NOgiM7kxuigzcynzfX8B0UF4kg==",
+    position = {0, 0}
+}
+]]
 data.raw["underground-belt"]["turbo-underground-belt"].next_upgrade = "hexic-underground-belt"
 
 local hexic_splitter = table.deepcopy(data.raw["splitter"]["turbo-splitter"])
