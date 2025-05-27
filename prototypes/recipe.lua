@@ -125,5 +125,39 @@ local sentient_spider_recipe = {
     enabled = false,
 }
 
+local energized_thruster_fuel = table.deepcopy(data.raw["recipe"]["advanced-thruster-fuel"])
+energized_thruster_fuel.name = "energized-thruster-fuel"
+energized_thruster_fuel.enabled = false
+energized_thruster_fuel.category = "chemistry-or-cryogenics"
+energized_thruster_fuel.icon = "__hextorio__/graphics/icons/energized-thruster-fuel.png"
+energized_thruster_fuel.ingredients = {
+    {type = "item", name = "carbon", amount = 10},
+    {type = "item", name = "calcite", amount = 5},
+    {type = "item", name = "hexaprism", amount = 1},
+    {type = "fluid", name = "water", amount = 1000},
+}
+energized_thruster_fuel.results = {
+    {type = "fluid", name = "thruster-fuel", amount = 15000},
+}
+energized_thruster_fuel.energy_required = 15
+energized_thruster_fuel.localised_name = nil
+
+local energized_thruster_oxidizer = table.deepcopy(data.raw["recipe"]["advanced-thruster-oxidizer"])
+energized_thruster_oxidizer.name = "energized-thruster-oxidizer"
+energized_thruster_oxidizer.enabled = false
+energized_thruster_oxidizer.category = "chemistry-or-cryogenics"
+energized_thruster_oxidizer.icon = "__hextorio__/graphics/icons/energized-thruster-oxidizer.png"
+energized_thruster_oxidizer.ingredients = {
+    {type = "item", name = "iron-ore", amount = 10},
+    {type = "item", name = "calcite", amount = 5},
+    {type = "item", name = "hexaprism", amount = 1},
+    {type = "fluid", name = "water", amount = 1000},
+}
+energized_thruster_oxidizer.results = {
+    {type = "fluid", name = "thruster-fuel", amount = 15000},
+}
+energized_thruster_oxidizer.energy_required = 15
+energized_thruster_oxidizer.localised_name = nil
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe})
+data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe, energized_thruster_fuel, energized_thruster_oxidizer})

@@ -210,4 +210,69 @@ data:extend({
             },
         },
     },
+
+    {
+        type = "technology",
+        name = "energized-thruster-fuel",
+        icon = "__hextorio__/graphics/technology/energized-thruster-fuel.png",
+        icon_size = 256,
+        prerequisites = {"promethium-science-pack"},
+        unit = {
+            count = 5000,
+            time = 60,
+            ingredients = {
+                {"automation-science-pack", 1},
+                {"logistic-science-pack", 1},
+                {"chemical-science-pack", 1},
+                {"production-science-pack", 1},
+                {"utility-science-pack", 1},
+                {"space-science-pack", 1},
+                {"metallurgic-science-pack", 1},
+                {"electromagnetic-science-pack", 1},
+                {"agricultural-science-pack", 1},
+                {"cryogenic-science-pack", 1},
+                {"promethium-science-pack", 1},
+            },
+        },
+        effects = {
+            {
+                type  = "unlock-recipe",
+                recipe = "energized-thruster-fuel",
+            },
+            {
+                type  = "unlock-recipe",
+                recipe = "energized-thruster-oxidizer",
+            },
+            {
+                type  = "change-recipe-productivity",
+                recipe = "thruster-fuel",
+                change = 0.2,
+            },
+            {
+                type  = "change-recipe-productivity",
+                recipe = "thruster-oxidizer",
+                change = 0.2,
+            },
+            {
+                type  = "change-recipe-productivity",
+                recipe = "advanced-thruster-fuel",
+                change = 0.15,
+            },
+            {
+                type  = "change-recipe-productivity",
+                recipe = "advanced-thruster-oxidizer",
+                change = 0.15,
+            },
+            {
+                type  = "change-recipe-productivity",
+                recipe = "energized-thruster-fuel",
+                change = 0.1,
+            },
+            {
+                type  = "change-recipe-productivity",
+                recipe = "energized-thruster-oxidizer",
+                change = 0.1,
+            },
+        },
+    },
 })
