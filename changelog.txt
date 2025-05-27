@@ -5,6 +5,7 @@ Date: 28/5/25
     - Added dungeons.
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms.
+    - Added localization for the crystalline fuel tech.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 27/5/25
