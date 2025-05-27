@@ -359,9 +359,9 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_settings.tile.settings["gleba-deep-lake"].size = 0
         surface.map_gen_settings = mgs
 
-        storage.hex_grid.resource_weighted_choice.fulgora = {}
-        storage.hex_grid.resource_weighted_choice.fulgora.resources = weighted_choice.new {
-            ["scrap"] = 1,
+        storage.hex_grid.resource_weighted_choice.gleba = {}
+        storage.hex_grid.resource_weighted_choice.gleba.resources = weighted_choice.new {
+            ["stone"] = 1,
         }
     elseif surface.name == "aquilo" then
         local mgs = surface.map_gen_settings

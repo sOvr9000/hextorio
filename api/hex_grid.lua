@@ -1683,7 +1683,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
             return nil, nil
         end
 
-        return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.fulgora.resources)
+        return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.fulgora.resources), false
     elseif surface.name == "gleba" then
         local resource_freq = lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_stone.frequency)
         resource_freq = resource_freq * resource_freq
@@ -1691,7 +1691,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
             return nil, nil
         end
 
-        return weighted_choice.new {stone = 1}, false
+        return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.gleba.resources), false
     elseif surface.name == "aquilo" then
         local well_names = {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}
         local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
