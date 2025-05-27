@@ -174,6 +174,7 @@ crystalline_fuel.results = {
     {type = "fluid", name = "fluoroketone-hot", amount = 50, temperature = 180},
 }
 crystalline_fuel.energy_required = 120
+crystalline_fuel.main_product = "crystalline-fuel"
 
 ---@diagnostic disable-next-line: assign-type-mismatch
 data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe, energized_thruster_fuel, energized_thruster_oxidizer, crystalline_fuel})
