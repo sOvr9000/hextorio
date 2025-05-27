@@ -15,7 +15,7 @@ Date: 27/5/25
     - [planet=vulcanus], [planet=fulgora], and [planet=gleba] now have finite planet size.
     - Sentient spider and demolisher techs now also require [item=military-science-pack].
   Bugfixes:
-    - Took destroyer capsules out from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
+    - Took [item=destroyer-capsule] out from trade generation on all planets except [planet=fulgora]. (IT IS BUFFED)
     - Fixed terrain generation bug that deformed hexes on all planets.
     - Fixed interplanetary value calculation.
     - Fixed resource bias calculation.
