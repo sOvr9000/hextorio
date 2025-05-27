@@ -640,7 +640,10 @@ function gui.give_item_tooltip(player, surface_name, element)
     if element.sprite:sub(1, 5) == "item/" then
         item_name = element.sprite:sub(6)
         rich_type = "item"
-        if item_name:sub(-5) == "-coin" then return end
+        if item_name:sub(-5) == "-coin" then
+            gui.try_give_coin_tooltip(element)
+            return
+        end
     elseif element.sprite:sub(1, 7) == "entity/" then
         item_name = element.sprite:sub(8)
         rich_type = "fluid"
@@ -707,6 +710,14 @@ function gui.give_trade_arrow_tooltip(element, trade, quality, quality_cost_mult
         table.insert(s, lib.color_localized_string({"hextorio-gui.click-to-ping"}, "gray"))
     end
     element.tooltip = s
+end
+
+function gui.try_give_coin_tooltip(element)
+    if element.number >= 1000 then
+        element.tooltip = element.number
+    else
+        element.tooltip = nil
+    end
 end
 
 function gui._process_trades_scroll_panes()
@@ -1985,13 +1996,9 @@ function gui.update_coin_tier(flow, coin)
         if coin.values[i] > 0 then
             coin_sprite.number = coin.values[i]
             coin_sprite.visible = true
+            gui.try_give_coin_tooltip(coin_sprite)
         else
             coin_sprite.visible = false
-        end
-        if coin.values[i] >= 1000 then
-            coin_sprite.tooltip = coin.values[i]
-        else
-            coin_sprite.tooltip = nil
         end
     end
 
