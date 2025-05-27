@@ -1,6 +1,7 @@
 
 require("prototypes.item_subgroup")
 require("prototypes.item")
+require("prototypes.resource")
 require("prototypes.sprite")
 require("prototypes.recipe")
 require("prototypes.entity")
