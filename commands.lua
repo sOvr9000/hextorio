@@ -62,31 +62,36 @@ function on_command(player, command, params)
             count = 100000,
         }
 
-        if player.get_inventory(defines.inventory.character_main) then
-            -- Get legendary mech armor
-            lib.insert_endgame_armor(player)
+        -- Get legendary mech armor
+        lib.insert_endgame_armor(player)
 
-            for _, starting_trades in pairs(storage.trades.starting_trades) do
-                for _, trade_items in pairs(starting_trades) do
-                    if type(trade_items[1]) == "string" then
-                        trade_items[1] = {trade_items[1]}
-                    end
-                    for _, item_name in pairs(trade_items[1]) do
-                        if not lib.is_coin(item_name) then
-                            player.insert {
-                                name = item_name,
-                                count = 200,
-                            }
-                        end
+        -- Give powerful weapons
+        player.insert {name = "teslagun", quality = "hextreme", count = 1}
+        player.insert {name = "railgun", quality = "hextreme", count = 1}
+        player.insert {name = "rocket-launcher", quality = "hextreme", count = 1}
+        player.insert {name = "tesla-ammo", quality = "hextreme", count = 200}
+        player.insert {name = "railgun-ammo", quality = "hextreme", count = 50}
+        player.insert {name = "atomic-bomb", quality = "hextreme", count = 20}
+        player.insert {name = "demolisher-capsule", quality = "hextreme", count = 100} -- railguns robot
+        -- player.insert {name = "disintegrator-capsule", quality = "hextreme", count = 100} -- lasers robot
+        -- player.insert {name = "decimator-capsule", quality = "hextreme", count = 100} -- bullets robot
+
+        -- Give items for making trades at spawn hexes on all planets
+        for _, starting_trades in pairs(storage.trades.starting_trades) do
+            for _, trade_items in pairs(starting_trades) do
+                if type(trade_items[1]) == "string" then
+                    trade_items[1] = {trade_items[1]}
+                end
+                for _, item_name in pairs(trade_items[1]) do
+                    if not lib.is_coin(item_name) then
+                        player.insert {
+                            name = item_name,
+                            count = 200,
+                        }
                     end
                 end
             end
-        else
-            player.print {"hextorio.no-player-inventory"}
         end
-
-        -- Claim hexes
-        -- handled by event_system
 
         -- Research all technologies
         for _, tech in pairs(game.forces.player.technologies) do
@@ -97,10 +102,14 @@ function on_command(player, command, params)
         player.cheat_mode = true
         player.clear_recipe_notifications()
 
+        -- Spawn midgame spaceship
         local sp = space_platforms.new("nauvis", "Hexaclysm")
         if sp then
             space_platforms.generate_tier1_ship(sp)
         end
+
+        -- Claim hexes
+        -- handled by event_system
     elseif command == "tp-to-ship" then
         player.teleport({x = 0, y = 0}, "platform-1")
     elseif command == "chart" then
