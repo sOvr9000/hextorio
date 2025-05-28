@@ -111,6 +111,7 @@ local sentient_spider_recipe = {
         {type = "item", name = "fusion-generator", amount = 2},
         {type = "item", name = "quantum-processor", amount = 50},
         {type = "item", name = "spidertron", amount = 1},
+        {type = "item", name = "teslagun", amount = 4},
         {type = "item", name = "raw-fish", amount = 100},
         {type = "item", name = "hexaprism", amount = 10},
         {type = "fluid", name = "fluoroketone-cold", amount = 1000},

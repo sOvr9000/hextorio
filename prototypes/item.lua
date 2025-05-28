@@ -119,5 +119,9 @@ crystalline_fuel.fuel_value = "6GJ"
 crystalline_fuel.fuel_acceleration_multiplier = 3
 crystalline_fuel.fuel_top_speed_multiplier = 1.36
 
+local sentient_spider_teslagun = table.deepcopy(data.raw["gun"]["teslagun"])
+sentient_spider_teslagun.name = "sentient-spider-teslagun"
+
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_capsule, sentient_spider, hexaprism, crystalline_fuel})
+data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_capsule, sentient_spider, hexaprism, crystalline_fuel, sentient_spider_teslagun})
