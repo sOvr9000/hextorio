@@ -3,6 +3,10 @@
 -- as well as various utility functions for working with an axial coordinate system.
 -- i.e. squares vs. hexagons
 
+---@alias HexPos {q: int, r: int}
+---@alias HexPosMap {[int]: {[int]: any}}
+---@alias AxialDirection 1|2|3|4|5|6
+
 local core_math = require "api.core_math"
 local lib = require "api.lib"
 
@@ -17,6 +21,11 @@ local adjacency_offsets = {
     {q = -1, r = 0}, {q = -1, r = 1}, {q = 0, r = 1},
 }
 
+local directions_by_offset = {[-1] = {}, [0] = {}, [1] = {}}
+for i = 1, 6 do
+    local offset = adjacency_offsets[i]
+    directions_by_offset[offset.q][offset.r] = i
+end
 
 
 -- Get the third coordinate (s) in the cube coordinate system
@@ -114,6 +123,24 @@ function axial.get_hex_center(hex_pos, axial_scale, axial_rotation)
     end
 
     return {x = x, y = y}
+end
+
+---@param direction AxialDirection
+---@return HexPos
+function axial.get_adjacency_offset(direction)
+    return adjacency_offsets[direction]
+end
+
+---@param offset HexPos
+---@return AxialDirection
+function axial.get_direction_from_offset(offset)
+    return (directions_by_offset[offset.q] or {})[offset.r] or 1
+end
+
+---@param dir AxialDirection
+---@return AxialDirection
+function axial.get_opposite_direction(dir)
+    return (dir + 3) % 6 + 1
 end
 
 -- Get the six hexes adjacent to the given hex
