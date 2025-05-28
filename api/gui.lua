@@ -1,4 +1,6 @@
 local lib = require "api.lib"
+local axial = require "api.axial"
+local terrain = require "api.terrain"
 local hex_grid = require "api.hex_grid"
 local item_values = require "api.item_values"
 local coin_tiers  = require "api.coin_tiers"
@@ -1458,7 +1460,7 @@ function gui.update_trade_overview(player)
             local distances = {}
             for _, trade in pairs(trades_list) do
                 if trade.hex_core_state then
-                    distances[trade.id] = hex_grid.distance(trade.hex_core_state.position, {q=0, r=0})
+                    distances[trade.id] = axial.distance(trade.hex_core_state.position, {q=0, r=0})
                 else
                     distances[trade.id] = 0
                 end
@@ -1473,12 +1475,12 @@ function gui.update_trade_overview(player)
             end
         elseif filter.sorting.method == "distance-from-character" then
             if player.character then
-                local transformation = hex_grid.get_surface_transformation(player.surface)
-                local char_pos = hex_grid.get_hex_containing(player.character.position, transformation.scale, transformation.rotation)
+                local transformation = terrain.get_surface_transformation(player.surface)
+                local char_pos = axial.get_hex_containing(player.character.position, transformation.scale, transformation.rotation)
                 local distances = {}
                 for _, trade in pairs(trades_list) do
                     if trade.hex_core_state then
-                        distances[trade.id] = hex_grid.distance(trade.hex_core_state.position, char_pos)
+                        distances[trade.id] = axial.distance(trade.hex_core_state.position, char_pos)
                     else
                         distances[trade.id] = 0
                     end
@@ -2543,14 +2545,14 @@ function gui.on_claim_hex_button_click(player)
         return
     end
 
-    local transformation = hex_grid.get_surface_transformation(hex_core.surface)
+    local transformation = terrain.get_surface_transformation(hex_core.surface)
 
     if not transformation then
         lib.log_error("on_claim_hex_button_click: No transformation found")
         return
     end
 
-    local hex_pos = hex_grid.get_hex_containing(hex_core.position, transformation.scale, transformation.rotation)
+    local hex_pos = axial.get_hex_containing(hex_core.position, transformation.scale, transformation.rotation)
 
     if not hex_grid.can_claim_hex(player, player.surface, hex_pos) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford"}, "red"))

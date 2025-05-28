@@ -13,9 +13,4 @@ return {
     },
 
     pool_size = 50,
-
-    directions = { -- adjacency offsets
-        {q = 1, r = 0}, {q = 1, r = -1}, {q = 0, r = -1},
-        {q = -1, r = 0}, {q = -1, r = 1}, {q = 0, r = 1},
-    },
 }

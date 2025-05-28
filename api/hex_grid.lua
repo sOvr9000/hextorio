@@ -1,709 +1,22 @@
+
 local lib = require "api.lib"
-local coin_tiers = require "api.coin_tiers"
-local weighted_choice = require "api.weighted_choice"
 local sets = require "api.sets"
-local trades = require "api.trades"
-local item_values = require "api.item_values"
-local item_ranks  = require "api.item_ranks"
+local axial = require "api.axial"
 local event_system = require "api.event_system"
+local terrain = require "api.terrain"
+
+local weighted_choice = require "api.weighted_choice"
+local item_values = require "api.item_values"
+local coin_tiers = require "api.coin_tiers"
 local quests = require "api.quests"
+local trades = require "api.trades"
+local item_ranks  = require "api.item_ranks"
 
 
 
 local hex_grid = {}
 
--- Get the third coordinate (s) in the cube coordinate system
--- In axial coords, we only store q,r but sometimes need s for calculations
-function hex_grid.get_s(hex)
-    return -hex.q - hex.r
-end
 
--- Convert from cube coordinates to axial coordinates
-function hex_grid.cube_to_axial(cube)
-    return {q = cube.q, r = cube.r}
-end
-
--- Convert from axial coordinates to cube coordinates
-function hex_grid.axial_to_cube(hex)
-    return {q = hex.q, r = hex.r, s = -hex.q - hex.r}
-end
-
--- Round floating point cube coordinates to the nearest hex
-function hex_grid.cube_round(cube)
-    local q = math.floor(cube.q + 0.5)
-    local r = math.floor(cube.r + 0.5)
-    local s = math.floor(cube.s + 0.5)
-
-    local q_diff = math.abs(q - cube.q)
-    local r_diff = math.abs(r - cube.r)
-    local s_diff = math.abs(s - cube.s)
-
-    -- Fix any rounding errors to ensure q + r + s = 0
-    if q_diff > r_diff and q_diff > s_diff then
-        q = -r - s
-    elseif r_diff > s_diff then
-        r = -q - s
-    else
-        s = -q - r
-    end
-
-    return {q = q, r = r, s = s}
-end
-
--- Round floating point axial coordinates to the nearest hex
-function hex_grid.round(hex)
-    local cube = hex_grid.axial_to_cube(hex)
-    local rounded_cube = hex_grid.cube_round(cube)
-    return hex_grid.cube_to_axial(rounded_cube)
-end
-
--- Convert rectangular coordinates to axial coordinates
--- rect_pos: {x, y} rectangular coordinates
--- hex_grid_scale: size of hexes (distance from center to corner)
--- hex_grid_rotation: rotation of the grid in radians
-function hex_grid.get_hex_containing(rect_pos, hex_grid_scale, hex_grid_rotation)
-    -- Default values
-    hex_grid_scale = hex_grid_scale or 1
-    hex_grid_rotation = hex_grid_rotation or 0
-
-    -- Apply rotation if needed
-    local x, y = rect_pos.x, rect_pos.y
-    if hex_grid_rotation ~= 0 then
-        local cos_r = math.cos(-hex_grid_rotation)
-        local sin_r = math.sin(-hex_grid_rotation)
-        x, y = x * cos_r - y * sin_r, x * sin_r + y * cos_r
-    end
-
-    -- Convert to cube coordinates using the inverse of the hex to pixel transformation
-    local size = hex_grid_scale
-    local q = (storage.constants.ROOT_THREE_OVER_THREE * x - 1/3 * y) / size
-    local r = (2/3 * y) / size
-
-    -- Create hith floating point coordinates
-    local hex = {q = q, r = r}
-    -- Round to the nearest hex
-    return hex_grid.round(hex)
-end
-
--- Convert axial coordinates to rectangular coordinates (center of hex)
--- hex_pos: {q, r} hex coordinates
--- hex_grid_scale: size of hexes (distance from center to corner)
--- hex_grid_rotation: rotation of the grid in radians
-function hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
-    -- Default values
-    hex_grid_scale = hex_grid_scale or 1
-    hex_grid_rotation = hex_grid_rotation or 0
-
-    -- Convert hex to pixel
-    local size = hex_grid_scale
-    local x = size * (storage.constants.ROOT_THREE * hex_pos.q + storage.constants.ROOT_THREE_OVER_TWO * hex_pos.r)
-    local y = size * (1.5 * hex_pos.r)
-
-    -- Apply rotation if needed
-    if hex_grid_rotation ~= 0 then
-        local cos_r = math.cos(hex_grid_rotation)
-        local sin_r = math.sin(hex_grid_rotation)
-        x, y = x * cos_r - y * sin_r, x * sin_r + y * cos_r
-    end
-
-    return {x = x, y = y}
-end
-
--- Get the six hexes adjacent to the given hex
-function hex_grid.get_adjacent_hexes(hex_pos)
-    local neighbors = {}
-    for i, dir in pairs(storage.hex_grid.directions) do
-        table.insert(neighbors, {
-            q = hex_pos.q + dir.q,
-            r = hex_pos.r + dir.r
-        })
-    end
-    return neighbors
-end
-
--- Calculate the distance between two hexes
-function hex_grid.distance(a, b)
-    -- In axial coordinates, the distance is calculated as:
-    return (math.abs(a.q - b.q) + 
-            math.abs(a.q + a.r - b.q - b.r) +
-            math.abs(a.r - b.r)) / 2
-end
-
--- Get a line of hexes from a to b
-function hex_grid.line(a, b)
-    local distance = hex_grid.distance(a, b)
-    local results = {}
-
-    -- For each point along the line
-    for i = 0, distance do
-        local t = distance > 0 and i / distance or 0
-
-        -- Linear interpolation in cube space
-        local ac = hex_grid.axial_to_cube(a)
-        local bc = hex_grid.axial_to_cube(b)
-
-        -- Interpolate each coordinate separately
-        local q = ac.q + (bc.q - ac.q) * t
-        local r = ac.r + (bc.r - ac.r) * t
-        local s = ac.s + (bc.s - ac.s) * t
-
-        -- Round to nearest hex and convert back to axial
-        local cube = hex_grid.cube_round({q = q, r = r, s = s})
-        local hex = hex_grid.cube_to_axial(cube)
-
-        table.insert(results, hex)
-    end
-
-    return results
-end
-
--- Get a ring of hexes at a specific radius from the center
-function hex_grid.ring(center, radius)
-    if radius < 1 then
-        return {center}
-    end
-
-    local results = {}
-
-    -- Start at a specific position on the ring
-    local hex = {
-        q = center.q + storage.hex_grid.directions[4].q * radius,
-        r = center.r + storage.hex_grid.directions[4].r * radius
-    }
-
-    -- Follow the ring by moving in each of the 6 directions
-    for i = 1, 6 do
-        local dir = i % 6 + 1 -- Wrap around to the next direction (1-based indexing)
-
-        -- Move radius hexes in this direction
-        for j = 1, radius do
-            table.insert(results, {q = hex.q, r = hex.r})
-
-            -- Move to the next hex in this direction
-            hex.q = hex.q + storage.hex_grid.directions[dir].q
-            hex.r = hex.r + storage.hex_grid.directions[dir].r
-        end
-    end
-
-    return results
-end
-
--- Get a spiral of hexes up to a specific radius
-function hex_grid.spiral(center, radius)
-    local results = {{q = center.q, r = center.r}}
-
-    -- Add each ring from 1 to radius
-    for r = 1, radius do
-        local ring = hex_grid.ring(center, r)
-        for _, hex in pairs(ring) do
-            table.insert(results, hex)
-        end
-    end
-
-    return results
-end
-
--- Rotate a hex around a center (in 60-degree increments)
-function hex_grid.rotate(hex, center, rotation_steps)
-    -- Convert to cube coordinates relative to center
-    local cube = hex_grid.axial_to_cube(hex)
-    local center_cube = hex_grid.axial_to_cube(center)
-
-    -- Calculate relative position
-    local q = cube.q - center_cube.q
-    local r = cube.r - center_cube.r
-    local s = cube.s - center_cube.s
-
-    -- Normalize rotation_steps to 0-5
-    rotation_steps = rotation_steps % 6
-
-    -- Rotate in 60-degree increments
-    for i = 1, rotation_steps do
-        local temp = q
-        q = -s
-        s = -r
-        r = -temp
-    end
-
-    -- Convert back to axial coordinates and add center offset
-    return {
-        q = q + center_cube.q,
-        r = r + center_cube.r
-    }
-end
-
--- Get the corner points of a hex in rectangular coordinates
-function hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation, hex_size_decrement)
-    -- Default values
-    hex_grid_scale = hex_grid_scale or 1
-    hex_grid_rotation = hex_grid_rotation or 0
-    hex_size_decrement = hex_size_decrement or 0
-
-    -- Get center without rotation
-    local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, 0)
-    local corners = {}
-
-    -- Calculate the six corners
-    local adjusted_scale = hex_grid_scale - hex_size_decrement
-    for i = 1, 6 do
-        local angle = (i - 1) * math.pi / 3 + math.pi / 6 -- +30 degrees offset for flat-top orientation
-        local x = center.x + adjusted_scale * math.cos(angle)
-        local y = center.y + adjusted_scale * math.sin(angle)
-
-        -- Apply rotation around the origin if needed
-        if hex_grid_rotation ~= 0 then
-            local cos_r = math.cos(hex_grid_rotation)
-            local sin_r = math.sin(hex_grid_rotation)
-            x, y = x * cos_r - y * sin_r, x * sin_r + y * cos_r
-        end
-
-        table.insert(corners, {x = x, y = y})
-    end
-
-    return corners
-end
-
--- Check if two hexes are equal
-function hex_grid.equals(a, b)
-    return a.q == b.q and a.r == b.r
-end
-
--- Calculate a hash value for a hex for use in tables
-function hex_grid.hash(hex)
-    -- Simple hash function for hex coordinates
-    return hex.q * 10000 + hex.r
-end
-
--- Add two hexes together
-function hex_grid.add(a, b)
-    return {q = a.q + b.q, r = a.r + b.r}
-end
-
--- Subtract hex b from hex a
-function hex_grid.subtract(a, b)
-    return {q = a.q - b.q, r = a.r - b.r}
-end
-
--- Multiply a hex by a scalar
-function hex_grid.multiply(hex, k)
-    return {q = hex.q * k, r = hex.r * k}
-end
-
--- Get a random hex within a certain radius of a center hex
-function hex_grid.random_hex(center, radius)
-    -- Get a random number in the range [-radius, radius]
-    local q_offset = math.random(-radius, radius)
-    local r_min = math.max(-radius, -q_offset - radius)
-    local r_max = math.min(radius, -q_offset + radius)
-    local r_offset = math.random(r_min, r_max)
-
-    return {
-        q = center.q + q_offset,
-        r = center.r + r_offset
-    }
-end
-
--- Check if a hex is within a certain radius of a center hex
-function hex_grid.is_within_radius(hex, center, radius)
-    return hex_grid.distance(hex, center) <= radius
-end
-
--- Generate a random rectangular coordinate point within a given hex
-function hex_grid.random_rect_in_hex(hex_pos, hex_grid_scale, hex_grid_rotation)
-    -- Default values
-    hex_grid_scale = hex_grid_scale or 1
-    hex_grid_rotation = hex_grid_rotation or 0
-
-    -- Get the center and corners of the hex
-    local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
-    local corners = hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)
-
-    -- Instead of rejection sampling, use triangular decomposition
-    -- Pick one of the 6 triangles formed by the center and two adjacent corners
-    local triangle_idx = math.random(1, 6)
-    local corner1 = corners[triangle_idx]
-    local corner2 = corners[triangle_idx % 6 + 1] -- Wrap around to first corner if needed
-
-    -- Generate random barycentric coordinates
-    -- For a random point in a triangle, we need 3 random numbers that sum to 1
-    local a = math.random()
-    local b = math.random() * (1 - a)
-    local c = 1 - a - b
-
-    -- Calculate the point using barycentric coordinates
-    local x = a * center.x + b * corner1.x + c * corner2.x
-    local y = a * center.y + b * corner1.y + c * corner2.y
-
-    return {x = x, y = y}
-end
-
--- Helper function to calculate the distance from a point to a line segment
-local function point_to_line_distance(point, p1, p2)
-    -- Vector from p1 to p2
-    local v_x = p2.x - p1.x
-    local v_y = p2.y - p1.y
-
-    -- Vector from p1 to point
-    local w_x = point.x - p1.x
-    local w_y = point.y - p1.y
-
-    -- Project w onto v
-    local c1 = v_x * w_x + v_y * w_y
-    if c1 <= 0 then
-        -- Point is closest to p1
-        return math.sqrt(w_x * w_x + w_y * w_y)
-    end
-
-    -- Length of v squared
-    local c2 = v_x * v_x + v_y * v_y
-    if c2 <= c1 then
-        -- Point is closest to p2
-        local dx = point.x - p2.x
-        local dy = point.y - p2.y
-        return math.sqrt(dx * dx + dy * dy)
-    end
-
-    -- Point is closest to a point on the line segment
-    local t = c1 / c2
-    local proj_x = p1.x + t * v_x
-    local proj_y = p1.y + t * v_y
-
-    local dx = point.x - proj_x
-    local dy = point.y - proj_y
-    return math.sqrt(dx * dx + dy * dy)
-end
-
--- Helper function to check if a point is inside a rectangle
-local function is_point_in_rect(point, rect_top_left, rect_bottom_right)
-    return point.x >= rect_top_left.x and point.x <= rect_bottom_right.x and
-           point.y >= rect_top_left.y and point.y <= rect_bottom_right.y
-end
-
--- Helper function to check if a point is inside a polygon (hex)
-local function is_point_in_polygon(point, polygon)
-    local inside = false
-    local j = #polygon
-
-    for i = 1, #polygon do
-        if ((polygon[i].y > point.y) ~= (polygon[j].y > point.y)) and
-           (point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / 
-            (polygon[j].y - polygon[i].y) + polygon[i].x) then
-            inside = not inside
-        end
-        j = i
-    end
-
-    return inside
-end
-
--- Helper function to check if two line segments intersect
-local function do_segments_intersect(p1, p2, p3, p4)
-    -- Calculate the direction vectors
-    local d1x, d1y = p2.x - p1.x, p2.y - p1.y
-    local d2x, d2y = p4.x - p3.x, p4.y - p3.y
-
-    -- Calculate the determinant
-    local det = d1x * d2y - d1y * d2x
-
-    -- Lines are parallel if det is close to 0
-    if math.abs(det) < 1e-10 then
-        return false
-    end
-
-    -- Calculate the parameters of intersection
-    local dx, dy = p1.x - p3.x, p1.y - p3.y
-    local t1 = (dx * d2y - dy * d2x) / det
-    local t2 = (dx * d1y - dy * d1x) / det
-
-    -- Check if the intersection is within both line segments
-    return t1 >= 0 and t1 <= 1 and t2 >= 0 and t2 <= 1
-end
-
--- Helper function to check if a line segment intersects a rectangle
-local function does_segment_intersect_rect(p1, p2, rect_top_left, rect_bottom_right)
-    -- Rectangle corners
-    local rect_corners = {
-        {x = rect_top_left.x, y = rect_top_left.y},           -- Top left
-        {x = rect_bottom_right.x, y = rect_top_left.y},       -- Top right
-        {x = rect_bottom_right.x, y = rect_bottom_right.y},   -- Bottom right
-        {x = rect_top_left.x, y = rect_bottom_right.y}        -- Bottom left
-    }
-
-    -- Check intersection with each edge of the rectangle
-    for i = 1, 4 do
-        local next_i = i % 4 + 1
-        if do_segments_intersect(p1, p2, rect_corners[i], rect_corners[next_i]) then
-            return true
-        end
-    end
-
-    return false
-end
-
--- Helper function to check if a hex overlaps a rectangle
-local function does_hex_overlap_rect(hex_pos, hex_grid_scale, hex_grid_rotation, rect_top_left, rect_bottom_right)
-    -- Get the corners of the hex
-    local corners = hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)
-
-    -- 1. Check if any hex corner is inside the rectangle
-    for _, corner in pairs(corners) do
-        if is_point_in_rect(corner, rect_top_left, rect_bottom_right) then
-            return true
-        end
-    end
-
-    -- 2. Check if any rectangle corner is inside the hex
-    local rect_corners = {
-        {x = rect_top_left.x, y = rect_top_left.y},           -- Top left
-        {x = rect_bottom_right.x, y = rect_top_left.y},       -- Top right
-        {x = rect_bottom_right.x, y = rect_bottom_right.y},   -- Bottom right
-        {x = rect_top_left.x, y = rect_bottom_right.y}        -- Bottom left
-    }
-
-    for _, corner in pairs(rect_corners) do
-        if is_point_in_polygon(corner, corners) then
-            return true
-        end
-    end
-
-    -- 3. Check if any hex edge intersects any rectangle edge
-    for i = 1, 6 do
-        local next_i = i % 6 + 1
-        if does_segment_intersect_rect(corners[i], corners[next_i], rect_top_left, rect_bottom_right) then
-            return true
-        end
-    end
-
-    return false
-end
-
--- Get all hexes that overlap a rectangular area
-function hex_grid.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
-    -- Default values
-    hex_grid_scale = hex_grid_scale or 1
-    hex_grid_rotation = hex_grid_rotation or 0
-
-    -- Normalize the rectangle coordinates (ensure top_left is actually top-left)
-    local tl = {
-        x = math.min(rect_top_left.x, rect_bottom_right.x),
-        y = math.min(rect_top_left.y, rect_bottom_right.y)
-    }
-    local br = {
-        x = math.max(rect_top_left.x, rect_bottom_right.x),
-        y = math.max(rect_top_left.y, rect_bottom_right.y)
-    }
-
-    -- Calculate a margin to accommodate rotated hexes that might overlap
-    -- This margin should be at least the hex size plus some buffer for rotation
-    local margin = hex_grid_scale * 2
-
-    -- Get hexes for the four corners of the rectangle (plus margin)
-    local tl_hex = hex_grid.get_hex_containing({x = tl.x - margin, y = tl.y - margin}, hex_grid_scale, hex_grid_rotation)
-    local tr_hex = hex_grid.get_hex_containing({x = br.x + margin, y = tl.y - margin}, hex_grid_scale, hex_grid_rotation)
-    local bl_hex = hex_grid.get_hex_containing({x = tl.x - margin, y = br.y + margin}, hex_grid_scale, hex_grid_rotation)
-    local br_hex = hex_grid.get_hex_containing({x = br.x + margin, y = br.y + margin}, hex_grid_scale, hex_grid_rotation)
-
-    -- Find the min/max q and r to create a bounding box of hexes
-    local min_q = math.min(tl_hex.q, tr_hex.q, bl_hex.q, br_hex.q)
-    local max_q = math.max(tl_hex.q, tr_hex.q, bl_hex.q, br_hex.q)
-    local min_r = math.min(tl_hex.r, tr_hex.r, bl_hex.r, br_hex.r)
-    local max_r = math.max(tl_hex.r, tr_hex.r, bl_hex.r, br_hex.r)
-
-    -- Check each hex in the bounding box
-    local overlapping_hexes = {}
-    for q = min_q, max_q do
-        for r = min_r, max_r do
-            local hex = {q = q, r = r}
-            if does_hex_overlap_rect(hex, hex_grid_scale, hex_grid_rotation, tl, br) then
-                table.insert(overlapping_hexes, hex)
-            end
-        end
-    end
-
-    return overlapping_hexes
-end
-
----Return a normally indexed table of chunk positions which overlap with the given hex.
----@param hex_pos {q: int, r: int}
----@param hex_grid_scale number
----@param hex_grid_rotation number
----@return {[int]: {x: int, y: int}}
-function hex_grid.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
-    local chunks = {}
-    local minx, miny, maxx, maxy
-    for _, vertex in pairs(hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)) do
-        local x, y = math.floor(vertex.x), math.floor(vertex.y)
-        if not minx then
-            minx = x
-            miny = y
-        else
-            minx = math.min(minx, x)
-            miny = math.min(miny, y)
-        end
-        if not maxx then
-            maxx = x
-            maxy = y
-        else
-            maxx = math.max(maxx, x)
-            maxy = math.max(maxy, y)
-        end
-    end
-    local chunk_size = 32
-    local chunk_minx = math.floor(minx / chunk_size) * chunk_size
-    local chunk_miny = math.floor(miny / chunk_size) * chunk_size
-    local chunk_maxx = math.ceil(maxx / chunk_size) * chunk_size
-    local chunk_maxy = math.ceil(maxy / chunk_size) * chunk_size
-    for x = chunk_minx, chunk_maxx, chunk_size do
-        for y = chunk_miny, chunk_maxy, chunk_size do
-            local top_left = {x = x, y = y}
-            local bottom_right = {x = x + chunk_size, y = y + chunk_size}
-            if does_hex_overlap_rect(hex_pos, hex_grid_scale, hex_grid_rotation, top_left, bottom_right) then
-                -- Convert world coordinates back to chunk coordinates
-                table.insert(chunks, {x = x / chunk_size, y = y / chunk_size})
-            end
-        end
-    end
-    return chunks
-end
-
--- Get all integer rectangular coordinates within a hex, excluding the border
-function hex_grid.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-    -- Default values
-    hex_grid_scale = hex_grid_scale or 1
-    hex_grid_rotation = hex_grid_rotation or 0
-    stroke_width = stroke_width or 0
-
-    -- stroke_width = stroke_width * 0.4 -- don't ask why this is necessary, it just is
-
-    -- Get the corners of the hex
-    local corners = hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)
-
-    -- Find the bounding rectangle of the hex
-    local min_x, min_y = math.huge, math.huge
-    local max_x, max_y = -math.huge, -math.huge
-
-    for _, corner in pairs(corners) do
-        min_x = math.min(min_x, corner.x)
-        min_y = math.min(min_y, corner.y)
-        max_x = math.max(max_x, corner.x)
-        max_y = math.max(max_y, corner.y)
-    end
-
-    -- Round to integers (expanding slightly to ensure we cover the full hex)
-    min_x = math.floor(min_x - 0.5)
-    min_y = math.floor(min_y - 0.5)
-    max_x = math.ceil(max_x + 0.5)
-    max_y = math.ceil(max_y + 0.5)
-
-    -- Collect all integer positions within the hex, excluding border
-    local positions = {}
-
-    for x = min_x, max_x do
-        for y = min_y, max_y do
-            local point = {x = x, y = y}
-
-            -- Check if the point is inside the hex
-            if is_point_in_polygon(point, corners) then
-                -- If stroke_width is provided, check distance from edges
-                local include = true
-
-                if stroke_width > 0 then
-                    -- Calculate minimum distance from the point to any edge of the hex
-                    local min_distance = math.huge
-
-                    for i = 1, 6 do
-                        local next_i = i % 6 + 1
-                        local p1 = corners[i]
-                        local p2 = corners[next_i]
-
-                        -- Calculate distance from point to line segment
-                        local distance = point_to_line_distance(point, p1, p2)
-                        min_distance = math.min(min_distance, distance)
-                    end
-
-                    -- Exclude points that are within stroke_width of the edge
-                    include = min_distance >= stroke_width
-                end
-
-                if include then
-                    table.insert(positions, {x = x, y = y})
-                end
-            end
-        end
-    end
-
-    return positions
-end
-
-function hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement, flatten_array)
-    if flatten_array == nil then
-        flatten_array = true
-    end
-
-    local added = {}
-
-    hex_size_decrement = hex_size_decrement or 0
-    stroke_width = stroke_width - 1
-    stroke_width = stroke_width * 1.25 -- dividing by the 0.8 factor for tile overlap
-
-    -- For each edge of the hex, place water tiles along it
-    for i = 1, 6 do
-        local next_i = i % 6 + 1
-        local start = corners[i]
-        local finish = corners[next_i]
-
-        -- Calculate the number of steps needed (depends on hex size)
-        -- Higher number for smoother border, but more intensive
-        local steps = math.max(10, math.floor(hex_grid_scale * 2))
-
-        -- Calculate direction vector of the edge
-        local dir_x = finish.x - start.x
-        local dir_y = finish.y - start.y
-
-        -- Calculate perpendicular vector (for stroke width)
-        local length = math.sqrt(dir_x * dir_x + dir_y * dir_y)
-        local perp_x = -dir_y / length
-        local perp_y = dir_x / length
-
-        -- For each position along the edge
-        for step = 1, steps do
-            local t = step / steps
-            local base_x = start.x + dir_x * t
-            local base_y = start.y + dir_y * t
-
-            -- Create tiles for the stroke width
-            for w = -1, math.ceil(stroke_width * 1.25) do
-                -- Offset in the perpendicular direction
-                -- We want the stroke to go inward from the edge
-                local offset = w * 0.8  -- 0.8 factor for tile overlap
-                local x = math.floor(base_x + perp_x * offset + 0.5)
-                local y = math.floor(base_y + perp_y * offset + 0.5)
-
-                if not added[x] then
-                    added[x] = {}
-                end
-                added[x][y] = true
-            end
-        end
-    end
-
-    if flatten_array then
-        return lib.flattened_position_array(added)
-    end
-
-    return added
-end
-
-function hex_grid.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, hex_size_decrement, flatten_array)
-    hex_size_decrement = math.min(hex_size_decrement, hex_grid_scale)
-    stroke_width = math.min(stroke_width, hex_grid_scale - hex_size_decrement)
-    local corners = hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation, hex_size_decrement)
-    return hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement, flatten_array)
-end
-
-----------------------------------------
--- Hex grid generation and management --
-----------------------------------------
 
 function hex_grid.register_events()
     event_system.register_callback("item-rank-up", function(item_name)
@@ -759,9 +72,9 @@ function hex_grid.register_events()
                 return
             end
         end
-        local transformation = hex_grid.get_surface_transformation(player.surface)
+        local transformation = terrain.get_surface_transformation(player.surface)
         if not transformation then return end
-        local hex_pos = hex_grid.get_hex_containing(player.position, transformation.scale, transformation.rotation)
+        local hex_pos = axial.get_hex_containing(player.position, transformation.scale, transformation.rotation)
         hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, false) -- claim by server
     end)
 
@@ -776,9 +89,9 @@ function hex_grid.register_events()
                 return
             end
         end
-        local transformation = hex_grid.get_surface_transformation(player.surface)
+        local transformation = terrain.get_surface_transformation(player.surface)
         if not transformation then return end
-        local hex_pos = hex_grid.get_hex_containing(player.position, transformation.scale, transformation.rotation)
+        local hex_pos = axial.get_hex_containing(player.position, transformation.scale, transformation.rotation)
         hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, true) -- claim by server
     end)
 
@@ -884,13 +197,13 @@ end
 function hex_grid.get_hex_state_from_core(hex_core)
     if not hex_core then return end
 
-    local transformation = hex_grid.get_surface_transformation(hex_core.surface.name)
+    local transformation = terrain.get_surface_transformation(hex_core.surface.name)
     if not transformation then
         lib.log_error("No transformation found for surface " .. serpent.line(hex_core.surface.name))
         return
     end
 
-    local hex_pos = hex_grid.get_hex_containing(hex_core.position, transformation.scale, transformation.rotation)
+    local hex_pos = axial.get_hex_containing(hex_core.position, transformation.scale, transformation.rotation)
     local state = hex_grid.get_hex_state(hex_core.surface.name, hex_pos)
 
     if state.hex_core ~= hex_core then
@@ -1008,7 +321,6 @@ end
 
 function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
     if not trades.set_trade_active(trades.get_trade_from_id(hex_core_state.trades[trade_index]), flag) then return end
-    -- hex_grid.update_loader_filters(hex_core_state)
 end
 
 function hex_grid.switch_hex_core_mode(state, mode)
@@ -1113,146 +425,6 @@ function hex_grid.update_hex_core_inventory_filters(hex_core_state)
     end
 end
 
--- Set the tile type for a specific position
-function hex_grid.set_tile(surface, position, tile_type)
-    local surface_id = lib.get_surface_id(surface)
-    surface = game.surfaces[surface_id]
-    if not surface then
-        lib.log_error("Invalid surface")
-        return
-    end
-
-    surface.set_tiles({{name = tile_type, position = position}})
-end
-
--- Set the tile type for a list of positions
-function hex_grid.set_tiles(surface, positions, tile_type, ignore_tiles)
-    if not ignore_tiles then ignore_tiles = {} end
-    local surface_id = lib.get_surface_id(surface)
-    surface = game.surfaces[surface_id]
-    if not surface then
-        lib.log_error("Invalid surface")
-        return
-    end
-
-    local tiles = {}
-    for _, position in pairs(positions) do
-        local cur_tile = surface.get_tile(position.x, position.y)
-        if not cur_tile.valid or not ignore_tiles[cur_tile.name] then
-            table.insert(tiles, {name = tile_type, position = position})
-        end
-    end
-    surface.set_tiles(tiles)
-end
-
--- Set all tiles within a hex to tile_type
-function hex_grid.set_hex_tiles(surface, hex_pos, tile_type, overwrite_water)
-    if tile_type == "none" then return end
-
-    if overwrite_water == nil then
-        overwrite_water = true
-    end
-
-    local transformation = hex_grid.get_surface_transformation(surface)
-    if not transformation then
-        lib.log_error("No transformation found for surface " .. serpent.line(surface))
-        return
-    end
-
-    local positions = hex_grid.get_hex_tile_positions(hex_pos, transformation.scale, transformation.rotation, transformation.stroke_width)
-
-    hex_grid.set_tiles(surface, positions, tile_type, storage.hex_grid.gleba_ignore_tiles)
-end
-
--- Generate tiles along the border of a hex
-function hex_grid.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-    -- Default values
-    hex_grid_scale = hex_grid_scale or 1
-    hex_grid_rotation = hex_grid_rotation or 0
-    stroke_width = stroke_width or 3
-
-    local corners = hex_grid.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)
-    local border_tiles = hex_grid.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width)
-
-    local surface_id = lib.get_surface_id(surface)
-    surface = game.get_surface(surface_id)
-    if not surface then
-        lib.log_error("hex_grid.generate_hex_border: Cannot find surface from " .. serpent.line(surface))
-        return
-    end
-
-    -- Set all border tiles to the non-land tile for the surface
-    local tile_type
-    if surface.name == "nauvis" then
-        tile_type = "water"
-    elseif surface.name == "vulcanus" then
-        tile_type = "lava-hot"
-    elseif surface.name == "fulgora" then
-        tile_type = "oil-ocean-shallow"
-    elseif surface.name == "gleba" then
-        tile_type = "gleba-deep-lake"
-    elseif surface.name == "aquilo" then
-        tile_type = "ammoniacal-ocean"
-    else
-        tile_type = "water"
-    end
-
-    hex_grid.set_tiles(surface, border_tiles, tile_type)
-end
-
----@param surfaceID SurfaceIdentification|LuaSurface|string
----@return {scale:number, rotation:number, stroke_width:number}
-function hex_grid.get_surface_transformation(surfaceID)
-    local surface_id = lib.get_surface_id(surfaceID)
-    surface = game.get_surface(surface_id)
-    if not surface then
-        lib.log_error("Cannot find surface from " .. serpent.line(surfaceID))
-        return {
-            scale = 24,
-            rotation = 0,
-            stroke_width = 5,
-        }
-    end
-
-    local surface_name = surface.name
-
-    local transformations = storage.hex_grid.surface_transformations
-    local transformation = transformations[surface_id]
-    if not transformation then
-        transformation = {}
-        transformations[surface_id] = transformation
-    end
-
-    if not transformation.scale then
-        transformation.scale = lib.startup_setting_value("hex-size-" .. surface_name)
-        if not transformation.scale then
-            transformation.scale = 24
-        end
-    end
-
-    if not transformation.rotation then
-        local mode = lib.startup_setting_value("grid-rotation-mode-" .. surface_name)
-        if mode == "random" then
-            transformation.rotation = math.random() * math.pi
-        elseif mode == "flat-top" then
-            transformation.rotation = math.pi * 0.5
-        elseif mode == "pointed-top" then
-            transformation.rotation = 0
-        else
-            transformation.rotation = 0
-        end
-    end
-
-    if not transformation.stroke_width then
-        transformation.stroke_width = lib.startup_setting_value("hex-stroke-width-" .. surface_name)
-        if not transformation.stroke_width then
-            transformation.stroke_width = 5
-        end
-    end
-
-    return transformation
-end
-
 -- Initialize a hex with default state and generate its border
 function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
@@ -1275,7 +447,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         return
     end
 
-    hex_grid.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+    terrain.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
 
     local land_chance
     if surface.name == "nauvis" then
@@ -1298,7 +470,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
-    local dist = hex_grid.distance(hex_pos, {q=0, r=0})
+    local dist = axial.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
     local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
 
@@ -1320,15 +492,15 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         if surface.name == "fulgora" then
             -- Chance to spawn a fulgoran-ruin-vault
             if math.random() < lib.runtime_setting_value "vault-chance" then
-                local transformation = hex_grid.get_surface_transformation "fulgora"
+                local transformation = terrain.get_surface_transformation "fulgora"
                 surface.create_entity {
                     name = "fulgoran-ruin-vault",
-                    position = hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation),
+                    position = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation),
                     force = "neutral",
                 }
             elseif math.random() < lib.runtime_setting_value "fulgoran-attractor-chance" then
-                local transformation = hex_grid.get_surface_transformation "fulgora"
-                local pos = hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
+                local transformation = terrain.get_surface_transformation "fulgora"
+                local pos = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
                 pos = lib.vector_add(pos, lib.random_unit_vector(9))
                 surface.create_entity {
                     name = "fulgoran-ruin-attractor",
@@ -1380,12 +552,12 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             end
         end
     else
-        hex_grid.generate_non_land_tiles(surface, hex_pos)
+        terrain.generate_non_land_tiles(surface, hex_pos)
     end
 
     state.generated = true
 
-    local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+    local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
     if hex_grid.can_hex_core_spawn(surface, hex_pos) then
         hex_grid.spawn_hex_core(surface, center)
     end
@@ -1413,7 +585,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     end
 
     local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
-    local dist = hex_grid.distance(hex_pos, {q=0, r=0})
+    local dist = axial.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
 
     local resource_wc, is_well = hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
@@ -1512,7 +684,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             end
 
             local angle = rotation + math.pi * 2 * i / num_entities
-            local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+            local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
             local x = center.x + math.cos(angle) * radius
             local y = center.y + math.sin(angle) * radius
             local entity = surface.create_entity{
@@ -1528,11 +700,11 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         local pie_angles, hex_pos_rect, rotation
         if not is_mixed then
             pie_angles = lib.get_pie_angles(resource_wc)
-            hex_pos_rect = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+            hex_pos_rect = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
             rotation = math.random() * math.pi * 2
         end
 
-        local inner_border_tiles = hex_grid.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
+        local inner_border_tiles = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
         for _, tile in pairs(inner_border_tiles) do
             if lib.is_land_tile(surface, tile) then
                 local resource, amount
@@ -1591,7 +763,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         return
     end
     local mgs = storage.hex_grid.mgs[surface.name]
-    local dist = hex_grid.distance(hex_pos, {q = 0, r = 0})
+    local dist = axial.distance(hex_pos, {q = 0, r = 0})
     local is_starter_hex = dist == 0
 
     -- Calculate frequencies
@@ -1725,14 +897,14 @@ function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid
     end
     surface = game.surfaces[surface_id]
 
-    local dist = hex_grid.distance(hex_pos, {q=0, r=0})
+    local dist = axial.distance(hex_pos, {q=0, r=0})
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
     local num_spawners_min = math.floor(0.5 + lib.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 3))
     local num_spawners_max = math.floor(0.5 + lib.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 5))
     local num_spawners = math.random(num_spawners_min, num_spawners_max)
     local num_worms = math.floor(0.4999 + num_spawners * (0.5 + math.random()))
-    local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+    local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
 
     return hex_grid.spawn_enemy_base(surface, center, hex_grid_scale - stroke_width, num_spawners, num_worms, quality)
 end
@@ -1745,13 +917,13 @@ function hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_g
     end
     surface = game.surfaces[surface_id]
 
-    local dist = hex_grid.distance(hex_pos, {q=0, r=0})
+    local dist = axial.distance(hex_pos, {q=0, r=0})
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
     local num_rafts_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 3))
     local num_rafts_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 5))
     local num_rafts = math.random(num_rafts_min, num_rafts_max)
-    local center = hex_grid.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+    local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
 
     return hex_grid.spawn_enemy_base(surface, center, hex_grid_scale - stroke_width, num_rafts, 0, quality)
 end
@@ -1874,29 +1046,6 @@ function hex_grid.get_quality_tier_from_distance(surface_name, dist)
     return i
 end
 
-function hex_grid.generate_non_land_tiles(surface, hex_pos)
-    local surface_id = lib.get_surface_id(surface)
-    if surface_id == -1 then
-        lib.log_error("hex_grid.generate_non_land_tiles: No surface found")
-        return
-    end
-    surface = game.surfaces[surface_id]
-
-    local tile_type
-    if surface.name == "nauvis" then
-        tile_type = "deepwater"
-    elseif surface.name == "vulcanus" then
-        tile_type = "lava"
-    elseif surface.name == "fulgora" then
-        tile_type = "oil-ocean-deep"
-    elseif surface.name == "gleba" then
-        tile_type = "gleba-deep-lake"
-    elseif surface.name == "aquilo" then
-        tile_type = "ammoniacal-ocean-2"
-    end
-
-    hex_grid.set_hex_tiles(surface, hex_pos, tile_type, true)
-end
 
 -- Check if a hex core can be spawned within a hex
 function hex_grid.can_hex_core_spawn(surface, hex_pos)
@@ -1915,7 +1064,7 @@ end
 
 -- Check if a hex is near a claimed hex
 function hex_grid.is_hex_near_claimed_hex(surface, hex_pos)
-    local adjacent_hexes = hex_grid.get_adjacent_hexes(hex_pos)
+    local adjacent_hexes = axial.get_adjacent_hexes(hex_pos)
     for _, adj_hex in pairs(adjacent_hexes) do
         local state = hex_grid.get_hex_state(surface, adj_hex)
         if state.claimed then
@@ -1977,8 +1126,8 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
 
     state.claimed_timestamp = game.tick
 
-    local adjacent_hexes = hex_grid.get_adjacent_hexes(hex_pos)
-    local transformation = hex_grid.get_surface_transformation(surface)
+    local adjacent_hexes = axial.get_adjacent_hexes(hex_pos)
+    local transformation = terrain.get_surface_transformation(surface)
 
     if not transformation then
         lib.log_error("hex_grid.claim_hex: No transformation found")
@@ -1987,7 +1136,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
 
     for _, adj_hex in pairs(adjacent_hexes) do
         if hex_grid.can_hex_core_spawn(surface, adj_hex) then
-            hex_grid.spawn_hex_core(surface, hex_grid.get_hex_center(adj_hex, transformation.scale, transformation.rotation))
+            hex_grid.spawn_hex_core(surface, axial.get_hex_center(adj_hex, transformation.scale, transformation.rotation))
         end
     end
 
@@ -2010,9 +1159,9 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     else
         storage.hex_grid.last_used_claim_tile = tile_name
     end
-    hex_grid.set_hex_tiles(surface, hex_pos, tile_name)
+    terrain.set_hex_tiles(surface, hex_pos, tile_name)
 
-    hex_grid.spawn_hex_core(surface, hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
+    hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
 
     local fill_tile_name
     if by_player then
@@ -2113,7 +1262,7 @@ function hex_grid.claim_hexes_range(surface, hex_pos, range, by_player, allow_no
 end
 
 function hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, center_pos, allow_nonland)
-    local dist = hex_grid.distance(hex_pos, center_pos)
+    local dist = axial.distance(hex_pos, center_pos)
     if dist > range then return end
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
@@ -2121,7 +1270,7 @@ function hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, center_po
         hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland)
     end
 
-    for _, adj_hex in pairs(hex_grid.get_adjacent_hexes(hex_pos)) do
+    for _, adj_hex in pairs(axial.get_adjacent_hexes(hex_pos)) do
         local adj_state = hex_grid.get_hex_state(surface, adj_hex)
         if not hex_grid.is_claimed_or_in_queue(adj_state) then
             hex_grid._claim_hexes_dfs(surface, adj_hex, range, by_player, center_pos, allow_nonland)
@@ -2144,7 +1293,7 @@ function hex_grid.check_hex_span(surface, hex_pos)
     local span = 0
     for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface)) do
         if state.claimed then
-            span = math.max(span, hex_grid.distance(hex_pos, state.position))
+            span = math.max(span, axial.distance(hex_pos, state.position))
         end
     end
 
@@ -2186,7 +1335,7 @@ function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_gri
     -- lib.log("hex_grid.on_chunk_generated: " .. surface.name .. ", " .. serpent.line(chunk_pos))
 
     -- Default values
-    local transformation = hex_grid.get_surface_transformation(surface)
+    local transformation = terrain.get_surface_transformation(surface)
 
     if not transformation then
         lib.log_error("hex_grid.on_chunk_generated: No transformation found")
@@ -2201,7 +1350,7 @@ function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_gri
     local top_left, bottom_right = lib.chunk_to_rect(chunk_pos)
 
     -- Find all hexes that overlap with this chunk
-    local overlapping_hexes = hex_grid.get_overlapping_hexes(
+    local overlapping_hexes = axial.get_overlapping_hexes(
         top_left, bottom_right, hex_grid_scale, hex_grid_rotation
     )
 
@@ -2225,7 +1374,7 @@ function hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_
     surface = game.surfaces[surface_id]
 
     -- Only return true if all overlapping chunks are generated
-    for _, chunk_pos in pairs(hex_grid.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)) do
+    for _, chunk_pos in pairs(axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)) do
         if not surface.is_chunk_generated(chunk_pos) then
             return false
         end
@@ -2234,7 +1383,7 @@ function hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_
 end
 
 function hex_grid.initialize_adjacent_hexes(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-    for _, adj in pairs(hex_grid.get_adjacent_hexes(hex_pos)) do
+    for _, adj in pairs(axial.get_adjacent_hexes(hex_pos)) do
         local state = hex_grid.get_hex_state(surface, adj)
         if not state.generated then
             if hex_grid.can_initialize_hex(surface, adj, hex_grid_scale, hex_grid_rotation) then
@@ -2253,17 +1402,17 @@ function hex_grid.spawn_hex_core(surface, position)
         return
     end
 
-    local transformation = hex_grid.get_surface_transformation(surface_id)
+    local transformation = terrain.get_surface_transformation(surface_id)
     if not transformation then
         lib.log_error("hex_grid.spawn_hex_core: No transformation found")
         return
     end
 
-    local hex_pos = hex_grid.get_hex_containing(position, transformation.scale, transformation.rotation)
+    local hex_pos = axial.get_hex_containing(position, transformation.scale, transformation.rotation)
     local state = hex_grid.get_hex_state(surface_id, hex_pos)
     if state.hex_core then return end
 
-    local dist = hex_grid.distance(hex_pos, {q=0, r=0})
+    local dist = axial.distance(hex_pos, {q=0, r=0})
 
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
@@ -2315,7 +1464,7 @@ function hex_grid.spawn_hex_core(surface, position)
 end
 
 function hex_grid.add_initial_trades(state)
-    local dist = hex_grid.distance(state.position, {q=0, r=0})
+    local dist = axial.distance(state.position, {q=0, r=0})
     local is_starting_hex = dist == 0
 
     local hex_core_trades = {}
@@ -2580,91 +1729,19 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
 
     if surface.name == "aquilo" then return end
 
+    local state = hex_grid.get_hex_state(surface_id, hex_pos)
+    if not state.claimed then return end
+
     -- If no tile type is specified, use the last claimed hex tile type
     if not tile_type then
         tile_type = storage.hex_grid.last_used_claim_tile or "refined-concrete"
     end
 
-    local transformation = hex_grid.get_surface_transformation(surface_id)
-    if not transformation then
-        lib.log_error("hex_grid.fill_edges_between_claimed_hexes: No transformation found")
-        return
-    end
-
-    -- Get adjacent hexes
-    local adjacent_hexes = hex_grid.get_adjacent_hexes(hex_pos)
-
     -- Process each adjacent hex that is claimed
-    for _, adj_hex in pairs(adjacent_hexes) do
+    for _, adj_hex in pairs(axial.get_adjacent_hexes(hex_pos)) do
         local adj_state = hex_grid.get_hex_state(surface_id, adj_hex)
         if adj_state.claimed then
-            -- Get centers of both hexes in rectangular coordinates
-            local center1 = hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
-            local center2 = hex_grid.get_hex_center(adj_hex, transformation.scale, transformation.rotation)
-
-            -- Calculate squared distance between centers
-            local dx = center1.x - center2.x
-            local dy = center1.y - center2.y
-            local center_dist_squared = dx * dx + dy * dy
-
-            -- Calculate threshold based on center distance and hex radius
-            -- Dynamically calculate the threshold multiplier using the formula: 2/(d/r)²
-            -- Where d is center_dist and r is hex_radius (transformation.scale)
-            local hex_radius = transformation.scale
-            local center_dist = math.sqrt(center_dist_squared)
-            local threshold_multiplier = 2 / ((center_dist / hex_radius) * (center_dist / hex_radius))
-
-            -- Calculate the threshold
-            local threshold = center_dist_squared * threshold_multiplier
-
-            if surface.name == "fulgora" then
-                threshold = threshold * 0.78
-            end
-
-            -- Get border tiles for both hexes
-            local corners1 = hex_grid.get_hex_corners(hex_pos, transformation.scale, transformation.rotation)
-            local corners2 = hex_grid.get_hex_corners(adj_hex, transformation.scale, transformation.rotation)
-            local border_tiles1 = hex_grid.get_hex_border_tiles_from_corners(corners1, transformation.scale, transformation.stroke_width)
-            local border_tiles2 = hex_grid.get_hex_border_tiles_from_corners(corners2, transformation.scale, transformation.stroke_width)
-
-            -- Combine border tiles
-            local all_border_tiles = {}
-            for _, tile in pairs(border_tiles1) do
-                table.insert(all_border_tiles, tile)
-            end
-            for _, tile in pairs(border_tiles2) do
-                table.insert(all_border_tiles, tile)
-            end
-
-            -- Find water tiles that meet the sum of squared distances criteria
-            local edge_tiles = {}
-            for _, tile in pairs(all_border_tiles) do
-                -- Calculate sum of squared distances to both centers
-                local d1_squared = (tile.x - center1.x) * (tile.x - center1.x) + (tile.y - center1.y) * (tile.y - center1.y)
-                local d2_squared = (tile.x - center2.x) * (tile.x - center2.x) + (tile.y - center2.y) * (tile.y - center2.y)
-                local sum_squared = d1_squared + d2_squared
-
-                -- Check if the tile meets the threshold criteria
-                if sum_squared <= threshold then
-                    -- Check if it's a water tile
-                    local game_tile = surface.get_tile(tile.x, tile.y)
-                    if game_tile and game_tile.valid and (
-                        game_tile.name == "water" or
-                        game_tile.name == "deepwater" or
-                        game_tile.name == "oil-ocean-shallow" or
-                        game_tile.name == "lava-hot" or
-                        game_tile.name == "gleba-deep-lake" or
-                        game_tile.name == "ammoniacal-solution"
-                    ) then
-                        table.insert(edge_tiles, {x = tile.x, y = tile.y})
-                    end
-                end
-            end
-
-            -- Fill the edge tiles
-            if #edge_tiles > 0 then
-                hex_grid.set_tiles(surface, edge_tiles, tile_type)
-            end
+            terrain.fill_edges_between_hexes(surface, hex_pos, adj_hex, tile_type)
         end
     end
 end
@@ -2679,119 +1756,31 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
     surface = game.surfaces[surface_id]
 
     if surface.name == "fulgora" or surface.name == "aquilo" then return end
-    
+
+    local state = hex_grid.get_hex_state(surface_id, hex_pos)
+    if not state.claimed then return end
+
     -- If no tile type is specified, use the last claimed hex tile type
     if not tile_type then
         tile_type = storage.hex_grid.last_used_claim_tile or "refined-concrete"
     end
-    
-    local transformation = hex_grid.get_surface_transformation(surface_id)
-    if not transformation then
-        lib.log_error("hex_grid.fill_corners_between_claimed_hexes: No transformation found")
-        return
-    end
-    
+
     -- Get adjacent hexes
-    local adjacent_hexes = hex_grid.get_adjacent_hexes(hex_pos)
-    
+    local adjacent_hexes = axial.get_adjacent_hexes(hex_pos)
+
     -- For each pair of adjacent hexes, check if they share a corner
     for i = 1, #adjacent_hexes do
-        local hex1 = adjacent_hexes[i]
-        local hex1_state = hex_grid.get_hex_state(surface_id, hex1)
-        
-        if hex1_state.claimed then
+        local hex_pos2 = adjacent_hexes[i]
+        local hex2_state = hex_grid.get_hex_state(surface_id, hex_pos2)
+        if hex2_state.claimed then
             for j = i+1, #adjacent_hexes do
-                local hex2 = adjacent_hexes[j]
-                local hex2_state = hex_grid.get_hex_state(surface_id, hex2)
-                
-                if hex2_state.claimed then
+                local hex_pos3 = adjacent_hexes[j]
+                local hex3_state = hex_grid.get_hex_state(surface_id, hex_pos3)
+                if hex3_state.claimed then
                     -- Check if these three hexes share a corner
                     -- For this to be true, hex1 and hex2 must be adjacent to each other
-                    if hex_grid.distance(hex1, hex2) == 1 then
-                        -- Get centers of all three hexes
-                        local center0 = hex_grid.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
-                        local center1 = hex_grid.get_hex_center(hex1, transformation.scale, transformation.rotation)
-                        local center2 = hex_grid.get_hex_center(hex2, transformation.scale, transformation.rotation)
-                        
-                        -- Get corners for all three hexes
-                        local corners0 = hex_grid.get_hex_corners(hex_pos, transformation.scale, transformation.rotation)
-                        local corners1 = hex_grid.get_hex_corners(hex1, transformation.scale, transformation.rotation)
-                        local corners2 = hex_grid.get_hex_corners(hex2, transformation.scale, transformation.rotation)
-                        
-                        -- Find the common corner among all three hexes
-                        local common_corner = nil
-                        local tolerance = 0.01
-                        
-                        for _, c0 in pairs(corners0) do
-                            for _, c1 in pairs(corners1) do
-                                if math.abs(c0.x - c1.x) < tolerance and math.abs(c0.y - c1.y) < tolerance then
-                                    -- c0 and c1 are the same corner, check if it's also in corners2
-                                    for _, c2 in pairs(corners2) do
-                                        if math.abs(c0.x - c2.x) < tolerance and math.abs(c0.y - c2.y) < tolerance then
-                                            -- Found a corner common to all three hexes
-                                            common_corner = {x = (c0.x + c1.x + c2.x) / 3, y = (c0.y + c1.y + c2.y) / 3}
-                                            break
-                                        end
-                                    end
-                                    
-                                    if common_corner then break end
-                                end
-                            end
-                            
-                            if common_corner then break end
-                        end
-                        
-                        if common_corner then
-                            -- Get border tiles for all three hexes
-                            local border_tiles0 = hex_grid.get_hex_border_tiles_from_corners(corners0, transformation.scale, transformation.stroke_width)
-                            local border_tiles1 = hex_grid.get_hex_border_tiles_from_corners(corners1, transformation.scale, transformation.stroke_width)
-                            local border_tiles2 = hex_grid.get_hex_border_tiles_from_corners(corners2, transformation.scale, transformation.stroke_width)
-                            
-                            -- Combine all border tiles
-                            local all_border_tiles = {}
-                            for _, tile in pairs(border_tiles0) do table.insert(all_border_tiles, tile) end
-                            for _, tile in pairs(border_tiles1) do table.insert(all_border_tiles, tile) end
-                            for _, tile in pairs(border_tiles2) do table.insert(all_border_tiles, tile) end
-                            
-                            -- Calculate distance from each center to the common corner
-                            local dist0 = math.sqrt((common_corner.x - center0.x)^2 + (common_corner.y - center0.y)^2)
-                            local dist1 = math.sqrt((common_corner.x - center1.x)^2 + (common_corner.y - center1.y)^2)
-                            local dist2 = math.sqrt((common_corner.x - center2.x)^2 + (common_corner.y - center2.y)^2)
-                            
-                            -- Average distance squared
-                            local avg_dist_squared = (dist0^2 + dist1^2 + dist2^2) / 3
-                            
-                            -- Radius for corner detection - slightly smaller than average distance
-                        local corner_radius_squared = avg_dist_squared * 0.85
-                            
-                            -- Find tiles close to the common corner
-                            local corner_tiles = {}
-                            for _, tile in pairs(all_border_tiles) do
-                                -- Distance from tile to corner
-                                local corner_dist_squared = (tile.x - common_corner.x)^2 + (tile.y - common_corner.y)^2
-                                
-                                -- If tile is close to corner
-                                if corner_dist_squared < corner_radius_squared * 0.5 then
-                                    -- Check if it's a water tile
-                                    local game_tile = surface.get_tile(tile.x, tile.y)
-                                    if game_tile and game_tile.valid and (
-                                        game_tile.name == "water" or
-                                        game_tile.name == "deepwater" or
-                                        game_tile.name == "oil-ocean-shallow" or
-                                        game_tile.name == "lava-hot" or
-                                        game_tile.name == "gleba-deep-lake" or
-                                        game_tile.name == "ammoniacal-solution"
-                                    ) then
-                                        table.insert(corner_tiles, {x = tile.x, y = tile.y})
-                                    end
-                                end
-                            end
-                            
-                            -- Fill the corner tiles
-                            if #corner_tiles > 0 then
-                                hex_grid.set_tiles(surface, corner_tiles, tile_type)
-                            end
-                        end
+                    if axial.distance(hex_pos2, hex_pos3) == 1 then
+                        terrain.fill_corners_between_hexes(surface, hex_pos, hex_pos2, hex_pos3, tile_type)
                     end
                 end
             end
@@ -2800,7 +1789,7 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
 end
 
 function hex_grid.get_hex_resource_entities(hex_core)
-    local transformation = hex_grid.get_surface_transformation(hex_core.surface)
+    local transformation = terrain.get_surface_transformation(hex_core.surface)
     if not transformation then return {} end
 
     local entities = hex_core.surface.find_entities_filtered {
@@ -2819,7 +1808,7 @@ function hex_grid.get_hex_resource_entities(hex_core)
     -- local state = hex_grid.get_hex_state_from_core(hex_core)
     -- if not state then return entities end
 
-    -- local inner_border_tiles = hex_grid.get_hex_border_tiles(state.position, transformation.scale, transformation.rotation, transformation.scale - transformation.stroke_width, transformation.stroke_width, false)
+    -- local inner_border_tiles = axial.get_hex_border_tiles(state.position, transformation.scale, transformation.rotation, transformation.scale - transformation.stroke_width, transformation.stroke_width, false)
     -- for i = #entities, 1, -1 do
     --     local entity = entities[i]
     --     if not inner_border_tiles[entity.position.x] or not inner_border_tiles[entity.position.x][entity.position.y] then
@@ -3307,7 +2296,7 @@ function hex_grid.recover_trades_retro(item_name)
 end
 
 function hex_grid.reduce_biters(portion)
-    local transformation = hex_grid.get_surface_transformation "nauvis"
+    local transformation = terrain.get_surface_transformation "nauvis"
     if not transformation then return end
 
     storage.hex_grid.total_biter_multiplier = (storage.total_biter_multiplier or 1) * (1 - portion)
@@ -3318,7 +2307,7 @@ function hex_grid.reduce_biters(portion)
             if math.random() < portion then
                 local entities = surface.find_entities_filtered {
                     force = "enemy",
-                    position = hex_grid.get_hex_center(state.position, transformation.scale, transformation.rotation),
+                    position = axial.get_hex_center(state.position, transformation.scale, transformation.rotation),
                     radius = transformation.scale,
                 }
                 for _, e in pairs(entities) do

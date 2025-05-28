@@ -280,4 +280,28 @@ tile_names.space_age_exclusive_land = sets.to_array(sets.difference(sets.new(til
 
 
 
+-- Generate lookup tables
+tile_names.lookup = {}
+for key, arr in pairs(tile_names) do
+    if key ~= "lookup" then
+        tile_names.lookup[key] = sets.new(arr)
+    end
+end
+
+
+
+---@param name string
+---@return boolean
+function tile_names.is_land_tile(name)
+    return tile_names.lookup.space_age_land[name] == true
+end
+
+---@param name string
+---@return boolean
+function tile_names.is_nonland_tile(name)
+    return tile_names.lookup.space_age_non_land[name] == true
+end
+
+
+
 return tile_names

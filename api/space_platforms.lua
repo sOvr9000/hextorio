@@ -1,6 +1,5 @@
 
 local blueprints = require "api.blueprints"
-local hex_grid = require "api.hex_grid"
 
 local space_platforms = {}
 
