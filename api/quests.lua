@@ -261,15 +261,19 @@ function quests.calculate_quest_order()
         if quest.unlocks then
             for _, unlock in pairs(quest.unlocks) do
                 q = quests.get_quest_from_name(unlock)
-                q.order = math.min(q.order, quest.order + 1)
-                dfs(q)
+                if q then
+                    q.order = math.min(q.order, quest.order + 1)
+                    dfs(q)
+                end
             end
         end
         if quest.prerequisites then
             for _, prereq in pairs(quest.prerequisites) do
                 q = quests.get_quest_from_name(prereq)
-                quest.order = math.min(quest.order, q.order + 1)
-                dfs(q)
+                if q then
+                    quest.order = math.min(quest.order, q.order + 1)
+                    dfs(q)
+                end
             end
         end
     end

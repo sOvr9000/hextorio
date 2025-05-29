@@ -1958,7 +1958,7 @@ function gui.add_quest_to_list(list, quest)
         local mid = math.floor((left + right) / 2)
         if mid > 0 then
             local mid_quest = gui.get_quest_from_list_item(list.get_item(mid))
-            if mid_quest.order < quest_order then
+            if mid_quest and mid_quest.order < quest_order then
                 left = mid + 1
             else
                 right = mid - 1
