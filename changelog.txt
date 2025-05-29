@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 28/5/25
+  Features:
+    - Added more quests and rewards.
   Changes:
     - Sentient Spider is now equipped with 1x [item=teslagun] instead of 4x [item=rocket-launcher].
     - Sentient Spider now has a larger equipment grid.

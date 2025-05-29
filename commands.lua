@@ -24,6 +24,7 @@ local all_commands = {
     {name = "skip-flight", usage = "/skip-flight"},
     {name = "hex-pool-size", usage = "/hex-pool-size <size>", examples = {"/hex-pool-size 100"}},
     {name = "add-coins", usage = "/add-coins [amount]", examples = {"/add-coins", "/add-coins 100000"}},
+    {name = "summon", usage = "/summon <entity> [amount] [quality]", examples = {"/summon spitter-spawner", "/summon small-worm-turret 2", "/summon big-stomper-pentapod 5 hextreme"}},
 }
 
 local public_commands = sets.new {
@@ -134,6 +135,18 @@ function on_command(player, command, params)
         sp.distance = 1
     elseif command == "add-coins" then
         coin_tiers.add_coin_to_inventory(lib.get_player_inventory(player), coin_tiers.from_base_value(params[1] or 1000000000000000))
+    elseif command == "summon" then
+        local entity_name = params[1]
+        local amount = tonumber(params[2]) or 1
+        local quality = params[3] or "normal"
+        for i = 1, amount do
+            game.surfaces[1].create_entity {
+                name = entity_name,
+                position = player.position,
+                quality = quality,
+            }
+        end
+        lib.unstuck_player(player)
     end
 
     event_system.trigger("command-" .. command, player, params)

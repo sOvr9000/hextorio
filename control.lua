@@ -213,6 +213,29 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     quests.check_player_receive_items(player)
 end)
 
+script.on_event(defines.events.on_built_entity, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("player-built-entity", player, event.entity)
+end)
+
+script.on_event(defines.events.on_player_mined_entity, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("player-mined-entity", player, event.entity)
+    event_system.trigger("entity-picked-up", event.entity)
+end)
+
+script.on_event(defines.events.on_robot_built_entity, function(event)
+    event_system.trigger("player-built-entity", nil, event.entity)
+end)
+
+script.on_event(defines.events.on_robot_mined_entity, function(event)
+    event_system.trigger("entity-picked-up", event.entity)
+end)
+
 script.on_event(defines.events.on_player_clicked_gps_tag, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
@@ -235,6 +258,13 @@ script.on_event(defines.events.on_player_changed_position, function(event)
     if game.tick > 1000 and not lib.player_is_in_remote_view(player) then
         player.surface.request_to_generate_chunks(player.position, 8)
     end
+end)
+
+script.on_event(defines.events.on_player_used_capsule, function (event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    quests.increment_progress_for_type("use-capsule", 1, event.item.name)
 end)
 
 script.on_event(defines.events.on_gui_opened, function (event)
@@ -283,6 +313,14 @@ script.on_event(defines.events.on_entity_settings_pasted, function (event)
 end)
 
 script.on_event(defines.events.on_entity_died, function (event)
+    if event.cause and event.cause.force == game.forces.player then
+        quests.increment_progress_for_type("kill-entity", 1, event.entity.name)
+        if event.damage_type then
+            if event.entity.force ~= game.forces.player then
+                event_system.trigger("enemy-died-to-damage-type", event.entity, event.damage_type.name, event.cause)
+            end
+        end
+    end
     if event.entity.name == "biter-spawner" or event.entity.name == "spitter-spawner" then
         if event.cause and (event.cause.name == "car" or event.cause.name == "tank") then
             event_system.trigger("spawner-rammed", event.entity, event.cause)

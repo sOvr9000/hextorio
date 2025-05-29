@@ -1,3 +1,6 @@
+
+---@alias Quest table
+
 local lib = require "api.lib"
 local event_system = require "api.event_system"
 local sets         = require "api.sets"
@@ -8,7 +11,7 @@ local quests = {}
 
 function quests.register_events()
     event_system.register_callback("command-complete-quest", function(player, params)
-        local quest = quests.get_quest(params[1])
+        local quest = quests.get_quest_from_name(params[1])
         if quest then
             quests.complete_quest(quest)
         else
@@ -19,6 +22,22 @@ function quests.register_events()
     event_system.register_callback("spawner-rammed", function(spawner, vehicle)
         quests.increment_progress_for_type "biter-ramming"
     end)
+
+    event_system.register_callback("enemy-died-to-damage-type", function(entity, damage_type_name, cause)
+        quests.increment_progress_for_type("kill-with-damage-type", 1, damage_type_name)
+    end)
+
+    event_system.register_callback("player-built-entity", function(player, entity)
+        quests.increment_progress_for_type("place-entity", 1, entity.name)
+    end)
+
+    event_system.register_callback("player-mined-entity", function(player, entity)
+        quests.increment_progress_for_type("mine-entity", 1, entity.name)
+    end)
+
+    event_system.register_callback("entity-picked-up", function(entity)
+        quests.increment_progress_for_type("place-entity", -1, entity.name)
+    end)
 end
 
 function quests.reinitialize_everything()
@@ -28,33 +47,43 @@ function quests.reinitialize_everything()
 end
 
 function quests.init()
-    lib.log("Indexing quests...")
+    local prev_quests = table.deepcopy(storage.quests.quests or {})
+    local prev_quest_ids_by_name = table.deepcopy(storage.quests.quest_ids_by_name or {})
+
+    storage.quests.quests = {}
+    storage.quests.quest_ids_by_name = {}
+    storage.quests.quest_id_counter = 0
 
     local reveal = {}
     local check_rev = {}
     for _, def in pairs(storage.quests.quest_defs) do
-        lib.log(def.name)
         local quest = quests.new_quest(def)
-        if quest then
-            -- don't overwrite old quest progress
-            if storage.quests.quests[def.name] then
-                -- check if extra rewards have been added due to migration
-                local extra_rewards = quests.get_reward_list_additions(quest, storage.quests.quests[def.name])
-                for _, reward in pairs(extra_rewards) do
-                    table.insert(storage.quests.quests[def.name].rewards, reward)
-                end
-                if quests.is_complete(storage.quests.quests[def.name]) then
-                    table.insert(check_rev, quest)
-                end
-            else
-                storage.quests.quests[def.name] = quest
-                quest.order = 0
-                quests.index_by_condition_types(quest)
+        storage.quests.quest_ids_by_name[def.name] = quest.id
 
-                if not quest.prerequisites or not next(quest.prerequisites) then
-                    table.insert(reveal, quest)
-                end
+        local prev_quest
+        if prev_quest_ids_by_name[def.name] then
+            prev_quest = prev_quests[prev_quest_ids_by_name[def.name]]
+        end
+
+        if prev_quest and quests.is_complete(prev_quest) then
+            -- check if extra rewards have been added due to migration
+            local extra_rewards = quests.get_reward_list_additions(quest, storage.quests.quests[def.name])
+            for _, reward in pairs(extra_rewards) do
+                table.insert(storage.quests.quests[def.name].rewards, reward)
             end
+
+            -- don't overwrite old quest progress
+            quests._mark_complete(quest)
+            table.insert(check_rev, quest)
+        end
+
+        quests.index_by_condition_types(quest)
+        storage.quests.quests[quest.id] = quest
+        storage.quests.quest_ids_by_name[quest.name] = quest.id
+        quest.order = 0
+
+        if not quest.prerequisites or not next(quest.prerequisites) then
+            table.insert(reveal, quest)
         end
     end
 
@@ -69,17 +98,22 @@ function quests.init()
 end
 
 function quests.index_by_condition_types(quest)
-    local types = sets.new()
-    for _, condition in pairs(quest.conditions) do
-        sets.add(types, condition.type)
+    if not storage.quests.quests_by_condition_type then
+        storage.quests.quests_by_condition_type = {}
     end
-    for ct, _ in pairs(types) do
-        local t = storage.quests.quests_by_condition_type[ct]
+    for _, condition in pairs(quest.conditions) do
+        local t = storage.quests.quests_by_condition_type[condition.type]
         if not t then
             t = {}
-            storage.quests.quests_by_condition_type[ct] = t
+            storage.quests.quests_by_condition_type[condition.type] = t
         end
-        table.insert(t, quest)
+        local condition_value = condition.value or "none"
+        local s = t[condition_value]
+        if not s then
+            s = {}
+            t[condition_value] = s
+        end
+        s[quest.id] = true
     end
 end
 
@@ -102,10 +136,11 @@ function quests.get_reward_list_additions(new_quest, old_quest)
     return additions
 end
 
+---@param params table
+---@return Quest
 function quests.new_quest(params)
     if not params.name then
-        lib.log_error("quests.new_quest: Quest must have a name")
-        return
+        lib.log_error("quests.new_quest: Quest has no name")
     end
     if not params.conditions then
         lib.log("quests.new_quest: Quest has no conditions")
@@ -113,8 +148,11 @@ function quests.new_quest(params)
     if not params.rewards then
         lib.log("quests.new_quest: Quest has no rewards")
     end
+
+    storage.quests.quest_id_counter = storage.quests.quest_id_counter + 1
+
     local quest = {
-        -- type = params.type,
+        id = storage.quests.quest_id_counter,
         name = params.name,
         conditions = {},
         rewards = {},
@@ -145,6 +183,7 @@ function quests.new_condition(params)
     end
     local condition = {
         type = params.type,
+        value = params.value,
         progress_requirement = params.progress_requirement or 1,
         progress = 0,
         show_progress_bar = params.show_progress_bar,
@@ -192,7 +231,7 @@ end
 function quests.conditions_equal(condition1, condition2)
     if condition1.type ~= condition2.type then return false end
     if condition1.progress_requirement ~= condition2.progress_requirement then return false end
-
+    if condition1.value ~= condition2.value then return false end
     return true
 end
 
@@ -221,26 +260,39 @@ function quests.calculate_quest_order()
         local q
         if quest.unlocks then
             for _, unlock in pairs(quest.unlocks) do
-                q = quests.get_quest(unlock)
+                q = quests.get_quest_from_name(unlock)
                 q.order = math.min(q.order, quest.order + 1)
                 dfs(q)
             end
         end
         if quest.prerequisites then
             for _, prereq in pairs(quest.prerequisites) do
-                q = quests.get_quest(prereq)
+                q = quests.get_quest_from_name(prereq)
                 quest.order = math.min(quest.order, q.order + 1)
                 dfs(q)
             end
         end
     end
-    dfs(quests.get_quest "ground-zero")
+    dfs(quests.get_quest_from_name "ground-zero")
 end
 
-function quests.get_quest(quest_name)
-    local quest = storage.quests.quests[quest_name]
+---@param quest_name string
+---@return Quest|nil
+function quests.get_quest_from_name(quest_name)
+    local quest_id = storage.quests.quest_ids_by_name[quest_name]
+    if not quest_id then
+        lib.log_error("quests.get_quest_from_name: Could not find quest id with name " .. quest_name)
+        return
+    end
+    return quests.get_quest_from_id(quest_id)
+end
+
+---@param quest_id int
+---@return Quest|nil
+function quests.get_quest_from_id(quest_id)
+    local quest = storage.quests.quests[quest_id]
     if not quest then
-        lib.log_error("quests.get_quest: Could not find quest with name " .. quest_name)
+        lib.log_error("quests.get_quest_from_id: Could not find quest with name " .. quest_id)
     end
     return quest
 end
@@ -399,6 +451,23 @@ function quests.check_quest_completion(quest)
     quests.complete_quest(quest)
 end
 
+---@param condition_type string
+---@param condition_value string|nil
+---@return table[]
+function quests.get_quests_by_condition_type(condition_type, condition_value)
+    if not condition_value then condition_value = "none" end
+    if not storage.quests.quests_by_condition_type[condition_type] then
+        lib.log_error("quests.get_quests_by_condition_type: No quests found with condition type " .. condition_type)
+        return {}
+    end
+    local quest_ids = storage.quests.quests_by_condition_type[condition_type][condition_value] or {}
+    local q = {}
+    for quest_id, _ in pairs(quest_ids) do
+        table.insert(q, storage.quests.quests[quest_id])
+    end
+    return q
+end
+
 -- Set a quest condition's progress and check if the quest is complete.
 function quests.set_progress(quest, condition, amount)
     if quests.is_complete(quest) then return end
@@ -409,13 +478,11 @@ function quests.set_progress(quest, condition, amount)
 end
 
 -- Set the progress of all quest conditions of a certain type.
-function quests.set_progress_for_type(condition_type, amount)
-    local quest_list = storage.quests.quests_by_condition_type[condition_type]
-    if not quest_list then return end
-    for _, quest in pairs(quest_list) do
+function quests.set_progress_for_type(condition_type, amount, condition_value)
+    for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
         if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
-                if condition.type == condition_type then
+                if condition.type == condition_type and (condition.value == nil or condition.value == condition_value) then
                     quests.set_progress(quest, condition, amount)
                 end
             end
@@ -424,14 +491,12 @@ function quests.set_progress_for_type(condition_type, amount)
 end
 
 -- Increment the progress of all quest conditions of a certain type.
-function quests.increment_progress_for_type(condition_type, amount)
+function quests.increment_progress_for_type(condition_type, amount, condition_value)
     if not amount then amount = 1 end
-    local quest_list = storage.quests.quests_by_condition_type[condition_type]
-    if not quest_list then return end
-    for _, quest in pairs(quest_list) do
+    for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
         if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
-                if condition.type == condition_type then
+                if condition.type == condition_type and (condition.value == nil or condition.value == condition_value) then
                     quests.set_progress(quest, condition, condition.progress + amount)
                 end
             end
@@ -456,7 +521,7 @@ function quests.check_revelations(quest)
     -- Direct unlocks are always revealed (like OR).
     if quest.unlocks then
         for _, unlock in pairs(quest.unlocks) do
-            local unlock_quest = quests.get_quest(unlock)
+            local unlock_quest = quests.get_quest_from_name(unlock)
             quests.reveal_quest(unlock_quest)
         end
     end
@@ -467,7 +532,7 @@ function quests.check_revelations(quest)
             local reveal = true
             if q.prerequisites then
                 for _, prereq in pairs(q.prerequisites) do
-                    local prereq_quest = quests.get_quest(prereq)
+                    local prereq_quest = quests.get_quest_from_name(prereq)
                     if not quests.is_complete(prereq_quest) then
                         reveal = false
                         break
@@ -481,7 +546,8 @@ function quests.check_revelations(quest)
     end
 end
 
--- Complete a quest, bypassing any progress requirements.
+---Complete a quest, bypassing any progress requirements.
+---@param quest Quest
 function quests.complete_quest(quest)
     if quests.is_complete(quest) then return end
 

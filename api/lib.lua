@@ -1127,6 +1127,21 @@ function lib.player_is_in_remote_view(player)
     return player.controller_type == defines.controllers.remote
 end
 
+---@param item_name string
+---@param prototype_category string|nil
+---@param localization_prefix string|nil
+---@return LocalisedString
+function lib.get_true_localized_name(item_name, prototype_category, localization_prefix)
+    if not prototype_category then prototype_category = "item" end
+    if not localization_prefix then localization_prefix = prototype_category .. "-name" end
+    local prots = prototypes[prototype_category] or prototypes["item"]
+    local prot = prots[item_name]
+    if prot and prot.localised_name then
+        return prot.localised_name
+    end
+    return {localization_prefix .. "." .. item_name}
+end
+
 
 
 return lib

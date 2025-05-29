@@ -320,6 +320,8 @@ function gui.init_questbook(player)
 
     local quest_notes_flow = quest_info_main.add {type = "flow", name = "notes-flow", direction = "vertical"}
 
+    local debug_complete_quest = quest_info_main.add {type = "button", name = "debug-complete-quest", caption = {"hextorio-debug.complete-quest"}}
+
     local quest_conditions_rewards = quest_frame.add {type = "flow", name = "conditions-rewards", direction = "horizontal"}
     gui.auto_width_height(quest_conditions_rewards)
 
@@ -1196,7 +1198,7 @@ function gui.update_questbook(player, quest_name)
 
     local quest
     if quest_name then
-        quest = quests.get_quest(quest_name)
+        quest = quests.get_quest_from_name(quest_name)
     end
 
     if not quest then return end
@@ -1236,10 +1238,29 @@ function gui.update_questbook(player, quest_name)
             condition_str = coin_tiers.coin_to_text(coin_tiers.from_base_value(condition.progress_requirement))
         end
 
+        local caption
+        local condition_value = condition.value
+        if condition_value then
+            if type(condition.value) ~= "table" then
+                condition_value = {condition_value}
+            end
+            local t = {table.unpack(condition_value)}
+            if condition.type == "kill-entity" or condition.type == "place-entity" or condition.type == "mine-entity" then
+                table.insert(t, lib.get_true_localized_name(t[1], "entity"))
+            elseif condition.type == "use-capsule" then
+                table.insert(t, lib.get_true_localized_name(t[1], "item"))
+            end
+            table.insert(t, "green")
+            table.insert(t, "heading-2") -- Lua table.unpack() and ... is weird, so this is necessary
+            caption = quests.get_condition_localized_description(condition, condition_str, table.unpack(t))
+        else
+            caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2")
+        end
+
         local condition_desc = condition_frame.add {
             type = "label",
             name = "desc",
-            caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2"),
+            caption = caption,
         }
         condition_desc.style.single_line = false
         gui.auto_width(condition_desc)
@@ -1638,6 +1659,8 @@ function gui.add_sprite_buttons(element, item_stacks, name_prefix)
     end
 end
 
+---@param player LuaPlayer
+---@return string
 function gui.get_player_current_quest_selected(player)
     if not storage.quests.players_quest_selected[player.name] then
         storage.quests.players_quest_selected[player.name] = "ground-zero"
@@ -1645,6 +1668,8 @@ function gui.get_player_current_quest_selected(player)
     return storage.quests.players_quest_selected[player.name]
 end
 
+---@param player LuaPlayer
+---@param quest_name string
 function gui.set_player_current_quest_selected(player, quest_name)
     storage.quests.players_quest_selected[player.name] = quest_name
 end
@@ -1949,7 +1974,7 @@ end
 
 function gui.get_quest_from_list_item(item)
     local quest_name = item[1]:sub(13)
-    return quests.get_quest(quest_name)
+    return quests.get_quest_from_name(quest_name)
 end
 
 function gui.get_current_selected_quest(player)
@@ -2128,7 +2153,17 @@ end
 function gui.on_button_click(player, element)
     if element.name == "clear-filters-button" then
         gui.on_clear_filters_button_click(player, element)
+    elseif element.name == "debug-complete-quest" then
+        gui.on_debug_complete_quest_button_click(player, element)
     end
+end
+
+function gui.on_debug_complete_quest_button_click(player, element)
+    local quest_name = gui.get_player_current_quest_selected(player)
+    if not quest_name then return end
+    local quest = quests.get_quest_from_name(quest_name)
+    if not quest then return end
+    quests.complete_quest(quest)
 end
 
 function gui.on_checkbox_click(player, element)

@@ -38,6 +38,7 @@ local versions = {
     "0.3.2",
     "0.4.0",
     "0.4.1",
+    "0.4.2",
 }
 
 local version_stepping = {}
@@ -141,7 +142,7 @@ local process_migration = {
 
         quests.init()
 
-        quests.reveal_quest(quests.get_quest "ground-zero")
+        quests.reveal_quest(quests.get_quest_from_name "ground-zero")
     end,
     ["0.2.0"] = function()
         storage.quests.quest_defs = data_quests.quest_defs -- only copy this over so that quest progress isn't reset
@@ -276,6 +277,14 @@ local process_migration = {
     end,
     ["0.4.0"] = function()
         storage.hex_grid.gleba_ignore_tiles = data_hex_grid.gleba_ignore_tiles
+    end,
+    ["0.4.1"] = function()
+        storage.quests.quest_ids_by_name = {}
+        for quest_id, quest in ipairs(storage.quests.quests) do
+            storage.quests.quest_ids_by_name[quest.name] = quest_id
+            quest.id = quest_id
+        end
+        quests.reinitialize_everything()
     end,
 }
 
