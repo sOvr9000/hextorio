@@ -1221,6 +1221,7 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
         local d = axial.distance(params.hex_pos, {q=0, r=0})
         if d > dist then
             idx = i
+            break
         end
     end
     if not idx then
