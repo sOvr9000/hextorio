@@ -373,8 +373,9 @@ end
 
 function hex_grid.set_trade_allowed_qualities(hex_core, trade)
     trade.allowed_qualities = {}
-    local quality_tier = lib.get_quality_tier(hex_core.quality.name)
-    for tier = quality_tier, 1, -1 do
+    local hex_quality_tier = lib.get_quality_tier(hex_core.quality.name)
+    local highest_quality_tier = lib.get_quality_tier(lib.get_highest_unlocked_quality().name)
+    for tier = math.min(hex_quality_tier, highest_quality_tier), 1, -1 do
         table.insert(trade.allowed_qualities, lib.get_quality_at_tier(tier))
     end
 end
@@ -389,8 +390,8 @@ function hex_grid.update_hex_core_inventory_filters(hex_core_state)
     end
 
     -- Set filters for non-coin items in trades
-    i = 1
-    j = 0
+    local i = 1
+    local j = 0
     for _, trade_id in pairs(hex_core_state.trades) do
         local trade = trades.get_trade_from_id(trade_id)
         if trade then
