@@ -1082,7 +1082,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
 
     local surface_id = lib.get_surface_id(surface)
     if surface_id == -1 then
-        lib.log_error("hex_grid.add_hex_to_claim_queue: No surface found")
+        lib.log_error("hex_grid.can_claim_hex: No surface found")
         return
     end
     surface = game.surfaces[surface_id]
@@ -1210,7 +1210,7 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
     surface = game.surfaces[surface_id]
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
-    if not state then return end
+    if not state or not state.hex_core then return end
     if hex_grid.is_claimed_or_in_queue(state) then return end
 
     state.is_in_claim_queue = true
