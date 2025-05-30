@@ -50,7 +50,6 @@ return {
             centrifuge = 4184.3235198911789,
             ["chemical-plant"] = 106.56392947037651,
             ["chemical-science-pack"] = 84.461566623504382,
-            ["cliff-explosives"] = 252.29012041305609,
             ["cluster-grenade"] = 305.38694043930167,
             coal = 1.2,
             ["combat-shotgun"] = 280.31201168609067,

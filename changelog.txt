@@ -11,6 +11,7 @@ Date: 30/5/25
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.
     - Fixed fish spawning.
+    - Removed [item=cliff-explosives] from all planets except [planet=vulcanus].
   Balancing:
     - Supercharging is now unlocked on [planet=vulcanus].
     - Quality trades now have a trade productivity decrement based on the tier of quality, e.g. an uncommon trade loses 35% productivity.
