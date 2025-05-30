@@ -7,6 +7,8 @@ Date: 30/5/25
     - Sentient Spider is now equipped with 1x [item=teslagun] instead of 4x [item=rocket-launcher].
     - Sentient Spider now has a larger equipment grid.
     - Trades can now only be made with researched qualities.
+  Gui:
+    - Changed the sink and generator mode icons.
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.

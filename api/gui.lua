@@ -210,11 +210,16 @@ function gui.init_hex_core(player)
 
     local supercharge = hex_control_flow.add {type = "sprite-button", name = "supercharge", sprite = "item/electric-mining-drill"}
 
-    local sink_mode = hex_control_flow.add {type = "sprite-button", name = "sink-mode", sprite = "hex-coin"}
+    local sink_mode = hex_control_flow.add {type = "sprite-button", name = "sink-mode", sprite = "virtual-signal/signal-input"}
     sink_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.sink-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.sink-mode-tooltip-body"}}
 
-    local generator_mode = hex_control_flow.add {type = "sprite-button", name = "generator-mode", sprite = "gravity-coin"}
+    local generator_mode = hex_control_flow.add {type = "sprite-button", name = "generator-mode", sprite = "virtual-signal/signal-output"}
     generator_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.generator-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.generator-mode-tooltip-body"}}
+
+    local sink_mode_confirmation = hex_core_gui.add {type = "sprite-button", name = "sink-mode-confirmation", sprite = "check-mark-green"}
+    sink_mode_confirmation.tooltip = {"hex-core-gui.sink-mode-confirmation-tooltip"}
+    local generator_mode_confirmation = hex_core_gui.add {type = "sprite-button", name = "generator-mode-confirmation", sprite = "check-mark-green"}
+    generator_mode_confirmation.tooltip = {"hex-core-gui.generator-mode-confirmation-tooltip"}
 
     local upgrade_quality = hex_control_flow.add {type = "sprite-button", name = "upgrade-quality", sprite = "quality/uncommon"}
 
@@ -997,6 +1002,8 @@ function gui.update_hex_core(player)
     if not state then return end
 
     frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion"
+    frame["sink-mode-confirmation"].visible = false
+    frame["generator-mode-confirmation"].visible = false
 
     if state.claimed then
         frame["claim-flow"].visible = false
@@ -2274,6 +2281,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_delete_core_button_click(player, element)
     elseif element.name == "confirmation-button" then
         gui.on_confirmation_button_click(player, element)
+    elseif element.name:sub(-18) == "-mode-confirmation" then
+        gui.on_hex_mode_confirmation_button_click(player, element)
     elseif element.name == "unloader-filters" then
         gui.on_unloader_filters_button_click(player, element)
     elseif element.name == "upgrade-quality" then
@@ -2441,13 +2450,18 @@ function gui.on_hex_core_trade_item_clicked(player, element)
 end
 
 function gui.on_hex_mode_button_click(player, element)
+    local mode = element.name:sub(1, -6)
+    element.parent.parent[mode .. "-mode-confirmation"].visible = true
+end
+
+function gui.on_hex_mode_confirmation_button_click(player, element)
     local hex_core = player.opened
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
 
-    local mode = element.name:sub(1, -6)
+    local mode = element.name:sub(1, -19)
     local succeeded = hex_grid.switch_hex_core_mode(state, mode)
 
     if succeeded then
