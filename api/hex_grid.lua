@@ -1210,12 +1210,24 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
     surface = game.surfaces[surface_id]
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
-    if not state or not state.hex_core then return end
+    if not state then return end
     if hex_grid.is_claimed_or_in_queue(state) then return end
 
     state.is_in_claim_queue = true
 
-    table.insert(storage.hex_grid.claim_queue, {
+    local idx
+    local dist = axial.distance(hex_pos, {q=0, r=0})
+    for i, params in ipairs(storage.hex_grid.claim_queue) do
+        local d = axial.distance(params.hex_pos, {q=0, r=0})
+        if d > dist then
+            idx = i
+        end
+    end
+    if not idx then
+        idx = #storage.hex_grid.claim_queue + 1
+    end
+
+    table.insert(storage.hex_grid.claim_queue, idx, {
         surface_name = surface.name,
         hex_pos = hex_pos,
         by_player = by_player,
@@ -1254,7 +1266,24 @@ function hex_grid.process_claim_queue()
     end
     if not next(storage.hex_grid.claim_queue) then return end
 
-    local params = table.remove(storage.hex_grid.claim_queue, 1)
+    -- Find the first params that is for a hex with an existing hex core
+    local params
+    local found = false
+    for i = 1, #storage.hex_grid.claim_queue do
+        params = storage.hex_grid.claim_queue[i]
+        local state = hex_grid.get_hex_state(params.surface_name, params.hex_pos)
+        if state.hex_core then
+            found = true
+            table.remove(storage.hex_grid.claim_queue, i)
+            break
+        end
+    end
+
+    if not found then
+        -- The remaining params are probably for non-land hexes.
+        params = table.remove(storage.hex_grid.claim_queue, 1)
+    end
+
     hex_grid.claim_hex(params.surface_name, params.hex_pos, params.by_player, params.allow_nonland)
 end
 
