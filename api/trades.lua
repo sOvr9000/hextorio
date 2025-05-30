@@ -276,16 +276,28 @@ function trades.get_total_values_str(trade, quality, quality_cost_mult)
     local coin_value = item_values.get_item_value("nauvis", "hex-coin")
     local total_input_value = trades.get_input_value(trade.surface_name, trade, quality, quality_cost_mult) / coin_value
     local total_output_value = trades.get_output_value(trade.surface_name, trade, quality) / coin_value
-    return {"",
+    local str = {"",
         {"hextorio-gui.total-input-value", coin_tiers.coin_to_text(total_input_value)},
         "\n",
         {"hextorio-gui.total-output-value", coin_tiers.coin_to_text(total_output_value)},
     }
+    local prod = trades.get_productivity(trade, quality)
+    if prod ~= 0 then
+        table.insert(str, "\n")
+        table.insert(str, {"hextorio-gui.total-output-with-prod", coin_tiers.coin_to_text(trades.scale_value_with_productivity(total_output_value, prod))})
+    end
+    return str
 end
 
-function trades.get_productivity_bonus_str(trade)
-    local prod = trades.get_productivity(trade)
-    if prod == 0 then
+---@param trade table
+---@param quality string|nil
+function trades.get_productivity_bonus_str(trade, quality)
+    if not quality then quality = "normal" end
+
+    local prod = trades.get_productivity(trade, quality)
+    local prod_mod = trades.get_productivity_modifier(quality)
+
+    if prod == 0 and prod_mod == 0 then
         return ""
     end
 
@@ -295,7 +307,7 @@ function trades.get_productivity_bonus_str(trade)
         if item_ranks.is_item_rank_defined(input_item.name) then
             local rank = item_ranks.get_item_rank(input_item.name)
             if rank >= 2 then
-                table.insert(bonus_strs, "[img=item." .. input_item.name .. "] +[color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, false) .. "%[.color]")
+                table.insert(bonus_strs, "([img=item." .. input_item.name .. "]) [color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, true, true) .. "[.color]")
             end
         end
     end
@@ -303,20 +315,31 @@ function trades.get_productivity_bonus_str(trade)
         if item_ranks.is_item_rank_defined(output_item.name) then
             local rank = item_ranks.get_item_rank(output_item.name)
             if rank >= 2 then
-                table.insert(bonus_strs, "[img=item." .. output_item.name .. "] +[color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, false) .. "%[.color]")
+                table.insert(bonus_strs, "([img=item." .. output_item.name .. "]) [color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, true, true) .. "[.color]")
             end
         end
     end
 
+    if prod_mod ~= 0 then
+        table.insert(bonus_strs, "([img=quality." .. quality .. "]) [color=red]" .. lib.format_percentage(prod_mod, 0, true, true) .. "[.color]")
+    end
+
+    local color
+    if prod >= 0 then
+        color = "green"
+    else
+        color = "red"
+    end
+
     local str = {"",
         lib.color_localized_string({"hextorio-gui.productivity-bonus"}, "purple", "heading-2"),
-        "\n" .. table.concat(bonus_strs, "\n") .. "\n[font=heading-2]=[color=green]" .. lib.format_percentage(prod, 0, false) .. "%[.color][.font]",
+        "\n" .. table.concat(bonus_strs, "\n") .. "\n[font=heading-2]= [color=" .. color .. "]" .. lib.format_percentage(prod, 0, true, true) .. "[.color][.font]",
     }
 
-    if trades.get_base_trade_productivity() > 0 then
+    if trades.get_base_trade_productivity() ~= 0 then
         table.insert(str, 3, "\n")
         table.insert(str, 4, lib.color_localized_string({"hextorio-gui.quest-reward"}, "white", "heading-2"))
-        table.insert(str, 5, " +[color=green]" .. lib.format_percentage(trades.get_base_trade_productivity(), 0, false) .. "%[.color]")
+        table.insert(str, 5, " [color=green]" .. lib.format_percentage(trades.get_base_trade_productivity(), 0, true, true) .. "[.color]")
     end
 
     return str
@@ -424,19 +447,22 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local total_inserted = {}
     local remaining_to_insert = {}
     trade_coin = trades.get_output_coins_of_trade(trade, quality)
-    local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches)
-    for _, output_item in pairs(trade.output_items) do
-        if not lib.is_coin(output_item.name) then
-            local to_insert = output_item.count * total_output_batches
-            local actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
-            if not total_inserted[quality] then total_inserted[quality] = {} end
-            total_inserted[quality][output_item.name] = (total_inserted[quality][output_item.name] or 0) + actually_inserted
-            if actually_inserted < to_insert then
-                if not remaining_to_insert[quality] then remaining_to_insert[quality] = {} end
-                remaining_to_insert[quality][output_item.name] = (remaining_to_insert[quality][output_item.name] or 0) + to_insert - actually_inserted
+
+    local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches, quality)
+    if total_output_batches > 0 then
+        for _, output_item in pairs(trade.output_items) do
+            if not lib.is_coin(output_item.name) then
+                local to_insert = output_item.count * total_output_batches
+                local actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
+                if not total_inserted[quality] then total_inserted[quality] = {} end
+                total_inserted[quality][output_item.name] = (total_inserted[quality][output_item.name] or 0) + actually_inserted
+                if actually_inserted < to_insert then
+                    if not remaining_to_insert[quality] then remaining_to_insert[quality] = {} end
+                    remaining_to_insert[quality][output_item.name] = (remaining_to_insert[quality][output_item.name] or 0) + to_insert - actually_inserted
+                end
+                trades.increment_total_bought(output_item.name, to_insert)
+                flow_statistics.on_flow({name = output_item.name, quality = quality}, to_insert) -- Track entire stacks being inserted into both the output inventory and the buffer (remaining_to_insert).
             end
-            trades.increment_total_bought(output_item.name, to_insert)
-            flow_statistics.on_flow({name = output_item.name, quality = quality}, to_insert) -- Track entire stacks being inserted into both the output inventory and the buffer (remaining_to_insert).
         end
     end
 
@@ -672,26 +698,48 @@ function trades.set_productivity(trade, productivity)
     trade.productivity = productivity
 end
 
-function trades.get_productivity(trade)
-    return trade.productivity or 0
+---@param trade table
+---@param quality string|nil
+---@return number
+function trades.get_productivity(trade, quality)
+    return (trade.productivity or 0) + trades.get_productivity_modifier(quality or "normal")
 end
 
 function trades.increment_productivity(trade, productivity)
     trade.productivity = (trade.productivity or 0) + productivity
 end
 
-function trades.get_current_prod_value(trade)
-    return trade.current_prod_value or 0
+function trades.get_current_prod_value(trade, quality)
+    return (trade.current_prod_value or {})[quality or "normal"] or 0
 end
 
-function trades.set_current_prod_value(trade, value)
-    trade.current_prod_value = value
+function trades.set_current_prod_value(trade, value, quality)
+    if not trade.current_prod_value then
+        trade.current_prod_value = {}
+    end
+    trade.current_prod_value[quality or "normal"] = value
 end
 
-function trades.increment_current_prod_value(trade, times)
-    trade.current_prod_value = (trade.current_prod_value or 0) + trades.get_productivity(trade) * (times or 1)
-    local prod_amount = math.floor(trade.current_prod_value)
-    trade.current_prod_value = trade.current_prod_value - prod_amount
+---@param trade table
+---@param times int
+---@param quality string
+---@return int
+function trades.increment_current_prod_value(trade, times, quality)
+    local total_prod = trades.get_productivity(trade, quality)
+    local prod_amount
+    if not trade.current_prod_value then
+        trade.current_prod_value = {}
+    end
+    if total_prod < 0 then
+        trade.current_prod_value[quality] = (trade.current_prod_value[quality] or 0) + times / (1 - total_prod)
+        local f = math.floor(trade.current_prod_value[quality])
+        prod_amount = f - times
+        trade.current_prod_value[quality] = trade.current_prod_value[quality] - f
+    else
+        trade.current_prod_value[quality] = (trade.current_prod_value[quality] or 0) + total_prod * (times or 1)
+        prod_amount = math.floor(trade.current_prod_value[quality])
+        trade.current_prod_value[quality] = trade.current_prod_value[quality] - prod_amount
+    end
     return prod_amount
 end
 
@@ -1138,6 +1186,23 @@ function trades._postprocess_items_traded(surface_name, total_traded, trade_type
         trades._postprocess_items_traded(surface_name, process_again, "sold")
         trades._postprocess_items_traded(surface_name, process_again, "bought")
     end
+end
+
+---@param quality string
+---@return number
+function trades.get_productivity_modifier(quality)
+    local tier = lib.get_quality_tier(quality)
+    if tier <= 1 then return 0 end
+    return -0.35 - (tier - 2) * 0.2
+end
+
+---@param value number
+---@param prod number
+function trades.scale_value_with_productivity(value, prod)
+    if prod < 0 then
+        return value / (1 - prod)
+    end
+    return value * (1 + prod)
 end
 
 

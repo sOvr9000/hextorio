@@ -256,7 +256,8 @@ function gui.init_hex_core(player)
     local quality_dropdown = gui.create_quality_dropdown(trades_header_flow)
 
     gui.add_info(hex_core_gui, {"hex-core-gui.trades-quality-info"}, "trades-quality-info")
-    gui.add_warning(hex_core_gui, {"hex-core-gui.trades-quality-warning"}, "trades-quality-warning")
+    gui.add_warning(hex_core_gui, {"hex-core-gui.trades-quality-warning-1"}, "trades-quality-warning-1")
+    gui.add_warning(hex_core_gui, {"hex-core-gui.trades-quality-warning-2"}, "trades-quality-warning-2")
 
     local trades_scroll_pane = hex_core_gui.add {type = "scroll-pane", name = "trades", direction = "vertical"}
     trades_scroll_pane.style.horizontally_stretchable = true
@@ -704,10 +705,11 @@ function gui.give_trade_arrow_tooltip(element, trade, quality, quality_cost_mult
     local s = {"",
         trades.get_total_values_str(trade, quality, quality_cost_mult),
     }
-    local prod = trades.get_productivity(trade)
-    if prod > 0 then
+    local prod = trades.get_productivity(trade, quality)
+    local prod_mod = trades.get_productivity_modifier(quality)
+    if prod ~= 0 or prod_mod ~= 0 then
         table.insert(s, "\n\n")
-        table.insert(s, trades.get_productivity_bonus_str(trade))
+        table.insert(s, trades.get_productivity_bonus_str(trade, quality))
     end
     if not gui.is_descendant_of(element, "trade-contents-flow") then
         table.insert(s, "\n\n")
@@ -886,13 +888,17 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         sprite = "trade-arrow",
     }
 
-    if params.show_productivity and trades.get_productivity(trade) > 0 then
+    local prod = trades.get_productivity(trade, quality_to_show)
+    if params.show_productivity and prod ~= 0 then
         local prod_bar = trade_frame.add {
             type = "progressbar",
             name = "prod-bar",
-            value = trades.get_current_prod_value(trade),
+            value = trades.get_current_prod_value(trade, quality_to_show),
             style = "bonus_progressbar",
         }
+        if prod < 0 then
+            prod_bar.style.color = {1, 0, 0}
+        end
         prod_bar.style.horizontally_squashable = true
         prod_bar.style.horizontally_stretchable = true
     end
@@ -1096,9 +1102,11 @@ function gui.update_hex_core(player)
     local quality_name = gui.get_quality_name_from_dropdown(quality_dropdown)
 
     frame["trades-quality-info"].visible = quality_name ~= "normal"
-    frame["trades-quality-warning"].visible = quality_name ~= "normal"
-    if frame["trades-quality-warning"].visible then
-        frame["trades-quality-warning"].caption = gui.get_warning_caption {"hex-core-gui.trades-quality-warning", lib.format_percentage(lib.get_quality_cost_multiplier(quality_name) - 1, 0, false)}
+    frame["trades-quality-warning-1"].visible = frame["trades-quality-info"].visible
+    frame["trades-quality-warning-2"].visible = frame["trades-quality-info"].visible
+    if frame["trades-quality-warning-1"].visible then
+        frame["trades-quality-warning-1"].caption = gui.get_warning_caption {"hex-core-gui.trades-quality-warning-1", "[color=red]" .. lib.format_percentage(lib.get_quality_cost_multiplier(quality_name) - 1, 0, true) .. "[.color]"}
+        frame["trades-quality-warning-2"].caption = gui.get_warning_caption {"hex-core-gui.trades-quality-warning-2", "[color=red]" .. lib.format_percentage(-trades.get_productivity_modifier(quality_name), 0, true) .. "[.color]"}
     end
 
     gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {

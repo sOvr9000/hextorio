@@ -668,12 +668,15 @@ function lib.is_catalog_item(item_name)
     return not lib.is_coin(item_name) and lib.is_item(item_name)
 end
 
-function lib.format_percentage(x, decimal_places, include_symbol)
+function lib.format_percentage(x, decimal_places, include_symbol, include_sign)
     if include_symbol == nil then include_symbol = true end
     local p = 10 ^ decimal_places
     s = tostring(math.floor(x * 100 * p + 0.5) / p)
     if include_symbol then
         s = s .. "%"
+    end
+    if include_sign and x >= 0 then
+        s = "+" .. s
     end
     return s
 end

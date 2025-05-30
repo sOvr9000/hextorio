@@ -9,6 +9,12 @@ Date: 28/5/25
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.
+  Balancing:
+    - Supercharging is now unlocked on [planet=vulcanus].
+    - Quality trades now have a trade productivity decrement based on the tier of quality, e.g. an uncommon trade loses 35% productivity.
+      Negative productivity will decrease the trade's output rate, e.g. -100% prod means 1/2 of normal output rate, -200% prod means 1/3 of normal output rate, etc.
+      This prevents the exploit of quickly generating unlimited [item=hexaprism-coin] on Nauvis before you have to visit other planets.
+    - Trade productivity bars are now tracked separately for each quality, preventing easy exploits for high quality items.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 27/5/25

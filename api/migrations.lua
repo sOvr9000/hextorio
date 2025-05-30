@@ -285,6 +285,8 @@ local process_migration = {
             quest.id = quest_id
         end
         quests.reinitialize_everything()
+        -- for _, trade in pairs(trades.get_all_trades(false)) do
+        -- end
     end,
 }
 
