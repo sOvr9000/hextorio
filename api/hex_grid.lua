@@ -448,7 +448,9 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         return
     end
 
-    terrain.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+    local dist = axial.distance(hex_pos, {q=0, r=0})
+    local hex_quality = hex_grid.get_quality_from_distance(surface.name, dist)
+    terrain.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, nil, hex_quality)
 
     local land_chance
     if surface.name == "nauvis" then
@@ -471,7 +473,6 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
-    local dist = axial.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
     local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
 

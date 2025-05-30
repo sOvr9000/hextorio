@@ -9,26 +9,31 @@ local terrain = {}
 
 
 
-
 -- Set the tile type for a specific position
 function terrain.set_tile(surface, position, tile_type)
     local surface_id = lib.get_surface_id(surface)
     surface = game.surfaces[surface_id]
     if not surface then
-        lib.log_error("Invalid surface")
+        lib.log_error("terrain.set_tile: Invalid surface")
         return
     end
 
     surface.set_tiles({{name = tile_type, position = position}})
 end
 
--- Set the tile type for a list of positions
-function terrain.set_tiles(surface, positions, tile_type, ignore_tiles)
+---Set the tile type for a list of positions
+---@param surface SurfaceIdentification
+---@param positions any
+---@param tile_type any
+---@param ignore_tiles any
+---@param quality any
+function terrain.set_tiles(surface, positions, tile_type, ignore_tiles, quality)
     if not ignore_tiles then ignore_tiles = {} end
+    if not quality then quality = "normal" end
     local surface_id = lib.get_surface_id(surface)
     surface = game.surfaces[surface_id]
     if not surface then
-        lib.log_error("Invalid surface")
+        lib.log_error("terrain.set_tiles: Invalid surface")
         return
     end
 
@@ -40,6 +45,16 @@ function terrain.set_tiles(surface, positions, tile_type, ignore_tiles)
         end
     end
     surface.set_tiles(tiles)
+
+    if tile_names.can_spawn_fish(tile_type) then
+        local num_fish_tiles = math.floor(#tiles * (0.008 + math.random() * 0.004) + 0.5)
+        for i = 1, num_fish_tiles do
+            if #tiles == 0 then break end
+            local tile = table.remove(tiles, math.random(1, #tiles))
+            local fish = surface.create_entity({name = "fish", position = tile.position, quality = quality})
+            -- I can try to spawn them with quality, but they won't have quality.  Oops.
+        end
+    end
 end
 
 -- Set all tiles within a hex to tile_type
@@ -62,11 +77,13 @@ function terrain.set_hex_tiles(surface, hex_pos, tile_type, overwrite_water)
 end
 
 -- Generate tiles along the border of a hex
-function terrain.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+function terrain.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, ignore_tiles, quality)
     -- Default values
     hex_grid_scale = hex_grid_scale or 1
     hex_grid_rotation = hex_grid_rotation or 0
     stroke_width = stroke_width or 3
+    quality = quality or "normal"
+    ignore_tiles = ignore_tiles or {}
 
     local corners = axial.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)
     local border_tiles = axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width)
@@ -94,7 +111,7 @@ function terrain.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid_
         tile_type = "water"
     end
 
-    terrain.set_tiles(surface, border_tiles, tile_type)
+    terrain.set_tiles(surface, border_tiles, tile_type, ignore_tiles, quality)
 end
 
 ---@param surfaceID SurfaceIdentification|LuaSurface|string
