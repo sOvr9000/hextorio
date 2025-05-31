@@ -164,7 +164,7 @@ return {
         {
             name = "stepping-on-ants",
             conditions = {{type = "kill-entity", value = "small-demolisher", progress_requirement = 3}},
-            rewards = {{type = "unlock-feature", value = "supercharging"}},
+            rewards = {{type = "unlock-feature", value = "supercharging"}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
             prerequisites = {"biter-rammer"},
             has_img = false,
         },
@@ -248,7 +248,14 @@ return {
         {
             name = "its-just-a-scratch",
             conditions = {{type = "items-at-rank", value = 5, progress_requirement = 1}},
-            rewards = {{type = "unlock-feature", value = "quantum-bazaar"}},
+            rewards = {
+                {type = "unlock-feature", value = "quantum-bazaar"},
+                {type = "claim-free-hexes", value = {"nauvis", 40}},
+                {type = "claim-free-hexes", value = {"vulcanus", 30}},
+                {type = "claim-free-hexes", value = {"fulgora", 30}},
+                {type = "claim-free-hexes", value = {"gleba", 30}},
+                {type = "claim-free-hexes", value = {"aquilo", 20}},
+            },
             prerequisites = {"catalog-initiate"},
             notes = {"multiple-rank-ups"},
             has_img = false,
