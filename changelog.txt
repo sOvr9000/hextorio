@@ -10,11 +10,13 @@ Date: 31/5/25
     - Changed silver rank bonus to guarantee at least one interplanetary trade for every item on every planet.
   Gui:
     - Changed the sink and generator mode icons.
+    - Changed the red star rank bonus description.
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.
     - Fixed fish spawning.
     - Removed [item=cliff-explosives] from all planets except [planet=vulcanus].
+    - Fixed that concrete was removing egg rafts and stromatolites on [planet=gleba].
   Balancing:
     - Supercharging is now unlocked on [planet=vulcanus].
     - Quality trades now have a trade productivity decrement based on the tier of quality, e.g. an uncommon trade loses 35% productivity.
