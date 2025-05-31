@@ -12,6 +12,7 @@ Date: 31/5/25
     - Changed the sink and generator mode icons.
     - Changed the red star rank bonus description.
     - Removed the line that separated quest conditions and rewards from the labels.
+    - Added images to all quests.
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.
