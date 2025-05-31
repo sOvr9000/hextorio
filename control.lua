@@ -237,6 +237,26 @@ script.on_event(defines.events.on_robot_mined_entity, function(event)
     event_system.trigger("entity-picked-up", event.entity)
 end)
 
+script.on_event(defines.events.on_player_built_tile, function(event)
+    quests.increment_progress_for_type("place-tile", #event.tiles, event.tile.name)
+end)
+
+script.on_event(defines.events.on_player_mined_tile, function(event)
+    for _, tile in pairs(event.tiles) do
+        quests.increment_progress_for_type("place-tile", -1, tile.old_tile.name)
+    end
+end)
+
+script.on_event(defines.events.on_robot_built_tile, function(event)
+    quests.increment_progress_for_type("place-tile", #event.tiles, event.tile.name)
+end)
+
+script.on_event(defines.events.on_robot_mined_tile, function(event)
+    for _, tile in pairs(event.tiles) do
+        quests.increment_progress_for_type("place-tile", -1, tile.old_tile.name)
+    end
+end)
+
 script.on_event(defines.events.on_player_clicked_gps_tag, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end

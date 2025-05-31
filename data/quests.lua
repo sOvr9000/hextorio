@@ -230,19 +230,17 @@ return {
             prerequisites = {"this-is-fine", "my-hair-feels-funny", "yummy-co"},
         },
         {
-            name = "itaksdajsckajskc",
-            conditions = {
-                {
-                    type = "obtain-items",
-                    value = {
-                        ["foundation-"] = 1,
-                        ["foundation"] = 1,
-                    },
-                    progress_requirement = 5,
-                },
-            },
+            name = "pond-filler",
+            conditions = {{type = "place-tile", value = "foundation", progress_requirement = 100}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
-            prerequisites = {"you-are-the-destroyer"},
+            prerequisites = {"this-is-fine", "my-hair-feels-funny", "yummy-co"},
+            has_img = false,
+        },
+        {
+            name = "world-paver",
+            conditions = {{type = "place-tile", value = "foundation", progress_requirement = 2000}},
+            rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
+            prerequisites = {"pond-filler"},
             has_img = false,
         },
 
