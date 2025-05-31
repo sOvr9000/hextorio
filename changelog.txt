@@ -17,6 +17,7 @@ Date: 31/5/25
     - Fixed fish spawning.
     - Removed [item=cliff-explosives] from all planets except [planet=vulcanus].
     - Fixed that concrete was removing egg rafts and stromatolites on [planet=gleba].
+    - Fixed that the selling part of ranking up an item to gold stars didn't count.
   Balancing:
     - Supercharging is now unlocked on [planet=vulcanus].
     - Quality trades now have a trade productivity decrement based on the tier of quality, e.g. an uncommon trade loses 35% productivity.
