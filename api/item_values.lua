@@ -136,6 +136,35 @@ function item_values.has_item_value(surface_name, item_name)
     return surface_vals[item_name] ~= nil
 end
 
+---@param surface_name string
+---@param items_only boolean|nil
+---@param allow_coins boolean|nil
+---@param quality string|nil
+---@return {[string]: number}
+function item_values.get_interplanetary_item_values(surface_name, items_only, allow_coins, quality)
+    if items_only == nil then items_only = false end
+    if allow_coins == nil then allow_coins = false end
+    if not quality then quality = "normal" end
+
+    local surface_vals = storage.item_values.values[surface_name]
+    if not surface_vals then
+        lib.log_error("item_values.get_interplanetary_item_values: No values found for surface " .. surface_name)
+        return {}
+    end
+    local values = {}
+    for _surface_name, _ in pairs(storage.item_values.values) do
+        if _surface_name ~= surface_name then
+            for _, name in pairs(item_values.get_items_sorted_by_value(_surface_name, items_only, allow_coins)) do
+                if not surface_vals[name] then
+                    values[name] = item_values.get_item_value(surface_name, name, true, quality)
+                end
+            end
+        end
+    end
+
+    return values
+end
+
 function item_values.is_item_interplanetary(surface_name, item_name)
     return not item_values.has_item_value(surface_name, item_name)
 end
@@ -181,7 +210,7 @@ function item_values.get_expanded_item_values_for_surface(surface_name)
     if surface_vals then
         return surface_vals
     end
-    surface_vals = {}
+    surface_vals = table.deepcopy(item_values.get_item_values_for_surface(surface_name)) or {}
     for _, _surface_vals in pairs(storage.item_values.values) do
         for item_name, _ in pairs(_surface_vals) do
             if not surface_vals[item_name] then

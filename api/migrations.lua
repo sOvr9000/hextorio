@@ -287,6 +287,12 @@ local process_migration = {
         quests.reinitialize_everything()
         -- for _, trade in pairs(trades.get_all_trades(false)) do
         -- end
+
+        trades.generate_interplanetary_trade_locations "nauvis"
+        trades.generate_interplanetary_trade_locations "vulcanus"
+        trades.generate_interplanetary_trade_locations "fulgora"
+        trades.generate_interplanetary_trade_locations "gleba"
+        trades.generate_interplanetary_trade_locations "aquilo"
     end,
 }
 

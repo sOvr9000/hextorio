@@ -1,5 +1,6 @@
 
 local lib = require "api.lib"
+local axial       = require "api.axial"
 local item_values = require "api.item_values"
 local sets        = require "api.sets"
 local item_ranks  = require "api.item_ranks"
@@ -474,7 +475,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     return total_removed, total_inserted, remaining_to_insert, remaining_coin
 end
 
-function trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary)
+function trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary, include_item)
     if not params then params = {} end
     if allow_interplanetary == nil then allow_interplanetary = false end
 
@@ -512,6 +513,10 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
     end
     local trade_items = sets.to_array(set)
 
+    if include_item and not set[include_item] then
+        trade_items[math.random(1, #trade_items)] = include_item
+    end
+
     if #trade_items < 2 then
         lib.log_error("trades.random_trade_item_names: Not enough items selected for trade")
         return
@@ -529,12 +534,28 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
 
     local num_inputs = math.random(1, 3)
     while #input_item_names > num_inputs do
-        table.remove(input_item_names, 1)
+        local idx = 1
+        if input_item_names[1] == include_item then
+            idx = idx + 1
+        end
+        if idx <= #input_item_names then
+            table.remove(input_item_names, idx)
+        else
+            break
+        end
     end
 
     local num_outputs = math.random(1, 3)
     while #output_item_names > num_outputs do
-        table.remove(output_item_names, 1)
+        local idx = 1
+        if output_item_names[1] == include_item then
+            idx = idx + 1
+        end
+        if idx <= #output_item_names then
+            table.remove(output_item_names, idx)
+        else
+            break
+        end
     end
 
     trades._check_coin_names_for_volume(input_item_names, volume)
@@ -1203,6 +1224,70 @@ function trades.scale_value_with_productivity(value, prod)
         return value / (1 - prod)
     end
     return value * (1 + prod)
+end
+
+---@param surface_name string
+function trades.generate_interplanetary_trade_locations(surface_name, trades_per_item)
+    if not trades_per_item then trades_per_item = 1 end
+
+    if not storage.trades.interplanetary_trade_locations then
+        storage.trades.interplanetary_trade_locations = {}
+    end
+    if not storage.trades.interplanetary_trade_locations[surface_name] then
+        storage.trades.interplanetary_trade_locations[surface_name] = {}
+    end
+
+    local item_vals = item_values.get_interplanetary_item_values(surface_name, true, false, "normal")
+    local planet_size = lib.runtime_setting_value("planet-size-" .. surface_name)
+    for item_name, _ in pairs(item_vals) do
+        for i = 1, trades_per_item do
+            local hex_pos = axial.random_hex({q=0, r=0}, planet_size)
+            if not storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q] then
+                storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q] = {}
+            end
+            if not storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q][hex_pos.r] then
+                storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q][hex_pos.r] = {}
+            end
+            storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q][hex_pos.r][item_name] = true
+            event_system.trigger("interplanetary-trade-generated", surface_name, item_name, hex_pos)
+        end
+    end
+end
+
+---@param surface_name string
+---@param hex_pos HexPos
+---@return {[string]: boolean}
+function trades.get_interplanetary_trade_items(surface_name, hex_pos)
+    if not storage.trades.interplanetary_trade_locations then
+        storage.trades.interplanetary_trade_locations = {}
+    end
+    local locations = storage.trades.interplanetary_trade_locations[surface_name]
+    if not locations then return {} end
+    if not locations[hex_pos.q] then return {} end
+    return locations[hex_pos.q][hex_pos.r] or {}
+end
+
+---@param surface_name string
+---@param item_name string
+---@return HexPos[]
+function trades.get_interplanetary_trade_locations_for_item(surface_name, item_name)
+    if not storage.trades.interplanetary_trade_locations then
+        storage.trades.interplanetary_trade_locations = {}
+    end
+    if not storage.trades.interplanetary_trade_locations[surface_name] then
+        storage.trades.interplanetary_trade_locations[surface_name] = {}
+    end
+
+    local locations = {}
+    for q, Q in pairs(storage.trades.interplanetary_trade_locations[surface_name]) do
+        for r, R in pairs(Q) do
+            if R[item_name] then
+                table.insert(locations, {q=q, r=r})
+            end
+        end
+    end
+
+    return locations
 end
 
 

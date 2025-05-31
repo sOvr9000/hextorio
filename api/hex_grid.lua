@@ -23,6 +23,12 @@ function hex_grid.register_events()
         local rank = item_ranks.get_item_rank(item_name)
         if rank == 2 then
             hex_grid.apply_extra_trades_bonus_retro(item_name)
+        elseif rank == 3 then
+            for surface_name, _ in pairs(storage.item_values.values) do
+                for _, hex_pos in pairs(trades.get_interplanetary_trade_locations_for_item(surface_name, item_name)) do
+                    hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
+                end
+            end
         elseif rank == 4 then
             hex_grid.recover_trades_retro(item_name)
         end
@@ -136,6 +142,10 @@ function hex_grid.register_events()
         end
         quests.set_progress_for_type("trades-found", trades_found)
         quests.set_progress_for_type("claimed-hexes", claimed_hexes)
+    end)
+
+    event_system.register_callback("interplanetary-trade-generated", function(surface_name, item_name, hex_pos)
+        hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
     end)
 end
 
@@ -267,21 +277,10 @@ function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.hex_core and item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
     if math.random() > 0.01 then return end
 
-    local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume, {blacklist = sets.new {item_name}}, state.hex_core.surface.name == "aquilo")
+    local input_names, output_names = trades.random_trade_item_names(state.hex_core.surface.name, volume, {blacklist = sets.new {item_name}}, false, item_name)
     if not input_names or not output_names then
         lib.log_error("hex_grid.apply_extra_trade_bonus: failed to get random trade item name from volume = " .. volume)
         return
-    end
-
-    local for_output = math.random() < 0.5
-    if for_output then
-        input_names, output_names = output_names, input_names
-    end
-
-    input_names[math.random(1, #input_names)] = item_name
-
-    if for_output then
-        input_names, output_names = output_names, input_names
     end
 
     local trade = trades.from_item_names(state.hex_core.surface.name, input_names, output_names)
@@ -1530,6 +1529,7 @@ function hex_grid.add_initial_trades(state)
     end
 
     hex_grid.apply_extra_trades_bonus(state)
+    hex_grid.apply_interplanetary_trade_bonus(state)
 end
 
 -- Delete a hex core entity and its trades, but keep the ground tiles.
@@ -2281,6 +2281,40 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
         game.print({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"})
         game.print(hex_cores_str)
     end
+end
+
+function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
+    if not state.hex_core then return end
+    local surface_name = state.hex_core.surface.name
+    if not item_name then
+        for _item_name, _ in pairs(trades.get_interplanetary_trade_items(surface_name, state.position)) do
+            hex_grid.apply_interplanetary_trade_bonus(state, _item_name)
+        end
+        return
+    end
+    local added = false
+    local rank = item_ranks.get_item_rank(item_name)
+    if rank >= 3 then
+        local volume = trades.get_random_volume_for_item(surface_name, item_name)
+        local input_names, output_names = trades.random_trade_item_names(surface_name, volume, {blacklist = sets.new {item_name}}, true, item_name)
+        if input_names and output_names then
+            local trade = trades.from_item_names(surface_name, input_names, output_names)
+            hex_grid.add_trade(state, trade)
+            added = true
+        else
+            lib.log_error("hex_grid.apply_interplanetary_trade_bonus: Could not generate interplanetary trade")
+        end
+    end
+    if added then
+        game.print({"hextorio.bonus-trade-interplanetary", lib.get_gps_str_from_hex_core(state.hex_core), "[img=item." .. item_name .. "]"})
+    end
+end
+
+function hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
+    local state = hex_grid.get_hex_state(surface_name, hex_pos)
+    if not state or not state.hex_core then return end
+
+    hex_grid.apply_interplanetary_trade_bonus(state, item_name)
 end
 
 function hex_grid.try_recover_trade(trade, states, notify)

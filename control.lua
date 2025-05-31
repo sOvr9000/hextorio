@@ -113,6 +113,7 @@ script.on_init(function()
         remote.call("freeplay", "set_skip_intro", true)
     end
 
+    trades.generate_interplanetary_trade_locations("nauvis", 1)
 end)
 
 script.on_event(defines.events.on_tick, function (event)
@@ -421,6 +422,14 @@ script.on_event(defines.events.on_surface_created, function (event)
             ["lithium-brine"] = mgs_original.autoplace_controls.lithium_brine.size * lithium_brine_frequency,
             ["fluorine-vent"] = mgs_original.autoplace_controls.fluorine_vent.size * fluorine_vent_frequency,
         }
+    end
+
+    if storage.item_values.values[surface.name] then
+        local count = 1
+        if surface.name == "aquilo" then
+            count = 2
+        end
+        trades.generate_interplanetary_trade_locations(surface.name, count)
     end
 end)
 
