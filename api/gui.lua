@@ -335,7 +335,7 @@ function gui.init_questbook(player)
 
     local quest_conditions_header = quest_conditions_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.conditions"}}
     quest_conditions_header.style.font = "heading-1"
-    quest_conditions_frame.add {type = "line", direction = "horizontal"}
+    -- quest_conditions_frame.add {type = "line", direction = "horizontal"}
 
     local quest_conditions_scroll_pane = quest_conditions_frame.add {type = "scroll-pane", name = "scroll-pane"}
     gui.auto_width_height(quest_conditions_scroll_pane)
@@ -344,7 +344,7 @@ function gui.init_questbook(player)
 
     local quest_rewards_header = quest_rewards_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.rewards"}}
     quest_rewards_header.style.font = "heading-1"
-    quest_rewards_frame.add {type = "line", direction = "horizontal"}
+    -- quest_rewards_frame.add {type = "line", direction = "horizontal"}
 
     local quest_rewards_scroll_pane = quest_rewards_frame.add {type = "scroll-pane", name = "scroll-pane"}
     gui.auto_width_height(quest_rewards_scroll_pane)
