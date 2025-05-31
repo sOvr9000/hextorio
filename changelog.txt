@@ -21,6 +21,7 @@ Date: 30/5/25
       Negative productivity will decrease the trade's output rate, e.g. -100% prod means 1/2 of normal output rate, -200% prod means 1/3 of normal output rate, etc.
       This prevents the exploit of quickly generating unlimited [item=hexaprism-coin] on Nauvis before you have to visit other planets.
     - Trade productivity bars are now tracked separately for each quality, preventing easy exploits for high quality items.
+    - The spawn hex on [planet=gleba] now generates with a starting amount of [entity=yumako-tree] and [entity=jellystem].
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 27/5/25

@@ -754,6 +754,43 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             state.resources[resource] = nil
         end
     end
+
+    if surface.name == "gleba" then
+        if is_starting_hex then
+            local transformation = terrain.get_surface_transformation "gleba"
+            local range = (transformation.scale - transformation.stroke_width) * 0.25
+            local width = 3
+            for i, tile_type in ipairs {"natural-yumako-soil", "natural-jellynut-soil"} do
+                local positions = {}
+                local x, dx, entity_name
+                if i == 1 then
+                    x = range
+                    dx = 1
+                    entity_name = "yumako-tree"
+                else
+                    x = -range
+                    dx = -1
+                    entity_name = "jellystem"
+                end
+                for y = -range, range do
+                    for n = 1, width do
+                        table.insert(positions, {x = x + dx * (n - 1), y = y})
+                    end
+
+                    local min_x = x
+                    local max_x = x + dx * (width - 1)
+                    local center_x = (min_x + max_x) * 0.5
+
+                    local entity = surface.create_entity {
+                        name = entity_name,
+                        position = {x = center_x, y = y},
+                    }
+                    entity.tick_grown = game.tick
+                end
+                terrain.set_tiles(surface, positions, tile_type)
+            end
+        end
+    end
 end
 
 function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)

@@ -393,8 +393,12 @@ script.on_event(defines.events.on_surface_created, function (event)
         }
     elseif surface.name == "gleba" then
         local mgs = surface.map_gen_settings
+        -- log(serpent.block(mgs))
         mgs.autoplace_controls.gleba_stone.size = 0
         mgs.autoplace_controls.gleba_water.size = 0
+        mgs.autoplace_controls.gleba_plants.size = 6
+        mgs.autoplace_controls.gleba_plants.frequency = 6
+        mgs.autoplace_controls.gleba_plants.richness = 6
         mgs.autoplace_settings.tile.settings["gleba-deep-lake"].size = 0
         surface.map_gen_settings = mgs
 

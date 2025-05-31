@@ -23,10 +23,10 @@ end
 
 ---Set the tile type for a list of positions
 ---@param surface SurfaceIdentification
----@param positions any
----@param tile_type any
----@param ignore_tiles any
----@param quality any
+---@param positions MapPosition[]
+---@param tile_type string
+---@param ignore_tiles {[string]: boolean} | nil
+---@param quality string|nil
 function terrain.set_tiles(surface, positions, tile_type, ignore_tiles, quality)
     if not ignore_tiles then ignore_tiles = {} end
     if not quality then quality = "normal" end
@@ -39,7 +39,7 @@ function terrain.set_tiles(surface, positions, tile_type, ignore_tiles, quality)
 
     local tiles = {}
     for _, position in pairs(positions) do
-        local cur_tile = surface.get_tile(position.x, position.y)
+        local cur_tile = surface.get_tile(position.x or position[1], position.y or position[2])
         if not cur_tile.valid or not ignore_tiles[cur_tile.name] then
             table.insert(tiles, {name = tile_type, position = position})
         end
