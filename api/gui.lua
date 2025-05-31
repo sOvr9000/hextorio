@@ -1767,10 +1767,16 @@ function gui.update_catalog_inspect_frame(player)
             name = "rank-bonus-unique-heading-" .. i,
             caption = lib.color_localized_string({"", "[img=" .. storage.item_ranks.rank_star_sprites[i] .. "] ", {"hextorio-gui.unique-bonus"}}, color_rich_text, "heading-2"),
         }
+        local caption
+        if i == 2 then
+            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, color_rich_text .. lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false) .. "[.color]"}}
+        else
+            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i}}
+        end
         local rank_bonus_unique = inspect_frame.add {
             type = "label",
             name = "rank-bonus-unique-" .. i,
-            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, color_rich_text .. lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false) .. "[.color]"}},
+            caption = caption,
         }
         rank_bonus_unique.style.single_line = false
         gui.auto_width(rank_bonus_unique)
