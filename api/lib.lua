@@ -1246,6 +1246,15 @@ function lib.is_entity_immune_to_hex_core_clearing(entity_name)
     return immune_to_hex_core_clearing[entity_name] ~= nil
 end
 
+---@param entity LuaEntity
+---@return string[]
+function lib.get_entity_ammo_categories(entity)
+    local prot = prototypes["entity"][entity.name]
+    if not prot then return {} end
+    if not prot.attack_parameters then return {} end
+    return prot.attack_parameters.ammo_categories or {}
+end
+
 
 
 return lib

@@ -224,8 +224,23 @@ return {
             has_img = false,
         },
         {
-            name = "i-am-the-demolisher",
-            conditions = {{type = "obtain-items", value = {[""]}, progress_requirement = 5}},
+            name = "collateral-damage",
+            conditions = {{type = "die-to-railgun", progress_requirement = 1}},
+            rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
+            prerequisites = {"this-is-fine", "my-hair-feels-funny", "yummy-co"},
+        },
+        {
+            name = "itaksdajsckajskc",
+            conditions = {
+                {
+                    type = "obtain-items",
+                    value = {
+                        ["foundation-"] = 1,
+                        ["foundation"] = 1,
+                    },
+                    progress_requirement = 5,
+                },
+            },
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"you-are-the-destroyer"},
             has_img = false,

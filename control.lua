@@ -322,6 +322,14 @@ script.on_event(defines.events.on_entity_died, function (event)
             end
         end
     end
+    if event.entity.name == "character" then
+        -- This is not in on_player_died because the damage type for cause of death may be important.
+        if event.cause then
+            if sets.new(lib.get_entity_ammo_categories(event.cause))["railgun"] then
+                quests.increment_progress_for_type "die-to-railgun"
+            end
+        end
+    end
     if event.entity.name == "biter-spawner" or event.entity.name == "spitter-spawner" then
         if event.cause and (event.cause.name == "car" or event.cause.name == "tank") then
             event_system.trigger("spawner-rammed", event.entity, event.cause)
