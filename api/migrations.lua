@@ -279,6 +279,7 @@ local process_migration = {
         storage.hex_grid.gleba_ignore_tiles = data_hex_grid.gleba_ignore_tiles
     end,
     ["0.4.1"] = function()
+        storage.hex_grid.gleba_ignore_tiles = data_hex_grid.gleba_ignore_tiles
         storage.quests.quest_ids_by_name = {}
         for quest_id, quest in ipairs(storage.quests.quests) do
             storage.quests.quest_ids_by_name[quest.name] = quest_id

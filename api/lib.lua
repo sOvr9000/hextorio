@@ -20,6 +20,72 @@ for _, name in pairs(non_land_tile_names) do
     non_land_tile_name_lookup[name] = true
 end
 
+local immune_to_hex_core_clearing = sets.new {
+    "big-demolisher",
+    "big-demolisher-segment-x0_65",
+    "big-demolisher-segment-x0_77",
+    "big-demolisher-segment-x0_87",
+    "big-demolisher-segment-x0_97",
+    "big-demolisher-segment-x0_99",
+    "big-demolisher-segment-x1_08",
+    "big-demolisher-segment-x1_09",
+    "big-demolisher-segment-x1_1",
+    "big-demolisher-segment-x1_17",
+    "big-demolisher-segment-x1_2",
+    "big-demolisher-segment-x1_27",
+    "big-demolisher-segment-x1_28",
+    "big-demolisher-segment-x1_3",
+    "big-demolisher-segment-x1_33",
+    "big-demolisher-segment-x1_36",
+    "big-demolisher-segment-x1_37",
+    "big-demolisher-segment-x1_4",
+    "big-demolisher-segment-x1_41",
+    "big-demolisher-segment-x1_52",
+    "big-demolisher-tail-x0_64",
+    "medium-demolisher",
+    "medium-demolisher-segment-x0_4875",
+    "medium-demolisher-segment-x0_5775",
+    "medium-demolisher-segment-x0_6525",
+    "medium-demolisher-segment-x0_7275",
+    "medium-demolisher-segment-x0_7425",
+    "medium-demolisher-segment-x0_81",
+    "medium-demolisher-segment-x0_8175",
+    "medium-demolisher-segment-x0_825",
+    "medium-demolisher-segment-x0_8775",
+    "medium-demolisher-segment-x0_9",
+    "medium-demolisher-segment-x0_9525",
+    "medium-demolisher-segment-x0_96",
+    "medium-demolisher-segment-x0_975",
+    "medium-demolisher-segment-x0_9975",
+    "medium-demolisher-segment-x1_02",
+    "medium-demolisher-segment-x1_0275",
+    "medium-demolisher-segment-x1_05",
+    "medium-demolisher-segment-x1_0575",
+    "medium-demolisher-segment-x1_14",
+    "medium-demolisher-tail-x0_48",
+    "small-demolisher",
+    "small-demolisher-segment-x0_325",
+    "small-demolisher-segment-x0_385",
+    "small-demolisher-segment-x0_435",
+    "small-demolisher-segment-x0_485",
+    "small-demolisher-segment-x0_495",
+    "small-demolisher-segment-x0_54",
+    "small-demolisher-segment-x0_545",
+    "small-demolisher-segment-x0_55",
+    "small-demolisher-segment-x0_585",
+    "small-demolisher-segment-x0_6",
+    "small-demolisher-segment-x0_635",
+    "small-demolisher-segment-x0_64",
+    "small-demolisher-segment-x0_65",
+    "small-demolisher-segment-x0_665",
+    "small-demolisher-segment-x0_68",
+    "small-demolisher-segment-x0_685",
+    "small-demolisher-segment-x0_7",
+    "small-demolisher-segment-x0_705",
+    "small-demolisher-segment-x0_76",
+    "small-demolisher-tail-x0_32",
+}
+
 
 
 function lib.position_to_string(x, y)
@@ -1174,6 +1240,10 @@ function lib.get_all_unlocked_quality_names()
         q = q.next
     end
     return unlocked
+end
+
+function lib.is_entity_immune_to_hex_core_clearing(entity_name)
+    return immune_to_hex_core_clearing[entity_name] ~= nil
 end
 
 
