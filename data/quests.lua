@@ -95,15 +95,18 @@ return {
             name = "exploration",
             conditions = {{type = "claimed-hexes", progress_requirement = 15}},
             rewards = {
-                {type = "receive-items", value = {
-                    {name = "modular-armor", count = 1},
-                    {name = "solar-panel-equipment", count = 15},
-                    {name = "personal-roboport-equipment", count = 1},
-                    {name = "battery-equipment", count = 3},
-                    {name = "construction-robot", count = 10},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "modular-armor", count = 1},
+                        {name = "solar-panel-equipment", count = 15},
+                        {name = "personal-roboport-equipment", count = 1},
+                        {name = "battery-equipment", count = 3},
+                        {name = "construction-robot", count = 10},
+                    },
                 },
                 {type = "claim-free-hexes", value = {"nauvis", 3}},
-            }},
+            },
             prerequisites = {"ground-zero"},
             has_img = false,
         },
@@ -216,6 +219,13 @@ return {
         {
             name = "i-am-the-demolisher",
             conditions = {{type = "use-capsule", value = "demolisher-capsule", progress_requirement = 5}},
+            rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
+            prerequisites = {"you-are-the-destroyer"},
+            has_img = false,
+        },
+        {
+            name = "i-am-the-demolisher",
+            conditions = {{type = "obtain-items", value = {[""]}, progress_requirement = 5}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"you-are-the-destroyer"},
             has_img = false,
