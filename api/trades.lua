@@ -471,7 +471,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     coin_tiers.add_coin_to_inventory(inventory_input, coins_added)
     flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
 
-    event_system.trigger("trade-processed", trade)
+    event_system.trigger("trade-processed", trade, total_removed, total_inserted)
     return total_removed, total_inserted, remaining_to_insert, remaining_coin
 end
 
@@ -1190,7 +1190,8 @@ function trades._postprocess_items_traded(surface_name, total_traded, trade_type
                     process_again[quality][item_name] = count
                 end
             end
-        elseif tier >= 4 then -- can be trade type can be either
+        end
+        if tier >= 4 then -- can be trade type can be either
             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
             for item_name, _ in pairs(item_names) do
                 if not item_values.has_item_value(surface_name, item_name) then
