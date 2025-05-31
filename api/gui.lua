@@ -1268,6 +1268,8 @@ function gui.update_questbook(player, quest_name)
                 table.insert(t, lib.get_true_localized_name(t[1], "item"))
             elseif condition.type == "place-tile" then
                 table.insert(t, {"item-name." .. t[1]}) -- could possibly have to change this, but it might be fine
+            elseif condition.type == "sell-item-of-quality" then
+                table.insert(t, {"quality-name." .. t[1]})
             end
             table.insert(t, "green")
             table.insert(t, "heading-2") -- Lua table.unpack() and ... is weird, so this is necessary
