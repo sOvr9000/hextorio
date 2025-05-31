@@ -158,7 +158,7 @@ function trades._try_set_output_counts(surface_name, trade, params)
         local output_item = trade.output_items[1]
         if lib.is_coin(trade.output_items[1].name) then
             output_item.name = "hex-coin"
-            output_item.count = math.floor(0.5 + total_input_value / item_values.get_item_value("nauvis", "hex-coin"))
+            output_item.count = math.max(1, math.floor(0.5 + total_input_value / item_values.get_item_value("nauvis", "hex-coin")))
         else
             local item_value = output_items_value[1]
             output_item.count = math.max(1, math.floor((total_input_value / item_value) + 0.5))
