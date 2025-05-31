@@ -1200,6 +1200,7 @@ function gui.update_questbook(player, quest_name)
     local quest_info_img = quest_info_img_frame["img"]
     local quest_title = quest_info_main["title"]
     local quest_description = quest_info_main["description"]
+    local debug_complete_quest = quest_info_main["debug-complete-quest"]
     local quest_notes_flow = quest_info_main["notes-flow"]
 
     local quest_conditions_frame = quest_frame["conditions-rewards"]["conditions"]
@@ -1227,6 +1228,7 @@ function gui.update_questbook(player, quest_name)
     local localized_quest_title = quests.get_quest_localized_title(quest)
     quest_title.caption = localized_quest_title
     quest_description.caption = quests.get_quest_localized_description(quest)
+    debug_complete_quest.visible = storage.debug_mode == true
 
     complete_header.caption = {"hextorio-questbook.complete", #complete_list.items}
     incomplete_header.caption = {"hextorio-questbook.incomplete", #incomplete_list.items}

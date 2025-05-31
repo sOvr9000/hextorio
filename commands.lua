@@ -46,6 +46,8 @@ function on_command(player, command, params)
         end
         player.print(table.concat(cmd_names, " "))
     elseif command == "hextorio-debug" then
+        storage.debug_mode = true
+
         player.insert {
             name = "hex-coin",
             count = 99999,
