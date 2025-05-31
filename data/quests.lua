@@ -83,7 +83,6 @@ return {
             rewards = {{type = "unlock-feature", value = "trade-overview"}, {type = "claim-free-hexes", value = {"nauvis", 2}}},
             notes = {"trades-randomized"},
             prerequisites = {"ground-zero"},
-            has_img = false,
         },
         {
             name = "biter-rammer",
@@ -108,49 +107,42 @@ return {
                 {type = "claim-free-hexes", value = {"nauvis", 3}},
             },
             prerequisites = {"ground-zero"},
-            has_img = false,
         },
         {
             name = "catalog-initiate",
             conditions = {{type = "total-item-rank", progress_requirement = 20}},
             rewards = {{type = "all-trades-productivity", value = 10}, {type = "claim-free-hexes", value = {"nauvis", 5}}},
             prerequisites = {"ground-zero"},
-            has_img = false,
         },
         {
             name = "sprawling-base",
             conditions = {{type = "hex-span", progress_requirement = 30}},
             rewards = {{type = "unlock-feature", value = "teleportation"}, {type = "claim-free-hexes", value = {"nauvis", 5}}},
             prerequisites = {"exploration"},
-            has_img = false,
         },
         {
             name = "too-many-hex-cores",
             conditions = {{type = "claimed-hexes", progress_requirement = 50}},
             rewards = {{type = "unlock-feature", value = "hex-core-deletion"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"exploration"},
-            has_img = false,
         },
         {
             name = "half-a-gravity",
             conditions = {{type = "coins-in-inventory", progress_requirement = 50000}},
             rewards = {{type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"getting-somewhere"},
-            has_img = false,
         },
         {
             name = "getting-somewhere",
             conditions = {{type = "coins-in-inventory", progress_requirement = 10000}},
             rewards = {{type = "unlock-feature", value = "generator-mode"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"find-some-trades"},
-            has_img = false,
         },
         {
             name = "trades-galore",
             conditions = {{type = "trades-found", progress_requirement = 200}},
             rewards = {{type = "unlock-feature", value = "sink-mode"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"find-some-trades"},
-            has_img = false,
         },
 
         -- Vulcanus
@@ -159,14 +151,12 @@ return {
             conditions = {{type = "claimed-hexes-on", value = "vulcanus", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"vulcanus", 10}}},
             prerequisites = {"too-many-hex-cores"},
-            has_img = false,
         },
         {
             name = "stepping-on-ants",
             conditions = {{type = "kill-entity", value = "small-demolisher", progress_requirement = 3}},
             rewards = {{type = "unlock-feature", value = "supercharging"}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
             prerequisites = {"biter-rammer"},
-            has_img = false,
         },
 
         -- Fulgora
@@ -175,21 +165,18 @@ return {
             conditions = {{type = "claimed-hexes-on", value = "fulgora", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"fulgora", 10}}},
             prerequisites = {"too-many-hex-cores"},
-            has_img = false,
         },
         {
             name = "you-are-the-destroyer",
             conditions = {{type = "use-capsule", value = "destroyer-capsule", progress_requirement = 5}},
             rewards = {{type = "claim-free-hexes", value = {"fulgora", 5}}},
             prerequisites = {"biter-rammer"},
-            has_img = false,
         },
         {
             name = "tesla-freak",
             conditions = {{type = "kill-with-damage-type", value = "electric", progress_requirement = 50}},
             rewards = {{type = "claim-free-hexes", value = {"fulgora", 5}}},
             prerequisites = {"biter-rammer"},
-            has_img = false,
         },
 
         -- Gleba
@@ -198,21 +185,18 @@ return {
             conditions = {{type = "claimed-hexes-on", value = "gleba", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 10}}},
             prerequisites = {"too-many-hex-cores"},
-            has_img = false,
         },
         {
             name = "five-legs-werent-enough",
             conditions = {{type = "kill-entity", value = "small-stomper-pentapod", progress_requirement = 10}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 5}}},
             prerequisites = {"biter-rammer"},
-            has_img = false,
         },
         {
             name = "farm-fresh",
             conditions = {{type = "mine-entity", value = "medium-stomper-shell", progress_requirement = 3}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 5}}},
             prerequisites = {"five-legs-werent-enough"},
-            has_img = false,
         },
 
         -- Aquilo
@@ -221,7 +205,6 @@ return {
             conditions = {{type = "use-capsule", value = "demolisher-capsule", progress_requirement = 5}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"you-are-the-destroyer"},
-            has_img = false,
         },
         {
             name = "collateral-damage",
@@ -234,14 +217,12 @@ return {
             conditions = {{type = "place-tile", value = "foundation", progress_requirement = 100}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"this-is-fine", "my-hair-feels-funny", "yummy-co"},
-            has_img = false,
         },
         {
             name = "world-paver",
             conditions = {{type = "place-tile", value = "foundation", progress_requirement = 2000}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"pond-filler"},
-            has_img = false,
         },
 
         -- Post-Aquilo
@@ -265,14 +246,12 @@ return {
             conditions = {{type = "sell-item-of-quality", value = "hextreme", progress_requirement = 1}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"catalog-initiate"},
-            has_img = false,
         },
         {
             name = "the-factory-must-grow",
             conditions = {{type = "place-entity", value = "sentient-spider", progress_requirement = 1}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"five-legs-werent-enough"},
-            has_img = false,
         },
     },
 }
