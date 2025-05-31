@@ -27,6 +27,7 @@ Date: 31/5/25
       This prevents the exploit of quickly generating unlimited [item=hexaprism-coin] on Nauvis before you have to visit other planets.
     - Trade productivity bars are now tracked separately for each quality, preventing easy exploits for high quality items.
     - The spawn hex on [planet=gleba] now generates with a starting amount of [entity=yumako-tree] and [entity=jellystem].
+    - Improved the quest reward of "It's Just a Scratch".
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 27/5/25
