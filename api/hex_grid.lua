@@ -781,19 +781,21 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         end
 
         local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
-        local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", resource_names)
-        resource_freq = resource_freq * resource_freq / #resource_names
+        local total_resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", resource_names)
+        local resource_freq = total_resource_freq
+        resource_freq = resource_freq / #resource_names
+        resource_freq = (resource_freq ^ 2.6) * #resource_names
 
         if math.random() > (well_freq + resource_freq) / (1 + #resource_names) then
             return nil, nil
         end
 
-        local is_well = math.random() < well_freq / (well_freq + resource_freq)
+        local is_well = math.random() < well_freq / (well_freq + total_resource_freq)
         if is_well then
             return storage.hex_grid.resource_weighted_choice.nauvis.wells, true
         end
 
-        local is_uranium = can_be_uranium and math.random() < lib.remap_map_gen_setting(mgs.autoplace_controls["uranium-ore"].frequency) / resource_freq
+        local is_uranium = can_be_uranium and math.random() < lib.remap_map_gen_setting(mgs.autoplace_controls["uranium-ore"].frequency) / total_resource_freq
         if is_uranium then
             return storage.hex_grid.resource_weighted_choice.nauvis.uranium, false
         end

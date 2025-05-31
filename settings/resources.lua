@@ -187,7 +187,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-resource-bias",
         setting_type = "runtime-global",
-        default_value = 4.0,
+        default_value = 2.0,
         order = "ja",
     },
     {
