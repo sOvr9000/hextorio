@@ -14,6 +14,16 @@ local item_ranks  = require "api.item_ranks"
 
 
 
+local allowed_surfaces = sets.new {
+    "nauvis",
+    "vulcanus",
+    "fulgora",
+    "gleba",
+    "aquilo",
+}
+
+
+
 local hex_grid = {}
 
 
@@ -1410,7 +1420,8 @@ end
 function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
     surface = game.surfaces[surface_id]
-    -- lib.log("hex_grid.on_chunk_generated: " .. surface.name .. ", " .. serpent.line(chunk_pos))
+
+    if not allowed_surfaces[surface.name] then return end
 
     -- Default values
     local transformation = terrain.get_surface_transformation(surface)
