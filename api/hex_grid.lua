@@ -1153,6 +1153,13 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         return
     end
 
+    local surface_id = lib.get_surface_id(surface)
+    if surface_id == -1 then
+        lib.log_error("hex_grid.claim_hex: No surface found")
+        return
+    end
+    surface = game.surfaces[surface_id]
+
     local state = hex_grid.get_hex_state(surface, hex_pos)
     if state.claimed then return end
     if not state.hex_core then return end
@@ -1229,8 +1236,9 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     hex_grid.check_hex_span(surface, hex_pos)
     hex_grid.add_free_hex_claims(surface, -1)
     quests.increment_progress_for_type("claimed-hexes", 1)
+    quests.increment_progress_for_type("claimed-hexes-on", 1, surface.name)
 
-    event_system.trigger("hex-claimed", state)
+    event_system.trigger("hex-claimed", surface, state)
 
     state.is_in_claim_queue = nil
 end

@@ -77,7 +77,7 @@ function gui.register_events()
         end
     end)
 
-    event_system.register_callback("hex-claimed", function(state)
+    event_system.register_callback("hex-claimed", function(surface, state)
         local hex_core = state.hex_core
         if not hex_core or not hex_core.valid then return end
 
