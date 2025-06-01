@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.2
-Date: 31/5/25
+Date: 1/6/25
   Features:
     - Added many more quests and rewards.
   Changes:
@@ -14,6 +14,7 @@ Date: 31/5/25
     - Removed the line that separated quest conditions and rewards from the labels.
     - Added images to all quests.
     - Changed the style of total bought/sold statistics in hex core GUIs.
+    - Changed the teleport button sprite.
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.

@@ -202,7 +202,7 @@ function gui.init_hex_core(player)
     local hex_control_flow = hex_core_gui.add {type = "flow", name = "hex-control-flow", direction = "horizontal"}
     hex_control_flow.visible = false
 
-    local teleport = hex_control_flow.add {type = "sprite-button", name = "teleport", sprite = "teleport"}
+    local teleport = hex_control_flow.add {type = "sprite-button", name = "teleport", sprite = "virtual-signal/down-arrow"}
     teleport.tooltip = {"hex-core-gui.teleport-tooltip"}
 
     local unloader_filters = hex_control_flow.add {type = "sprite-button", name = "unloader-filters", sprite = "item/loader"}
