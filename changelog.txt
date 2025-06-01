@@ -21,6 +21,7 @@ Date: 31/5/25
     - Fixed that concrete was removing egg rafts and stromatolites on [planet=gleba].
     - Fixed that the selling part of ranking up an item to gold stars didn't count.
     - Fixed that sink mode trade conversion was skipping some items randomly.
+    - Fixed belt capacity tech.
   Balancing:
     - Supercharging is now unlocked on [planet=vulcanus].
     - Quality trades now have a trade productivity decrement based on the tier of quality, e.g. an uncommon trade loses 35% productivity.
