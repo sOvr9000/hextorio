@@ -155,8 +155,20 @@ return {
         {
             name = "stepping-on-ants",
             conditions = {{type = "kill-entity", value = "small-demolisher", progress_requirement = 3}},
-            rewards = {{type = "unlock-feature", value = "supercharging"}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
+            rewards = {{type = "unlock-feature", value = "supercharging"}, {type = "claim-free-hexes", value = {"vulcanus", 5}}},
             prerequisites = {"biter-rammer"},
+        },
+        {
+            name = "stepping-on-beetles",
+            conditions = {{type = "kill-entity", value = "medium-demolisher", progress_requirement = 3}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
+            prerequisites = {"stepping-on-ants"},
+        },
+        {
+            name = "cant-step-on-that",
+            conditions = {{type = "kill-entity", value = "big-demolisher", progress_requirement = 1}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 15}}},
+            prerequisites = {"stepping-on-beetles"},
         },
 
         -- Fulgora
@@ -169,7 +181,7 @@ return {
         {
             name = "you-are-the-destroyer",
             conditions = {{type = "use-capsule", value = "destroyer-capsule", progress_requirement = 5}},
-            rewards = {{type = "claim-free-hexes", value = {"fulgora", 5}}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 5}}},
             prerequisites = {"biter-rammer"},
         },
         {
@@ -237,7 +249,7 @@ return {
                 {type = "claim-free-hexes", value = {"gleba", 30}},
                 {type = "claim-free-hexes", value = {"aquilo", 20}},
             },
-            prerequisites = {"catalog-initiate"},
+            prerequisites = {"it-wasnt-good-enough"},
             notes = {"multiple-rank-ups"},
             has_img = false,
         },
@@ -250,8 +262,8 @@ return {
         {
             name = "the-factory-must-grow",
             conditions = {{type = "place-entity", value = "sentient-spider", progress_requirement = 1}},
-            rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
-            prerequisites = {"five-legs-werent-enough"},
+            rewards = {{type = "claim-free-hexes", value = {"aquilo", 10}}},
+            prerequisites = {"five-legs-werent-enough", "cant-step-on-that"},
         },
     },
 }
