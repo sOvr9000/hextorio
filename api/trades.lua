@@ -904,7 +904,7 @@ end
 
 ---Returns a normally indexed table of all trade objects in the current game, skipping over the trades that were deleted but recoverable if only_existent is true.
 ---@param only_existent boolean
----@return {[int]: table}
+---@return table[]
 function trades.get_all_trades(only_existent)
     if only_existent == nil then only_existent = true end
     local all_trades = {}

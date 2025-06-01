@@ -53,10 +53,6 @@ function quests.reinitialize_everything()
 end
 
 function quests.init()
-    log(serpent.block(quests.get_quest "ground-zero"))
-    log(serpent.block(quests.get_quests_by_condition_type "claimed-hexes"))
-    -- log(serpent.block(quests.get_quest "exploration"))
-
     if not storage.quests.quests then
         storage.quests.quests = {}
     end
@@ -101,10 +97,6 @@ function quests.init()
     for _, quest in pairs(check_rev) do
         quests.check_revelations(quest)
     end
-
-    -- log(serpent.block(storage.quests))
-    log(serpent.block(quests.get_quest "ground-zero"))
-    -- log(serpent.block(quests.get_quest "exploration"))
 end
 
 function quests.index_by_condition_types(quest)

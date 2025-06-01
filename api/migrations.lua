@@ -284,7 +284,6 @@ local process_migration = {
         storage.quests.quest_defs = data_quests.quest_defs -- only copy this over so that quest progress isn't reset
         storage.quests.quest_ids_by_name = {}
         storage.quests.quests_by_condition_type = {}
-        log(serpent.block(storage.quests.quests))
 
         local quest_id = 0
         local quest_names = sets.to_array(storage.quests.quests)
@@ -292,7 +291,6 @@ local process_migration = {
             local quest = storage.quests.quests[quest_name]
             quest_id = quest_id + 1
             storage.quests.quest_ids_by_name[quest_name] = quest_id
-            log("indexed quest " .. quest_name .. " with index " .. quest_id)
             storage.quests.quests[quest_name] = nil
             storage.quests.quests[quest_id] = quest
             quest.id = quest_id
@@ -307,6 +305,18 @@ local process_migration = {
         for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"} do
             if game.get_surface(surface_name) then
                 trades.generate_interplanetary_trade_locations(surface_name)
+            end
+        end
+
+        for _, trade in pairs(trades.get_all_trades(false)) do
+            local cpv = trade.current_prod_value
+            trade.current_prod_value = {}
+            for _, q in pairs(prototypes.quality) do
+                if q.name == "normal" then
+                    trade.current_prod_value[q.name] = cpv
+                else
+                    trade.current_prod_value[q.name] = 0
+                end
             end
         end
     end,
