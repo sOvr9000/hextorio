@@ -285,9 +285,10 @@ local process_migration = {
             storage.quests.quest_ids_by_name[quest.name] = quest_id
             quest.id = quest_id
         end
+        for _, player in pairs(game.players) do
+            gui.reinitialize_everything(player)
+        end
         quests.reinitialize_everything()
-        -- for _, trade in pairs(trades.get_all_trades(false)) do
-        -- end
 
         trades.generate_interplanetary_trade_locations "nauvis"
         trades.generate_interplanetary_trade_locations "vulcanus"
