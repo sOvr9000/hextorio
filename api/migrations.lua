@@ -1,5 +1,6 @@
 
 local lib = require "api.lib"
+local sets = require "api.sets"
 local hex_grid = require "api.hex_grid"
 local item_values = require "api.item_values"
 local item_ranks = require "api.item_ranks"
@@ -280,21 +281,34 @@ local process_migration = {
     end,
     ["0.4.1"] = function()
         storage.hex_grid.gleba_ignore_tiles = data_hex_grid.gleba_ignore_tiles
+        storage.quests.quest_defs = data_quests.quest_defs -- only copy this over so that quest progress isn't reset
         storage.quests.quest_ids_by_name = {}
-        for quest_id, quest in ipairs(storage.quests.quests) do
-            storage.quests.quest_ids_by_name[quest.name] = quest_id
+        storage.quests.quests_by_condition_type = {}
+        log(serpent.block(storage.quests.quests))
+
+        local quest_id = 0
+        local quest_names = sets.to_array(storage.quests.quests)
+        for _, quest_name in pairs(quest_names) do
+            local quest = storage.quests.quests[quest_name]
+            quest_id = quest_id + 1
+            storage.quests.quest_ids_by_name[quest_name] = quest_id
+            log("indexed quest " .. quest_name .. " with index " .. quest_id)
+            storage.quests.quests[quest_name] = nil
+            storage.quests.quests[quest_id] = quest
             quest.id = quest_id
+            quests.index_by_condition_types(quest)
         end
+
         for _, player in pairs(game.players) do
             gui.reinitialize_everything(player)
         end
         quests.reinitialize_everything()
 
-        trades.generate_interplanetary_trade_locations "nauvis"
-        trades.generate_interplanetary_trade_locations "vulcanus"
-        trades.generate_interplanetary_trade_locations "fulgora"
-        trades.generate_interplanetary_trade_locations "gleba"
-        trades.generate_interplanetary_trade_locations "aquilo"
+        for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"} do
+            if game.get_surface(surface_name) then
+                trades.generate_interplanetary_trade_locations(surface_name)
+            end
+        end
     end,
 }
 

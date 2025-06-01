@@ -5,6 +5,12 @@ local lib = require "api.lib"
 local event_system = require "api.event_system"
 local sets         = require "api.sets"
 
+
+
+---@alias QuestIdentification Quest|int|string
+
+
+
 local quests = {}
 
 
@@ -47,30 +53,31 @@ function quests.reinitialize_everything()
 end
 
 function quests.init()
-    local prev_quests = table.deepcopy(storage.quests.quests or {})
-    local prev_quest_ids_by_name = table.deepcopy(storage.quests.quest_ids_by_name or {})
+    log(serpent.block(quests.get_quest "ground-zero"))
+    log(serpent.block(quests.get_quests_by_condition_type "claimed-hexes"))
+    -- log(serpent.block(quests.get_quest "exploration"))
 
-    storage.quests.quests = {}
-    storage.quests.quest_ids_by_name = {}
+    if not storage.quests.quests then
+        storage.quests.quests = {}
+    end
+    if not storage.quests.quest_ids_by_name then
+        storage.quests.quest_ids_by_name = {}
+    end
     storage.quests.quest_id_counter = 0
 
     local reveal = {}
     local check_rev = {}
     for _, def in pairs(storage.quests.quest_defs) do
-        local quest = quests.new_quest(def)
+        local prev_quest = quests.get_quest_from_name(def.name)
+        local quest = quests.new_quest(def, (prev_quest or {}).id)
         storage.quests.quest_ids_by_name[def.name] = quest.id
-
-        local prev_quest
-        if prev_quest_ids_by_name[def.name] then
-            prev_quest = prev_quests[prev_quest_ids_by_name[def.name]]
-        end
 
         if prev_quest and quests.is_complete(prev_quest) then
             -- check if extra rewards have been added due to migration
-            local extra_rewards = quests.get_reward_list_additions(quest, storage.quests.quests[def.name])
-            for _, reward in pairs(extra_rewards) do
-                table.insert(storage.quests.quests[def.name].rewards, reward)
-            end
+            -- local extra_rewards = quests.get_reward_list_additions(quest, prev_quest)
+            -- for _, reward in pairs(extra_rewards) do
+            --     table.insert(prev_quest.rewards, reward)
+            -- end
 
             -- don't overwrite old quest progress
             quests._mark_complete(quest)
@@ -79,7 +86,6 @@ function quests.init()
 
         quests.index_by_condition_types(quest)
         storage.quests.quests[quest.id] = quest
-        storage.quests.quest_ids_by_name[quest.name] = quest.id
         quest.order = 0
 
         if not quest.prerequisites or not next(quest.prerequisites) then
@@ -95,6 +101,10 @@ function quests.init()
     for _, quest in pairs(check_rev) do
         quests.check_revelations(quest)
     end
+
+    -- log(serpent.block(storage.quests))
+    log(serpent.block(quests.get_quest "ground-zero"))
+    -- log(serpent.block(quests.get_quest "exploration"))
 end
 
 function quests.index_by_condition_types(quest)
@@ -137,8 +147,9 @@ function quests.get_reward_list_additions(new_quest, old_quest)
 end
 
 ---@param params table
+---@param id int|nil
 ---@return Quest
-function quests.new_quest(params)
+function quests.new_quest(params, id)
     if not params.name then
         lib.log_error("quests.new_quest: Quest has no name")
     end
@@ -149,10 +160,19 @@ function quests.new_quest(params)
         lib.log("quests.new_quest: Quest has no rewards")
     end
 
-    storage.quests.quest_id_counter = storage.quests.quest_id_counter + 1
+    if id and storage.quests.quests[id] then
+        lib.log_error("quests.new_quest: Provided id " .. id .. " is already used by another quest: " .. storage.quests.quests[id].name)
+        id = nil
+    end
+    if not id then
+        while storage.quests.quests[storage.quests.quest_id_counter] do
+            storage.quests.quest_id_counter = storage.quests.quest_id_counter + 1
+        end
+        id = storage.quests.quest_id_counter
+    end
 
     local quest = {
-        id = storage.quests.quest_id_counter,
+        id = id,
         name = params.name,
         conditions = {},
         rewards = {},
@@ -296,9 +316,22 @@ end
 function quests.get_quest_from_id(quest_id)
     local quest = storage.quests.quests[quest_id]
     if not quest then
-        lib.log_error("quests.get_quest_from_id: Could not find quest with name " .. quest_id)
+        lib.log_error("quests.get_quest_from_id: Could not find quest with id " .. quest_id)
     end
     return quest
+end
+
+---@param quest QuestIdentification|nil
+---@return Quest|nil
+function quests.get_quest(quest)
+    if not quest then return end
+    if type(quest) == "number" then
+        return quests.get_quest_from_id(quest)
+    elseif type(quest) == "string" then
+        return quests.get_quest_from_name(quest)
+    elseif type(quest) == "table" then
+        return quest
+    end
 end
 
 function quests.get_quest_localized_title(quest)
@@ -337,24 +370,45 @@ function quests.get_feature_localized_description(feature_name)
     return {"feature-description." .. feature_name}
 end
 
+---@param quest QuestIdentification
+---@return boolean
 function quests.is_complete(quest)
-    return quest.complete == true
+    if not quest then
+        lib.log_error("quests.is_complete: quest is nil")
+        return false
+    end
+    local q = quests.get_quest(quest)
+    if not q then
+        lib.log_error("quests.is_complete: Quest not found: " .. tostring(quest))
+        return false
+    end
+    return q.complete == true
 end
 
 function quests._mark_complete(quest)
     quest.complete = true
 end
 
--- Dish out the rewards of a quest.
+---Dish out the rewards of a quest.
+---@param quest QuestIdentification
 function quests.give_rewards(quest)
-    if quests.is_complete(quest) then return end
+    if not quest then
+        lib.log_error("quests.give_rewards: quest is nil")
+        return
+    end
+    local q = quests.get_quest(quest)
+    if not q then
+        lib.log_error("quests.give_rewards: Quest not found: " .. tostring(quest))
+        return
+    end
+    if quests.is_complete(q) then return end
 
-    for _, reward in pairs(quest.rewards) do
+    for _, reward in pairs(q.rewards) do
         if reward.type == "unlock-feature" then
             storage.quests.unlocked_features[reward.value] = true
         elseif reward.type == "receive-items" then
             for _, player in pairs(game.players) do
-                quests.try_receive_items_reward(player, quest, reward)
+                quests.try_receive_items_reward(player, q, reward)
             end
         end
 
@@ -444,6 +498,7 @@ function quests.print_quest_completion(quest)
 end
 
 -- Check if all conditions are satisfied.
+---@param quest Quest|int
 function quests.check_quest_completion(quest)
     if quests.is_complete(quest) then return end
     for _, condition in pairs(quest.conditions) do
@@ -537,7 +592,7 @@ function quests.check_revelations(quest)
             if q.prerequisites then
                 for _, prereq in pairs(q.prerequisites) do
                     local prereq_quest = quests.get_quest_from_name(prereq)
-                    if not quests.is_complete(prereq_quest) then
+                    if prereq_quest and not quests.is_complete(prereq_quest) then
                         reveal = false
                         break
                     end
@@ -551,20 +606,32 @@ function quests.check_revelations(quest)
 end
 
 ---Complete a quest, bypassing any progress requirements.
----@param quest Quest
+---@param quest QuestIdentification
 function quests.complete_quest(quest)
-    if quests.is_complete(quest) then return end
+    if not quest then
+        lib.log_error("quests.complete_quest: No quest provided")
+        return
+    end
 
-    quests.print_quest_completion(quest)
-    quests.give_rewards(quest)
-    quests._mark_complete(quest)
+    local q = quests.get_quest(quest)
+    if not q then
+        lib.log_error("quests.complete_quest: Quest not found: " .. tostring(quest))
+        return
+    end
 
-    for _, condition in pairs(quest.conditions) do
+    if quests.is_complete(q) then return end
+
+    log("completing quest " .. q.name)
+    quests.print_quest_completion(q)
+    quests.give_rewards(q)
+    quests._mark_complete(q)
+
+    for _, condition in pairs(q.conditions) do
         condition.progress = condition.progress_requirement
     end
 
-    quests.check_revelations(quest)
-    event_system.trigger("quest-completed", quest)
+    quests.check_revelations(q)
+    event_system.trigger("quest-completed", q)
 end
 
 
