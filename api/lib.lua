@@ -1255,6 +1255,150 @@ function lib.get_entity_ammo_categories(entity)
     return prot.attack_parameters.ammo_categories or {}
 end
 
+---@param items QualityItemCounts
+---@param show_none boolean|nil Whether to return "none" if no items exist. Defaults to `true`.
+---@return LocalisedString
+function lib.get_quality_item_counts_str(items, show_none)
+    if show_none == nil then show_none = true end
+
+    local strs = {}
+    for quality, t in pairs(items) do
+        for item_name, count in pairs(t) do
+            table.insert(strs, "[item=" .. item_name .. ",quality=" .. quality .. "]x" .. count)
+        end
+    end
+
+    if show_none and not next(strs) then
+        return {"hextorio.none"}
+    end
+    return table.concat(strs, " ")
+end
+
+---Add a quality item counts table to another, modifying the first one passed.
+---@param quality_item_counts_to_modify QualityItemCounts
+---@param quality_item_counts_to_add QualityItemCounts
+function lib.add_to_quality_item_counts(quality_item_counts_to_modify, quality_item_counts_to_add)
+    for quality, t_add in pairs(quality_item_counts_to_add) do
+        local t_modify = quality_item_counts_to_modify[quality]
+        if not t_modify then
+            t_modify = {}
+            quality_item_counts_to_modify[quality] = t_modify
+        end
+
+        for item_name, count in pairs(t_add) do
+            t_modify[item_name] = (t_modify[item_name] or 0) + count
+        end
+    end
+    lib.normalize_quality_item_counts(quality_item_counts_to_modify)
+end
+
+---@param quality_item_counts QualityItemCounts
+function lib.normalize_quality_item_counts(quality_item_counts)
+    for quality, t in pairs(quality_item_counts) do
+        for item_name, count in pairs(t) do
+            if count == 0 then
+                t[item_name] = nil
+            end
+        end
+        if not next(t) then
+            quality_item_counts[quality] = nil
+        end
+    end
+end
+
+---@param stats HexCoreStats
+---@return LocalisedString
+function lib.get_str_from_hex_core_stats(stats)
+    local str = {"",
+        lib.color_localized_string({"hex-core-gui.total-produced"}, "white", "heading-2"),
+    }
+
+    local any = false
+    if next(stats.total_items_produced) then
+        table.insert(str, "\n" .. lib.get_quality_item_counts_str(stats.total_items_produced, false))
+        any = true
+    end
+    if stats.total_coins_produced.values[1] ~= 0 or stats.total_coins_produced.values[2] ~= 0 or stats.total_coins_produced.values[3] ~= 0 or stats.total_coins_produced.values[4] ~= 0 then -- TODO: Break this file into down into multiple files so that circular dependency can be avoided while using coin_tiers.is_zero()
+        table.insert(str, "\n" .. lib.get_str_from_coin(stats.total_coins_produced))
+        any = true
+    end
+    if not any then
+        table.insert(str, "\n")
+        table.insert(str, {"hextorio.none"})
+    end
+
+    table.insert(str, "\n\n")
+    table.insert(str, lib.color_localized_string({"hex-core-gui.total-consumed"}, "white", "heading-2"))
+
+    any = false
+    if next(stats.total_items_consumed) then
+        log(serpent.block(stats.total_items_consumed))
+        table.insert(str, "\n" .. lib.get_quality_item_counts_str(stats.total_items_consumed, false))
+        any = true
+    end
+    if stats.total_coins_consumed.values[1] ~= 0 or stats.total_coins_consumed.values[2] ~= 0 or stats.total_coins_consumed.values[3] ~= 0 or stats.total_coins_consumed.values[4] ~= 0 then -- TODO: Break this file into down into multiple files so that circular dependency can be avoided while using coin_tiers.is_zero()
+        table.insert(str, "\n" .. lib.get_str_from_coin(stats.total_coins_consumed))
+        any = true
+    end
+    if not any then
+        table.insert(str, "\n")
+        table.insert(str, {"hextorio.none"})
+    end
+
+    return str
+end
+
+---@param coin table
+---@param show_leading_zeros boolean|nil
+---@param sigfigs int|nil
+---@return string
+function lib.get_str_from_coin(coin, show_leading_zeros, sigfigs)
+    if show_leading_zeros == nil then show_leading_zeros = false end
+    local p = 10 ^ (sigfigs or 4)
+    local function format(value)
+        if not sigfigs then
+            return tostring(math.floor(0.5 + value))
+        end
+        if value ~= math.floor(value) and value < p then
+            return lib.tostring_sigfigs(value, sigfigs)
+        end
+        if value > p then
+            return tostring(math.floor(0.5 + value))
+        end
+        return tostring(value)
+    end
+
+    if show_leading_zeros then
+        return "[img=hex-coin]x" .. format(coin.values[1]) .. " [img=gravity-coin]x" .. format(coin.values[2]) .. " [img=meteor-coin]x" .. format(coin.values[3]) .. " [img=hexaprism-coin]x" .. format(coin.values[4])
+    end
+
+    local text = ""
+    local visible = false
+    if coin.values[4] > 0 then visible = true end
+    if visible then
+        if text ~= "" then text = text .. " " end
+        text = text .. "[img=hexaprism-coin]x" .. format(coin.values[4])
+    end
+
+    if coin.values[3] > 0 then visible = true end
+    if visible then
+        if text ~= "" then text = text .. " " end
+        text = text .. "[img=meteor-coin]x" .. format(coin.values[3])
+    end
+
+    if coin.values[2] > 0 then visible = true end
+    if visible then
+        if text ~= "" then text = text .. " " end
+        text = text .. "[img=gravity-coin]x" .. format(coin.values[2])
+    end
+
+    -- Don't show leading zeroes, but show intermediate zeroes, and always show hex coin even if total cost is zero.
+    if text ~= "" then text = text .. " " end
+    text = text .. "[img=hex-coin]x" .. format(coin.values[1])
+
+    return text
+end
+
 
 
 return lib

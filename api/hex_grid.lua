@@ -14,6 +14,10 @@ local item_ranks  = require "api.item_ranks"
 
 
 
+---@alias HexCoreStats {total_items_produced: QualityItemCounts, total_items_consumed: QualityItemCounts, total_coins_produced: table, total_coins_consumed: table}
+
+
+
 local allowed_surfaces = sets.new {
     "nauvis",
     "vulcanus",
@@ -2171,8 +2175,28 @@ function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
     if not inventory_output then return end
 
     if hex_grid.try_unload_output_buffer(state) then
-        local _, _, remaining_to_insert = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
+        local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
         hex_grid.add_to_output_buffer(state, remaining_to_insert)
+
+        if not state.total_items_sold then
+            state.total_items_sold = {}
+        end
+        lib.add_to_quality_item_counts(state.total_items_sold, total_removed)
+
+        if not state.total_items_bought then
+            state.total_items_bought = {}
+        end
+        lib.add_to_quality_item_counts(state.total_items_bought, total_inserted)
+
+        if not state.total_coins_produced then
+            state.total_coins_produced = coin_tiers.new()
+        end
+        state.total_coins_produced = coin_tiers.add(state.total_coins_produced, total_coins_added)
+
+        if not state.total_coins_consumed then
+            state.total_coins_consumed = coin_tiers.new()
+        end
+        state.total_coins_consumed = coin_tiers.add(state.total_coins_consumed, total_coins_removed)
     end
 end
 
@@ -2462,6 +2486,28 @@ function hex_grid.get_trade_volume_base(surface_name)
     val = item_values.get_item_value(surface_name, min_item)
     storage.trades.trade_volume_base[surface_name] = val
     return val
+end
+
+---@return HexCoreStats
+function hex_grid.get_hex_core_stats(state)
+    if not state then
+        lib.log_error("hex_grid.get_hex_core_stats: No hex state provided")
+        return {
+            total_items_produced = {},
+            total_items_consumed = {},
+            total_coins_produced = coin_tiers.new(),
+            total_coins_consumed = coin_tiers.new(),
+        }
+    end
+
+    local stats = {
+        total_items_produced = table.deepcopy(state.total_items_bought or {}),
+        total_items_consumed = table.deepcopy(state.total_items_sold or {}),
+        total_coins_produced = coin_tiers.copy(state.total_coins_produced or coin_tiers.new()),
+        total_coins_consumed = coin_tiers.copy(state.total_coins_consumed or coin_tiers.new()),
+    }
+
+    return stats
 end
 
 

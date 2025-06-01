@@ -472,7 +472,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
 
     event_system.trigger("trade-processed", trade, total_removed, total_inserted)
-    return total_removed, total_inserted, remaining_to_insert, remaining_coin
+    return total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added
 end
 
 function trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary, include_item)
@@ -1126,22 +1126,25 @@ end
 ---@param surface_name string
 ---@param input_inv LuaInventory
 ---@param output_inv LuaInventory
----@param trade_ids {[int]: int}
+---@param trade_ids int[]
 ---@param quality_cost_multipliers {[string]: number} | nil
 ---@param max_items_per_output int | nil
----@return {[string]: int}, {[string]: int}, {[string]: int}
+---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, table, table
 function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
     -- Check if trades can occur
     local total_items = input_inv.get_item_count()
-    if total_items == 0 then return {}, {}, {} end
+    if total_items == 0 then return {}, {}, {}, coin_tiers.new(), coin_tiers.new() end
 
     quality_cost_multipliers = quality_cost_multipliers or {}
 
     local input_coin, all_items_lookup = trades.get_coins_and_items_of_inventory(input_inv)
+    local initial_input_coin = coin_tiers.copy(input_coin)
 
     local _total_removed = {}
     local _total_inserted = {}
     local _remaining_to_insert = {}
+    local total_coins_added = coin_tiers.new()
+
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
         if trade then
@@ -1149,8 +1152,9 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
                 if num_batches > 0 then
-                    local total_removed, total_inserted, remaining_to_insert, remaining_coin = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin)
+                    local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin)
                     input_coin = remaining_coin
+                    total_coins_added = coin_tiers.add(total_coins_added, coins_added)
                     if not _total_removed[quality] then _total_removed[quality] = {} end
                     for item_name, amount in pairs(total_removed[quality] or {}) do
                         _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
@@ -1168,9 +1172,11 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
         end
     end
 
+    local total_coins_removed = coin_tiers.subtract(initial_input_coin, input_coin)
+
     trades._postprocess_items_traded(surface_name, _total_removed, "sold")
     trades._postprocess_items_traded(surface_name, _total_inserted, "bought")
-    return _total_removed, _total_inserted, _remaining_to_insert
+    return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
 end
 
 function trades._postprocess_items_traded(surface_name, total_traded, trade_type)

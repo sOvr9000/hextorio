@@ -362,50 +362,7 @@ function coin_tiers.coin_to_text(coin, show_leading_zeros, sigfigs)
     if type(coin) == "number" then
         coin = coin_tiers.from_base_value(coin)
     end
-
-    local p = 10 ^ (sigfigs or 4)
-    local function format(value)
-        if not sigfigs then
-            return tostring(math.floor(0.5 + value))
-        end
-        if value ~= math.floor(value) and value < p then
-            return lib.tostring_sigfigs(value, sigfigs)
-        end
-        if value > p then
-            return tostring(math.floor(0.5 + value))
-        end
-        return tostring(value)
-    end
-
-    if show_leading_zeros then
-        return "[img=hex-coin]x" .. format(coin.values[1]) .. " [img=gravity-coin]x" .. format(coin.values[2]) .. " [img=meteor-coin]x" .. format(coin.values[3]) .. " [img=hexaprism-coin]x" .. format(coin.values[4])
-    end
-
-    local text = ""
-    local visible = false
-    if coin.values[4] > 0 then visible = true end
-    if visible then
-        if text ~= "" then text = text .. " " end
-        text = text .. "[img=hexaprism-coin]x" .. format(coin.values[4])
-    end
-
-    if coin.values[3] > 0 then visible = true end
-    if visible then
-        if text ~= "" then text = text .. " " end
-        text = text .. "[img=meteor-coin]x" .. format(coin.values[3])
-    end
-
-    if coin.values[2] > 0 then visible = true end
-    if visible then
-        if text ~= "" then text = text .. " " end
-        text = text .. "[img=gravity-coin]x" .. format(coin.values[2])
-    end
-
-    -- Don't show leading zeroes, but show intermediate zeroes, and always show hex coin even if total cost is zero.
-    if text ~= "" then text = text .. " " end
-    text = text .. "[img=hex-coin]x" .. format(coin.values[1])
-
-    return text
+    return lib.get_str_from_coin(coin, show_leading_zeros, sigfigs)
 end
 
 function coin_tiers.get_tier_of_base_value(base_value)

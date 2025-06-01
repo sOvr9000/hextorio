@@ -2,7 +2,7 @@
 Version: 0.4.2
 Date: 31/5/25
   Features:
-    - Added more quests and rewards.
+    - Added many more quests and rewards.
   Changes:
     - Sentient Spider is now equipped with 1x [item=teslagun] instead of 4x [item=rocket-launcher].
     - Sentient Spider now has a larger equipment grid.
@@ -13,6 +13,7 @@ Date: 31/5/25
     - Changed the red star rank bonus description.
     - Removed the line that separated quest conditions and rewards from the labels.
     - Added images to all quests.
+    - Changed the style of total bought/sold statistics in hex core GUIs.
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
     - Added localization for the crystalline fuel tech.
@@ -23,6 +24,7 @@ Date: 31/5/25
     - Fixed that sink mode trade conversion was skipping some items randomly.
     - Fixed belt capacity tech.
     - Fixed that modded surfaces would crash the game.
+    - Fixed total bought/sold statistics in hex core GUIs.
   Balancing:
     - Supercharging is now unlocked on [planet=vulcanus].
     - Quality trades now have a trade productivity decrement based on the tier of quality, e.g. an uncommon trade loses 35% productivity.

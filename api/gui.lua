@@ -223,6 +223,8 @@ function gui.init_hex_core(player)
 
     local upgrade_quality = hex_control_flow.add {type = "sprite-button", name = "upgrade-quality", sprite = "quality/uncommon"}
 
+    local stats = hex_control_flow.add {type = "sprite-button", name = "stats", sprite = "utility/side_menu_production_icon"}
+
     local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/deconstruction_mark"}
 
     local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
@@ -237,20 +239,6 @@ function gui.init_hex_core(player)
     local delete_core_confirmation_button = delete_core_confirmation.add {type = "sprite-button", name = "confirmation-button", sprite = "utility/deconstruction_mark"}
     local delete_core_confirmation_label = delete_core_confirmation.add {type = "label", name = "confirmation-label", caption = lib.color_localized_string({"hex-core-gui.delete-core-confirmation"}, "red")}
     delete_core_confirmation_label.style.font = "heading-1"
-
-    hex_core_gui.add {type = "line", direction = "horizontal"}
-
-    local trades_total_sold = hex_core_gui.add {type = "label", name = "trades-total-sold", caption = {"hex-core-gui.trades-total-sold"}}
-    trades_total_sold.style.font = "heading-2"
-
-    local trades_total_sold_none = hex_core_gui.add {type = "label", name = "trades-total-sold-none", caption = {"hex-core-gui.trades-total-sold-none"}}
-    local trades_total_sold_table = hex_core_gui.add {type = "table", name = "trades-total-sold-table", column_count = 8}
-
-    local trades_total_bought = hex_core_gui.add {type = "label", name = "trades-total-bought", caption = {"hex-core-gui.trades-total-bought"}}
-    trades_total_bought.style.font = "heading-2"
-
-    local trades_total_bought_none = hex_core_gui.add {type = "label", name = "trades-total-bought-none", caption = {"hex-core-gui.trades-total-bought-none"}}
-    local trades_total_bought_table = hex_core_gui.add {type = "table", name = "trades-total-bought-table", column_count = 8}
 
     hex_core_gui.add {type = "line", direction = "horizontal"}
 
@@ -1012,32 +1000,8 @@ function gui.update_hex_core(player)
         frame["claimed-by"].visible = true
         frame["claimed-by"].caption = {"hex-core-gui.claimed-by", claimed_by_name, lib.ticks_to_string(claimed_timestamp)}
 
-        frame["trades-total-sold"].visible = true
-        frame["trades-total-bought"].visible = true
-
-        local total_items_sold = state.total_items_sold or {}
-        if next(total_items_sold) then
-            frame["trades-total-sold-none"].visible = false
-            frame["trades-total-sold-table"].visible = true
-            frame["trades-total-sold-table"].clear()
-            gui.generate_sprite_buttons(player, hex_core.surface.name, frame["trades-total-sold-table"], total_items_sold, true)
-        else
-            frame["trades-total-sold-none"].visible = true
-            frame["trades-total-sold-table"].visible = false
-        end
-
-        local total_items_bought = state.total_items_bought or {}
-        if next(total_items_bought) then
-            frame["trades-total-bought-none"].visible = false
-            frame["trades-total-bought-table"].visible = true
-            frame["trades-total-bought-table"].clear()
-            gui.generate_sprite_buttons(player, hex_core.surface.name, frame["trades-total-bought-table"], total_items_bought, true)
-        else
-            frame["trades-total-bought-none"].visible = true
-            frame["trades-total-bought-table"].visible = false
-        end
-
         frame["hex-control-flow"].visible = true
+        frame["hex-control-flow"]["stats"].tooltip = lib.get_str_from_hex_core_stats(hex_grid.get_hex_core_stats(state))
         frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation" and player.character and state.hex_core and player.character.surface.name == state.hex_core.surface.name
         frame["hex-control-flow"]["unloader-filters"].enabled = true
         frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging" and not coin_tiers.is_zero(hex_grid.get_supercharge_cost(hex_core))
@@ -1080,14 +1044,6 @@ function gui.update_hex_core(player)
     else
         frame["claim-flow"].visible = true
         frame["claimed-by"].visible = false
-
-        frame["trades-total-sold"].visible = false
-        frame["trades-total-sold-table"].visible = false
-        frame["trades-total-bought"].visible = false
-        frame["trades-total-bought-table"].visible = false
-
-        frame["trades-total-sold-none"].visible = false
-        frame["trades-total-bought-none"].visible = false
 
         frame["hex-control-flow"].visible = false
 
@@ -1174,7 +1130,7 @@ function gui.update_hex_core_resources(player)
         resources_flow.add {
             type = "label",
             name = "no-resources",
-            caption = {"hex-core-gui.no-resources"},
+            caption = {"hextorio.none"},
         }
     end
 end
