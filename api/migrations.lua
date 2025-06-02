@@ -40,6 +40,7 @@ local versions = {
     "0.4.0",
     "0.4.1",
     "0.4.2",
+    "0.4.3",
 }
 
 local version_stepping = {}
@@ -328,6 +329,10 @@ local process_migration = {
             end
         end
         hex_grid.set_pool_size(data_hex_grid.pool_size)
+    end,
+    ["0.4.2"] = function()
+        storage.cached = {}
+        storage.hex_grid.chunk_generation_range_per_player = data_hex_grid.chunk_generation_range_per_player
     end,
 }
 

@@ -8,6 +8,7 @@ Date: 2/6/25
     - Fewer of the more distant hexes than the ones near spawn have resources on all planets.
   Optimizations:
     - Greatly optimized hex generation and overall UPS.
+    - Further optimized hex generation ahead of time in uncharted areas (for charting at fast speeds).
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 1/6/25

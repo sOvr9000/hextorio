@@ -23,4 +23,5 @@ return {
     },
 
     pool_size = 1000,
+    chunk_generation_range_per_player = 7,
 }
