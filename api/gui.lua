@@ -282,7 +282,7 @@ function gui.init_questbook(player)
     local list_frame = lower_flow.add {type = "frame", name = "list-frame", direction = "vertical"}
     list_frame.style.natural_width = 300 / 1.2
     list_frame.style.horizontally_stretchable = false
-    list_frame.style.horizontally_squashable = true
+    list_frame.style.horizontally_squashable = false
 
     local quest_frame = lower_flow.add {type = "flow", name = "quest-frame", direction = "vertical"}
     gui.auto_width_height(quest_frame)
@@ -304,10 +304,14 @@ function gui.init_questbook(player)
 
     local quest_info_frame = quest_frame.add {type = "frame", name = "info-frame", direction = "horizontal"}
     quest_info_frame.style.natural_height = 300 / 1.2
+    quest_info_frame.style.maximal_width = 1153 / 1.2
+    quest_info_frame.style.natural_width = 1153 / 1.2
 
     local quest_info_main = quest_info_frame.add {type = "flow", name = "main", direction = "vertical"}
     local quest_info_img_frame = quest_info_frame.add {type = "frame", name = "img-frame"}
     local quest_info_img = quest_info_img_frame.add {type = "sprite", name = "img", sprite = "missing-quest-img"}
+    quest_info_img.style.width = 256 / 1.2
+    quest_info_img.style.height = 256 / 1.2
 
     local quest_title = quest_info_main.add {type = "label", name = "title", caption = "[Quest Title]"}
     quest_title.style.font = "heading-1"

@@ -28,6 +28,7 @@ Date: 1/6/25
     - Fixed belt capacity tech.
     - Fixed that modded surfaces would crash the game.
     - Fixed total bought/sold statistics in hex core GUIs.
+    - Fixed that the questbook was changing sizes as quests were selected.
   Balancing:
     - Supercharging is now unlocked on [planet=vulcanus].
     - Quality trades now have a trade productivity decrement based on the tier of quality, e.g. an uncommon trade loses 35% productivity.
