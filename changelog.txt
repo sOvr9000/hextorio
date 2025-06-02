@@ -4,7 +4,8 @@ Date: 2/6/25
   Features:
     - Sentient Spider is now semi-functional.
   Balancing:
-    - Made lower-valued trades more common in the more distant hexes from spawn on all planets.
+    - Lower-valued trades are now more common in the more distant hexes from spawn on all planets.
+    - Fewer of the more distant hexes than the ones near spawn have resources on all planets.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 1/6/25
