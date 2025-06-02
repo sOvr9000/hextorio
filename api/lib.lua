@@ -1399,6 +1399,22 @@ function lib.get_str_from_coin(coin, show_leading_zeros, sigfigs)
     return text
 end
 
+---@param player LuaPlayer
+---@param object_name string
+function lib.open_factoriopedia_gui(player, object_name, prototype_category)
+    local prot
+    if prototype_category then
+        prot = prototypes[prototype_category][object_name]
+    else
+        prot = prototypes.item[object_name] or prototypes.fluid[object_name] or prototypes.entity[object_name] or prototypes.recipe[object_name]
+    end
+    if not prot then
+        lib.log_error("lib.open_factoriopedia_gui: Cannot find prototype for " .. object_name)
+        return
+    end
+    player.open_factoriopedia_gui(prot)
+end
+
 
 
 return lib

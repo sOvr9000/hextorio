@@ -3,11 +3,13 @@ Version: 0.4.2
 Date: 1/6/25
   Features:
     - Added many more quests and rewards.
+    - Added button in catalog to open the item in the Factoriopedia.
   Changes:
     - Sentient Spider is now equipped with 1x [item=teslagun] instead of 4x [item=rocket-launcher].
     - Sentient Spider now has a larger equipment grid.
     - Trades can now only be made with researched qualities.
     - Changed silver rank bonus to guarantee at least one interplanetary trade for every item on every planet.
+    - Clicking on an item in a trade when viewed in a hex core now opens up that item in the catalog instead of the Factoriopedia.
   Gui:
     - Changed the sink and generator mode icons.
     - Changed the red star rank bonus description.

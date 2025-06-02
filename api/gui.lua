@@ -15,6 +15,10 @@ local gui = {}
 
 
 
+---@alias PlayerCatalogSelection {surface_name: string, item_name: string, bazaar_quality: string}
+
+
+
 function gui.register_events()
     event_system.register_callback("post-rank-up-command", function(player, params)
         gui.close_all(player)
@@ -1661,7 +1665,7 @@ function gui.update_catalog_inspect_frame(player)
     local inspect_frame = frame["flow"]["inspect-frame"]
 
     gui.verify_catalog_storage(player)
-    local selection = storage.catalog.current_selection[player.name]
+    local selection = gui.get_catalog_selection(player)
     local rank_obj = item_ranks.get_rank_obj(selection.item_name)
     if not rank_obj then return end
 
@@ -1694,6 +1698,21 @@ function gui.update_catalog_inspect_frame(player)
         caption = "[font=heading-1][img=item." .. selection.item_name .. "][.font]",
     }
     rank_label3.style.left_margin = 73 / 1.2
+
+    inspect_frame.add {type = "line", direction = "horizontal"}
+
+    local control_flow = inspect_frame.add {
+        type = "flow",
+        name = "control-flow",
+        direction = "horizontal",
+    }
+
+    local open_in_factoriopedia = control_flow.add {
+        type = "sprite-button",
+        name = "open-in-factoriopedia",
+        sprite = "utility/side_menu_factoriopedia_icon",
+        tooltip = {"hextorio-gui.open-in-factoriopedia"},
+    }
 
     inspect_frame.add {type = "line", direction = "horizontal"}
 
@@ -2263,11 +2282,13 @@ function gui.on_sprite_button_click(player, element)
                 gui.on_hex_mode_button_click(player, element)
             elseif gui.is_descendant_of(element, "trade-overview") and element.parent.name == "trade-table" then
                 gui.on_trade_overview_item_clicked(player, element)
-            elseif gui.is_descendant_of(element, "hex-core") then
+            elseif gui.is_descendant_of(element, "hex-core") and element.parent.name ~= "hex-control-flow" then
                 gui.on_hex_core_trade_item_clicked(player, element)
+            elseif gui.is_descendant_of(element, "catalog") and element.parent.name == "control-flow" then
+                gui.on_catalog_control_button_clicked(player, element)
             elseif gui.is_descendant_of(element, "quantum-bazaar") then
                 gui.on_quantum_bazaar_button_clicked(player, element)
-            else -- this is just horribly ugly, maybe I'll clean it up later
+            else -- all of this is EXTREMELY ugly, I will have to clean it up later
                 if element.parent.parent then
                     if element.parent.parent.name == "planet-flow" then
                         if element.parent["status"].sprite == "check-mark-green" then
@@ -2280,6 +2301,14 @@ function gui.on_sprite_button_click(player, element)
                 end
             end
         end
+    end
+end
+
+function gui.on_catalog_control_button_clicked(player, element)
+    local selection = gui.get_catalog_selection(player)
+    if element.name == "open-in-factoriopedia" then
+        gui.close_all(player)
+        lib.open_factoriopedia_gui(player, selection.item_name)
     end
 end
 
@@ -2410,11 +2439,16 @@ function gui.set_trade_overview_item_filters(player, input_items, output_items)
 end
 
 function gui.on_hex_core_trade_item_clicked(player, element)
+    if not quests.is_feature_unlocked "catalog" then return end
+
+    local hex_core = player.opened
+    if not hex_core then return end
+
     local item_name = element.sprite:sub(6)
-    local prot = prototypes.item[item_name]
-    if not prot then return end
+
     gui.close_all(player)
-    player.open_factoriopedia_gui(prot)
+    gui.show_catalog(player)
+    gui.set_catalog_selection(player, hex_core.surface.name, item_name, "normal")
 end
 
 function gui.on_hex_mode_button_click(player, element)
@@ -2790,6 +2824,10 @@ function gui.swap_trade_overview_content_filters(player)
     end
 end
 
+---Check if a LuaGuiElement is a descendant of a given parent name.
+---@param element LuaGuiElement
+---@param parent_name string
+---@return boolean
 function gui.is_descendant_of(element, parent_name)
     local parent = element.parent
     if not parent then return false end
@@ -2797,21 +2835,29 @@ function gui.is_descendant_of(element, parent_name)
     return gui.is_descendant_of(parent, parent_name)
 end
 
+---Automatically stretch a LuaGuiElement horizontally.
+---@param element LuaGuiElement
 function gui.auto_width(element)
     element.style.horizontally_stretchable = true
     element.style.horizontally_squashable = true
 end
 
+---Automatically stretch a LuaGuiElement vertically.
+---@param element LuaGuiElement
 function gui.auto_height(element)
     element.style.vertically_stretchable = true
     element.style.vertically_squashable = true
 end
 
+---Automatically stretch a LuaGuiElement horizontally and vertically.
+---@param element LuaGuiElement
 function gui.auto_width_height(element)
     gui.auto_width(element)
     gui.auto_height(element)
 end
 
+---Verify the catalog storage is set up correctly.
+---@param player LuaPlayer
 function gui.verify_catalog_storage(player)
     if not storage.catalog then
         storage.catalog = {}
@@ -2826,6 +2872,11 @@ function gui.verify_catalog_storage(player)
     end
 end
 
+---Set the catalog selection for a player.
+---@param player LuaPlayer
+---@param surface_name string
+---@param item_name string
+---@param bazaar_quality string
 function gui.set_catalog_selection(player, surface_name, item_name, bazaar_quality)
     gui.verify_catalog_storage(player)
     local selection = storage.catalog.current_selection[player.name]
@@ -2835,11 +2886,17 @@ function gui.set_catalog_selection(player, surface_name, item_name, bazaar_quali
     gui.update_catalog_inspect_frame(player)
 end
 
+---Get the catalog selection for a player.
+---@param player LuaPlayer
+---@return PlayerCatalogSelection
 function gui.get_catalog_selection(player)
     gui.verify_catalog_storage(player)
     return storage.catalog.current_selection[player.name]
 end
 
+---Get the quality name from a dropdown element.
+---@param element LuaGuiElement
+---@return string
 function gui.get_quality_name_from_dropdown(element)
     return element.get_item(math.max(1, element.selected_index))[3][1]:sub(14)
 end
