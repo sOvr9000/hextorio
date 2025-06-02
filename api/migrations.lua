@@ -319,6 +319,14 @@ local process_migration = {
                 end
             end
         end
+
+        for _, pool in pairs(storage.hex_grid.pool) do
+            for _, params in pairs(pool) do
+                params.hex_pos = {q = params.q, r = params.r}
+                params.q = nil
+                params.r = nil
+            end
+        end
     end,
 }
 

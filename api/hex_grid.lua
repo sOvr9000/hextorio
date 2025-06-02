@@ -14,7 +14,9 @@ local item_ranks  = require "api.item_ranks"
 
 
 
+---@alias HexState table
 ---@alias HexCoreStats {total_items_produced: QualityItemCounts, total_items_consumed: QualityItemCounts, total_coins_produced: table, total_coins_consumed: table}
+---@alias HexPoolParameters {surface_id: int, q: int, r: int}
 
 
 
@@ -2020,7 +2022,7 @@ function hex_grid.setup_pool()
                         table.insert(pool, cur_pool)
                         cur_pool = {}
                     end
-                    table.insert(cur_pool, {surface_id = surface_id, q = q, r = r})
+                    table.insert(cur_pool, {surface_id = surface_id, hex_pos = {q = q, r = r}})
                 end
             end
         end
@@ -2028,7 +2030,7 @@ function hex_grid.setup_pool()
     table.insert(pool, cur_pool)
 end
 
----@param state table
+---@param state HexState
 ---@param pool_idx int | nil
 function hex_grid.add_to_pool(state, pool_idx)
     if not state.hex_core then
@@ -2070,16 +2072,15 @@ function hex_grid.add_to_pool(state, pool_idx)
 
     local pool_params = {
         surface_id = state.hex_core.surface.index,
-        q = state.position.q,
-        r = state.position.r,
-    }
+        hex_pos = state.position,
+    } --[[@as HexPoolParameters]]
 
     table.insert(pool, pool_params)
 end
 
----@param state table
----@param pool_idx int | nil
----@param idx_in_pool int | nil
+---@param state HexState
+---@param pool_idx int | nil The index of the pool that contains the hex state. If not provided, it is located automatically.
+---@param idx_in_pool int | nil The index of the hex state in the pool. If not provided, it is located automatically.
 function hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
     if not storage.hex_grid.pool then return end
     if not state.hex_core then
@@ -2093,7 +2094,7 @@ function hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
         -- Find pool with this state
         for idx, pool in pairs(storage.hex_grid.pool) do
             for idx2, pool_params in pairs(pool) do
-                if pool_params.surface_id == surface_id then
+                if pool_params.surface_id == surface_id and axial.equals(pool_params.hex_pos, state.position) then
                     pool_idx = idx
                     idx_in_pool = idx2
                     break
@@ -2126,24 +2127,55 @@ function hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
     end
 
     table.remove(pool, idx_in_pool)
+    hex_grid.cleanup_empty_pools()
 end
 
----@param state table
----@param pool_idx int | nil
----@param idx_in_pool int | nil
-function hex_grid.relocate_state_in_pool(state, pool_idx, idx_in_pool)
+---@param state HexState
+---@param pool_idx int | nil The index of the pool that contains the hex state. If not provided, it is located automatically.
+---@param idx_in_pool int | nil The index of the hex state in the pool. If not provided, it is located automatically.
+function hex_grid.relocate_in_pool(state, pool_idx, idx_in_pool)
     hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
     hex_grid.add_to_pool(state)
 end
 
 function hex_grid.verify_pool_sizes()
-    local size = storage.hex_grid.pool_size
+    -- Ensure that no pools are too large.
+    local size = hex_grid.get_pool_size()
     for pool_idx, pool in pairs(storage.hex_grid.pool) do
         if #pool > size then
             for idx_in_pool = #pool, size + 1, -1 do
                 local params = pool[idx_in_pool]
                 local state = hex_grid.get_hex_state_from_pool_params(params)
-                hex_grid.relocate_state_in_pool(state, pool_idx, idx_in_pool)
+                hex_grid.relocate_in_pool(state, pool_idx, idx_in_pool)
+            end
+        end
+    end
+
+    -- Ensure that pools are filled in order of first to last, removing unnecessarily empty pools.
+    for i = 1, #storage.hex_grid.pool - 1 do
+        if i >= #storage.hex_grid.pool then break end
+        local pool1 = storage.hex_grid.pool[i]
+        for j = 1, size - #pool1 do
+            for k = #storage.hex_grid.pool, i + 1, -1 do
+                local pool2 = storage.hex_grid.pool[k]
+                if next(pool2) then
+                    local state = hex_grid.get_hex_state_from_pool_params(pool2[1])
+                    hex_grid.relocate_in_pool(state, k, 1)
+                    break
+                end
+            end
+        end
+    end
+end
+
+function hex_grid.cleanup_empty_pools()
+    local found = false
+    for i = #storage.hex_grid.pool, 1, -1 do
+        if not next(storage.hex_grid.pool[i]) then
+            if found then
+                table.remove(storage.hex_grid.pool, i)
+            else
+                found = true
             end
         end
     end
@@ -2172,7 +2204,7 @@ function hex_grid.get_pool_size()
 end
 
 function hex_grid.get_hex_state_from_pool_params(params)
-    return hex_grid.get_hex_state(params.surface_id, {q = params.q, r = params.r})
+    return hex_grid.get_hex_state(params.surface_id, params.hex_pos)
 end
 
 function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)

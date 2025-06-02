@@ -22,5 +22,5 @@ return {
         "wetland-blue-slime",
     },
 
-    pool_size = 50,
+    pool_size = 1000,
 }
