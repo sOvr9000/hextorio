@@ -1584,7 +1584,7 @@ function hex_grid.add_initial_trades(state)
         max_volume = math.min(max_volume, max_item_value * 0.5)
         for _ = 1, trades_per_hex do
             local r = math.random()
-            local random_volume = math.max(1, (1 - r * r) * max_volume)
+            local random_volume = math.max(1, r * r * max_volume)
             local trade = trades.random(state.hex_core.surface.name, random_volume)
             if trade then
                 table.insert(hex_core_trades, trade)
