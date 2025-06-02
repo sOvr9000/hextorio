@@ -4,6 +4,8 @@ Date: 1/6/25
   Features:
     - Added many more quests and rewards.
     - Added button in catalog to open the item in the Factoriopedia.
+  Minor Features:
+    - The parameter to the /hex-pool-size command can now be omitted to check the current hex pool size.
   Changes:
     - Sentient Spider is now equipped with 1x [item=teslagun] instead of 4x [item=rocket-launcher].
     - Sentient Spider now has a larger equipment grid.
@@ -19,7 +21,7 @@ Date: 1/6/25
     - Changed the teleport button sprite.
   Bugfixes:
     - Fixed the factoriopedia simulation for hexaprisms and hexic underground belts.
-    - Added localization for the crystalline fuel tech.
+    - Added localization for the crystalline fuel tech and some commands.
     - Fixed fish spawning.
     - Removed [item=cliff-explosives] from all planets except [planet=vulcanus].
     - Fixed that concrete was removing egg rafts and stromatolites on [planet=gleba].

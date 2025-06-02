@@ -116,6 +116,10 @@ function hex_grid.register_events()
     end)
 
     event_system.register_callback("command-hex-pool-size", function(player, params)
+        if not params[1] then
+            player.print({"hextorio.current-hex-pool-size", hex_grid.get_pool_size()})
+            return
+        end
         hex_grid.set_pool_size(params[1])
     end)
 
@@ -2160,6 +2164,11 @@ function hex_grid.set_pool_size(size)
     -- for _, pool in pairs(storage.hex_grid.pool) do
     --     log("pool size: " .. #pool)
     -- end
+end
+
+---@return int
+function hex_grid.get_pool_size()
+    return storage.hex_grid.pool_size
 end
 
 function hex_grid.get_hex_state_from_pool_params(params)
