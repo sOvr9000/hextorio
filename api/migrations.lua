@@ -327,6 +327,7 @@ local process_migration = {
                 params.r = nil
             end
         end
+        hex_grid.set_pool_size(data_hex_grid.pool_size)
     end,
 }
 
