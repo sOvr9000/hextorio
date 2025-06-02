@@ -13,7 +13,6 @@ local lib = require "api.lib"
 
 
 local axial = {}
-local cached = {}
 
 
 
@@ -412,10 +411,10 @@ end
 -- Get all hexes that overlap a rectangular area
 function axial.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
     local coords = {x = rect_top_left.x, y = rect_top_left.y}
-    local result = lib.get_at_multi_index(cached, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
+    local result = lib.get_at_multi_index(storage.cached, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
     if result then return result end
     result = axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
-    lib.set_at_multi_index(cached, result, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
+    lib.set_at_multi_index(storage.cached, result, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
     return result
 end
 
@@ -467,10 +466,10 @@ end
 
 -- Get all hexes that overlap a rectangular area
 function axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
-    local result = lib.get_at_multi_index(cached, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
+    local result = lib.get_at_multi_index(storage.cached, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
     if result then return result end
     result = axial._get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
-    lib.set_at_multi_index(cached, result, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
+    lib.set_at_multi_index(storage.cached, result, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
     return result
 end
 
@@ -653,7 +652,7 @@ function axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, 
 end
 
 function axial.clear_cache(...)
-    lib.remove_at_multi_index(cached, ...)
+    lib.remove_at_multi_index(storage.cached, ...)
 end
 
 

@@ -1444,17 +1444,6 @@ function lib.remove_at_multi_index(t, ...)
     lib.set_at_multi_index(t, nil, ...)
 end
 
--- Get all hexes that overlap a rectangular area
-function lib.cached_func(name, func)
-    return function(...)
-        local result = lib.get_at_multi_index(cached, name, ...)
-        if result then return result end
-        result = func(...)
-        lib.set_at_multi_index(cached, name, result, ...)
-        return result
-    end
-end
-
 
 
 return lib

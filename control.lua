@@ -47,6 +47,8 @@ local function attempt_initialization()
 end
 
 script.on_init(function()
+    storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
+
     storage.constants = data_constants
     storage.events = data_events
     storage.item_values = data_item_values
