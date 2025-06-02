@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.3
+Date: 2/6/25
+  Features:
+    - Sentient Spider is now semi-functional.
+---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 1/6/25
   Features:
@@ -12,6 +17,7 @@ Date: 1/6/25
     - Trades can now only be made with researched qualities.
     - Changed silver rank bonus to guarantee at least one interplanetary trade for every item on every planet.
     - Clicking on an item in a trade when viewed in a hex core now opens up that item in the catalog instead of the Factoriopedia.
+    - There is now a confirmation for switching hex core modes to avoid accidental changes.
   Gui:
     - Changed the sink and generator mode icons.
     - Changed the red star rank bonus description.
