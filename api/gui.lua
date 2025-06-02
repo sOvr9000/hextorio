@@ -1192,7 +1192,7 @@ function gui.update_questbook(player, quest_name)
     local localized_quest_title = quests.get_quest_localized_title(quest)
     quest_title.caption = localized_quest_title
     quest_description.caption = quests.get_quest_localized_description(quest)
-    debug_complete_quest.visible = storage.debug_mode == true
+    debug_complete_quest.visible = storage.debug_mode == true and not quests.is_complete(quest)
 
     complete_header.caption = {"hextorio-questbook.complete", #complete_list.items}
     incomplete_header.caption = {"hextorio-questbook.incomplete", #incomplete_list.items}
