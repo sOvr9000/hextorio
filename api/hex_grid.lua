@@ -582,6 +582,8 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     if hex_grid.can_hex_core_spawn(surface, hex_pos) then
         hex_grid.spawn_hex_core(surface, center)
     end
+
+    axial.clear_cache('overlapping-chunks', hex_pos, hex_grid_scale, hex_grid_rotation)
 end
 
 -- Generate a small ring of mixed resources right up to the border of the hex

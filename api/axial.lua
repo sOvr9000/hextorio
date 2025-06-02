@@ -13,6 +13,7 @@ local lib = require "api.lib"
 
 
 local axial = {}
+local cached = {}
 
 
 
@@ -410,6 +411,16 @@ end
 
 -- Get all hexes that overlap a rectangular area
 function axial.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
+    local coords = {x = rect_top_left.x, y = rect_top_left.y}
+    local result = lib.get_at_multi_index(cached, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
+    if result then return result end
+    result = axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
+    lib.set_at_multi_index(cached, result, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
+    return result
+end
+
+-- Get all hexes that overlap a rectangular area
+function axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
     -- Default values
     hex_grid_scale = hex_grid_scale or 1
     hex_grid_rotation = hex_grid_rotation or 0
@@ -454,12 +465,21 @@ function axial.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_
     return overlapping_hexes
 end
 
+-- Get all hexes that overlap a rectangular area
+function axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
+    local result = lib.get_at_multi_index(cached, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
+    if result then return result end
+    result = axial._get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
+    lib.set_at_multi_index(cached, result, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
+    return result
+end
+
 ---Return a normally indexed table of chunk positions which overlap with the given hex.
 ---@param hex_pos {q: int, r: int}
 ---@param hex_grid_scale number
 ---@param hex_grid_rotation number
 ---@return {[int]: {x: int, y: int}}
-function axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
+function axial._get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
     local chunks = {}
     local minx, miny, maxx, maxy
     for _, vertex in pairs(axial.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)) do
@@ -630,6 +650,10 @@ function axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, 
     stroke_width = math.min(stroke_width, hex_grid_scale - hex_size_decrement)
     local corners = axial.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation, hex_size_decrement)
     return axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement, flatten_array)
+end
+
+function axial.clear_cache(...)
+    lib.remove_at_multi_index(cached, ...)
 end
 
 

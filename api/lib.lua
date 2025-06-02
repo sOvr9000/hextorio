@@ -1415,6 +1415,46 @@ function lib.open_factoriopedia_gui(player, object_name, prototype_category)
     player.open_factoriopedia_gui(prot)
 end
 
+function lib.get_at_multi_index(t, ...)
+    local current = t
+    for _, index in ipairs({...}) do
+        if type(current) ~= "table" then return end
+        current = current[index]
+    end
+    return current
+end
+
+function lib.set_at_multi_index(t, value, ...)
+    local args = {...}
+    local last = table.remove(args)
+    local current = t
+
+    for _, index in ipairs(args) do
+        if type(current[index]) ~= "table" then
+            current[index] = {}
+        end
+        current = current[index]
+    end
+
+    current[last] = value
+    return t
+end
+
+function lib.remove_at_multi_index(t, ...)
+    lib.set_at_multi_index(t, nil, ...)
+end
+
+-- Get all hexes that overlap a rectangular area
+function lib.cached_func(name, func)
+    return function(...)
+        local result = lib.get_at_multi_index(cached, name, ...)
+        if result then return result end
+        result = func(...)
+        lib.set_at_multi_index(cached, name, result, ...)
+        return result
+    end
+end
+
 
 
 return lib
