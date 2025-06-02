@@ -2190,12 +2190,6 @@ function hex_grid.set_pool_size(size)
 
     storage.hex_grid.pool_size = size
     hex_grid.verify_pool_sizes()
-
-    -- BUG: The first pool size seems to be incorrect sometimes on larger saves.
-    -- log("num pools: " .. #storage.hex_grid.pool)
-    -- for _, pool in pairs(storage.hex_grid.pool) do
-    --     log("pool size: " .. #pool)
-    -- end
 end
 
 ---@return int
