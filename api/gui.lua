@@ -2902,7 +2902,12 @@ end
 ---@param element LuaGuiElement
 ---@return string
 function gui.get_quality_name_from_dropdown(element)
-    return element.get_item(math.max(1, element.selected_index))[3][1]:sub(14)
+    local item = element.get_item(math.max(1, element.selected_index))[3][1] --[[@as string]]
+    if not item then
+        lib.log_error("gui.get_quality_name_from_dropdown: Could not find item in dropdown, assuming normal quality.")
+        return "normal"
+    end
+    return item:sub(14)
 end
 
 
