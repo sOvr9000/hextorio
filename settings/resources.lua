@@ -200,6 +200,42 @@ data:extend({
 
     {
         type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-nauvis",
+        setting_type = "runtime-global",
+        default_value = 0.075,
+        order = "k_aa",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-vulcanus",
+        setting_type = "runtime-global",
+        default_value = 0.075,
+        order = "k_ab",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-fulgora",
+        setting_type = "runtime-global",
+        default_value = 0.05,
+        order = "k_ac",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-gleba",
+        setting_type = "runtime-global",
+        default_value = 0.1,
+        order = "k_ad",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-aquilo",
+        setting_type = "runtime-global",
+        default_value = 0.15,
+        order = "k_ae",
+    },
+
+    {
+        type = "double-setting",
         name = "hextorio-starting-hex-resource-stroke-width-nauvis",
         setting_type = "runtime-global",
         default_value = 2.0,

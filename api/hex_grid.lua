@@ -823,6 +823,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
     local mgs = storage.hex_grid.mgs[surface.name]
     local dist = axial.distance(hex_pos, {q = 0, r = 0})
     local is_starter_hex = dist == 0
+    local dropoff = lib.runtime_setting_value("resource-frequency-dropoff-" .. surface.name)
 
     -- Calculate frequencies
     if surface.name == "nauvis" then
@@ -842,6 +843,8 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         local resource_freq = total_resource_freq
         resource_freq = resource_freq / #resource_names
         resource_freq = (resource_freq ^ 2.6) * #resource_names
+        resource_freq = resource_freq / (1 + dist * dropoff)
+        well_freq = well_freq / (1 + dist * dropoff)
 
         if math.random() > (well_freq + resource_freq) / (1 + #resource_names) then
             return nil, nil
@@ -877,6 +880,8 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"sulfuric_acid_geyser"})
         local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"vulcanus_coal", "calcite", "tungsten_ore"})
         resource_freq = resource_freq * resource_freq / 3
+        resource_freq = resource_freq / (1 + dist * dropoff)
+        well_freq = well_freq / (1 + dist * dropoff)
 
         if math.random() > (well_freq + resource_freq) * 0.25 then
             return nil, nil
@@ -888,7 +893,6 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         end
 
         local wc
-
         if can_be_tungsten then
             wc = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.resources)
         else
@@ -911,6 +915,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
         local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"scrap"})
         resource_freq = resource_freq * resource_freq
+        resource_freq = resource_freq / (1 + dist * dropoff)
         if math.random() > resource_freq then
             return nil, nil
         end
@@ -919,6 +924,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
     elseif surface.name == "gleba" then
         local resource_freq = lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_stone.frequency)
         resource_freq = resource_freq * resource_freq
+        resource_freq = resource_freq / (1 + dist * dropoff)
         if not is_starter_hex and math.random() > resource_freq then
             return nil, nil
         end
@@ -928,6 +934,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         local well_names = {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}
         local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
         well_freq = well_freq * well_freq / 3
+        well_freq = well_freq / (1 + dist * dropoff)
         if math.random() > well_freq then
             return nil, nil
         end
