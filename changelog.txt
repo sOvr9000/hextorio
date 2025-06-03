@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.3
-Date: 2/6/25
+Date: 4/6/25
+  Major Features:
+    - Added dungeons.
   Balancing:
     - Lower-valued trades are now more common in the more distant hexes from spawn on all planets.
     - Fewer of the more distant hexes than the ones near spawn have resources on all planets.

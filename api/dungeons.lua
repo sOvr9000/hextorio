@@ -5,6 +5,7 @@
 local lib = require "api.lib"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
+local terrain = require "api.terrain"
 
 local dungeons = {}
 

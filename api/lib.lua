@@ -216,6 +216,42 @@ function lib.is_empty_table(t)
     return true
 end
 
+---Shuffle a table in-place.
+---@param t any[]
+function lib.table_shuffle(t)
+    local n = #t
+    if n <= 1 then return end
+
+    -- Fisher-Yates algorithm
+    for i = n, 2, -1 do
+        local j = math.random(1, i)
+        t[i], t[j] = t[j], t[i]
+    end
+end
+
+---Generate a list of integers from 1 to n (inclusive) in ascending order.
+---@param n int
+---@return int[]
+function lib.array_range(n)
+    local t = {}
+    for i = 1, n do
+        t[i] = i
+    end
+    return t
+end
+
+---Remove an element from a table if it exists.
+---@param t table
+---@param element any
+function lib.table_remove_element(t, element)
+    for k, v in pairs(t) do
+        if v == element then
+            t[k] = nil
+            return
+        end
+    end
+end
+
 function lib.table_to_string(t, indent)
     -- courtesy ChatGPT
 
