@@ -46,6 +46,9 @@ end
 --- https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
 ---@param maze HexMaze
 function hex_maze.generate(maze)
+    -- Ensure that if the maze has already been generated or partially generated, it is reset to an initial state with all passages closed.
+    hex_maze.close_all_passages(maze)
+
     -- Initialize sets
     local sets = {}
     local sets_by_position = {} -- Helps to calculate the "find" in "union-find"
@@ -165,6 +168,48 @@ function hex_maze.set_open_in_direction(maze, tile, dir, flag)
     end
     tile.open[dir] = flag
     tile2.open[axial.get_opposite_direction(dir)] = flag
+end
+
+---Check whether a tile has an opening to another tile.
+---@param tile1 HexMazeTile
+---@param tile2 HexMazeTile
+---@return boolean
+function hex_maze.is_open_between_tiles(tile1, tile2)
+    local offset = axial.subtract(tile2.pos, tile1.pos)
+    local dir = axial.get_direction_from_offset(offset)
+    return tile1.open[dir]
+end
+
+---Check whether a tile has an opening in the given direction.
+---@param tile HexMazeTile
+---@param dir AxialDirection
+function hex_maze.is_open_in_direction(tile, dir)
+    return tile.open[dir]
+end
+
+---Close all passages between tiles in the maze.
+---@param maze HexMaze
+function hex_maze.close_all_passages(maze)
+    for _, tile in pairs(maze.tiles) do
+        for dir = 1, 6 do
+            tile.open[dir] = false
+        end
+    end
+end
+
+---Open all passages between tiles in the maze.
+---@param maze HexMaze
+function hex_maze.open_all_passages(maze)
+    -- Ensure that all passages that are on the perimeter of the maze are closed.
+    hex_maze.close_all_passages(maze)
+
+    -- Open all passages between tiles.
+    for _, tile in pairs(maze.tiles) do
+        -- Iterate over existing neighbors so that openings aren't created in directions toward positions that don't exist in the maze.
+        for _, adj_tile in pairs(hex_maze.get_adjacent_tiles(maze, tile.pos)) do
+            hex_maze.set_open_between_tiles(tile, adj_tile)
+        end
+    end
 end
 
 
