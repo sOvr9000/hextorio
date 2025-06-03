@@ -691,11 +691,11 @@ function gui.give_item_tooltip(player, surface_name, element)
         "[img=planet-" .. surface_name .. "] [font=heading-2][color=green]",
         {"hextorio-gui.item-value"},
         "[.color][.font]\n" .. item_img_rich_text .. "x1 = ",
-        coin_tiers.coin_to_text(scaled_value, false, 4),
+        coin_tiers.base_coin_value_to_text(scaled_value, false, 4),
         "\n\n[img=planet-" .. surface_name .. "] [font=heading-2][color=yellow]",
         {"hextorio-gui.stack-value-total"},
         "[.color][.font]\n" .. item_img_rich_text .. "x" .. item_count .. " = ",
-        coin_tiers.coin_to_text(item_count * scaled_value, false, nil)
+        coin_tiers.base_coin_value_to_text(item_count * scaled_value, false, nil)
     }
 end
 
@@ -1216,7 +1216,7 @@ function gui.update_questbook(player, quest_name)
 
         local condition_str = condition.progress_requirement
         if condition.type == "coins-in-inventory" then
-            condition_str = coin_tiers.coin_to_text(coin_tiers.from_base_value(condition.progress_requirement))
+            condition_str = coin_tiers.base_coin_value_to_text(condition.progress_requirement)
         end
 
         local caption

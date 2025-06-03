@@ -67,7 +67,7 @@ local process_migration = {
                     trade.surface_name = "nauvis"
                     trade.active = true
                 end
-                state.trades_original = trades.copy_trade(state.trades)
+                state.trades_original = trades.copy(state.trades)
             end
         end
 
@@ -310,7 +310,7 @@ local process_migration = {
         end
 
         for _, trade in pairs(trades.get_all_trades(false)) do
-            local cpv = trade.current_prod_value
+            local cpv = trade.current_prod_value --[[@as number]]
             trade.current_prod_value = {}
             for _, q in pairs(prototypes.quality) do
                 if q.name == "normal" then

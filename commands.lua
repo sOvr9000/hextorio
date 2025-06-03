@@ -136,7 +136,10 @@ function on_command(player, command, params)
 
         sp.distance = 1
     elseif command == "add-coins" then
-        coin_tiers.add_coin_to_inventory(lib.get_player_inventory(player), coin_tiers.from_base_value(params[1] or 1000000000000000))
+        local inv = lib.get_player_inventory(player)
+        if inv then
+            coin_tiers.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1] or 1000000000000000))
+        end
     elseif command == "summon" then
         local entity_name = params[1]
         local amount = tonumber(params[2]) or 1

@@ -289,7 +289,10 @@ function hex_grid.remove_trade_by_index(hex_core_state, idx)
     local trade_id = table.remove(hex_core_state.trades, idx)
     if type(trade_id) ~= "number" then return end -- migration from 0.2.3 saves
 
-    trades.remove_trade_from_tree(trades.get_trade_from_id(trade_id))
+    local trade = trades.get_trade_from_id(trade_id)
+    if not trade then return end
+
+    trades.remove_trade_from_tree(trade)
 end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
@@ -339,7 +342,9 @@ function hex_grid.apply_extra_trades_bonus(state)
 end
 
 function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
-    if not trades.set_trade_active(trades.get_trade_from_id(hex_core_state.trades[trade_index]), flag) then return end
+    local trade = trades.get_trade_from_id(hex_core_state.trades[trade_index])
+    if not trade or not trades.set_trade_active(trade, flag) then return end
+    -- Trigger an event maybe?
 end
 
 function hex_grid.switch_hex_core_mode(state, mode)
@@ -1223,7 +1228,10 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
 
         -- Purchase
         if hex_grid.get_free_hex_claims(surface) == 0 and not lib.is_player_editor_like(by_player) then
-            coin_tiers.remove_coin_from_inventory(lib.get_player_inventory(by_player), state.claim_price)
+            local inv = lib.get_player_inventory(by_player)
+            if inv then
+                coin_tiers.remove_coin_from_inventory(inv, state.claim_price)
+            end
         end
     end
     if not tile_name then
@@ -2480,7 +2488,7 @@ function hex_grid.recover_trades_retro(item_name)
             local states = hex_grid.get_states_with_fewest_trades(surface.name)
             for _, trade_id in pairs(trades.get_recoverable_trades()) do
                 local trade = trades.get_trade_from_id(trade_id)
-                if trades.has_item(trade, item_name) then
+                if trade and trades.has_item(trade, item_name) then
                     trades.recover_trade(trade)
                     hex_grid.try_recover_trade(trade, states, true)
                 end

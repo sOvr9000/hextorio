@@ -1,4 +1,6 @@
 
+require "util" -- For table.deepcopy()
+
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
 local coin_tiers = require "api.coin_tiers"
@@ -185,14 +187,24 @@ end)
 script.on_event(defines.events.on_player_main_inventory_changed, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
-    local coin = coin_tiers.normalize_inventory(player.get_inventory(defines.inventory.character_main))
+
+    local inv = player.get_inventory(defines.inventory.character_main)
+    if not inv then return end
+
+    local coin = coin_tiers.normalize_inventory(inv)
+    if not coin then return end
+
     quests.set_progress_for_type("coins-in-inventory", coin_tiers.to_base_value(coin))
 end)
 
 script.on_event(defines.events.on_player_trash_inventory_changed, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
-    coin_tiers.normalize_inventory(player.get_inventory(defines.inventory.character_trash))
+
+    local inv = player.get_inventory(defines.inventory.character_trash)
+    if not inv then return end
+
+    coin_tiers.normalize_inventory(inv)
 end)
 
 script.on_event(defines.events.on_player_respawned, function(event)

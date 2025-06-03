@@ -8,7 +8,17 @@ local coin_tiers  = require "api.coin_tiers"
 local event_system= require "api.event_system"
 local quests      = require "api.quests"
 
-require "util" -- for table.deepcopy
+
+
+---@alias TradeSide "give"|"receive"
+---@alias TradeItem {name: string, count: int}
+---@alias TentativeTradeItem {name: string, count: int|nil}
+---@alias Trade {id: int, input_items: TradeItem[], output_items: TradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil}
+---@alias TentativeTrade {id: int, input_items: TradeItem[], output_items: TentativeTradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil}
+---@alias TradeGenerationParameters {target_efficiency: number|nil}
+---@alias TradeItemSamplingParameters StringFilters
+
+
 
 local trades = {}
 
@@ -29,13 +39,12 @@ function trades.register_events()
     end)
 end
 
+---Create a new trade object.
+---@param input_items TradeItem[]
+---@param output_items TradeItem[]
+---@param surface_name string
+---@return Trade
 function trades.new(input_items, output_items, surface_name)
-    if not input_items or not output_items then
-        lib.log_error("trade has no input items or no output items")
-    end
-    if not surface_name then
-        lib.log_error("trade has no specified surface name")
-    end
     storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
     local trade = {
         id = storage.trades.trade_id_ctr,
@@ -60,11 +69,33 @@ function trades.new(input_items, output_items, surface_name)
     return trade
 end
 
--- Return a deep copy of a single trade
-function trades.copy_trade(trade)
-    return table.deepcopy(trade)
+---Return a copy of a trade, copying the id but not copying the hex core state if it exists (the returned trade will reference the same object).
+---@param trade Trade
+---@return Trade
+function trades.copy(trade)
+    local prev_ctr = storage.trades.trade_id_ctr
+    local t = trades.new(
+        table.deepcopy(trade.input_items),
+        table.deepcopy(trade.output_items),
+        trade.surface_name
+    )
+
+    t.id = trade.id
+    if trade.active ~= nil then
+        t.active = trade.active
+    end
+    t.hex_core_state = trade.hex_core_state
+
+    storage.trades.trade_id_ctr = prev_ctr
+    return t
 end
 
+---Generate a trade object from item names, using item values to determine best input and output counts and normalizing tiered coins to the lowest tier.
+---@param surface_name string
+---@param input_item_names string[]
+---@param output_item_names string[]
+---@param params TradeGenerationParameters|nil
+---@return Trade
 function trades.from_item_names(surface_name, input_item_names, output_item_names, params)
     if not params then
         params = {}
@@ -125,7 +156,10 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
     return trade
 end
 
--- Given a trade with set input items and counts and set output items but unset output counts, set the remaining unset output counts to the values which best preserve a value ratio of 1:1.
+---Given a trade with unset output item counts, set the output counts to the values which best preserve a value ratio of 1:1, turning it into a properly formed trade object.
+---@param surface_name string
+---@param trade TentativeTrade
+---@param params TradeGenerationParameters|nil
 function trades.determine_best_output_counts(surface_name, trade, params)
     if not params then params = {} end
     trades._try_set_output_counts(surface_name, trade, params)
@@ -233,7 +267,12 @@ function trades._try_set_output_counts(surface_name, trade, params)
     end
 end
 
--- Return the value of the trade's inputs
+---Return the value of the trade's inputs on a given surface.
+---@param surface_name string
+---@param trade Trade
+---@param quality string|nil
+---@param quality_cost_mult number|nil
+---@return number
 function trades.get_input_value(surface_name, trade, quality, quality_cost_mult)
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
@@ -249,7 +288,11 @@ function trades.get_input_value(surface_name, trade, quality, quality_cost_mult)
     return input_value
 end
 
--- Return the value of the trade's outputs
+---Return the value of the trade's outputs on a given surface.
+---@param surface_name string
+---@param trade Trade
+---@param quality string|nil
+---@return number
 function trades.get_output_value(surface_name, trade, quality)
     quality = quality or "normal"
     local output_value = 0
@@ -260,37 +303,55 @@ function trades.get_output_value(surface_name, trade, quality)
     return output_value
 end
 
+---Return the volume of the trade on a given surface.
+---@param surface_name string
+---@param trade Trade
+---@return number
 function trades.get_volume_of_trade(surface_name, trade)
     return trades.get_total_value_of_trade(surface_name, trade) * 0.5
 end
 
--- Return the ratio of values of the trade's outputs to its inputs
+---Return the ratio of values of the trade's outputs to its inputs, on a given surface.
+---@param surface_name string
+---@param trade Trade
+---@return number
 function trades.get_trade_value_ratio(surface_name, trade)
     return trades.get_output_value(surface_name, trade) / trades.get_input_value(surface_name, trade)
 end
 
+---Return the total value of the trade on a given surface.
+---@param surface_name string
+---@param trade Trade
+---@param quality string|nil
+---@param quality_cost_mult number|nil
+---@return number
 function trades.get_total_value_of_trade(surface_name, trade, quality, quality_cost_mult)
     return trades.get_input_value(surface_name, trade, quality, quality_cost_mult) + trades.get_output_value(surface_name, trade, quality)
 end
 
+---Return a human-readable string which represents the trade's total input and output values, including productivity bonuses if present.
+---@param trade Trade
+---@param quality string|nil
+---@param quality_cost_mult number|nil
 function trades.get_total_values_str(trade, quality, quality_cost_mult)
     local coin_value = item_values.get_item_value("nauvis", "hex-coin")
     local total_input_value = trades.get_input_value(trade.surface_name, trade, quality, quality_cost_mult) / coin_value
     local total_output_value = trades.get_output_value(trade.surface_name, trade, quality) / coin_value
     local str = {"",
-        {"hextorio-gui.total-input-value", coin_tiers.coin_to_text(total_input_value)},
+        {"hextorio-gui.total-input-value", coin_tiers.base_coin_value_to_text(total_input_value)},
         "\n",
-        {"hextorio-gui.total-output-value", coin_tiers.coin_to_text(total_output_value)},
+        {"hextorio-gui.total-output-value", coin_tiers.base_coin_value_to_text(total_output_value)},
     }
     local prod = trades.get_productivity(trade, quality)
     if prod ~= 0 then
         table.insert(str, "\n")
-        table.insert(str, {"hextorio-gui.total-output-with-prod", coin_tiers.coin_to_text(trades.scale_value_with_productivity(total_output_value, prod))})
+        table.insert(str, {"hextorio-gui.total-output-with-prod", coin_tiers.base_coin_value_to_text(trades.scale_value_with_productivity(total_output_value, prod))})
     end
     return str
 end
 
----@param trade table
+---Return a human-readable string which summarizes the calculations for the trade's productivity bonus.
+---@param trade Trade
 ---@param quality string|nil
 function trades.get_productivity_bonus_str(trade, quality)
     if not quality then quality = "normal" end
@@ -346,6 +407,11 @@ function trades.get_productivity_bonus_str(trade, quality)
     return str
 end
 
+---Get a coin object representing the trade's input items that are coins.
+---@param trade Trade
+---@param quality string|nil
+---@param quality_cost_mult number|nil
+---@return Coin
 function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
@@ -361,6 +427,10 @@ function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
     return coin
 end
 
+---Get a coin object representing the trade's output items that are coins.
+---@param trade Trade
+---@param quality string|nil
+---@return Coin
 function trades.get_output_coins_of_trade(trade, quality)
     quality = quality or "normal"
     local values = {}
@@ -374,7 +444,14 @@ function trades.get_output_coins_of_trade(trade, quality)
     return coin
 end
 
--- Check how many batches of (how many times) a trade can occur within an inventory
+---Check how many batches of (how many times) a trade can occur given an input amount of items.
+---@param input_items QualityItemCounts
+---@param input_coin Coin
+---@param trade Trade
+---@param quality string|nil
+---@param quality_cost_mult number|nil
+---@param max_items_per_output number|nil
+---@return number
 function trades.get_num_batches_for_trade(input_items, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
     if not trade.active then return 0 end
 
@@ -383,8 +460,8 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
 
     if not max_items_per_output then
         max_items_per_output = trade.max_items_per_output or 1000
-        if max_items_per_output == 0 then return 0 end -- Probably won't ever happen, but if it ever does, it's an optimization.
     end
+    if max_items_per_output < 1 then return 0 end -- Probably won't ever happen, but if it ever does, it's an optimization.
 
     local num_batches = math.huge
     for _, input_item in pairs(trade.input_items) do
@@ -410,10 +487,20 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     return num_batches
 end
 
--- Trade items within an inventory
+---Trade items within an inventory, returning the total items removed, total items inserted, remaining items to insert if inventory was filled completely, the remaining coins in the inventory input inventory, and the newly added coins to the output inventory.
+---@param inventory_input LuaInventory
+---@param inventory_output LuaInventory
+---@param trade Trade
+---@param num_batches number
+---@param quality string|nil
+---@param quality_cost_mult number|nil
+---@param input_items QualityItemCounts|nil The total amount of items in the input inventory. Calculated automatically if not provided.
+---@param input_coin Coin|nil The total amount of coins in the input inventory. Calculated automatically if not provided.
+---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, Coin, Coin
 function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, quality_cost_mult, input_items, input_coin)
-    if not trade.active then return {}, {}, {}, input_coin end
-    if num_batches <= 0 then return {}, {}, {}, input_coin end
+    if not trade.active or num_batches <= 0 then
+        return {}, {}, {}, input_coin or coin_tiers.new(), coin_tiers.new()
+    end
 
     -- TODO: Handle two flow statistics if input and output inventories are on different surfaces
     local flow_statistics = game.forces.player.get_item_production_statistics(trade.surface_name)
@@ -468,22 +555,25 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     end
 
     local coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
-    coin_tiers.add_coin_to_inventory(inventory_input, coins_added)
+    coin_tiers.add_coin_to_inventory(inventory_output, coins_added)
     flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
 
     event_system.trigger("trade-processed", trade, total_removed, total_inserted)
     return total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added
 end
 
+---Sample random item names for inputs and outputs of a trade based on a central value for each item.
+---@param surface_name string
+---@param volume number
+---@param params TradeItemSamplingParameters|nil
+---@param allow_interplanetary boolean|nil
+---@param include_item string|nil An item name to be forcefully included in the returned input or output items.
+---@return string[], string[]
 function trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary, include_item)
     if not params then params = {} end
     if allow_interplanetary == nil then allow_interplanetary = false end
 
     local ratio = 10
-    -- if surface_name == "aquilo" then
-    --     ratio = 100
-    -- end
-
     local possible_items = item_values.get_items_near_value(surface_name, volume, ratio, true, false, allow_interplanetary)
 
     -- Apply whitelist filter
@@ -502,7 +592,7 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
 
     if #possible_items < 2 then
         lib.log_error("trades.random_trade_item_names: Not enough items found near value " .. volume .. "; found: " .. serpent.line(possible_items))
-        return
+        return {}, {}
     end
 
     local set = sets.new()
@@ -519,7 +609,7 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
 
     if #trade_items < 2 then
         lib.log_error("trades.random_trade_item_names: Not enough items selected for trade")
-        return
+        return {}, {}
     end
 
     local input_item_names = {}
@@ -564,16 +654,30 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
     return input_item_names, output_item_names
 end
 
--- Generate a random trade
+---Generate a random trade on a given surface with a central value for input and output items.
+---@param surface_name string
+---@param volume number
+---@return Trade|nil
 function trades.random(surface_name, volume)
     local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, surface_name == "aquilo")
 
-    if not input_item_names or not output_item_names then
+    if not input_item_names or not output_item_names or (not next(input_item_names) and not next(output_item_names)) then
         lib.log("trades.random: Not enough items centered around the value " .. volume)
         return
     end
 
-    if math.random() < lib.runtime_setting_value "coin-trade-chance" then
+    local is_coin_trade = false
+    if #input_item_names == 1 and not next(output_item_names) then
+        -- Special case: Sell the item.
+        table.insert(output_item_names, "hex-coin")
+        is_coin_trade = true
+    elseif #output_item_names == 1 and not next(input_item_names) then
+        -- Special case: Buy the item.
+        table.insert(input_item_names, "hex-coin")
+        is_coin_trade = true
+    end
+
+    if not is_coin_trade and math.random() < lib.runtime_setting_value "coin-trade-chance" then
         local coin_type = "hex-coin"
         if volume > item_values.get_item_value(surface_name, "hexaprism-coin") then
             coin_type = "hexaprism-coin"
@@ -592,6 +696,9 @@ function trades.random(surface_name, volume)
     return trades.from_item_names(surface_name, input_item_names, output_item_names)
 end
 
+---Return whether a trade object has a valid structure.
+---@param trade table
+---@return boolean
 function trades.is_trade_valid(trade)
     if not trade then return false end
     if not trade.id then return false end
@@ -617,7 +724,9 @@ function trades.is_trade_valid(trade)
     return true
 end
 
--- Return whether the item is now discovered if it wasn't previously.
+---Return whether the item is now discovered if it wasn't previously.
+---@param item_name string
+---@return boolean
 function trades.mark_as_discovered(item_name)
     if not quests.is_feature_unlocked "catalog" then return false end
     if item_name:sub(-5) == "-coin" then return false end
@@ -626,11 +735,16 @@ function trades.mark_as_discovered(item_name)
     return not already_discovered
 end
 
+---Check whether the item is discovered.
+---@param item_name string
+---@return boolean
 function trades.is_item_discovered(item_name)
     return storage.trades.discovered_items[item_name] == true
 end
 
--- Return a list of the item names which were newly discovered.
+---Try to discover each item in the list, and return a list of the items which were newly discovered.
+---@param items_list string[]
+---@return string[]
 function trades.discover_items(items_list)
     if not items_list then return {} end
 
@@ -655,7 +769,9 @@ function trades.discover_items(items_list)
     return new_discoveries
 end
 
--- Return a list of the item names which were newly discovered in the given trades.
+---Try to discover each item in each trade's inputs and outputs, and return a list of the items which were newly discovered in the given trades.
+---@param trades_list Trade[]
+---@return string[]
 function trades.discover_items_in_trades(trades_list)
     if not trades_list then return {} end
 
@@ -672,11 +788,17 @@ function trades.discover_items_in_trades(trades_list)
     return trades.discover_items(items_list)
 end
 
+---Increment the total amount of an item traded.
+---@param item_name string
+---@param amount int
 function trades._increment_total_traded(item_name, amount)
     if amount <= 0 then return end
     storage.trades.total_items_traded[item_name] = (storage.trades.total_items_traded[item_name] or 0) + amount
 end
 
+---Increment the total amount of an item sold (given to a hex core).
+---@param item_name string
+---@param amount int
 function trades.increment_total_sold(item_name, amount)
     if amount <= 0 then return end
     local old_amount = storage.trades.total_items_sold[item_name] or 0
@@ -687,6 +809,9 @@ function trades.increment_total_sold(item_name, amount)
     end
 end
 
+---Increment the total amount of an item bought (received from a hex core).
+---@param item_name string
+---@param amount int
 function trades.increment_total_bought(item_name, amount)
     if amount <= 0 then return end
     local old_amount = storage.trades.total_items_bought[item_name] or 0
@@ -697,43 +822,72 @@ function trades.increment_total_bought(item_name, amount)
     end
 end
 
+---Get the total number of an item traded (either bought or sold).
+---@param item_name string
+---@return integer
 function trades.get_total_traded(item_name)
     return storage.trades.total_items_traded[item_name] or 0
 end
 
+---Get the total number of an item sold (given to a hex core).
+---@param item_name string
+---@return integer
 function trades.get_total_sold(item_name)
     return storage.trades.total_items_sold[item_name] or 0
 end
 
+---Get the total number of an item bought (received from a hex core).
+---@param item_name string
+---@return integer
 function trades.get_total_bought(item_name)
     return storage.trades.total_items_bought[item_name] or 0
 end
 
+---Set a trade to be active or inactive, returning whether the activity was really changed.
+---@param trade Trade
+---@param flag boolean|nil Defaults to `true`.
+---@return boolean
 function trades.set_trade_active(trade, flag)
+    if flag == nil then flag = true end
     if flag == trade.active then return false end
     trade.active = flag
     return true
 end
 
+---Set a productivity bonus for a trade.
+---@param trade Trade
+---@param productivity number
 function trades.set_productivity(trade, productivity)
     trade.productivity = productivity
 end
 
----@param trade table
+---Get a trade's productivity bonus, accounting for the modifier from quality.
+---@param trade Trade
 ---@param quality string|nil
 ---@return number
 function trades.get_productivity(trade, quality)
     return (trade.productivity or 0) + trades.get_productivity_modifier(quality or "normal")
 end
 
-function trades.increment_productivity(trade, productivity)
-    trade.productivity = (trade.productivity or 0) + productivity
+---Increment a trade's productivity bonus.
+---@param trade Trade
+---@param amount number
+function trades.increment_productivity(trade, amount)
+    trade.productivity = (trade.productivity or 0) + amount
 end
 
+---Get the trade's current progress toward filling the productivity bar.
+---@param trade Trade
+---@param quality string|nil
+---@return number
 function trades.get_current_prod_value(trade, quality)
     return (trade.current_prod_value or {})[quality or "normal"] or 0
 end
 
+---Set a trade's current progress toward filling the productivity bar.
+---@param trade Trade
+---@param value number
+---@param quality string|nil
 function trades.set_current_prod_value(trade, value, quality)
     if not trade.current_prod_value then
         trade.current_prod_value = {}
@@ -741,7 +895,8 @@ function trades.set_current_prod_value(trade, value, quality)
     trade.current_prod_value[quality or "normal"] = value
 end
 
----@param trade table
+---Increment a trade's current progress toward filling the productivity bar, returning how many times the bar has been filled.
+---@param trade Trade
 ---@param times int
 ---@param quality string
 ---@return int
@@ -764,20 +919,26 @@ function trades.increment_current_prod_value(trade, times, quality)
     return prod_amount
 end
 
+---Get the current base productivity bonus for all trades.
+---@return number
 function trades.get_base_trade_productivity()
     return storage.trades.base_productivity or 0
 end
 
+---Set the base productivity bonus for all trades.
+---@param prod number
 function trades.set_base_trade_productivity(prod)
     storage.trades.base_productivity = prod
 end
 
-function trades.increment_base_trade_productivity(prod)
-    storage.trades.base_productivity = (storage.trades.base_productivity or 0) + prod
+---Increment the current base productivity bonus for all trades.
+---@param amount number
+function trades.increment_base_trade_productivity(amount)
+    storage.trades.base_productivity = (storage.trades.base_productivity or 0) + amount
 end
 
----Verify that the trade's productivity effect is correctly calculated from base productivity and its input and output item ranks.
----@param trade table
+---Recalculate the trade's productivity effect based on base productivity and its input and output item ranks.
+---@param trade Trade
 function trades.check_productivity(trade)
     trades.set_productivity(trade, trades.get_base_trade_productivity())
     for j, item in ipairs(trade.input_items) do
@@ -792,11 +953,16 @@ function trades.check_productivity(trade)
     end
 end
 
+---Sample a random value for the central value of items in a trade on a given surface.
+---@param surface_name string
+---@param item_name string
+---@return number
 function trades.get_random_volume_for_item(surface_name, item_name)
     local volume = item_values.get_item_value(surface_name, item_name)
     return volume * (3 + 7 * math.random())
 end
 
+---Verify that the trade data structures are valid.
 function trades._check_tree_existence()
     if not storage.trades.tree then
         storage.trades.tree = {}
@@ -815,11 +981,9 @@ function trades._check_tree_existence()
     end
 end
 
+---Add a trade to the trade tree.
+---@param trade Trade
 function trades.add_trade_to_tree(trade)
-    if not trade then
-        lib.log_error("trades.add_trade_to_tree: trade is nil")
-        return
-    end
     trades._check_tree_existence()
     for _, input in pairs(trade.input_items) do
         if not storage.trades.tree.by_input[input.name] then
@@ -836,12 +1000,11 @@ function trades.add_trade_to_tree(trade)
     storage.trades.tree.all_trades_lookup[trade.id] = trade
 end
 
+---Remove a trade from the trade tree, allowing for recoverability.
+---@param trade Trade
+---@param recoverable boolean|nil
 function trades.remove_trade_from_tree(trade, recoverable)
     if recoverable == nil then recoverable = true end
-    if not trade then
-        lib.log_error("trades.remove_trade_from_tree: trade is nil")
-        return
-    end
     trades._check_tree_existence()
     for _, input in pairs(trade.input_items) do
         if storage.trades.tree.by_input[input.name] then
@@ -860,18 +1023,16 @@ function trades.remove_trade_from_tree(trade, recoverable)
     end
 end
 
+---Recover a trade that was previously removed from the trade tree.
+---@param trade Trade
 function trades.recover_trade(trade)
-    if not trade then
-        lib.log_error("trades.recover_trade: trade is nil")
-        return
-    end
     trades._check_tree_existence()
     if not storage.trades.recoverable[trade.id] then return end
     trades.add_trade_to_tree(trade)
     storage.trades.recoverable[trade.id] = nil
 end
 
----Returns a lookup table, mapping trade ids to boolean (true) values, of all trades that consume the given item.
+---Return a lookup table, mapping trade ids to boolean (true) values, of all trades that consume the given item.
 ---@param item_name string
 ---@return {[int]: boolean}
 function trades.get_trades_by_input(item_name)
@@ -883,7 +1044,7 @@ function trades.get_trades_by_input(item_name)
     return storage.trades.tree.by_input[item_name] or {}
 end
 
----Returns a lookup table, mapping trade ids to boolean (true) values, of all trades that produce the given item.
+---Return a lookup table, mapping trade ids to boolean (true) values, of all trades that produce the given item.
 ---@param item_name string
 ---@return {[int]: boolean}
 function trades.get_trades_by_output(item_name)
@@ -895,16 +1056,16 @@ function trades.get_trades_by_output(item_name)
     return storage.trades.tree.by_output[item_name] or {}
 end
 
----Returns a lookup table, mapping trade ids to trade objects, of all trades in the current game.
----@return {[int]: table}
+---Return a lookup table, mapping trade ids to trade objects, of all trades in the current game.
+---@return {[int]: Trade}
 function trades.get_trades_lookup()
     trades._check_tree_existence()
     return storage.trades.tree.all_trades_lookup
 end
 
----Returns a normally indexed table of all trade objects in the current game, skipping over the trades that were deleted but recoverable if only_existent is true.
----@param only_existent boolean
----@return table[]
+---Return a normally indexed table of all trade objects in the current game, skipping over the trades that were deleted but recoverable if `only_existent` is true.
+---@param only_existent boolean|nil
+---@return Trade[]
 function trades.get_all_trades(only_existent)
     if only_existent == nil then only_existent = true end
     local all_trades = {}
@@ -916,16 +1077,15 @@ function trades.get_all_trades(only_existent)
     return all_trades
 end
 
----Returns a normally indexed table of all ids of the trades that were deleted from hex cores and haven't yet been relocated via the gold star bonus effect.
----@return {[int]: int}
+---Return a normally indexed table of all ids of the trades that were deleted from hex cores and haven't yet been relocated via the gold star bonus effect.
+---@return int[]
 function trades.get_recoverable_trades()
     return sets.to_array(storage.trades.recoverable)
 end
 
----Expects a normally indexed table of trade ids.
 ---Returns a normally indexed table of trade objects.
----@param trade_id_list {[int]: int}
----@return {[int]: table}
+---@param trade_id_list int[]
+---@return Trade[]
 function trades.convert_trade_id_array_to_trade_array(trade_id_list)
     local _trades = {}
     local lookup = trades.get_trades_lookup()
@@ -940,10 +1100,9 @@ function trades.convert_trade_id_array_to_trade_array(trade_id_list)
     return _trades
 end
 
----Expects a lookup table that maps trade ids to boolean (true) values.
----Returns a normally indexed table of trade objects.
----@param trades_lookup {[int]: boolean}
----@return {[int]: table}
+---Return a normally indexed table of trade objects.
+---@param trades_lookup {[int]: boolean} A lookup table that maps trade ids to boolean (true) values.
+---@return Trade[]
 function trades.convert_boolean_lookup_to_array(trades_lookup)
     local _trades = {}
     local lookup = trades.get_trades_lookup()
@@ -958,9 +1117,9 @@ function trades.convert_boolean_lookup_to_array(trades_lookup)
     return _trades
 end
 
----Converts a lookup table, which maps trade ids to boolean (true) values, to a lookup table which maps trade ids to trade objects.
+---Convert a lookup table, which maps trade ids to boolean (true) values, to a lookup table which maps trade ids to trade objects.
 ---@param boolean_lookup {[int]: boolean}
----@return {[int]: table}
+---@return {[int]: Trade}
 function trades.convert_boolean_lookup_to_trades_lookup(boolean_lookup)
     local trades_lookup = {}
     local lookup = trades.get_trades_lookup()
@@ -974,9 +1133,9 @@ function trades.convert_boolean_lookup_to_trades_lookup(boolean_lookup)
     return trades_lookup
 end
 
----Converts a lookup table, which maps trade ids to trade objects, to a normally indexed table of trade objects.
----@param trades_lookup {[int]: table}
----@return {[int]: table}
+---Convert a lookup table, which maps trade ids to trade objects, to a normally indexed table of trade objects.
+---@param trades_lookup {[int]: Trade}
+---@return Trade[]
 function trades.convert_trades_lookup_to_array(trades_lookup)
     local _trades = {}
     for _, trade in pairs(trades_lookup) do
@@ -985,29 +1144,18 @@ function trades.convert_trades_lookup_to_array(trades_lookup)
     return _trades
 end
 
----@param trade_id int|table
----@return table|nil
+---Get a trade from its id.
+---@param trade_id int
+---@return Trade|nil
 function trades.get_trade_from_id(trade_id)
-    if type(trade_id) == "table" and trades.is_trade_valid(trade_id) then return trade_id end
-    if type(trade_id) ~= "number" then
-        lib.log_error("trades.get_trade_from_id: trade_id is not a number, received type: " .. type(trade_id))
-        -- if type(trade_id) == "table" then
-        --     lib.log(serpent.block(trade_id))
-        -- end
-        return
-    end
     return trades.get_trades_lookup()[trade_id]
 end
 
+---Return whether the trade has a given item in its inputs.
+---@param trade Trade
+---@param item_name string
+---@return boolean
 function trades.has_item_as_input(trade, item_name)
-    if not trade then
-        lib.log_error("trades.has_item_as_input: trade is nil")
-        return false
-    end
-    if not item_name then
-        lib.log_error("trades.has_item_as_input: item_name is nil")
-        return true
-    end
     if lib.is_coin(item_name) then
         for _, input in pairs(trade.input_items) do
             if lib.is_coin(input.name) then
@@ -1025,15 +1173,11 @@ function trades.has_item_as_input(trade, item_name)
     return false
 end
 
+---Return whether the trade has a given item in its outputs.
+---@param trade Trade
+---@param item_name string
+---@return boolean
 function trades.has_item_as_output(trade, item_name)
-    if not trade then
-        lib.log_error("trades.has_item_as_output: trade is nil")
-        return false
-    end
-    if not item_name then
-        lib.log_error("trades.has_item_as_output: item_name is nil")
-        return true
-    end
     if lib.is_coin(item_name) then
         for _, output in pairs(trade.output_items) do
             if lib.is_coin(output.name) then
@@ -1051,35 +1195,29 @@ function trades.has_item_as_output(trade, item_name)
     return false
 end
 
+---Return whether the trade has a given item in either its inputs or outputs.
+---@param trade Trade
+---@param item_name string
+---@return boolean
 function trades.has_item(trade, item_name)
     return trades.has_item_as_input(trade, item_name) or trades.has_item_as_output(trade, item_name)
 end
 
-function trades.get_coin_name_for_trade_volume(trade_volume)
-    if type(trade_volume) == "number" then
-        if trade_volume < 1000000000 then -- use hex coin up to 1000x gravity coin's worth of hex coins
-            return "hex-coin"
-        elseif trade_volume < 100000000000000 then -- use hex coin up to 1000x meteor coin's worth of gravity coins
-            return "gravity-coin"
-        elseif trade_volume < 10000000000000000000 then -- use hex coin up to 1000x heaxaprism coin's worth of gravity coins
-            return "meteor-coin"
-        else
-            return "hexaprism-coin"
-        end
-    else
-        -- TODO: trade_volume is a coin_tier object
-    end
-end
-
+---Verify that the list of item names has the best coin tiers for display, given a central value for item values.
+---@param list string[]
+---@param volume number
 function trades._check_coin_names_for_volume(list, volume)
     -- Convert coin names to correct tier for trade volume
     for i, item_name in ipairs(list) do
         if lib.is_coin(item_name) then
-            list[i] = trades.get_coin_name_for_trade_volume(volume)
+            list[i] = coin_tiers.get_name_of_tier(coin_tiers.get_tier_for_display(coin_tiers.from_base_value(volume / item_values.get_item_value("nauvis", "hex-coin"))))
         end
     end
 end
 
+---Get two lists from a trade object, one for the item names of the inputs, and the other for the outputs.
+---@param trade Trade
+---@return string[], string[]
 function trades.get_input_output_item_names_of_trade(trade)
     local input_names = {}
     local output_names = {}
@@ -1092,6 +1230,9 @@ function trades.get_input_output_item_names_of_trade(trade)
     return input_names, output_names
 end
 
+---Get the combined list of item names from a trade object, taken from both the inputs and outputs.
+---@param trade Trade
+---@return string[]
 function trades.get_item_names_in_trade(trade)
     local item_names = {}
     for _, input in pairs(trade.input_items) do
@@ -1103,6 +1244,9 @@ function trades.get_item_names_in_trade(trade)
     return item_names
 end
 
+---Get the total amount of coins and items of an inventory.
+---@param inv LuaInventory
+---@return Coin, QualityItemCounts
 function trades.get_coins_and_items_of_inventory(inv)
     local input_coin_values = {}
     local all_items = inv.get_contents()
@@ -1127,8 +1271,8 @@ end
 ---@param input_inv LuaInventory
 ---@param output_inv LuaInventory
 ---@param trade_ids int[]
----@param quality_cost_multipliers {[string]: number} | nil
----@param max_items_per_output int | nil
+---@param quality_cost_multipliers StringAmounts|nil
+---@param max_items_per_output int|nil
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, table, table
 function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
     -- Check if trades can occur
@@ -1147,7 +1291,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
-        if trade then
+        if trade and trade.active then
             for _, quality in pairs(trade.allowed_qualities or {"normal"}) do
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
@@ -1174,16 +1318,20 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
     local total_coins_removed = coin_tiers.subtract(initial_input_coin, input_coin)
 
-    trades._postprocess_items_traded(surface_name, _total_removed, "sold")
-    trades._postprocess_items_traded(surface_name, _total_inserted, "bought")
+    trades._postprocess_items_traded(surface_name, _total_removed, "give")
+    trades._postprocess_items_traded(surface_name, _total_inserted, "receive")
     return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
 end
 
-function trades._postprocess_items_traded(surface_name, total_traded, trade_type)
+---Process the traded items after a trade had occurred.
+---@param surface_name string
+---@param total_traded QualityItemCounts
+---@param trade_side TradeSide
+function trades._postprocess_items_traded(surface_name, total_traded, trade_side)
     local process_again = {}
     for quality, item_names in pairs(total_traded) do
         local tier = lib.get_quality_tier(quality)
-        if tier >= 3 and trade_type == "sold" then
+        if tier >= 3 and trade_side == "sold" then
             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
             for item_name, count in pairs(item_names) do
                 local rank = item_ranks.get_item_rank(item_name)
@@ -1211,19 +1359,23 @@ function trades._postprocess_items_traded(surface_name, total_traded, trade_type
         end
     end
     if next(process_again) then
-        trades._postprocess_items_traded(surface_name, process_again, "sold")
-        trades._postprocess_items_traded(surface_name, process_again, "bought")
+        trades._postprocess_items_traded(surface_name, process_again, "give")
+        trades._postprocess_items_traded(surface_name, process_again, "receive")
     end
 end
 
+---Calculate the productivity modifier for a given quality.
 ---@param quality string
 ---@return number
 function trades.get_productivity_modifier(quality)
+    -- The results of this function can be cached, but that'd be slower than calculating it repeatedly,
+    -- partly because the tier has to be determined, which is already cached and requires a string hash.
     local tier = lib.get_quality_tier(quality)
     if tier <= 1 then return 0 end
     return -0.35 - (tier - 2) * 0.2
 end
 
+---Get a value scaled by the productivity modifier, allowing for negative productivity modifiers.
 ---@param value number
 ---@param prod number
 function trades.scale_value_with_productivity(value, prod)
@@ -1233,7 +1385,9 @@ function trades.scale_value_with_productivity(value, prod)
     return value * (1 + prod)
 end
 
+---Generate for each item the hex coordinates at which that item exists in `trades_per_item` interplanetary trades on the given surface.
 ---@param surface_name string
+---@param trades_per_item int|nil
 function trades.generate_interplanetary_trade_locations(surface_name, trades_per_item)
     if not trades_per_item then trades_per_item = 1 end
 
@@ -1261,9 +1415,10 @@ function trades.generate_interplanetary_trade_locations(surface_name, trades_per
     end
 end
 
+---Get the items that are traded at the given hex coordinates.
 ---@param surface_name string
 ---@param hex_pos HexPos
----@return {[string]: boolean}
+---@return StringSet
 function trades.get_interplanetary_trade_items(surface_name, hex_pos)
     if not storage.trades.interplanetary_trade_locations then
         storage.trades.interplanetary_trade_locations = {}
@@ -1274,6 +1429,7 @@ function trades.get_interplanetary_trade_items(surface_name, hex_pos)
     return locations[hex_pos.q][hex_pos.r] or {}
 end
 
+---Get the list of hex coordinates at which the given item is traded in an interplanetary trade on the given surface.
 ---@param surface_name string
 ---@param item_name string
 ---@return HexPos[]
