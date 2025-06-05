@@ -306,7 +306,7 @@ function dungeons.init_maze(dungeon, start_pos)
     -- Mark the sampled positions as used.
     for q, Q in pairs(allowed_positions) do
         for r, _ in pairs(Q) do
-            used_hexes[q][r] = true
+            hex_sets.add(used_hexes, {q=q, r=r})
         end
     end
 
@@ -341,6 +341,11 @@ end
 ---@param amount int
 ---@return HexSet, HexPos[]
 function dungeons.get_positions_for_maze(surface_id, start_pos, amount)
+    local surface = game.get_surface(surface_id)
+    if not surface then return {}, {} end
+
+    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
+
     local used_hexes = storage.dungeons.used_hexes[surface_id] or {}
     local positions = {} --[[@as HexSet]]
     local visited = {} --[[@as HexSet]]
@@ -354,11 +359,13 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount)
         -- Add unvisited, unused adjacent hexes to the open list.
         local adj_hexes = axial.get_adjacent_hexes(cur)
         for _, adj in pairs(adj_hexes) do
-            local is_visited = hex_sets.contains(visited, adj)
-            local is_used = hex_sets.contains(used_hexes, adj)
-            if not is_visited and not is_used then
-                table.insert(open, adj)
-                hex_sets.add(visited, adj)
+            if axial.distance(adj, {q=0, r=0}) > planet_size + 1 then
+                local is_visited = hex_sets.contains(visited, adj)
+                local is_used = hex_sets.contains(used_hexes, adj)
+                if not is_visited and not is_used then
+                    table.insert(open, adj)
+                    hex_sets.add(visited, adj)
+                end
             end
         end
 
