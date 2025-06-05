@@ -6,6 +6,7 @@
 ---@alias HexPos {q: int, r: int}
 ---@alias HexPosMap {[int]: {[int]: any}}
 ---@alias AxialDirection 1|2|3|4|5|6
+---@alias AxialDirectionSet {[AxialDirection]: boolean}
 
 local core_math = require "api.core_math"
 local lib = require "api.lib"
@@ -134,13 +135,17 @@ end
 ---@param offset HexPos
 ---@return AxialDirection
 function axial.get_direction_from_offset(offset)
-    return (directions_by_offset[offset.q] or {})[offset.r] or 1
+    if not directions_by_offset[offset.q] or not directions_by_offset[offset.q][offset.r] then
+        lib.log_error("axial.get_direction_from_offset: Invalid offset: " .. serpent.line(offset))
+        return 1
+    end
+    return directions_by_offset[offset.q][offset.r]
 end
 
 ---@param dir AxialDirection
 ---@return AxialDirection
 function axial.get_opposite_direction(dir)
-    return (dir + 3) % 6 + 1
+    return (dir + 2) % 6 + 1
 end
 
 -- Get the six hexes adjacent to the given hex
@@ -516,7 +521,12 @@ function axial._get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotatio
     return chunks
 end
 
--- Get all integer rectangular coordinates within a hex, excluding the border
+---Get all integer rectangular coordinates within a hex, excluding the border
+---@param hex_pos HexPos
+---@param hex_grid_scale number
+---@param hex_grid_rotation number
+---@param stroke_width number
+---@return MapPosition[]
 function axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     -- Default values
     hex_grid_scale = hex_grid_scale or 1
@@ -644,11 +654,43 @@ function axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke
     return added
 end
 
+---Get the tile positions at the border of a hex.
+---@param hex_pos HexPos
+---@param hex_grid_scale number
+---@param hex_grid_rotation number
+---@param stroke_width number
+---@param hex_size_decrement number
+---@param flatten_array boolean|nil
+---@return MapPosition[]
 function axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, hex_size_decrement, flatten_array)
     hex_size_decrement = math.min(hex_size_decrement, hex_grid_scale)
     stroke_width = math.min(stroke_width, hex_grid_scale - hex_size_decrement)
     local corners = axial.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation, hex_size_decrement)
     return axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width, hex_size_decrement, flatten_array)
+end
+
+---Return a new set of positions that are within, or not within, the given directions from the hex center.
+---@param hex_center MapPosition
+---@param positions MapPositionSet
+---@param directions AxialDirectionSet
+---@param hex_grid_rotation number|nil
+---@return MapPositionSet
+function axial.filter_positions_by_directions(hex_center, positions, directions, hex_grid_rotation)
+    if not hex_grid_rotation then hex_grid_rotation = 0 end
+    local new_positions = {}
+    for x, X in pairs(positions) do
+        for y, _ in pairs(X) do
+            local angle = math.atan2(y - hex_center.y, x - hex_center.x)
+            local dir = math.floor((angle + math.pi - hex_grid_rotation) / math.pi * 3 - 1) % 8 + 1
+            if directions[dir] then
+                if not new_positions[x] then
+                    new_positions[x] = {}
+                end
+                new_positions[x][y] = true
+            end
+        end
+    end
+    return new_positions
 end
 
 function axial.clear_cache(...)

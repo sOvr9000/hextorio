@@ -1,0 +1,138 @@
+
+local lib = require "api.lib"
+
+---@param prot data.AmmoTurretPrototype | data.ElectricTurretPrototype | data.ArtilleryTurretPrototype | data.FluidTurretPrototype | data.WallPrototype
+---@param effect number
+function boost_max_health(prot, effect)
+    prot.max_health = prot.max_health * effect
+end
+
+---@param prot data.AmmoTurretPrototype | data.ElectricTurretPrototype | data.ArtilleryTurretPrototype | data.FluidTurretPrototype | data.WallPrototype
+---@param damage_types string[]
+---@param effect number
+function boost_resistances(prot, damage_types, effect)
+    local resistances = {} --[[@as {[string]: data.Resistance[]}]]
+    for _, resistance in pairs(prot.resistances or {}) do
+        resistances[resistance.type] = resistance
+    end
+    for _, damage_type in pairs(damage_types) do
+        if not resistances[damage_type] then
+            resistances[damage_type] = {type = damage_type}
+        end
+    end
+    prot.resistances = {}
+
+    -- Increment towards 100%
+    -- For example with effect = 0.1:
+    -- 0% -> 10%
+    -- 10% -> 19%
+    -- 20% -> 28%
+    -- 30% -> 37%
+    -- ...
+    -- 90% -> 91%
+
+    for damage_type, resistance in pairs(resistances) do
+        if not resistance.percent then
+            resistance.percent = 0
+        end
+        if lib.table_index(damage_types, damage_type) then
+            resistance.percent = resistance.percent + effect * (100 - resistance.percent)
+        end
+        table.insert(prot.resistances, resistance)
+    end
+end
+
+---@param prot data.AmmoTurretPrototype | data.ElectricTurretPrototype | data.FluidTurretPrototype
+---@param effect number
+function boost_range(prot, effect)
+    prot.attack_parameters.range = prot.attack_parameters.range * effect
+end
+
+---@param prot data.AmmoTurretPrototype | data.ElectricTurretPrototype | data.FluidTurretPrototype
+---@param effect number
+function boost_damage(prot, effect)
+    prot.attack_parameters.damage_modifier = (prot.attack_parameters.damage_modifier or 1) * effect
+end
+
+local void_source = {
+    type = "void",
+    render_no_power_icon = false,
+    render_no_network_icon = false,
+    emissions_per_minute = {},
+} --[[@as data.VoidEnergySource]]
+
+local max_health_boost = 2.00
+local wall_max_health_boost = 5.00
+local wall_physical_resistance_percentage_boost = 0.90
+local resistance_percentage_boost = 0.20
+local fire_resistance_percentage_boost = 0.75
+local range_boost = 1.25
+local damage_boost = 1.20
+
+local dungeon_laser_turret = table.deepcopy(data.raw["electric-turret"]["laser-turret"])
+dungeon_laser_turret.name = "dungeon-laser-turret"
+dungeon_laser_turret.energy_source = void_source
+boost_max_health(dungeon_laser_turret, max_health_boost)
+boost_resistances(dungeon_laser_turret, {"electric", "explosion"}, resistance_percentage_boost)
+boost_resistances(dungeon_laser_turret, {"fire"}, fire_resistance_percentage_boost)
+boost_range(dungeon_laser_turret, range_boost)
+boost_damage(dungeon_laser_turret, damage_boost)
+
+local dungeon_tesla_turret = table.deepcopy(data.raw["electric-turret"]["tesla-turret"])
+dungeon_tesla_turret.name = "dungeon-tesla-turret"
+dungeon_tesla_turret.energy_source = void_source
+boost_max_health(dungeon_tesla_turret, max_health_boost)
+boost_resistances(dungeon_tesla_turret, {"physical", "electric", "explosion"}, resistance_percentage_boost)
+boost_resistances(dungeon_tesla_turret, {"fire"}, fire_resistance_percentage_boost)
+boost_range(dungeon_tesla_turret, range_boost)
+boost_damage(dungeon_tesla_turret, damage_boost)
+
+local dungeon_gun_turret = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
+dungeon_gun_turret.name = "dungeon-gun-turret"
+boost_max_health(dungeon_gun_turret, max_health_boost)
+boost_resistances(dungeon_gun_turret, {"physical", "explosion"}, resistance_percentage_boost)
+boost_resistances(dungeon_gun_turret, {"fire"}, fire_resistance_percentage_boost)
+boost_range(dungeon_gun_turret, range_boost)
+boost_damage(dungeon_gun_turret, damage_boost)
+
+local dungeon_flamethrower_turret = table.deepcopy(data.raw["fluid-turret"]["flamethrower-turret"])
+dungeon_flamethrower_turret.name = "dungeon-flamethrower-turret"
+boost_max_health(dungeon_flamethrower_turret, max_health_boost)
+boost_resistances(dungeon_flamethrower_turret, {"physical", "explosion"}, resistance_percentage_boost)
+boost_resistances(dungeon_flamethrower_turret, {"fire"}, fire_resistance_percentage_boost)
+boost_range(dungeon_flamethrower_turret, range_boost)
+boost_damage(dungeon_flamethrower_turret, damage_boost)
+
+local dungeon_rocket_turret = table.deepcopy(data.raw["ammo-turret"]["rocket-turret"])
+dungeon_rocket_turret.name = "dungeon-rocket-turret"
+boost_max_health(dungeon_rocket_turret, max_health_boost)
+boost_resistances(dungeon_rocket_turret, {"physical", "electric", "explosion"}, resistance_percentage_boost)
+boost_resistances(dungeon_rocket_turret, {"fire"}, fire_resistance_percentage_boost)
+boost_range(dungeon_rocket_turret, range_boost)
+boost_damage(dungeon_rocket_turret, damage_boost)
+
+local dungeon_artillery_turret = table.deepcopy(data.raw["artillery-turret"]["artillery-turret"])
+dungeon_artillery_turret.name = "dungeon-artillery-turret"
+dungeon_artillery_turret.turret_rotation_speed = dungeon_artillery_turret.turret_rotation_speed * 4
+boost_max_health(dungeon_artillery_turret, max_health_boost)
+boost_resistances(dungeon_artillery_turret, {"physical", "electric", "explosion"}, resistance_percentage_boost)
+boost_resistances(dungeon_artillery_turret, {"fire"}, fire_resistance_percentage_boost)
+-- boost_range(dungeon_artillery_turret, range_boost)
+-- boost_damage(dungeon_artillery_turret, damage_boost)
+
+local dungeon_railgun_turret = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
+dungeon_railgun_turret.name = "dungeon-railgun-turret"
+boost_max_health(dungeon_railgun_turret, max_health_boost)
+boost_resistances(dungeon_railgun_turret, {"physical", "electric", "explosion"}, resistance_percentage_boost)
+boost_resistances(dungeon_railgun_turret, {"fire"}, fire_resistance_percentage_boost)
+boost_range(dungeon_railgun_turret, range_boost)
+boost_damage(dungeon_railgun_turret, damage_boost)
+
+local dungeon_wall = table.deepcopy(data.raw["wall"]["stone-wall"])
+dungeon_wall.name = "dungeon-wall"
+boost_max_health(dungeon_wall, wall_max_health_boost)
+boost_resistances(dungeon_wall, {"physical"}, wall_physical_resistance_percentage_boost)
+boost_resistances(dungeon_wall, {"electric"}, 1)
+
+---@diagnostic disable-next-line assign-type-mismatch
+data:extend({dungeon_laser_turret, dungeon_tesla_turret, dungeon_gun_turret, dungeon_flamethrower_turret, dungeon_rocket_turret, dungeon_artillery_turret, dungeon_railgun_turret, dungeon_wall})

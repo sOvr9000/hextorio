@@ -25,6 +25,7 @@ local all_commands = {
     {name = "hex-pool-size", usage = "/hex-pool-size [size]", examples = {"/hex-pool-size", "/hex-pool-size 100"}},
     {name = "add-coins", usage = "/add-coins [amount]", examples = {"/add-coins", "/add-coins 100000"}},
     {name = "summon", usage = "/summon <entity> [amount] [quality]", examples = {"/summon spitter-spawner", "/summon small-worm-turret 2", "/summon big-stomper-pentapod 5 hextreme"}},
+    {name = "tp-to-edge", usage = "/tp-to-edge"},
 }
 
 local public_commands = sets.new {

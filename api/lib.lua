@@ -240,6 +240,18 @@ function lib.array_range(n)
     return t
 end
 
+---Get the index of an element in a table, or nil if it does not exist.
+---@param t table
+---@param element any
+---@return any
+function lib.table_index(t, element)
+    for k, v in pairs(t) do
+        if v == element then
+            return k
+        end
+    end
+end
+
 ---Remove an element from a table if it exists.
 ---@param t table
 ---@param element any
@@ -966,6 +978,9 @@ function lib.sum_mgs(mgs, target, keys)
     return sum
 end
 
+---Flattened a 2D array of positions that are indexed by x and y coordinates.
+---@param arr MapPositionSet
+---@return MapPosition[]
 function lib.flattened_position_array(arr)
     local flat = {}
     for x, Y in pairs(arr) do
@@ -974,6 +989,20 @@ function lib.flattened_position_array(arr)
         end
     end
     return flat
+end
+
+---Convert a list of positions to a 2D array indexed by x and y coordinates.
+---@param arr MapPosition[]
+---@return MapPositionSet
+function lib.indexed_position_array(arr)
+    local set = {}
+    for _, pos in pairs(arr) do
+        if not set[pos.x] then
+            set[pos.x] = {}
+        end
+        set[pos.x][pos.y] = true
+    end
+    return set
 end
 
 function lib.is_t2_planet(surface_name)
@@ -1478,6 +1507,55 @@ end
 
 function lib.remove_at_multi_index(t, ...)
     lib.set_at_multi_index(t, nil, ...)
+end
+
+---Reload the given turrets.
+---@param entities LuaEntity[]
+---@param params {bullet_type: string|nil, flamethrower_type: string|nil, rocket_type: string|nil, railgun_type: string|nil} | nil
+function lib.reload_turrets(entities, params)
+    if not params then params = {} end
+    if not params.bullet_type then
+        params.bullet_type = "uranium-rounds-magazine"
+    end
+    if not params.flamethrower_type then
+        params.flamethrower_type = "light-oil"
+    end
+    if not params.rocket_type then
+        params.rocket_type = "rocket"
+    end
+    if not params.railgun_type then
+        params.railgun_type = "railgun-ammo"
+    end
+    local stack_sizes = {
+        [params.bullet_type] = prototypes["item"][params.bullet_type].stack_size,
+        [params.flamethrower_type] = 1000,
+        [params.rocket_type] = prototypes["item"][params.rocket_type].stack_size,
+        [params.railgun_type] = prototypes["item"][params.railgun_type].stack_size,
+    }
+    for _, e in pairs(entities) do
+        if e.valid then
+            local prot = e.prototype
+            local attack_params = prot.attack_parameters
+            if attack_params then
+                local ammo_categories = attack_params.ammo_categories
+                if ammo_categories then
+                    for _, ammo_category in pairs(ammo_categories) do
+                        if ammo_category == "flamethrower" then
+                            local fluid = params[ammo_category .. "_type"]
+                            if fluid then
+                                e.insert_fluid {name = fluid, amount = stack_sizes[fluid]}
+                            end
+                        else
+                            local item = params[ammo_category .. "_type"]
+                            if item then
+                                e.insert {name = item, count = stack_sizes[item]}
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
 
 

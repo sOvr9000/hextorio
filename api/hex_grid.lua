@@ -11,6 +11,7 @@ local coin_tiers = require "api.coin_tiers"
 local quests = require "api.quests"
 local trades = require "api.trades"
 local item_ranks  = require "api.item_ranks"
+local dungeons = require "api.dungeons"
 
 
 
@@ -123,6 +124,14 @@ function hex_grid.register_events()
             return
         end
         hex_grid.set_pool_size(params[1])
+    end)
+
+    event_system.register_callback("command-tp-to-edge", function(player, params)
+        local planet_size = lib.runtime_setting_value("planet-size-" .. player.surface.name)
+        local edge_pos = {q = planet_size, r = 0}
+        local transformation = terrain.get_surface_transformation(player.surface)
+        local center = axial.get_hex_center(edge_pos, transformation.scale, transformation.rotation)
+        player.teleport(center)
     end)
 
     event_system.register_callback("quest-reward-received", function(reward_type, value)
@@ -450,6 +459,16 @@ function hex_grid.update_hex_core_inventory_filters(hex_core_state)
     end
 end
 
+---Initialize a hex for a dungeon.
+---@param surface_id int
+---@param hex_pos HexPos
+---@param hex_grid_scale number
+---@param hex_grid_rotation number
+---@param hex_stroke_width number
+function hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
+    dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
+end
+
 -- Initialize a hex with default state and generate its border
 function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
@@ -472,7 +491,11 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         return
     end
 
+    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
+    local min_dungeon_dist = planet_size + 2
     local dist = axial.distance(hex_pos, {q=0, r=0})
+    local is_dungeon = dist >= min_dungeon_dist
+
     local hex_quality = hex_grid.get_quality_from_distance(surface.name, dist)
     terrain.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, nil, hex_quality)
 
@@ -496,7 +519,6 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         land_chance = (1 - land_chance * land_chance) ^ 0.5 -- basically turning a triangle into a circle
     end
 
-    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
     local is_starting_hex = dist == 0
     local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
 
@@ -579,6 +601,10 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         end
     else
         terrain.generate_non_land_tiles(surface, hex_pos)
+    end
+
+    if is_dungeon then
+        hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, 3)
     end
 
     state.generated = true

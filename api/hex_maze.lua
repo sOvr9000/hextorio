@@ -1,6 +1,6 @@
 
 ---@alias HexMazeTile {pos: HexPos, open: boolean[]}
----@alias HexMaze {tiles: HexMazeTile[], tiles_by_position: IndexMap}
+---@alias HexMaze {tiles: HexMazeTile[], tiles_by_position: IndexMap, generated: boolean}
 
 local lib = require "api.lib"
 local axial = require "api.axial"
@@ -13,7 +13,7 @@ local hex_maze = {}
 ---@param allowed_positions HexPosMap
 ---@return HexMaze
 function hex_maze.new(allowed_positions)
-    local maze = {tiles = {}, tiles_by_position = {}}
+    local maze = {tiles = {}, tiles_by_position = {}, generated = false}
 
     for q, Q in pairs(allowed_positions) do
         for r, _ in pairs(Q) do
@@ -42,18 +42,20 @@ function hex_maze.new_tile(hex_pos)
     }
 end
 
---- Generate a maze in the axial coordinate system using Kruskal's algorithm.
+--- Generate a maze in the axial coordinate system using Kruskal's algorithm, returning whether the maze was successfully generated.
 --- https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
 ---@param maze HexMaze
+---@return boolean
 function hex_maze.generate(maze)
     -- Ensure that if the maze has already been generated or partially generated, it is reset to an initial state with all passages closed.
     hex_maze.close_all_passages(maze)
+    maze.generated = false
 
     -- Initialize sets
     local sets = {}
     local sets_by_position = {} -- Helps to calculate the "find" in "union-find"
     for i, tile in ipairs(maze.tiles) do
-        sets[i] = hex_sets.new_set {tile.pos}
+        sets[i] = hex_sets.new {tile.pos}
         if not sets_by_position[tile.pos.q] then
             sets_by_position[tile.pos.q] = {}
         end
@@ -102,7 +104,10 @@ function hex_maze.generate(maze)
     local limit = #maze.tiles - 1 -- The exact number of union operations needed to complete the maze.
     for _ = 1, limit do
         local i, j, tile, adj_tile = get_next_edge()
-        if not i then return end
+        if not i then
+            -- Keep maze.generated=false.
+            return false
+        end
 
         -- Suppress nil warnings from LuaLS. These values cannot be nil if at least one is not nil.
         ---@cast j int
@@ -112,16 +117,32 @@ function hex_maze.generate(maze)
         union(i, j)
         hex_maze.set_open_between_tiles(tile, adj_tile)
     end
+
+    maze.generated = true
+    return true
 end
 
 ---Get a tile in the maze at the given position.
 ---@param maze HexMaze
 ---@param pos HexPos
----@return HexMazeTile|nil
+---@return HexMazeTile
 function hex_maze.get_tile(maze, pos)
     local idx = (maze.tiles_by_position[pos.q] or {})[pos.r]
-    if not idx then return end
-    return maze.tiles[idx]
+    if not idx then
+        error("hex_maze.get_tile: Could not find tile at position " .. axial.to_string(pos))
+    end
+    local tile = maze.tiles[idx]
+    if not tile then
+        error("hex_maze.get_tile: Tile index maps to nothing.")
+    end
+    return tile
+end
+
+---Return whether the maze contains a specific tile.
+---@param maze HexMaze
+---@param pos HexPos
+function hex_maze.tile_exists_at(maze, pos)
+    return (maze.tiles_by_position[pos.q] or {})[pos.r] ~= nil
 end
 
 ---Get the valid adjacent tiles of a given tile in the maze.
@@ -133,9 +154,8 @@ function hex_maze.get_adjacent_tiles(maze, pos)
     for dir = 1, 6 do
         local offset = axial.get_adjacency_offset(dir)
         local adj = axial.add(pos, offset)
-        local tile = hex_maze.get_tile(maze, adj)
-        if tile then
-            table.insert(tiles, tile)
+        if hex_maze.tile_exists_at(maze, adj) then
+            table.insert(tiles, hex_maze.get_tile(maze, adj))
         end
     end
     return tiles
@@ -162,10 +182,6 @@ function hex_maze.set_open_in_direction(maze, tile, dir, flag)
     if flag == nil then flag = true end
     local offset = axial.get_adjacency_offset(dir)
     local tile2 = hex_maze.get_tile(maze, axial.add(tile.pos, offset))
-    if not tile2 then
-        lib.log_error("hex_maze.set_open_in_direction: No tile found in direction " .. dir .. " from " .. serpent.line(tile.pos))
-        return
-    end
     tile.open[dir] = flag
     tile2.open[axial.get_opposite_direction(dir)] = flag
 end
@@ -210,6 +226,20 @@ function hex_maze.open_all_passages(maze)
             hex_maze.set_open_between_tiles(tile, adj_tile)
         end
     end
+end
+
+---Get the tiles that this tile has an open passage to.
+---@param maze HexMaze
+---@param tile HexMazeTile
+---@return HexMazeTile[]
+function hex_maze.get_connected_tiles(maze, tile)
+    local connected = {}
+    for _, adj_tile in pairs(hex_maze.get_adjacent_tiles(maze, tile.pos)) do
+        if hex_maze.is_open_between_tiles(tile, adj_tile) then
+            table.insert(connected, adj_tile)
+        end
+    end
+    return connected
 end
 
 

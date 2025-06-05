@@ -16,6 +16,7 @@ local item_ranks = require "api.item_ranks"
 local quests = require "api.quests"
 local blueprints = require "api.blueprints"
 local space_platforms = require "api.space_platforms"
+local dungeons = require "api.dungeons"
 
 hex_grid.register_events()
 trades.register_events()
@@ -38,6 +39,7 @@ local data_item_ranks = require "data.item_ranks"
 local data_event_system = require "data.event_system"
 local data_trade_overview = require "data.trade_overview"
 local data_blueprints = require "data.blueprints"
+local data_dungeons = require "data.dungeons"
 
 
 
@@ -62,6 +64,7 @@ script.on_init(function()
     storage.event_system = data_event_system
     storage.trade_overview = data_trade_overview
     storage.blueprints = data_blueprints
+    storage.dungeons = data_dungeons
 
     local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
     storage.hex_grid.mgs["nauvis"] = mgs_original
@@ -107,6 +110,7 @@ script.on_init(function()
     item_values.init()
     quests.init()
     blueprints.init()
+    dungeons.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -159,6 +163,12 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     if storage.events.is_nauvis_generating then return end
 
     hex_grid.on_chunk_generated(surface.name, chunk_position)
+end)
+
+script.on_nth_tick(300, function()
+    for _, player in pairs(game.connected_players) do
+        event_system.trigger("dungeon-update", player)
+    end
 end)
 
 script.on_nth_tick(60, function()

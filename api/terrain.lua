@@ -191,8 +191,11 @@ function terrain.generate_non_land_tiles(surface, hex_pos)
     terrain.set_hex_tiles(surface, hex_pos, tile_type, true)
 end
 
-
--- Fill edges between adjacent claimed hexes using sum of squared distances method
+---Fill edges between adjacent claimed hexes using sum of squared distances method
+---@param surface LuaSurface
+---@param hex_pos1 HexPos
+---@param hex_pos2 HexPos
+---@param tile_type string
 function terrain.fill_edges_between_hexes(surface, hex_pos1, hex_pos2, tile_type)
     local transformation = terrain.get_surface_transformation(surface)
     if not transformation then
