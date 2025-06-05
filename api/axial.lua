@@ -17,6 +17,8 @@ local axial = {}
 
 
 
+local inv_dir_map = {1, 6, 5, 4, 3, 2}
+
 local adjacency_offsets = {
     {q = 1, r = 0}, {q = 1, r = -1}, {q = 0, r = -1},
     {q = -1, r = 0}, {q = -1, r = 1}, {q = 0, r = 1},
@@ -681,7 +683,11 @@ function axial.filter_positions_by_directions(hex_center, positions, directions,
     for x, X in pairs(positions) do
         for y, _ in pairs(X) do
             local angle = math.atan2(y - hex_center.y, x - hex_center.x)
-            local dir = math.floor((angle + math.pi - hex_grid_rotation) / math.pi * 3 - 1) % 8 + 1
+            angle = (angle - hex_grid_rotation) % (2 * math.pi)
+
+            local sector = math.floor((angle + math.pi/6) / (math.pi/3)) % 6
+            local dir = inv_dir_map[sector + 1]
+
             if directions[dir] then
                 if not new_positions[x] then
                     new_positions[x] = {}

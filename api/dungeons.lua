@@ -217,7 +217,7 @@ function dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rota
             local max_dim = math.max(entity_prot.tile_width, entity_prot.tile_height)
             for _, radius in pairs(radii) do
                 local positions = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, max_dim * 1.5, hex_stroke_width + radius, false)
-                positions = axial.filter_positions_by_directions(hex_center, positions, directions)
+                positions = axial.filter_positions_by_directions(hex_center, positions, directions, hex_grid_rotation)
                 for x, X in pairs(used_positions) do
                     if positions[x] then
                         for y, _ in pairs(X) do
