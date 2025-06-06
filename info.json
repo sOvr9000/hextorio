@@ -4,7 +4,7 @@
   "title": "Hextorio - Build in hexagons",
   "author": "sOvr9000",
   "contact": "https://discord.gg/huJY7QK6UG",
-  "factorio_version": "2.0.48",
+  "factorio_version": "2.0.55",
   "description": "As they've always said since 325 B.C., hexagons are the bestagons! You start inside a hexagon with water and limited resources. The goal is to reach the solar system edge, like normal.\n\nDuring your quest-filled journey, you'll discover many ways to take your factory to greater heights and breach the massive dungeons of each planet! And most importantly... get rich! Level up, explore, and discover a version of Factorio you wish you had all along.",
-  "dependencies": ["base >= 2.0.48", "space-age >= 2.0.48"]
+  "dependencies": ["base >= 2.0.55", "space-age >= 2.0.55"]
 }
