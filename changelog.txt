@@ -5,7 +5,7 @@ Date: 4/6/25
     - Added dungeons.
   Features:
     - Added more quests and rewards.
-    - Added poison rockets ammo, technology, and recipe.
+    - Added plague rockets ammo, technology, recipe, and smoke/particle effect. (used by Gleba dungeon turrets)
   Changes:
     - [item=rocket] and [item=explosive-rocket] are now also craftable in [entity=biochamber].
   Balancing:

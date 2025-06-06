@@ -1,6 +1,6 @@
 
 ---@alias EntityRadii {[string]: number[]}
----@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, max_loot_radius: number, qualities: string[], tile_type: string}
+---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, max_loot_radius: number, qualities: string[], tile_type: string, ammo: {[string]: string}}
 ---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet}
 
 local lib = require "api.lib"
@@ -26,7 +26,7 @@ function dungeons.init()
     storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
 
     for _, def in pairs(storage.dungeons.defs) do
-        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.qualities, def.tile_type)
+        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.qualities, def.tile_type, def.ammo)
         if not storage.dungeons.prototypes[def.surface_name] then
             storage.dungeons.prototypes[def.surface_name] = {}
         end
@@ -55,13 +55,14 @@ end
 ---@param loot_value number
 ---@param qualities string[]
 ---@return DungeonPrototype
-function dungeons.new_prototype(wall_entities, loot_value, rolls, qualities, tile_type)
+function dungeons.new_prototype(wall_entities, loot_value, rolls, qualities, tile_type, ammo)
     local prot = table.deepcopy {
         wall_entities = wall_entities,
         loot_value = loot_value,
         rolls = rolls,
         qualities = qualities,
         tile_type = tile_type,
+        ammo = ammo,
     }
 
     prot.max_loot_radius = math.huge
@@ -277,7 +278,7 @@ function dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     -- Initial ammo load of turrets
-    lib.reload_turrets(entities)
+    lib.reload_turrets(entities, prot.ammo)
 end
 
 ---Fill the edges between dungeon hexes.
@@ -519,7 +520,9 @@ end
 function dungeons.try_reload_turrets(dungeon)
     if dungeon.last_turret_reload + TURRET_RELOAD_INTERVAL < game.tick then return end
     dungeon.last_turret_reload = game.tick
-    lib.reload_turrets(dungeon.turrets)
+    local prot = dungeons.get_prototype_of_dungeon(dungeon)
+    if not prot then return end
+    lib.reload_turrets(dungeon.turrets, prot.ammo)
 end
 
 ---Spawn the loot chests in a dungeon tile.

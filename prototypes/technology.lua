@@ -311,8 +311,8 @@ data:extend({
 
     {
         type = "technology",
-        name = "poison-rocket",
-        icon = "__hextorio__/graphics/technology/poison-rocket.png",
+        name = "plague-rocket",
+        icon = "__hextorio__/graphics/technology/plague-rocket.png",
         icon_size = 256,
         prerequisites = {"rocketry", "agricultural-science-pack"},
         unit = {
@@ -330,7 +330,7 @@ data:extend({
         effects = {
             {
                 type  = "unlock-recipe",
-                recipe = "poison-rocket",
+                recipe = "plague-rocket",
             },
         },
     },

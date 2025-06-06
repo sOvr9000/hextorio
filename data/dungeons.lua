@@ -14,6 +14,10 @@ return {
             rolls = 16,
             qualities = {"normal", "uncommon"},
             tile_type = "brown-refined-concrete",
+            ammo = {
+                bullet_type = "uranium-rounds-magazine",
+                flamethrower_type = "light-oil",
+            },
         },
 
         -- Vulcanus
@@ -28,6 +32,9 @@ return {
             rolls = 25,
             qualities = {"uncommon", "rare"},
             tile_type = "black-refined-concrete",
+            ammo = {
+                flamethrower_type = "light-oil",
+            },
         },
 
         -- Fulgora
@@ -41,6 +48,7 @@ return {
             rolls = 36,
             qualities = {"uncommon", "rare", "epic"},
             tile_type = "red-refined-concrete",
+            ammo = {},
         },
 
         -- Gleba
@@ -55,6 +63,9 @@ return {
             rolls = 49,
             qualities = {"rare", "epic"},
             tile_type = "green-refined-concrete",
+            ammo = {
+                rocket_type = "plague-rocket",
+            },
         },
 
         -- Aquilo
@@ -70,6 +81,11 @@ return {
             rolls = 81,
             qualities = {"epic", "legendary", "hextreme"},
             tile_type = "refined-hazard-concrete-left",
+            ammo = {
+                bullet_type = "uranium-rounds-magazine",
+                rocket_type = "plague-rocket",
+                railgun_type = "railgun-ammo",
+            },
         },
     },
 }

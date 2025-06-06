@@ -76,6 +76,7 @@ function on_command(player, command, params)
         player.insert {name = "tesla-ammo", quality = "hextreme", count = 200}
         player.insert {name = "railgun-ammo", quality = "hextreme", count = 50}
         player.insert {name = "atomic-bomb", quality = "hextreme", count = 20}
+        player.insert {name = "plague-rocket", quality = "hextreme", count = 200}
         player.insert {name = "demolisher-capsule", quality = "hextreme", count = 100} -- railguns robot
         -- player.insert {name = "disintegrator-capsule", quality = "hextreme", count = 100} -- lasers robot
         -- player.insert {name = "decimator-capsule", quality = "hextreme", count = 100} -- bullets robot
