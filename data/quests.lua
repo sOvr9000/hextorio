@@ -241,10 +241,22 @@ return {
             prerequisites = {"biter-rammer"},
         },
         {
-            name = "farm-fresh",
+            name = "farm-fresh-eggs",
             conditions = {{type = "mine-entity", value = "medium-stomper-shell", progress_requirement = 3}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 5}}},
             prerequisites = {"five-legs-werent-enough"},
+        },
+        {
+            name = "farm-fresh-produce",
+            conditions = {
+                {type = "mine-entity", value = "yumako-tree", progress_requirement = 25},
+                {type = "mine-entity", value = "jellystem", progress_requirement = 25},
+                {type = "mine-entity", value = "boompuff", progress_requirement = 10},
+                {type = "mine-entity", value = "stingfrond", progress_requirement = 10},
+                {type = "mine-entity", value = "lickmaw", progress_requirement = 10},
+            },
+            rewards = {{type = "claim-free-hexes", value = {"gleba", 8}}},
+            prerequisites = {"too-many-hex-cores"},
         },
         {
             name = "biochemical-dungeon",
