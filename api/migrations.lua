@@ -179,7 +179,7 @@ local process_migration = {
                     if reward.type == "claim-free-hexes" then
                         hex_grid.add_free_hex_claims(reward.value[1], reward.value[2])
                     end
-              end
+                end
             end
         end
     end,

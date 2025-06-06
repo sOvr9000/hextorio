@@ -1206,35 +1206,39 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
     return coin_tiers.ge(coin_tiers.get_coin_from_inventory(inv), coin)
 end
 
--- Claim a hex and spawn hex cores in adjacent hexes if possible.
-function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
+---Claim a hex and spawn hex cores in adjacent hexes if possible.
+---@param surface_id int
+---@param hex_pos HexPos
+---@param by_player LuaPlayer|nil
+---@param allow_nonland boolean|nil
+function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     if by_player and not hex_grid.can_claim_hex(by_player, surface, hex_pos) then
         hex_grid.remove_hex_from_claim_queue(surface, hex_pos)
         return
     end
 
-    local surface_id = lib.get_surface_id(surface)
-    if surface_id == -1 then
-        lib.log_error("hex_grid.claim_hex: No surface found")
+    local surface = game.get_surface(surface_id)
+    if not surface then
+        lib.log_error("hex_grid.claim_hex: Could not find surface with id " .. surface_id)
         return
     end
-    surface = game.surfaces[surface_id]
 
-    local state = hex_grid.get_hex_state(surface, hex_pos)
+    local surface_name = surface.name
+
+    local state = hex_grid.get_hex_state(surface_id, hex_pos)
     if state.claimed then return end
     if not state.hex_core then return end
     if not state.is_land and not allow_nonland then return end
 
     state.claimed = true
-    state.claimed_by = by_player
-    if state.claimed_by then
-        state.claimed_by = state.claimed_by.name -- player's name, not player object, and nil means by server
+    if by_player then
+        state.claimed_by = by_player.name -- player's name, not player object, and nil means by server
     end
 
     state.claimed_timestamp = game.tick
 
     local adjacent_hexes = axial.get_adjacent_hexes(hex_pos)
-    local transformation = terrain.get_surface_transformation(surface)
+    local transformation = terrain.get_surface_transformation(surface_id)
 
     if not transformation then
         lib.log_error("hex_grid.claim_hex: No transformation found")
@@ -1242,7 +1246,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     end
 
     for _, adj_hex in pairs(adjacent_hexes) do
-        if hex_grid.can_hex_core_spawn(surface, adj_hex) then
+        if hex_grid.can_hex_core_spawn(surface_id, adj_hex) then
             hex_grid.spawn_hex_core(surface, axial.get_hex_center(adj_hex, transformation.scale, transformation.rotation))
         end
     end
@@ -1253,7 +1257,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         tile_name = lib.player_setting_value(by_player, "claimed-hex-tile")
 
         -- Purchase
-        if hex_grid.get_free_hex_claims(surface) == 0 and not lib.is_player_editor_like(by_player) then
+        if hex_grid.get_free_hex_claims(surface_name) == 0 and not lib.is_player_editor_like(by_player) then
             local inv = lib.get_player_inventory(by_player)
             if inv then
                 coin_tiers.remove_coin_from_inventory(inv, state.claim_price)
@@ -1270,8 +1274,7 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
         storage.hex_grid.last_used_claim_tile = tile_name
     end
     terrain.set_hex_tiles(surface, hex_pos, tile_name)
-
-    hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
+    -- hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
 
     local fill_tile_name
     if by_player then
@@ -1297,9 +1300,9 @@ function hex_grid.claim_hex(surface, hex_pos, by_player, allow_nonland)
     trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
 
     hex_grid.check_hex_span(surface, hex_pos)
-    hex_grid.add_free_hex_claims(surface, -1)
+    hex_grid.add_free_hex_claims(surface_name, -1)
     quests.increment_progress_for_type("claimed-hexes", 1)
-    quests.increment_progress_for_type("claimed-hexes-on", 1, surface.name)
+    quests.increment_progress_for_type("claimed-hexes-on", 1, surface_name)
 
     event_system.trigger("hex-claimed", surface, state)
 
@@ -1443,30 +1446,24 @@ function hex_grid.check_hex_span(surface, hex_pos)
     quests.set_progress_for_type("hex-span", span)
 end
 
-function hex_grid.add_free_hex_claims(surface, amount)
-    local surface_id = lib.get_surface_id(surface)
-    if surface_id == -1 then
-        lib.log_error("hex_grid.add_free_hex_claims: No surface found")
-        return
-    end
-
+---Add free claims on a surface.
+---@param surface_name string
+---@param amount int
+function hex_grid.add_free_hex_claims(surface_name, amount)
     if not storage.hex_grid.free_hex_claims then
         storage.hex_grid.free_hex_claims = {}
     end
-    storage.hex_grid.free_hex_claims[surface_id] = math.max(0, (storage.hex_grid.free_hex_claims[surface_id] or 0) + (amount or 1))
+    storage.hex_grid.free_hex_claims[surface_name] = math.max(0, (storage.hex_grid.free_hex_claims[surface_name] or 0) + (amount or 1))
 end
 
-function hex_grid.get_free_hex_claims(surface)
-    local surface_id = lib.get_surface_id(surface)
-    if surface_id == -1 then
-        lib.log_error("hex_grid.get_free_hex_claims: No surface found")
-        return
-    end
-
+---Get the number of free hex claims remaining on a surface.
+---@param surface_name string
+---@return int
+function hex_grid.get_free_hex_claims(surface_name)
     if not storage.hex_grid.free_hex_claims then
         return 0
     end
-    return storage.hex_grid.free_hex_claims[surface_id] or 0
+    return storage.hex_grid.free_hex_claims[surface_name] or 0
 end
 
 -- Handle chunk generation event for the hex grid
