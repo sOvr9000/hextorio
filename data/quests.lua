@@ -68,6 +68,7 @@ return {
         ["trades-found"] = {"finding-counts-unclaimed"},
         ["hex-span"] = {"hex-span-simplified"},
         ["coins-in-inventory"] = {"does-not-consume"},
+        ["loot-dungeons-on"] = {"dungeon-loot-condition"},
     },
 
     quest_defs = {
@@ -144,6 +145,31 @@ return {
             rewards = {{type = "unlock-feature", value = "sink-mode"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"find-some-trades"},
         },
+        {
+            name = "dark-factorian-dungeon",
+            conditions = {{type = "loot-dungeons-on", value = "nauvis", progress_requirement = 1}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"nauvis", 10}}},
+            prerequisites = {"getting-somewhere"},
+            notes = {"dungeon-location"},
+            has_img = false,
+        },
+        {
+            name = "lazy-looter",
+            conditions = {{type = "loot-dungeons-off-planet", progress_requirement = 1}},
+            rewards = {
+                {type = "all-trades-productivity", value = 5},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "spidertron", count = 1},
+                    },
+                    notes = {"first-spidertron"},
+                },
+                {type = "claim-free-hexes", value = {"nauvis", 20}}
+            },
+            prerequisites = {"dark-factorian-dungeon"},
+            has_img = false,
+        },
 
         -- Vulcanus
         {
@@ -170,6 +196,13 @@ return {
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 15}}},
             prerequisites = {"stepping-on-beetles"},
         },
+        {
+            name = "metallurgic-dungeon",
+            conditions = {{type = "loot-dungeons-on", value = "vulcanus", progress_requirement = 1}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
+            prerequisites = {"dark-factorian-dungeon"},
+            has_img = false,
+        },
 
         -- Fulgora
         {
@@ -190,6 +223,13 @@ return {
             rewards = {{type = "claim-free-hexes", value = {"fulgora", 5}}},
             prerequisites = {"biter-rammer"},
         },
+        {
+            name = "electromagnetic-dungeon",
+            conditions = {{type = "loot-dungeons-on", value = "fulgora", progress_requirement = 1}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 10}}},
+            prerequisites = {"dark-factorian-dungeon"},
+            has_img = false,
+        },
 
         -- Gleba
         {
@@ -209,6 +249,13 @@ return {
             conditions = {{type = "mine-entity", value = "medium-stomper-shell", progress_requirement = 3}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 5}}},
             prerequisites = {"five-legs-werent-enough"},
+        },
+        {
+            name = "biochemical-dungeon",
+            conditions = {{type = "loot-dungeons-on", value = "gleba", progress_requirement = 1}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"gleba", 10}}},
+            prerequisites = {"dark-factorian-dungeon"},
+            has_img = false,
         },
 
         -- Aquilo
@@ -235,6 +282,26 @@ return {
             conditions = {{type = "place-tile", value = "foundation", progress_requirement = 2000}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
             prerequisites = {"pond-filler"},
+        },
+        {
+            name = "overwatch-dungeon",
+            conditions = {{type = "loot-dungeons-on", value = "aquilo", progress_requirement = 1}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"aquilo", 10}}},
+            prerequisites = {"metallurgic-dungeon", "electromagnetic-dungeon", "biochemical-dungeon"},
+            has_img = false,
+        },
+        {
+            name = "dungeon-mastery",
+            conditions = {
+                {type = "loot-dungeons-on", value = "nauvis", progress_requirement = 3},
+                {type = "loot-dungeons-on", value = "vulcanus", progress_requirement = 3},
+                {type = "loot-dungeons-on", value = "fulgora", progress_requirement = 3},
+                {type = "loot-dungeons-on", value = "gleba", progress_requirement = 3},
+                {type = "loot-dungeons-on", value = "aquilo", progress_requirement = 3},
+            },
+            rewards = {{type = "all-trades-productivity", value = 10}, {type = "claim-free-hexes", value = {"aquilo", 10}}},
+            prerequisites = {"overwatch-dungeon"},
+            has_img = false,
         },
 
         -- Post-Aquilo

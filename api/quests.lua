@@ -4,6 +4,8 @@
 local lib = require "api.lib"
 local event_system = require "api.event_system"
 local sets         = require "api.sets"
+local axial        = require "api.axial"
+local terrain      = require "api.terrain"
 
 
 
@@ -47,6 +49,17 @@ function quests.register_events()
 
     event_system.register_callback("dungeon-looted", function(dungeon)
         quests.increment_progress_for_type("loot-dungeons-on", 1, dungeon.surface.name)
+
+        local passed = true
+        for _, player in pairs(game.connected_players) do
+            if player.surface == dungeon.surface then
+                passed = false
+            end
+        end
+
+        if passed then
+            quests.increment_progress_for_type "loot-dungeons-off-planet"
+        end
     end)
 end
 
