@@ -3,6 +3,11 @@ Version: 0.4.3
 Date: 4/6/25
   Major Features:
     - Added dungeons.
+  Features:
+    - Added more quests and rewards.
+    - Added poison rockets ammo, technology, and recipe.
+  Changes:
+    - [item=rocket] and [item=explosive-rocket] are now also craftable in [entity=biochamber].
   Balancing:
     - Lower-valued trades are now more common in the more distant hexes from spawn on all planets.
     - Fewer of the more distant hexes than the ones near spawn have resources on all planets.

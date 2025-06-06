@@ -1,4 +1,9 @@
 
+-- Buff recipes
+data.raw["recipe"]["rocket"].category = "organic-or-assembling"
+data.raw["recipe"]["explosive-rocket"].category = "organic-or-assembling"
+
+-- Custom recipes
 local hexic_transport_belt = table.deepcopy(data.raw["recipe"]["turbo-transport-belt"])
 hexic_transport_belt.name = "hexic-transport-belt"
 hexic_transport_belt.icon = "__hextorio__/graphics/icons/hexic-transport-belt.png"
@@ -177,5 +182,21 @@ crystalline_fuel.results = {
 crystalline_fuel.energy_required = 120
 crystalline_fuel.main_product = "crystalline-fuel"
 
+local poison_rocket = {
+    type = "recipe",
+    name = "poison-rocket",
+    category = "organic",
+    energy_required = 8,
+    enabled = false,
+    ingredients = {
+        {type = "item", name = "rocket", amount = 1},
+        {type = "item", name = "poison-capsule", amount = 1},
+        {type = "item", name = "nutrients", amount = 10},
+    },
+    results = {
+        {type = "item", name = "poison-rocket", amount = 1},
+    },
+}
+
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe, energized_thruster_fuel, energized_thruster_oxidizer, crystalline_fuel})
+data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe, energized_thruster_fuel, energized_thruster_oxidizer, crystalline_fuel, poison_rocket})

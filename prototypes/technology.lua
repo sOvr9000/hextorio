@@ -308,4 +308,30 @@ data:extend({
             },
         },
     },
+
+    {
+        type = "technology",
+        name = "poison-rocket",
+        icon = "__hextorio__/graphics/technology/poison-rocket.png",
+        icon_size = 256,
+        prerequisites = {"rocketry", "agricultural-science-pack"},
+        unit = {
+            count = 500,
+            time = 60,
+            ingredients = {
+                {"automation-science-pack", 1},
+                {"logistic-science-pack", 1},
+                {"military-science-pack", 1},
+                {"chemical-science-pack", 1},
+                {"space-science-pack", 1},
+                {"agricultural-science-pack", 1},
+            },
+        },
+        effects = {
+            {
+                type  = "unlock-recipe",
+                recipe = "poison-rocket",
+            },
+        },
+    },
 })

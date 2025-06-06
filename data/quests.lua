@@ -257,6 +257,7 @@ return {
             },
             rewards = {{type = "claim-free-hexes", value = {"gleba", 8}}},
             prerequisites = {"too-many-hex-cores"},
+            has_img = false,
         },
         {
             name = "biochemical-dungeon",
