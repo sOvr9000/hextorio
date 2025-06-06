@@ -1,6 +1,7 @@
 
 return {
     defs = {
+        -- Nauvis
         {
             surface_name = "nauvis",
             wall_entities = {
@@ -9,7 +10,66 @@ return {
                 ["dungeon-laser-turret"] = {5},
                 ["dungeon-gun-turret"] = {7},
             },
-            loot_value = 10000,
+            loot_value = 400000,
+            rolls = 16,
+            qualities = {"normal", "uncommon"},
+            tile_type = "brown-refined-concrete",
+        },
+
+        -- Vulcanus
+        {
+            surface_name = "vulcanus",
+            wall_entities = {
+                ["dungeon-wall"] = {1, 8},
+                ["dungeon-flamethrower-turret"] = {2, 8},
+                ["dungeon-laser-turret"] = {10, 12, 14},
+            },
+            loot_value = 50000000,
+            rolls = 20,
+            qualities = {"uncommon", "rare"},
+            tile_type = "black-refined-concrete",
+        },
+
+        -- Fulgora
+        {
+            surface_name = "fulgora",
+            wall_entities = {
+                ["dungeon-wall"] = {1},
+                ["dungeon-tesla-turret"] = {3},
+            },
+            loot_value = 100000000,
+            rolls = 32,
+            qualities = {"uncommon", "rare", "epic"},
+            tile_type = "red-refined-concrete",
+        },
+
+        -- Gleba
+        {
+            surface_name = "gleba",
+            wall_entities = {
+                ["dungeon-wall"] = {1},
+                ["dungeon-laser-turret"] = {3},
+                ["dungeon-rocket-turret"] = {6},
+            },
+            loot_value = 500000000,
+            rolls = 60,
+            qualities = {"rare", "epic"},
+            tile_type = "green-refined-concrete",
+        },
+
+        -- Aquilo
+        {
+            surface_name = "aquilo",
+            wall_entities = {
+                ["dungeon-railgun-turret"] = {3},
+                ["dungeon-tesla-turret"] = {11},
+                ["dungeon-rocket-turret"] = {15, 19},
+                ["dungeon-gun-turret"] = {22, 24},
+            },
+            loot_value = 1000000000000,
+            rolls = 200,
+            qualities = {"epic", "legendary", "hextreme"},
+            tile_type = "refined-hazard-concrete-left",
         },
     },
 }

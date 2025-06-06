@@ -94,6 +94,7 @@ boost_resistances(dungeon_gun_turret, {"physical", "explosion"}, resistance_perc
 boost_resistances(dungeon_gun_turret, {"fire"}, fire_resistance_percentage_boost)
 boost_range(dungeon_gun_turret, range_boost)
 boost_damage(dungeon_gun_turret, damage_boost)
+dungeon_gun_turret.heating_energy = "0J"
 
 local dungeon_flamethrower_turret = table.deepcopy(data.raw["fluid-turret"]["flamethrower-turret"])
 dungeon_flamethrower_turret.name = "dungeon-flamethrower-turret"
@@ -102,6 +103,7 @@ boost_resistances(dungeon_flamethrower_turret, {"physical", "explosion"}, resist
 boost_resistances(dungeon_flamethrower_turret, {"fire"}, fire_resistance_percentage_boost)
 boost_range(dungeon_flamethrower_turret, range_boost)
 boost_damage(dungeon_flamethrower_turret, damage_boost)
+dungeon_flamethrower_turret.heating_energy = "0J"
 
 local dungeon_rocket_turret = table.deepcopy(data.raw["ammo-turret"]["rocket-turret"])
 dungeon_rocket_turret.name = "dungeon-rocket-turret"
@@ -110,6 +112,7 @@ boost_resistances(dungeon_rocket_turret, {"physical", "electric", "explosion"}, 
 boost_resistances(dungeon_rocket_turret, {"fire"}, fire_resistance_percentage_boost)
 boost_range(dungeon_rocket_turret, range_boost)
 boost_damage(dungeon_rocket_turret, damage_boost)
+dungeon_rocket_turret.heating_energy = "0J"
 
 local dungeon_artillery_turret = table.deepcopy(data.raw["artillery-turret"]["artillery-turret"])
 dungeon_artillery_turret.name = "dungeon-artillery-turret"
@@ -119,6 +122,7 @@ boost_resistances(dungeon_artillery_turret, {"physical", "electric", "explosion"
 boost_resistances(dungeon_artillery_turret, {"fire"}, fire_resistance_percentage_boost)
 -- boost_range(dungeon_artillery_turret, range_boost)
 -- boost_damage(dungeon_artillery_turret, damage_boost)
+dungeon_artillery_turret.heating_energy = "0J"
 
 local dungeon_railgun_turret = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
 dungeon_railgun_turret.name = "dungeon-railgun-turret"
@@ -127,6 +131,7 @@ boost_resistances(dungeon_railgun_turret, {"physical", "electric", "explosion"},
 boost_resistances(dungeon_railgun_turret, {"fire"}, fire_resistance_percentage_boost)
 boost_range(dungeon_railgun_turret, range_boost)
 boost_damage(dungeon_railgun_turret, damage_boost)
+dungeon_railgun_turret.heating_energy = "0J"
 
 local dungeon_wall = table.deepcopy(data.raw["wall"]["stone-wall"])
 dungeon_wall.name = "dungeon-wall"

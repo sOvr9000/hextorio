@@ -1,6 +1,6 @@
 
 ---@alias EntityRadii {[string]: number[]}
----@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, max_loot_radius: number}
+---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, max_loot_radius: number, qualities: string[], tile_type: string}
 ---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet}
 
 local lib = require "api.lib"
@@ -26,7 +26,7 @@ function dungeons.init()
     storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
 
     for _, def in pairs(storage.dungeons.defs) do
-        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value)
+        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.qualities, def.tile_type)
         if not storage.dungeons.prototypes[def.surface_name] then
             storage.dungeons.prototypes[def.surface_name] = {}
         end
@@ -53,11 +53,15 @@ end
 
 ---@param wall_entities EntityRadii
 ---@param loot_value number
+---@param qualities string[]
 ---@return DungeonPrototype
-function dungeons.new_prototype(wall_entities, loot_value)
+function dungeons.new_prototype(wall_entities, loot_value, rolls, qualities, tile_type)
     local prot = table.deepcopy {
         wall_entities = wall_entities,
         loot_value = loot_value,
+        rolls = rolls,
+        qualities = qualities,
+        tile_type = tile_type,
     }
 
     prot.max_loot_radius = math.huge
@@ -175,13 +179,16 @@ end
 function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
     local dungeon = dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos)
     if not dungeon then return end
+    local prot = dungeons.get_prototype_of_dungeon(dungeon)
+    if not prot then return end
+    local surface = game.get_surface(surface_id)
+    if not surface then return end
 
     -- Generate tiles
-    local tile_type = "brown-refined-concrete"
     local tile_positions = axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
-    terrain.set_tiles(surface_id, tile_positions, tile_type)
-    dungeons.fill_edges_between_dungeon_hexes(dungeon, hex_pos, tile_type)
-    dungeons.fill_corners_between_dungeon_hexes(dungeon, hex_pos, tile_type)
+    terrain.set_tiles(surface_id, tile_positions, prot.tile_type)
+    dungeons.fill_edges_between_dungeon_hexes(dungeon, hex_pos, prot.tile_type)
+    dungeons.fill_corners_between_dungeon_hexes(dungeon, hex_pos, prot.tile_type)
 
     -- Generate turrets and other entities
     dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
@@ -189,6 +196,16 @@ function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotati
     -- Spawn loot
     if dungeons.is_hex_pos_internal(dungeon, hex_pos) then
         dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
+    end
+
+    if surface.name == "fulgora" then
+        local transformation = terrain.get_surface_transformation(surface_id)
+        local hex_center = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
+        surface.create_entity {
+            name = "fulgoran-ruin-attractor",
+            quality = "rare",
+            position = {x = hex_center.x, y = hex_center.y - 4},
+        }
     end
 end
 
@@ -243,10 +260,12 @@ function dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rota
                     end
                 end
                 for _, pos_dir in pairs(entity_positions) do
+                    local quality = prot.qualities[math.random(1, #prot.qualities)]
                     local entity = surface.create_entity {
                         name = entity_name,
                         position = pos_dir.position,
                         direction = pos_dir.direction,
+                        quality = quality,
                     }
                     if entity then
                         table.insert(dungeon.turrets, entity)
@@ -535,7 +554,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
     if not loot_table then return entities end
 
     local loot_value = prot.loot_value * (1 + dist * 0.25)
-    local expected_num_samples = 16
+    local expected_num_samples = prot.rolls
     local min_item_value = loot_value / expected_num_samples / 10
     local max_item_value = math.huge
     local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
