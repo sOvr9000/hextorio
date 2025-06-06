@@ -594,7 +594,6 @@ end
 ---Handle the event where a dungeon chest is picked up.
 ---@param chest LuaEntity
 function dungeons.on_dungeon_chest_picked_up(chest)
-    game.print("picked up")
     local surface = chest.surface
     local transformation = terrain.get_surface_transformation(surface.name)
     local hex_pos = axial.get_hex_containing(chest.position, transformation.scale, transformation.rotation)
@@ -604,7 +603,6 @@ function dungeons.on_dungeon_chest_picked_up(chest)
     dungeons.remove_loot_chest(dungeon, chest)
 
     if dungeons.is_looted(dungeon) then
-        game.print("LOOTED DUNGEON!!!")
         event_system.trigger("dungeon-looted", dungeon)
     end
 end

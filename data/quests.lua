@@ -151,7 +151,6 @@ return {
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"nauvis", 10}}},
             prerequisites = {"getting-somewhere"},
             notes = {"dungeon-location"},
-            has_img = false,
         },
         {
             name = "lazy-looter",
@@ -168,7 +167,6 @@ return {
                 {type = "claim-free-hexes", value = {"nauvis", 20}}
             },
             prerequisites = {"dark-factorian-dungeon"},
-            has_img = false,
         },
 
         -- Vulcanus
@@ -201,7 +199,6 @@ return {
             conditions = {{type = "loot-dungeons-on", value = "vulcanus", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
             prerequisites = {"dark-factorian-dungeon"},
-            has_img = false,
         },
 
         -- Fulgora
@@ -228,7 +225,6 @@ return {
             conditions = {{type = "loot-dungeons-on", value = "fulgora", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 10}}},
             prerequisites = {"dark-factorian-dungeon"},
-            has_img = false,
         },
 
         -- Gleba
@@ -255,7 +251,6 @@ return {
             conditions = {{type = "loot-dungeons-on", value = "gleba", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"gleba", 10}}},
             prerequisites = {"dark-factorian-dungeon"},
-            has_img = false,
         },
 
         -- Aquilo
@@ -288,7 +283,6 @@ return {
             conditions = {{type = "loot-dungeons-on", value = "aquilo", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"aquilo", 10}}},
             prerequisites = {"metallurgic-dungeon", "electromagnetic-dungeon", "biochemical-dungeon"},
-            has_img = false,
         },
         {
             name = "dungeon-mastery",
