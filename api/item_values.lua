@@ -9,7 +9,7 @@ local item_values = {}
 function item_values.init()
     storage.item_values.recipe_tree = lib.get_recipe_tree()
     storage.item_values.recipe_graph = lib.get_recipe_graph(storage.item_values.recipe_tree)
-    -- log(serpent.block(storage.item_values.recipe_tree))
+    log(serpent.block(storage.item_values.recipe_tree))
 
     -- Log spoilable items.
     -- local spoilable = {}

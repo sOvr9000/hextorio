@@ -223,7 +223,7 @@ local casting_piercing_rounds_magazine = {
     enabled = false,
     ingredients = {
         {type = "item", name = "firearm-magazine", amount = 1},
-        {type = "fluid", name = "molten-iron", amount = 25},
+        {type = "fluid", name = "molten-iron", amount = 10},
         {type = "fluid", name = "molten-copper", amount = 10},
     },
     results = {
@@ -238,7 +238,7 @@ local casting_firearm_magazine = {
     energy_required = 1,
     enabled = false,
     ingredients = {
-        {type = "fluid", name = "molten-iron", amount = 40},
+        {type = "fluid", name = "molten-iron", amount = 25},
     },
     results = {
         {type = "item", name = "firearm-magazine", amount = 1},
