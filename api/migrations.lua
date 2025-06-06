@@ -9,6 +9,8 @@ local gui = require "api.gui"
 local quests = require "api.quests"
 local weighted_choice = require "api.weighted_choice"
 local blueprints = require "api.blueprints"
+local loot_tables = require "api.loot_tables"
+local dungeons = require "api.dungeons"
 
 local data_item_ranks = require "data.item_ranks"
 local data_trade_overview = require "data.trade_overview"
@@ -17,6 +19,7 @@ local data_quests = require "data.quests"
 local data_blueprints = require "data.blueprints"
 local data_trades = require "data.trades"
 local data_hex_grid = require "data.hex_grid"
+local data_dungeons = require "data.dungeons"
 
 local migrations = {}
 
@@ -333,6 +336,12 @@ local process_migration = {
     ["0.4.2"] = function()
         storage.cached = {}
         storage.hex_grid.chunk_generation_range_per_player = data_hex_grid.chunk_generation_range_per_player
+        storage.item_values.values = data_item_values.values
+        quests.reinitialize_everything()
+
+        storage.dungeons = data_dungeons
+        loot_tables.init()
+        dungeons.init()
     end,
 }
 
