@@ -1,19 +1,17 @@
 
 local lib = require "api.lib"
 
+---@alias WeightedChoice {[any]: number, __total_weight: number}
+
 local weighted_choice = {}
 
 
 
--- Create a new weighted choice object (which shallow copies the passed weights table)
+---Create a new weighted choice object (which shallow copies the passed weights table)
+---@param weights {[any]: number}
+---@return WeightedChoice
 function weighted_choice.new(weights)
-    -- error if weights is not a table
-    if type(weights) ~= "table" then
-        lib.log_error("weighted_choice.new: weights must be a table")
-    end
-
-    -- error if weights is empty
-    if lib.is_empty_table(weights) then
+    if not next(weights) then
         lib.log_error("weighted_choice.new: weights must not be empty")
     end
 
@@ -49,12 +47,17 @@ function weighted_choice.set_weight(wc, item, weight)
     end
 end
 
--- Get an item's weight
+---Get an item's weight
+---@param wc WeightedChoice
+---@param item any
+---@return number
 function weighted_choice.get_weight(wc, item)
     return wc[item] or 0
 end
 
--- Sample an item from the weighted choice object
+---Sample an item from the weighted choice object
+---@param wc WeightedChoice
+---@return any
 function weighted_choice.choice(wc)
     local r = math.random() * wc["__total_weight"]
     local s = 0
@@ -68,12 +71,10 @@ function weighted_choice.choice(wc)
     end
 end
 
--- Shallow copy a weighted choice object
+---Shallow copy a weighted choice object
+---@param wc WeightedChoice
+---@return WeightedChoice
 function weighted_choice.copy(wc)
-    if not wc then
-        lib.log_error("weighted_choice.copy: wc is nil")
-        return
-    end
     local new_wc = {}
     for item, weight in pairs(wc) do
         new_wc[item] = weight
@@ -81,17 +82,16 @@ function weighted_choice.copy(wc)
     return new_wc
 end
 
--- Add bias (any number from -inf to inf) to an item in the weighted choice object, returning a new object.
--- If bias < 0, the item weight will be adjusted to `wc[item] = wc[item] / -bias`, which means that `item` is `1 / -bias` times as likely to be chosen.
--- If bias > 0, the item weight will be adjusted to `wc[item] = wc[item] * bias`, which means that `item` is `bias` times as likely to be chosen.
--- If bias = 0, the item weight will be unchanged.
+---Add bias (any number from -inf to inf) to an item in the weighted choice object, returning a new object.
+---If bias < 0, the item weight will be adjusted to `wc[item] = wc[item] / -bias`, which means that `item` is `1 / -bias` times as likely to be chosen.
+---If bias > 0, the item weight will be adjusted to `wc[item] = wc[item] * bias`, which means that `item` is `bias` times as likely to be chosen.
+---If bias = 0, the item weight will be unchanged.
+---@param wc WeightedChoice
+---@param item any
+---@param bias number
+---@return WeightedChoice
 function weighted_choice.add_bias(wc, item, bias)
-    if not wc then
-        lib.log_error("weighted_choice.add_bias: wc is nil")
-        return
-    end
     local new_wc = weighted_choice.copy(wc)
-    if not new_wc then return end
     if bias == 0 then return new_wc end
 
     local old_value = new_wc[item]
@@ -101,6 +101,55 @@ function weighted_choice.add_bias(wc, item, bias)
         new_wc[item] = new_wc[item] * bias
     end
     new_wc["__total_weight"] = new_wc["__total_weight"] + new_wc[item] - old_value
+
+    return new_wc
+end
+
+---Apply a bias to all weights, returning a new weighted choice object.
+---Positive bias favors items with smaller weights (rarer items), negative bias favors items with larger weights (common items).
+---@param wc WeightedChoice
+---@param bias number
+---@return WeightedChoice
+function weighted_choice.add_global_bias(wc, bias)
+    local new_wc = weighted_choice.copy(wc)
+    if bias == 0 then return new_wc end
+
+    -- Collect all items and weights (excluding __total_weight)
+    local items = {}
+    local normalized_weights = {}
+    local original_total = new_wc["__total_weight"]
+    local index = 1
+
+    for item, weight in pairs(new_wc) do
+        if item ~= "__total_weight" then
+            items[index] = item
+            -- Normalize to [0,1] range based on total weight
+            normalized_weights[index] = weight / original_total
+            index = index + 1
+        end
+    end
+
+    -- Apply softmax-like transformation
+    -- bias > 0: base < 1, favors small weights (rare items)
+    -- bias < 0: base > 1, favors large weights (common items)
+    local base = math.exp(-bias)
+    local transformed_weights = {}
+    local sum_transformed = 0
+
+    for i = 1, #normalized_weights do
+        transformed_weights[i] = math.pow(base, normalized_weights[i])
+        sum_transformed = sum_transformed + transformed_weights[i]
+    end
+
+    -- Normalize and scale back to preserve original total weight magnitude
+    local new_total_weight = 0
+    for i = 1, #items do
+        local final_weight = (transformed_weights[i] / sum_transformed) * original_total
+        new_wc[items[i]] = final_weight
+        new_total_weight = new_total_weight + final_weight
+    end
+
+    new_wc["__total_weight"] = new_total_weight
 
     return new_wc
 end

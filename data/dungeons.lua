@@ -9,8 +9,7 @@ return {
                 ["dungeon-laser-turret"] = {5},
                 ["dungeon-gun-turret"] = {7},
             },
-            normal_loot_value = 10000,
-            center_loot_value = 100000,
+            loot_value = 10000,
         },
     },
 }

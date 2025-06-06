@@ -1,12 +1,13 @@
 
 ---@alias EntityRadii {[string]: number[]}
----@alias DungeonPrototype {wall_entities: EntityRadii, normal_loot_value: number, center_loot_value: number, max_loot_radius: number}
----@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], last_turret_reload: int}
+---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, max_loot_radius: number}
+---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet}
 
 local lib = require "api.lib"
 local axial = require "api.axial"
 local weighted_choice = require "api.weighted_choice"
-local item_values = require "api.item_values"
+-- local item_values = require "api.item_values"
+local loot_tables = require "api.loot_tables"
 local terrain = require "api.terrain"
 local hex_maze = require "api.hex_maze"
 local hex_sets = require "api.hex_sets"
@@ -25,7 +26,7 @@ function dungeons.init()
     storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
 
     for _, def in pairs(storage.dungeons.defs) do
-        local prot = dungeons.new_prototype(def.wall_entities, def.normal_loot_value, def.center_loot_value)
+        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value)
         if not storage.dungeons.prototypes[def.surface_name] then
             storage.dungeons.prototypes[def.surface_name] = {}
         end
@@ -42,17 +43,21 @@ function dungeons.init()
             end
         end
     end)
+
+    event_system.register_callback("entity-picked-up", function(entity)
+        if entity.name == "dungeon-chest" then
+            dungeons.on_dungeon_chest_picked_up(entity)
+        end
+    end)
 end
 
 ---@param wall_entities EntityRadii
----@param normal_loot_value number
----@param center_loot_value number
+---@param loot_value number
 ---@return DungeonPrototype
-function dungeons.new_prototype(wall_entities, normal_loot_value, center_loot_value)
+function dungeons.new_prototype(wall_entities, loot_value)
     local prot = table.deepcopy {
         wall_entities = wall_entities,
-        normal_loot_value = normal_loot_value,
-        center_loot_value = center_loot_value,
+        loot_value = loot_value,
     }
 
     prot.max_loot_radius = math.huge
@@ -82,7 +87,9 @@ function dungeons.new(surface, prot)
         prototype_idx = prot_idx,
         id = #storage.dungeons.dungeons + 1,
         turrets = {},
+        loot_chests = {},
         last_turret_reload = 0,
+        internal_hexes = {},
     }
 
     return dungeon
@@ -180,8 +187,9 @@ function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotati
     dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
 
     -- Spawn loot
-    -- TODO
-
+    if dungeons.is_hex_pos_internal(dungeon, hex_pos) then
+        dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
+    end
 end
 
 ---Spawn the turrets on a hex in a dungeon.
@@ -332,12 +340,20 @@ function dungeons.init_maze(dungeon, start_pos)
         return false
     end
 
+    -- Determine which hexes are internal.
+    for _, tile in pairs(dungeon.maze.tiles) do
+        local is_internal = #hex_maze.get_adjacent_tiles(dungeon.maze, tile.pos) == 6
+        if is_internal then
+            hex_sets.add(dungeon.internal_hexes, tile.pos)
+        end
+    end
+
     return true
 end
 
 ---Randomly sample allowed positions for a maze to be generated for a dungeon, and also return the resulting adjacent hexes (which weren't included in the selected positions) around the selected positions.
 ---@param surface_id int
----@param start_pos any
+---@param start_pos HexPos
 ---@param amount int
 ---@return HexSet, HexPos[]
 function dungeons.get_positions_for_maze(surface_id, start_pos, amount)
@@ -351,9 +367,17 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount)
     local visited = {} --[[@as HexSet]]
     local open = {start_pos} --[=[@as HexPos[]]=]
 
-    for i = 1, amount do
+    for _ = 1, amount do
         if #open == 0 then break end
-        local idx = math.random(1, #open)
+
+        local weights = {}
+        for i, pos in ipairs(open) do
+            local dist = axial.distance(pos, start_pos)
+            weights[i] = 1 / math.max(1, dist * dist) -- dist is only zero on the start_pos
+        end
+        local wc = weighted_choice.new(weights)
+
+        local idx = weighted_choice.choice(wc)
         local cur = table.remove(open, idx)
 
         -- Add unvisited, unused adjacent hexes to the open list.
@@ -385,6 +409,14 @@ function dungeons.is_hex_pos_used(surface_id, hex_pos)
     end
     -- There may be more logic here in the future.
     return false
+end
+
+---Return whether the given hex position is fully surrounded by other hexes in the same dungeon.
+---@param dungeon Dungeon
+---@param hex_pos HexPos
+---@return boolean
+function dungeons.is_hex_pos_internal(dungeon, hex_pos)
+    return hex_sets.contains(dungeon.internal_hexes, hex_pos)
 end
 
 ---Get the prototype that a dungeon uses.
@@ -469,6 +501,105 @@ function dungeons.try_reload_turrets(dungeon)
     if dungeon.last_turret_reload + TURRET_RELOAD_INTERVAL < game.tick then return end
     dungeon.last_turret_reload = game.tick
     lib.reload_turrets(dungeon.turrets)
+end
+
+---Spawn the loot chests in a dungeon tile.
+---@param dungeon Dungeon
+---@param hex_pos HexPos
+---@return LuaEntity[]
+function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
+    local prot = dungeons.get_prototype_of_dungeon(dungeon)
+    if not prot then
+        lib.log_error("dungeons.spawn_loot: No prototype found for dungeon " .. dungeon.id)
+        return {}
+    end
+
+    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
+    local dist = axial.distance(hex_pos, {q = 0, r = 0}) - planet_size - 1
+    dist = math.max(0, dist) -- Shouldn't need this, but it's here just in case.
+
+    local hex_center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+    local chest = dungeon.surface.create_entity {
+        name = "dungeon-chest",
+        position = hex_center,
+        force = "player",
+    }
+
+    if not chest then return {} end
+    local entities = {chest}
+
+    local inv = chest.get_inventory(defines.inventory.chest)
+    if not inv then return entities end
+
+    local loot_table = loot_tables.get_loot_table(dungeon.surface.name, "dungeon")
+    if not loot_table then return entities end
+
+    local loot_value = prot.loot_value * (1 + dist * 0.25)
+    local expected_num_samples = 16
+    local min_item_value = loot_value / expected_num_samples / 10
+    local max_item_value = math.huge
+    local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
+
+    local max_num_samples = #inv
+
+    local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value)
+    for _, item in pairs(loot_items) do
+        inv.insert {
+            name = item.loot_item.item_name,
+            quality = lib.get_quality_at_tier(item.loot_item.quality_tier),
+            count = item.count,
+        }
+    end
+    inv.sort_and_merge()
+
+    for _, e in pairs(entities) do
+        e.destructible = false
+        table.insert(dungeon.loot_chests, e)
+    end
+
+    return entities
+end
+
+---Remove a chest from a dungeon's record of loot chests.
+---@param dungeon Dungeon
+---@param chest LuaEntity
+function dungeons.remove_loot_chest(dungeon, chest)
+    local index = lib.table_index(dungeon.loot_chests, chest)
+    if not index then
+        lib.log_error("dungeons.remove_loot_chest: Loot chest not found in dungeon")
+        return
+    end
+    table.remove(dungeon.loot_chests, index)
+end
+
+---Handle the event where a dungeon chest is picked up.
+---@param chest LuaEntity
+function dungeons.on_dungeon_chest_picked_up(chest)
+    game.print("picked up")
+    local surface = chest.surface
+    local transformation = terrain.get_surface_transformation(surface.name)
+    local hex_pos = axial.get_hex_containing(chest.position, transformation.scale, transformation.rotation)
+    local dungeon = dungeons.get_dungeon_at_hex_pos(surface.index, hex_pos)
+    if not dungeon then return end
+
+    dungeons.remove_loot_chest(dungeon, chest)
+
+    if dungeons.is_looted(dungeon) then
+        game.print("LOOTED DUNGEON!!!")
+        event_system.trigger("dungeon-looted", dungeon)
+    end
+end
+
+---Return whether the dungeon is fully looted, where all loot chests have been mined.
+---@param dungeon Dungeon
+---@return boolean
+function dungeons.is_looted(dungeon)
+    for _, _chest in pairs(dungeon.loot_chests) do
+        if _chest.valid then -- Chests can become invalid if an /editor mode deconstruction planner is used.
+            return false
+        end
+    end
+    return true
 end
 
 

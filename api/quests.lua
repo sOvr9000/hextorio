@@ -44,6 +44,10 @@ function quests.register_events()
     event_system.register_callback("entity-picked-up", function(entity)
         quests.increment_progress_for_type("place-entity", -1, entity.name)
     end)
+
+    event_system.register_callback("dungeon-looted", function(dungeon)
+        quests.increment_progress_for_type("loot-dungeons-on", 1, dungeon.surface.name)
+    end)
 end
 
 function quests.reinitialize_everything()

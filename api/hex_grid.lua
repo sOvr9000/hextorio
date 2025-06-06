@@ -652,7 +652,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         local bias_wc = weighted_choice.copy(resource_wc)
         local resource = weighted_choice.choice(resource_wc)
 
-        local bias_strength = lib.runtime_setting_value "resource-bias"
+        local bias_strength = lib.runtime_setting_value "resource-bias" --[[@as number]]
 
         -- Make the selected resource more likely to be chosen
         resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
@@ -898,7 +898,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
         local resource = weighted_choice.choice(wc)
-        local bias_strength = lib.runtime_setting_value "resource-bias"
+        local bias_strength = lib.runtime_setting_value "resource-bias" --[[@as number]]
 
         -- Make the selected resource more likely to be chosen
         local resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
@@ -935,7 +935,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
         local resource = weighted_choice.choice(wc)
-        local bias_strength = lib.runtime_setting_value "resource-bias"
+        local bias_strength = lib.runtime_setting_value "resource-bias" --[[@as number]]
 
         -- Make the selected resource more likely to be chosen
         local resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
@@ -977,7 +977,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
         local resource = weighted_choice.choice(wc)
-        local bias_strength = lib.runtime_setting_value "resource-bias"
+        local bias_strength = lib.runtime_setting_value "resource-bias" --[[@as number]]
 
         -- Make the selected resource more likely to be chosen
         local resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)

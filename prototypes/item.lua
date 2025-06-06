@@ -122,6 +122,26 @@ crystalline_fuel.fuel_top_speed_multiplier = 1.36
 local sentient_spider_teslagun = table.deepcopy(data.raw["gun"]["teslagun"])
 sentient_spider_teslagun.name = "sentient-spider-teslagun"
 
+-- Dungeons
+local dungeon_chest = table.deepcopy(data.raw["item"]["steel-chest"])
+dungeon_chest.name = "dungeon-chest"
+dungeon_chest.icon = "__hextorio__/graphics/icons/dungeon-chest.png"
+dungeon_chest.order = "a[items]-d[dungeon-chest]"
+dungeon_chest.place_result = "dungeon-chest"
 
----@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hex_coin, gravity_coin, meteor_coin, hexaprism_coin, hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_capsule, sentient_spider, hexaprism, crystalline_fuel, sentient_spider_teslagun})
+---@diagnostic disable: assign-type-mismatch
+data:extend({
+    hex_coin,
+    gravity_coin,
+    meteor_coin,
+    hexaprism_coin,
+    hexic_transport_belt,
+    hexic_underground_belt,
+    hexic_splitter,
+    demolisher_capsule,
+    sentient_spider,
+    hexaprism,
+    crystalline_fuel,
+    sentient_spider_teslagun,
+    dungeon_chest,
+})

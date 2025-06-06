@@ -222,9 +222,12 @@ function item_values.get_expanded_item_values_for_surface(surface_name)
     return surface_vals
 end
 
-function item_values.get_items_sorted_by_value(surface_name, items_only, allow_coins)
+function item_values.get_items_sorted_by_value(surface_name, items_only, allow_coins, allow_spoilable)
     if allow_coins == nil then
         allow_coins = true
+    end
+    if allow_spoilable == nil then
+        allow_spoilable = true
     end
     local surface_vals = item_values.get_item_values_for_surface(surface_name)
     if not surface_vals then
@@ -234,7 +237,7 @@ function item_values.get_items_sorted_by_value(surface_name, items_only, allow_c
     local sorted_items = {}
     for item_name, _ in pairs(surface_vals) do
         if not items_only or prototypes.item[item_name] then
-            if allow_coins or not lib.is_coin(item_name) then
+            if (allow_coins or not lib.is_coin(item_name)) and (allow_spoilable or not lib.is_spoilable(item_name)) then
                 table.insert(sorted_items, item_name)
             end
         end

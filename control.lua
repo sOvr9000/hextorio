@@ -16,6 +16,7 @@ local item_ranks = require "api.item_ranks"
 local quests = require "api.quests"
 local blueprints = require "api.blueprints"
 local space_platforms = require "api.space_platforms"
+local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
 
 hex_grid.register_events()
@@ -110,6 +111,7 @@ script.on_init(function()
     item_values.init()
     quests.init()
     blueprints.init()
+    loot_tables.init()
     dungeons.init()
 
     -- Disable crash site generation, may be done by other mods anyway.

@@ -134,5 +134,14 @@ boost_max_health(dungeon_wall, wall_max_health_boost)
 boost_resistances(dungeon_wall, {"physical"}, wall_physical_resistance_percentage_boost)
 boost_resistances(dungeon_wall, {"electric"}, 1)
 
+local dungeon_chest = table.deepcopy(data.raw["container"]["steel-chest"])
+dungeon_chest.name = "dungeon-chest"
+dungeon_chest.icon = "__hextorio__/graphics/icons/dungeon-chest.png"
+dungeon_chest.picture.layers[1].filename = "__hextorio__/graphics/entity/dungeon-chest/dungeon-chest.png"
+dungeon_chest.max_health = 9001 -- Functionally pointless, but it makes it seem cooler.
+dungeon_chest.inventory_size = 1000
+dungeon_chest.minable.result = "dungeon-chest"
+dungeon_chest.minable.mining_time = 1
+
 ---@diagnostic disable-next-line assign-type-mismatch
-data:extend({dungeon_laser_turret, dungeon_tesla_turret, dungeon_gun_turret, dungeon_flamethrower_turret, dungeon_rocket_turret, dungeon_artillery_turret, dungeon_railgun_turret, dungeon_wall})
+data:extend({dungeon_laser_turret, dungeon_tesla_turret, dungeon_gun_turret, dungeon_flamethrower_turret, dungeon_rocket_turret, dungeon_artillery_turret, dungeon_railgun_turret, dungeon_wall, dungeon_chest})
