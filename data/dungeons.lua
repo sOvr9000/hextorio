@@ -26,13 +26,15 @@ return {
             wall_entities = {
                 ["dungeon-wall"] = {1, 8},
                 ["dungeon-flamethrower-turret"] = {2, 8},
-                ["dungeon-laser-turret"] = {10, 12, 14},
+                ["dungeon-laser-turret"] = {10},
+                ["dungeon-gun-turret"] = {12},
             },
             loot_value = 75000000,
             rolls = 25,
             qualities = {"uncommon", "rare"},
             tile_type = "black-refined-concrete",
             ammo = {
+                bullet_type = "magmatic-rounds-magazine",
                 flamethrower_type = "light-oil",
             },
         },

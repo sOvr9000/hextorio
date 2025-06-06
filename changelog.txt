@@ -6,8 +6,10 @@ Date: 6/6/25
   Features:
     - Added more quests and rewards.
     - Added plague rockets ammo, technology, recipe, and smoke/particle effect. (used by Gleba dungeon turrets)
+    - Added magmatic bullets ammo, technology, recipe, and special effect. (used by Vulcanus dungeon turrets)
   Changes:
     - [item=rocket] and [item=explosive-rocket] are now also craftable in [entity=biochamber].
+    - [item=firearm-magazine] and [item=piercing-rounds-magazine] are now also craftable in [entity=foundry].
   Balancing:
     - Lower-valued trades are now more common in the more distant hexes from spawn on all planets.
     - Fewer of the more distant hexes than the ones near spawn have resources on all planets.

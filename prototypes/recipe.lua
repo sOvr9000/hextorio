@@ -198,5 +198,65 @@ local plague_rocket = {
     },
 }
 
----@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hexic_transport_belt, hexic_underground_belt, hexic_splitter, demolisher_recipe, sentient_spider_recipe, energized_thruster_fuel, energized_thruster_oxidizer, crystalline_fuel, plague_rocket})
+local magmatic_rounds_magazine = {
+    type = "recipe",
+    name = "magmatic-rounds-magazine",
+    category = "metallurgy",
+    energy_required = 12,
+    enabled = false,
+    ingredients = {
+        {type = "item", name = "piercing-rounds-magazine", amount = 1},
+        {type = "item", name = "tungsten-plate", amount = 4},
+        {type = "item", name = "tungsten-carbide", amount = 3},
+        {type = "fluid", name = "lava", amount = 100},
+    },
+    results = {
+        {type = "item", name = "magmatic-rounds-magazine", amount = 1},
+    },
+}
+
+local casting_piercing_rounds_magazine = {
+    type = "recipe",
+    name = "casting-piercing-rounds-magazine",
+    category = "metallurgy",
+    energy_required = 3,
+    enabled = false,
+    ingredients = {
+        {type = "item", name = "firearm-magazine", amount = 1},
+        {type = "fluid", name = "molten-iron", amount = 25},
+        {type = "fluid", name = "molten-copper", amount = 10},
+    },
+    results = {
+        {type = "item", name = "piercing-rounds-magazine", amount = 1},
+    },
+}
+
+local casting_firearm_magazine = {
+    type = "recipe",
+    name = "casting-firearm-magazine",
+    category = "metallurgy",
+    energy_required = 1,
+    enabled = false,
+    ingredients = {
+        {type = "fluid", name = "molten-iron", amount = 40},
+    },
+    results = {
+        {type = "item", name = "firearm-magazine", amount = 1},
+    },
+}
+
+---@diagnostic disable: assign-type-mismatch
+data:extend({
+    hexic_transport_belt,
+    hexic_underground_belt,
+    hexic_splitter,
+    demolisher_recipe,
+    sentient_spider_recipe,
+    energized_thruster_fuel,
+    energized_thruster_oxidizer,
+    crystalline_fuel,
+    plague_rocket,
+    magmatic_rounds_magazine,
+    casting_piercing_rounds_magazine,
+    casting_firearm_magazine,
+})

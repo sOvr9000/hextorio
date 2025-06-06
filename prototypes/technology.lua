@@ -311,6 +311,40 @@ data:extend({
 
     {
         type = "technology",
+        name = "magmatic-ammo",
+        icon = "__hextorio__/graphics/technology/magmatic-ammo.png",
+        icon_size = 256,
+        prerequisites = {"military-4", "metallurgic-science-pack"},
+        unit = {
+            count = 2000,
+            time = 60,
+            ingredients = {
+                {"automation-science-pack", 1},
+                {"logistic-science-pack", 1},
+                {"military-science-pack", 1},
+                {"chemical-science-pack", 1},
+                {"space-science-pack", 1},
+                {"metallurgic-science-pack", 1},
+            },
+        },
+        effects = {
+            {
+                type  = "unlock-recipe",
+                recipe = "magmatic-rounds-magazine",
+            },
+            {
+                type  = "unlock-recipe",
+                recipe = "casting-piercing-rounds-magazine",
+            },
+            {
+                type  = "unlock-recipe",
+                recipe = "casting-firearm-magazine",
+            },
+        },
+    },
+
+    {
+        type = "technology",
         name = "plague-rocket",
         icon = "__hextorio__/graphics/technology/plague-rocket.png",
         icon_size = 256,
