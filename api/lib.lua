@@ -1279,7 +1279,7 @@ end
 ---@return LuaQualityPrototype
 function lib.get_highest_unlocked_quality()
     local q = prototypes.quality.normal
-    while q.next do
+    while q.next and game.forces.player.is_quality_unlocked(q.next) do
         q = q.next
     end
     return q

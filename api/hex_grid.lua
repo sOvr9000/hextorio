@@ -404,13 +404,41 @@ function hex_grid.switch_hex_core_mode(state, mode)
     return true
 end
 
-function hex_grid.set_trade_allowed_qualities(hex_core, trade)
-    trade.allowed_qualities = {}
+---Set a trade's minimum and maximum allowed qualities. Return whether the trade's resulting quality bounds reflect exactly what was provided to this function.
+---Return true if no qualities were automatically excluded due to hex core quality or currently unlocked qualities.
+---@param hex_core HexState
+---@param trade Trade
+---@param min_quality string|nil If not provided, it will be set to "normal".
+---@param max_quality string|nil If not provided, it will be set to the minimum between the highest unlocked quality and the hex core's current quality.
+---@return boolean
+function hex_grid.set_trade_allowed_qualities(hex_core, trade, min_quality, max_quality)
+    if not min_quality then
+        min_quality = "normal"
+    end
+    if not max_quality then
+        max_quality = lib.get_highest_unlocked_quality().name
+    end
+
+    local min_quality_tier = lib.get_quality_tier(min_quality)
+    local max_quality_tier = lib.get_quality_tier(max_quality)
+
+    if min_quality_tier > max_quality_tier then
+        min_quality_tier, max_quality_tier = max_quality_tier, min_quality_tier
+        min_quality, max_quality = max_quality, min_quality
+    end
+
     local hex_quality_tier = lib.get_quality_tier(hex_core.quality.name)
     local highest_quality_tier = lib.get_quality_tier(lib.get_highest_unlocked_quality().name)
-    for tier = math.min(hex_quality_tier, highest_quality_tier), 1, -1 do
+
+    local adjusted = max_quality_tier > math.min(hex_quality_tier, highest_quality_tier)
+    max_quality_tier = math.min(max_quality_tier, highest_quality_tier, hex_quality_tier)
+
+    trade.allowed_qualities = {}
+    for tier = max_quality_tier, min_quality_tier, -1 do
         table.insert(trade.allowed_qualities, lib.get_quality_at_tier(tier))
     end
+
+    return not adjusted
 end
 
 function hex_grid.update_hex_core_inventory_filters(hex_core_state)

@@ -797,30 +797,6 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         direction = "horizontal",
     }
 
-    if params.show_toggle_trade then
-        local checkbox = trade_flow.add {
-            type = "checkbox",
-            name = "toggle-trade-" .. trade_number,
-            state = trade.active,
-        }
-        checkbox.tooltip = {"hex-core-gui.trade-checkbox-tooltip"}
-        -- checkbox.style.left_margin = 10
-        checkbox.style.left_margin = 5
-        checkbox.style.top_margin = size / 2 + 1
-        -- checkbox.style.top_margin = size / 2 - 5
-    end
-
-    if params.show_tag_creator then
-        local tag_button = trade_flow.add {
-            type = "sprite-button",
-            name = "tag-button-" .. trade_number,
-            sprite = "utility/show_tags_in_map_view",
-        }
-        -- tag_button.style.left_margin = 5
-        tag_button.style.top_margin = 10
-        tag_button.tooltip = {"hex-core-gui.tag-button"}
-    end
-
     if params.show_core_finder then
         local core_finder_button = trade_flow.add {
             type = "sprite-button",
@@ -843,8 +819,6 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
     }
     trade_frame.style.left_margin = 10
     trade_frame.style.natural_height = (size + 20) / 1.2 - 5
-    -- trade_frame.style.horizontally_stretchable = true
-    -- gui.auto_width(trade_frame)
     trade_frame.style.width = 381 / 1.2
 
     local trade_table = trade_frame.add {
@@ -852,6 +826,57 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         name = "trade-table",
         column_count = 7,
     }
+
+    if params.expanded then
+        local trade_control_flow = trade_frame.add {
+            type = "flow",
+            name = "trade-control-flow",
+            direction = "horizontal",
+        }
+
+        if params.show_toggle_trade then
+            local sprite
+            if trade.active then
+                sprite = "virtual-signal/signal-check"
+            else
+                sprite = "virtual-signal/signal-deny"
+            end
+            local toggle_trade_button = trade_control_flow.add {
+                type = "sprite-button",
+                name = "toggle-trade-" .. trade_number,
+                sprite = sprite,
+            }
+            toggle_trade_button.tooltip = {"hex-core-gui.trade-checkbox-tooltip"}
+        end
+
+        if params.show_tag_creator then
+            local tag_button = trade_control_flow.add {
+                type = "sprite-button",
+                name = "tag-button-" .. trade_number,
+                sprite = "utility/show_tags_in_map_view",
+            }
+            tag_button.tooltip = {"hex-core-gui.tag-button"}
+        end
+
+        if params.show_quality_bounds then
+            local allowed_qualities = trade.allowed_qualities or {"normal"}
+            local min_quality = trade_control_flow.add {
+                type = "choose-elem-button",
+                name = "min-quality-" .. trade_number,
+                elem_type = "signal",
+                signal = {type = "quality", name = allowed_qualities[#allowed_qualities]},
+            }
+            min_quality.tooltip = {"hex-core-gui.minimum-trade-quality"}
+
+            local max_quality = trade_control_flow.add {
+                type = "choose-elem-button",
+                name = "max-quality-" .. trade_number,
+                elem_type = "signal",
+                signal = {type = "quality", name = allowed_qualities[1]},
+            }
+            max_quality.tooltip = {"hex-core-gui.maximum-trade-quality"}
+        end
+    end
 
     local total_empty = 0
     for i = 1, 3 do
@@ -888,6 +913,8 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         name = "trade-arrow",
         sprite = "trade-arrow",
     }
+    trade_arrow_sprite.style.width = 50 / 1.2
+    trade_arrow_sprite.style.height = 50 / 1.2
 
     local prod = trades.get_productivity(trade, quality_to_show)
     if params.show_productivity and prod ~= 0 then
@@ -1080,12 +1107,19 @@ function gui.update_hex_core(player)
         frame["trades-quality-warning-2"].caption = gui.get_warning_caption {"hex-core-gui.trades-quality-warning-2", "[color=red]" .. lib.format_percentage(-trades.get_productivity_modifier(quality_name), 0, true) .. "[.color]"}
     end
 
+    local show_quality_bounds = false
+    if state.claimed then
+        show_quality_bounds = lib.get_highest_unlocked_quality().name ~= "normal"
+    end
+
     gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
         show_toggle_trade = state.claimed,
         show_tag_creator = true,
         show_core_finder = false,
         show_productivity = true,
+        show_quality_bounds = show_quality_bounds,
         quality_to_show = quality_name,
+        expanded = true,
     })
     gui.update_hex_core_resources(player)
 end
@@ -1545,7 +1579,7 @@ function gui.update_trade_overview(player)
     storage.trade_overview.trades[player.name] = trades_list
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
-    gui.update_trades_scroll_pane(player, trade_table, trades_list, {show_toggle_trade=false, show_tag_creator=false, show_core_finder=true, show_productivity=false})
+    gui.update_trades_scroll_pane(player, trade_table, trades_list, {show_toggle_trade=false, show_tag_creator=false, show_core_finder=true, show_productivity=false, expanded=false, show_quality_bounds=false})
 end
 
 function gui.update_catalog(player, selected_item_surface, selected_item_name)
@@ -2173,9 +2207,7 @@ function gui.on_debug_complete_quest_button_click(player, element)
 end
 
 function gui.on_checkbox_click(player, element)
-    if element.name:sub(1, 12) == "toggle-trade" then
-        gui.on_toggle_trade_checkbox_click(player, element)
-    elseif element.parent.name == "show-only-claimed" or element.parent.name == "exact-inputs-match" or element.parent.name == "exact-outputs-match" then
+    if element.parent.name == "show-only-claimed" or element.parent.name == "exact-inputs-match" or element.parent.name == "exact-outputs-match" then
         gui.on_trade_overview_filter_changed(player)
     end
 end
@@ -2244,7 +2276,7 @@ function gui.on_quest_name_selected(player, element)
     gui.update_questbook(player)
 end
 
-function gui.on_toggle_trade_checkbox_click(player, element)
+function gui.on_toggle_trade_button_click(player, element)
     local hex_core = player.opened
     if not hex_core then return end
 
@@ -2252,10 +2284,13 @@ function gui.on_toggle_trade_checkbox_click(player, element)
     if not state then return end
 
     local trade_number = tonumber(element.name:sub(14))
-    hex_grid.set_trade_active(state, trade_number, element.state)
+    local active = element.sprite == "virtual-signal/signal-check"
+    hex_grid.set_trade_active(state, trade_number, not active)
+    gui.update_hex_core(player)
 end
 
 function gui.on_sprite_button_click(player, element)
+    -- ALL of this is EXTREMELY ugly and hard to manage, I will have to clean it up later and utilize a "handler" type of structure, probably using my event_system or implementing a new system for registering callbacks during GUI initialization.
     if element.name == "catalog-item" then
         gui.on_catalog_item_click(player, element)
     elseif element.name == "frame-close-button" then
@@ -2287,12 +2322,16 @@ function gui.on_sprite_button_click(player, element)
             elseif gui.is_descendant_of(element, "trade-overview") and element.parent.name == "trade-table" then
                 gui.on_trade_overview_item_clicked(player, element)
             elseif gui.is_descendant_of(element, "hex-core") and element.parent.name ~= "hex-control-flow" then
-                gui.on_hex_core_trade_item_clicked(player, element)
+                if element.parent.name == "trade-control-flow" then
+                    gui.on_hex_core_control_flow_button_clicked(player, element)
+                else
+                    gui.on_hex_core_trade_item_clicked(player, element)
+                end
             elseif gui.is_descendant_of(element, "catalog") and element.parent.name == "control-flow" then
                 gui.on_catalog_control_button_clicked(player, element)
             elseif gui.is_descendant_of(element, "quantum-bazaar") then
                 gui.on_quantum_bazaar_button_clicked(player, element)
-            else -- all of this is EXTREMELY ugly, I will have to clean it up later
+            else
                 if element.parent.parent then
                     if element.parent.parent.name == "planet-flow" then
                         if element.parent["status"].sprite == "check-mark-green" then
@@ -2440,6 +2479,12 @@ function gui.set_trade_overview_item_filters(player, input_items, output_items)
     end
 
     gui.update_trade_overview(player)
+end
+
+function gui.on_hex_core_control_flow_button_clicked(player, element)
+    if element.name:sub(1, 13) == "toggle-trade-" then
+        gui.on_toggle_trade_button_click(player, element)
+    end
 end
 
 function gui.on_hex_core_trade_item_clicked(player, element)
@@ -2710,7 +2755,62 @@ function gui.on_gui_elem_changed(event)
         gui.on_trade_overview_filter_changed(player)
     elseif gui.is_descendant_of(event.element, "catalog") then
         gui.on_quantum_bazaar_changed(player, event.element)
+    elseif gui.is_descendant_of(event.element, "trade-control-flow") then
+        gui.on_quality_bound_selected(player, event.element)
     end
+end
+
+---Reset a choose-elem-button's element value to a valid quality.
+---@param player LuaPlayer
+---@param element LuaGuiElement
+---@param hex_core_quality string|nil
+function gui.reset_quality_bound(player, element, hex_core_quality)
+    if element.name:sub(1, 12) == "min-quality-" then
+        element.elem_value = {type = "quality", name = "normal"}
+    elseif element.name:sub(1, 12) == "max-quality-" then
+        local quality_tier = lib.get_quality_tier(lib.get_highest_unlocked_quality().name)
+        if hex_core_quality then
+            quality_tier = math.min(quality_tier, lib.get_quality_tier(hex_core_quality))
+        end
+        element.elem_value = {type = "quality", name = lib.get_quality_at_tier(quality_tier)}
+    end
+end
+
+function gui.on_quality_bound_selected(player, element)
+    local signal = element.elem_value
+
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    if not signal then
+        gui.reset_quality_bound(player, element, hex_core.quality.name)
+        signal = element.elem_value
+    elseif signal.type ~= "quality" then
+        player.print({"hextorio.invalid-quality-selected"})
+        gui.reset_quality_bound(player, element, hex_core.quality.name)
+        signal = element.elem_value
+    end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    local trade_number = tonumber(element.name:sub(13))
+    trade = trades.get_trade_from_id(state.trades[trade_number])
+    if not trade then return end
+
+    local adjusted = false
+    if element.name:sub(1, 12) == "min-quality-" then
+        adjusted = not hex_grid.set_trade_allowed_qualities(hex_core, trade, signal.name, trade.allowed_qualities[1])
+    elseif element.name:sub(1, 12) == "max-quality-" then
+        adjusted = not hex_grid.set_trade_allowed_qualities(hex_core, trade, trade.allowed_qualities[#trade.allowed_qualities], signal.name)
+    end
+
+    if adjusted then
+        player.print({"hextorio.quality-bounds-adjusted"})
+        element.elem_value = nil
+    end
+
+    gui.update_hex_core(player)
 end
 
 function gui.get_frame_from_close_button(close_button)
