@@ -58,6 +58,8 @@ hidden_loader.resistances = {
     },
 }
 
+hidden_loader.selection_priority = 51 -- Not so hidden anymore.
+
 
 
 -- BELTS

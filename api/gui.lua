@@ -209,8 +209,8 @@ function gui.init_hex_core(player)
     local teleport = hex_control_flow.add {type = "sprite-button", name = "teleport", sprite = "virtual-signal/down-arrow"}
     teleport.tooltip = {"hex-core-gui.teleport-tooltip"}
 
-    local unloader_filters = hex_control_flow.add {type = "sprite-button", name = "unloader-filters", sprite = "item/loader"}
-    unloader_filters.tooltip = {"hex-core-gui.unloader-filters-tooltip"}
+    -- local unloader_filters = hex_control_flow.add {type = "sprite-button", name = "unloader-filters", sprite = "item/loader"}
+    -- unloader_filters.tooltip = {"hex-core-gui.unloader-filters-tooltip"}
 
     local supercharge = hex_control_flow.add {type = "sprite-button", name = "supercharge", sprite = "item/electric-mining-drill"}
 
@@ -231,11 +231,11 @@ function gui.init_hex_core(player)
 
     local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/deconstruction_mark"}
 
-    local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
-    for i, dir in ipairs {"west", "north", "south", "east"} do
-        local unloader_filters_dir = unloader_filters_flow.add {type = "sprite-button", name = dir, sprite = "arrow-" .. dir}
-    end
-    unloader_filters_flow.visible = false
+    -- local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
+    -- for i, dir in ipairs {"west", "north", "south", "east"} do
+    --     local unloader_filters_dir = unloader_filters_flow.add {type = "sprite-button", name = dir, sprite = "arrow-" .. dir}
+    -- end
+    -- unloader_filters_flow.visible = false
 
     local delete_core_confirmation = hex_core_gui.add {type = "flow", name = "delete-core-confirmation", direction = "horizontal"}
     delete_core_confirmation.visible = false
@@ -1035,7 +1035,7 @@ function gui.update_hex_core(player)
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["stats"].tooltip = lib.get_str_from_hex_core_stats(hex_grid.get_hex_core_stats(state))
         frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation" and player.character and state.hex_core and player.character.surface.name == state.hex_core.surface.name
-        frame["hex-control-flow"]["unloader-filters"].enabled = true
+        -- frame["hex-control-flow"]["unloader-filters"].enabled = true
         frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging" and not coin_tiers.is_zero(hex_grid.get_supercharge_cost(hex_core))
         if frame["hex-control-flow"]["supercharge"].visible then
             frame["hex-control-flow"]["supercharge"].tooltip = {"",
@@ -1091,7 +1091,7 @@ function gui.update_hex_core(player)
     end
 
     frame["delete-core-confirmation"].visible = false
-    frame["unloader-filters-flow"].visible = false
+    -- frame["unloader-filters-flow"].visible = false
 
     local quality_dropdown = frame["trades-header"]["quality-dropdown"]
     local quality_name = gui.get_quality_name_from_dropdown(quality_dropdown)
@@ -2306,15 +2306,15 @@ function gui.on_sprite_button_click(player, element)
         gui.on_confirmation_button_click(player, element)
     elseif element.name:sub(-18) == "-mode-confirmation" then
         gui.on_hex_mode_confirmation_button_click(player, element)
-    elseif element.name == "unloader-filters" then
-        gui.on_unloader_filters_button_click(player, element)
+    -- elseif element.name == "unloader-filters" then
+    --     gui.on_unloader_filters_button_click(player, element)
     elseif element.name == "upgrade-quality" then
         gui.on_upgrade_quality_button_click(player, element)
     else
         if element.parent then
-            if element.parent.name == "unloader-filters-flow" then
-                gui.on_unloader_filters_direction_click(player, element)
-            elseif element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
+            -- if element.parent.name == "unloader-filters-flow" then
+                -- gui.on_unloader_filters_direction_click(player, element)
+            if element.name:sub(-5) == "-mode" and element.parent.name == "hex-control-flow" then
                 gui.on_hex_mode_button_click(player, element)
             elseif gui.is_descendant_of(element, "trade-overview") and element.parent.name == "trade-table" then
                 gui.on_trade_overview_item_clicked(player, element)
@@ -2523,28 +2523,28 @@ function gui.on_hex_mode_confirmation_button_click(player, element)
     end
 end
 
-function gui.on_unloader_filters_button_click(player, element)
-    element.parent.parent["unloader-filters-flow"].visible = true
-    element.enabled = false
-end
+-- function gui.on_unloader_filters_button_click(player, element)
+--     element.parent.parent["unloader-filters-flow"].visible = true
+--     element.enabled = false
+-- end
 
-function gui.on_unloader_filters_direction_click(player, element)
-    local hex_core = player.opened
-    if not hex_core then return end
+-- function gui.on_unloader_filters_direction_click(player, element)
+--     local hex_core = player.opened
+--     if not hex_core then return end
 
-    local dir = element.name
-    local entities = player.surface.find_entities_filtered{
-        name = "hex-core-loader",
-        area = {{hex_core.position.x - 2, hex_core.position.y - 2}, {hex_core.position.x + 2, hex_core.position.y + 2}},
-    }
-    for _, e in pairs(entities) do
-        if e.direction == defines.direction[dir] and e.loader_type == "output" then
-            gui.close_all(player)
-            player.opened = e
-            break
-        end
-    end
-end
+--     local dir = element.name
+--     local entities = player.surface.find_entities_filtered{
+--         name = "hex-core-loader",
+--         area = {{hex_core.position.x - 2, hex_core.position.y - 2}, {hex_core.position.x + 2, hex_core.position.y + 2}},
+--     }
+--     for _, e in pairs(entities) do
+--         if e.direction == defines.direction[dir] and e.loader_type == "output" then
+--             gui.close_all(player)
+--             player.opened = e
+--             break
+--         end
+--     end
+-- end
 
 function gui.on_clear_filters_button_click(player, element)
     local filter_frame = element.parent.parent
