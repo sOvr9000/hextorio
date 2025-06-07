@@ -10,6 +10,7 @@ if lib.data.is_hextreme_enabled() then
         level = 8,
         mining_drill_resource_drain_multiplier = 0.08333333333333333333333,
         science_pack_drain_multiplier = 0.90,
+        beacon_power_usage_multiplier = 1/9,
         subgroup = "qualities",
         order = "e0", -- right after legendary, even if other mods add more qualities
     }

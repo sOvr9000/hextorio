@@ -5,6 +5,7 @@ Date: 10/6/25
     - Improved trade UI.
   Bugfixes:
     - Fixed that some coin sprites would have tooltips with non-integer values while viewing higher quality trades in hex cores.
+    - Fixed that hextreme quality was not decreasing the power consumption of beacons like other qualities do.
   Features:
     - It is now possible to set which qualities a trade can use.
   Ease of use:
