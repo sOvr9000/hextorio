@@ -913,8 +913,10 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         name = "trade-arrow",
         sprite = "trade-arrow",
     }
-    trade_arrow_sprite.style.width = 50 / 1.2
-    trade_arrow_sprite.style.height = 50 / 1.2
+    trade_arrow_sprite.style.width = size / 1.2
+    trade_arrow_sprite.style.height = size / 1.2
+    trade_arrow_sprite.style.top_margin = 2
+    gui.give_trade_arrow_tooltip(trade_arrow_sprite, trade, quality_to_show, quality_cost_mult)
 
     local prod = trades.get_productivity(trade, quality_to_show)
     if params.show_productivity and prod ~= 0 then
@@ -930,11 +932,6 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         prod_bar.style.horizontally_squashable = true
         prod_bar.style.horizontally_stretchable = true
     end
-
-    trade_arrow_sprite.style.width = size / 1.2
-    trade_arrow_sprite.style.height = size / 1.2
-    trade_arrow_sprite.style.top_margin = 2
-    gui.give_trade_arrow_tooltip(trade_arrow_sprite, trade, quality_to_show, quality_cost_mult)
 
     for i = 1, 3 do
         local j = 4 - i
