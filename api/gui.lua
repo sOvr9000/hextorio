@@ -948,7 +948,7 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
                 local tier = coin_tiers.get_tier_for_display(coin)
                 local coin_name = coin_tiers.get_name_of_tier(tier)
                 local base_value, other_value = coin_tiers.to_base_values(coin, tier)
-                output.number = other_value
+                output.number = math.ceil(other_value)
                 output.sprite = "item/" .. coin_name
             else
                 output.quality = quality_to_show
