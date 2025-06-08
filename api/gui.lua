@@ -183,7 +183,7 @@ function gui.init_hex_core(player)
     hex_core_gui.caption = {"hex-core-gui.title"}
     -- gui.add_titlebar(hex_core_gui, {"hex-core-gui.title"})
     -- hex_core_gui.style.size = {width = 444, height = 625}
-    hex_core_gui.style.width = 444
+    hex_core_gui.style.width = 380
     hex_core_gui.style.natural_height = 625
     hex_core_gui.style.vertically_stretchable = true
 
