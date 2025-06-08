@@ -394,6 +394,10 @@ function gui.init_trade_overview(player)
     local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact-outputs-match"}}
     toggle_exact_outputs_match_label.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
 
+    local max_trades_flow = right_frame.add {type = "flow", name = "max-trades-flow", direction = "horizontal"}
+    local max_trades_label = max_trades_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-trades"}}
+    local max_trades_dropdown = max_trades_flow.add {type = "drop-down", name = "dropdown", selected_index = 1, items = {{"", 10}, {"", 25}, {"", 100}, {"hextorio-gui.all"}}}
+
     right_frame.add {type = "line", direction = "horizontal"}
 
     local sort_method_flow = right_frame.add {type = "flow", name = "sort-method", direction = "horizontal"}
@@ -1573,6 +1577,14 @@ function gui.update_trade_overview(player)
         table.sort(trades_list, directed_sort_func)
     end
 
+    if filter.max_trades and filter.max_trades < math.huge then
+        local to_show = {}
+        for i = 1, filter.max_trades do
+            to_show[i] = trades_list[i]
+        end
+        trades_list = to_show
+    end
+
     storage.trade_overview.trades[player.name] = trades_list
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
@@ -2232,6 +2244,8 @@ end
 
 function gui.on_dropdown_item_selected(player, element)
     if element.parent.name == "sort-method" then
+        gui.on_trade_overview_filter_changed(player)
+    elseif element.parent.name == "max-trades-flow" then
         gui.on_trade_overview_filter_changed(player)
     elseif element.name == "quality-dropdown" then
         gui.on_quality_dropdown_selected(player, element)
@@ -2924,6 +2938,20 @@ function gui.update_player_trade_overview_filters(player)
     local sorting_dropdown = filter_frame["right"]["sort-method"]["dropdown"]
     filter.sorting.method = sorting_dropdown.get_item(sorting_dropdown.selected_index)[1]:sub(19)
     filter.sorting.ascending = filter_frame["right"]["sort-direction"].switch_state == "left"
+
+    local max_trades
+    local max_trades_dropdown = filter_frame["right"]["max-trades-flow"]["dropdown"]
+    if max_trades_dropdown.selected_index == 0 then
+        max_trades = math.huge
+    else
+        local selected = max_trades_dropdown.items[max_trades_dropdown.selected_index]
+        if selected[1] == "hextorio-gui.all" then
+            max_trades = math.huge
+        else
+            max_trades = tonumber(selected[2])
+        end
+    end
+    filter.max_trades = max_trades
 end
 
 function gui.swap_trade_overview_content_filters(player)
