@@ -475,6 +475,19 @@ function gui.init_trade_overview(player)
 
     local trade_table = scroll_pane.add {type = "table", name = "table", column_count = 2}
     trade_table.style.horizontal_spacing = 109 / 1.2
+
+    for surface_name, _ in pairs(storage.trade_overview.allowed_planet_filters) do
+        if not planet_flow[surface_name] then
+            local enabled = game.get_surface(surface_name) ~= nil
+            local surface_sprite = filter_frame["left"]["planet-flow"].add {
+                type = "sprite-button",
+                name = surface_name,
+                sprite = "planet-" .. surface_name,
+                toggled = enabled,
+                enabled = enabled,
+            }
+        end
+    end
 end
 
 function gui.init_catalog(player)
@@ -1390,19 +1403,10 @@ function gui.update_trade_overview(player)
         frame = player.gui.screen["trade-overview"]
     end
 
-    -- Ensure that all available planets are listed
+    -- Ensure that all available planets are enabled
     local filter_frame = frame["filter-frame"]
-    for surface_name, _ in pairs(game.surfaces) do
-        if storage.trade_overview.allowed_planet_filters[surface_name] then
-            if not filter_frame["left"]["planet-flow"][surface_name] then
-                local surface_sprite = filter_frame["left"]["planet-flow"].add {
-                    type = "sprite-button",
-                    name = surface_name,
-                    sprite = "planet-" .. surface_name,
-                    toggled = true,
-                }
-            end
-        end
+    for surface_name, _ in pairs(storage.trade_overview.allowed_planet_filters) do
+        filter_frame["left"]["planet-flow"][surface_name].enabled = game.get_surface(surface_name) ~= nil
     end
 
     filter_frame["right"]["max-inputs-flow"]["label"].caption = {"hextorio-gui.max-inputs", filter_frame["right"]["max-inputs-flow"]["slider"].slider_value}
@@ -2589,7 +2593,7 @@ function gui.on_clear_filters_button_click(player, element)
     filter_frame["right"]["exact-outputs-match"]["checkbox"].state = false
     filter_frame["right"]["max-inputs-flow"]["slider"].slider_value = filter_frame["right"]["max-inputs-flow"]["slider"].get_slider_maximum()
     filter_frame["right"]["max-outputs-flow"]["slider"].slider_value = filter_frame["right"]["max-outputs-flow"]["slider"].get_slider_maximum()
-    filter_frame["right"]["max-trades-flow"]["dropdown"].selected_index = #filter_frame["right"]["max-trades-flow"]["dropdown"].items
+    -- filter_frame["right"]["max-trades-flow"]["dropdown"].selected_index = #filter_frame["right"]["max-trades-flow"]["dropdown"].items
 
     gui.on_trade_overview_filter_changed(player)
 end
