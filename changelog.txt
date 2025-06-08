@@ -1,16 +1,19 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
-Date: 10/6/25
+Date: 8/6/25
   Features:
-    - Implemented Sentient Spider feature: Build Mode
+    - Added mod setting to change the shapes of ore patches.
   Gui:
-    - Improved trade UI.
+    - Improved hex core trade UI.
   Bugfixes:
     - Fixed that some coin sprites would have tooltips with non-integer values while viewing higher quality trades in hex cores.
     - Fixed that hextreme quality was not decreasing the power consumption of beacons like other qualities do.
+  Changes:
+    - Clicking on a GPS tag in chat no longer opens pinged hex cores.
   Features:
     - It is now possible to set which qualities a trade can use.
   Ease of use:
+    - Clicking on the "find trade" button in the trade overview now immediately takes your remote view to the relevant hex core and opens it up for you, instead of pinging it in chat for you to click it manually.
     - Output loaders of hex cores can now be clicked directly to set their filters rather than having to go through the hex core interface.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.3

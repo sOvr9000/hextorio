@@ -2604,22 +2604,34 @@ end
 
 function gui.on_core_finder_button_click(player, element)
     if not storage.trade_overview.trades[player.name] then
-        player.print("player trades not found")
-        player.print(element.name)
+        lib.log_error("gui.on_core_finder_button_click: Player trades list not found")
         return
     end
+
     local trade_number = tonumber(element.name:sub(20))
+    if not trade_number then
+        lib.log_error("gui.on_core_finder_button_click: Trade number could not be determined from element name: " .. element.name)
+        return
+    end
+
     local trade = storage.trade_overview.trades[player.name][trade_number]
     if not trade then
-        player.print("No trade found.")
+        lib.log_error("gui.on_core_finder_button_click: No trade found from trade overview")
         return
     end
+
     if not trade.hex_core_state then
-        player.print("No core found.")
+        lib.log_error("gui.on_core_finder_button_click: No core found from trade overview")
         return
     end
-    local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
-    player.print(gps_str)
+
+    player.set_controller {
+        type = defines.controllers.remote,
+        position = trade.hex_core_state.hex_core.position,
+        surface = trade.hex_core_state.hex_core.surface
+    }
+
+    player.opened = trade.hex_core_state.hex_core
 end
 
 function gui.on_tag_button_click(player, element)
