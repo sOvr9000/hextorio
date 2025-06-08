@@ -27,6 +27,15 @@ function quests.register_events()
         end
     end)
 
+    event_system.register_callback("command-hextorio-debug", function(player, params)
+        local quest = quests.get_quest_from_name "find-some-trades"
+        if quest then
+            quests.complete_quest(quest)
+        else
+            lib.log_error("Couldn't find quest to unlock trade overview")
+        end
+    end)
+
     event_system.register_callback("spawner-rammed", function(spawner, vehicle)
         quests.increment_progress_for_type "biter-ramming"
     end)

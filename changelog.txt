@@ -2,6 +2,10 @@
 Version: 1.0.0
 Date: 8/6/25
   Features:
+    - It is now possible to set which qualities a trade can use.
+    - Added trade overview filters for maximum number of input and output items in trades.
+    - Added trade overview filter for maximum number of trades to be shown.
+        Helps with UPS if you specify enough filters to not have to search countless trades.
     - Added mod setting to change the shapes of ore patches.
   Gui:
     - Improved hex core trade UI.
@@ -10,10 +14,8 @@ Date: 8/6/25
     - Fixed that hextreme quality was not decreasing the power consumption of beacons like other qualities do.
   Changes:
     - Clicking on a GPS tag in chat no longer opens pinged hex cores.
-  Features:
-    - It is now possible to set which qualities a trade can use.
   Ease of use:
-    - Clicking on the "find trade" button in the trade overview now immediately takes your remote view to the relevant hex core and opens it up for you, instead of pinging it in chat for you to click it manually.
+    - Clicking on the "find trade" button in the trade overview now immediately takes your remote view to the relevant hex core and opens it up for you.
     - Output loaders of hex cores can now be clicked directly to set their filters rather than having to go through the hex core interface.
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.3

@@ -394,9 +394,22 @@ function gui.init_trade_overview(player)
     local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact-outputs-match"}}
     toggle_exact_outputs_match_label.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
 
+    local max_input_items_flow = right_frame.add {type = "flow", name = "max-inputs-flow", direction = "horizontal"}
+    local max_input_items_label = max_input_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-inputs"}}
+    max_input_items_label.style.top_margin = -4
+    gui.auto_width(max_input_items_label)
+    local max_input_items_slider = max_input_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+
+    local max_output_items_flow = right_frame.add {type = "flow", name = "max-outputs-flow", direction = "horizontal"}
+    local max_output_items_label = max_output_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-outputs"}}
+    max_output_items_label.style.top_margin = -4
+    gui.auto_width(max_output_items_label)
+    local max_output_items_slider = max_output_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+
     local max_trades_flow = right_frame.add {type = "flow", name = "max-trades-flow", direction = "horizontal"}
     local max_trades_label = max_trades_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-trades"}}
-    local max_trades_dropdown = max_trades_flow.add {type = "drop-down", name = "dropdown", selected_index = 1, items = {{"", 10}, {"", 25}, {"", 100}, {"hextorio-gui.all"}}}
+    max_trades_label.style.top_margin = 3
+    local max_trades_dropdown = max_trades_flow.add {type = "drop-down", name = "dropdown", selected_index = 4, items = {{"", 10}, {"", 25}, {"", 100}, {"hextorio-gui.all"}}}
 
     right_frame.add {type = "line", direction = "horizontal"}
 
@@ -1475,6 +1488,22 @@ function gui.update_trade_overview(player)
         if filter.exact_outputs_match then
             for _, output in pairs(trade.output_items) do
                 if not filter.output_items_lookup[output.name] then
+                    return true
+                end
+            end
+        end
+        if filter.num_item_bounds then
+            local input_bounds = filter.num_item_bounds.inputs
+            if input_bounds then
+                local num_inputs = #trade.input_items
+                if num_inputs < (input_bounds.min or 1) or num_inputs > (input_bounds.max or math.huge) then
+                    return true
+                end
+            end
+            local output_bounds = filter.num_item_bounds.outputs
+            if output_bounds then
+                local num_outputs = #trade.output_items
+                if num_outputs < (output_bounds.min or 1) or num_outputs > (output_bounds.max or math.huge) then
                     return true
                 end
             end
@@ -2577,6 +2606,9 @@ function gui.on_clear_filters_button_click(player, element)
     filter_frame["right"]["show-only-claimed"]["checkbox"].state = false
     filter_frame["right"]["exact-inputs-match"]["checkbox"].state = false
     filter_frame["right"]["exact-outputs-match"]["checkbox"].state = false
+    filter_frame["right"]["max-inputs-flow"]["slider"].slider_value = filter_frame["right"]["max-inputs-flow"]["slider"].get_slider_maximum()
+    filter_frame["right"]["max-outputs-flow"]["slider"].slider_value = filter_frame["right"]["max-outputs-flow"]["slider"].get_slider_maximum()
+    filter_frame["right"]["max-trades-flow"]["dropdown"].selected_index = #filter_frame["right"]["max-trades-flow"]["dropdown"].items
 
     gui.on_trade_overview_filter_changed(player)
 end
@@ -2783,6 +2815,15 @@ function gui.on_gui_elem_changed(event)
     end
 end
 
+function gui.on_gui_value_changed(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if gui.is_descendant_of(event.element, "trade-overview") then
+        gui.on_trade_overview_filter_changed(player)
+    end
+end
+
 ---Reset a choose-elem-button's element value to a valid quality.
 ---@param player LuaPlayer
 ---@param element LuaGuiElement
@@ -2932,6 +2973,17 @@ function gui.update_player_trade_overview_filters(player)
         filter.output_items_lookup = sets.new(filter.output_items)
     end
 
+    filter.num_item_bounds = {
+        inputs = {
+            min = 1,
+            max = filter_frame["right"]["max-inputs-flow"]["slider"].slider_value,
+        },
+        outputs = {
+            min = 1,
+            max = filter_frame["right"]["max-outputs-flow"]["slider"].slider_value,
+        },
+    }
+
     -- Sorting stuff
     filter.sorting = {}
 
@@ -2952,6 +3004,8 @@ function gui.update_player_trade_overview_filters(player)
         end
     end
     filter.max_trades = max_trades
+
+    -- TODO: min/max num inputs/outputs
 end
 
 function gui.swap_trade_overview_content_filters(player)
