@@ -338,13 +338,30 @@ function lib.chunk_to_rect(chunk_pos)
         x = chunk_pos.x * 32,
         y = chunk_pos.y * 32
     }
-    
+
     local bottom_right = {
         x = top_left.x + 31,
         y = top_left.y + 31
     }
-    
+
     return top_left, bottom_right
+end
+
+function lib.get_chunk_pos_from_tile_position(pos)
+    return {x = math.floor((pos.x or pos[1]) / 32), y = math.floor((pos.y or pos[2]) / 32)}
+end
+
+function lib.get_area_for_chunk_position(chunk_pos)
+    return {
+        left_top = {
+            x = chunk_pos.x * 32,
+            y = chunk_pos.y * 32,
+        },
+        right_bottom = {
+            x = chunk_pos.x * 32 + 31,
+            y = chunk_pos.y * 32 + 31,
+        },
+    }
 end
 
 function lib.is_position_in_rect(position, top_left, bottom_right)
@@ -955,13 +972,10 @@ function lib.tables_equal(tab1, tab2)
     return true
 end
 
----@param surface LuaSurface|string
+---@param surface_name string
 ---@return boolean
-function lib.is_space_platform(surface)
-    if type(surface) ~= "string" then
-        return lib.is_space_platform(surface.name)
-    end
-    return surface:sub(1, 9) == "platform-"
+function lib.is_space_platform(surface_name)
+    return surface_name:sub(1, 9) == "platform-"
 end
 
 function lib.sum_mgs(mgs, target, keys)
@@ -1238,23 +1252,6 @@ end
 
 function lib.is_player_editor_like(player)
     return player.controller_type == defines.controllers.god or player.controller_type == defines.controllers.editor
-end
-
-function lib.get_chunk_pos_from_tile_position(pos)
-    return {x = math.floor((pos.x or pos[1]) / 32), y = math.floor((pos.y or pos[2]) / 32)}
-end
-
-function lib.get_area_for_chunk_position(chunk_pos)
-    return {
-        left_top = {
-            x = chunk_pos.x * 32,
-            y = chunk_pos.y * 32,
-        },
-        right_bottom = {
-            x = chunk_pos.x * 32 + 31,
-            y = chunk_pos.y * 32 + 31,
-        },
-    }
 end
 
 function lib.player_is_in_remote_view(player)

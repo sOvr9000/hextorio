@@ -2537,7 +2537,7 @@ function hex_grid.recover_trades_retro(item_name)
     if not lib.is_catalog_item(item_name) then return end
 
     for _, surface in pairs(game.surfaces) do
-        if not lib.is_space_platform(surface) then
+        if not lib.is_space_platform(surface.name) then
             local states = hex_grid.get_states_with_fewest_trades(surface.name)
             for _, trade_id in pairs(trades.get_recoverable_trades()) do
                 local trade = trades.get_trade_from_id(trade_id)

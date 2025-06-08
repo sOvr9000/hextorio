@@ -19,20 +19,7 @@ local dungeons = {}
 
 
 
-function dungeons.init()
-    storage.dungeons.prototypes = {} --[[@as {[string]: DungeonPrototype[]}]]
-    storage.dungeons.dungeons = {} --[=[@as Dungeon[]]=]
-    storage.dungeons.dungeon_idx_by_position = {} --[[@as {[int]: IndexMap}]]
-    storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
-
-    for _, def in pairs(storage.dungeons.defs) do
-        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.qualities, def.tile_type, def.ammo)
-        if not storage.dungeons.prototypes[def.surface_name] then
-            storage.dungeons.prototypes[def.surface_name] = {}
-        end
-        table.insert(storage.dungeons.prototypes[def.surface_name], prot)
-    end
-
+function dungeons.register_events()
     event_system.register_callback("dungeon-update", function(player)
         local transformation = terrain.get_surface_transformation(player.surface)
         local hex_pos = axial.get_hex_containing(player.position, transformation.scale, transformation.rotation)
@@ -49,6 +36,21 @@ function dungeons.init()
             dungeons.on_dungeon_chest_picked_up(entity)
         end
     end)
+end
+
+function dungeons.init()
+    storage.dungeons.prototypes = {} --[[@as {[string]: DungeonPrototype[]}]]
+    storage.dungeons.dungeons = {} --[=[@as Dungeon[]]=]
+    storage.dungeons.dungeon_idx_by_position = {} --[[@as {[int]: IndexMap}]]
+    storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
+
+    for _, def in pairs(storage.dungeons.defs) do
+        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.qualities, def.tile_type, def.ammo)
+        if not storage.dungeons.prototypes[def.surface_name] then
+            storage.dungeons.prototypes[def.surface_name] = {}
+        end
+        table.insert(storage.dungeons.prototypes[def.surface_name], prot)
+    end
 end
 
 ---@param wall_entities EntityRadii

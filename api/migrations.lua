@@ -11,6 +11,7 @@ local weighted_choice = require "api.weighted_choice"
 local blueprints = require "api.blueprints"
 local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
+local spiders = require "api.spiders"
 
 local data_item_ranks = require "data.item_ranks"
 local data_trade_overview = require "data.trade_overview"
@@ -20,6 +21,7 @@ local data_blueprints = require "data.blueprints"
 local data_trades = require "data.trades"
 local data_hex_grid = require "data.hex_grid"
 local data_dungeons = require "data.dungeons"
+local data_spiders = require "data.spiders"
 
 local migrations = {}
 
@@ -44,6 +46,7 @@ local versions = {
     "0.4.1",
     "0.4.2",
     "0.4.3",
+    "1.0.0",
 }
 
 local version_stepping = {}
@@ -342,6 +345,12 @@ local process_migration = {
         storage.dungeons = data_dungeons
         loot_tables.init()
         dungeons.init()
+    end,
+    ["0.4.3"] = function()
+        storage.spiders = data_spiders
+        spiders.register_events()
+        spiders.init()
+        spiders.reindex_spiders()
     end,
 }
 

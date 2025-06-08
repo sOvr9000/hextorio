@@ -18,12 +18,15 @@ local blueprints = require "api.blueprints"
 local space_platforms = require "api.space_platforms"
 local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
+local spiders = require "api.spiders"
 
 hex_grid.register_events()
 trades.register_events()
 item_ranks.register_events()
 gui.register_events()
 quests.register_events()
+dungeons.register_events()
+spiders.register_events()
 
 require "commands"
 require "handle_keybinds"
@@ -41,6 +44,7 @@ local data_event_system = require "data.event_system"
 local data_trade_overview = require "data.trade_overview"
 local data_blueprints = require "data.blueprints"
 local data_dungeons = require "data.dungeons"
+local data_spiders = require "data.spiders"
 
 
 
@@ -50,6 +54,8 @@ local function attempt_initialization()
     if storage.events.is_nauvis_generating then return end
     events.on_nauvis_generating()
 end
+
+
 
 script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
@@ -66,6 +72,7 @@ script.on_init(function()
     storage.trade_overview = data_trade_overview
     storage.blueprints = data_blueprints
     storage.dungeons = data_dungeons
+    storage.spiders = data_spiders
 
     local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
     storage.hex_grid.mgs["nauvis"] = mgs_original
@@ -113,6 +120,7 @@ script.on_init(function()
     blueprints.init()
     loot_tables.init()
     dungeons.init()
+    spiders.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -160,7 +168,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         end
     end
 
-    if lib.is_space_platform(surface) then return end
+    if lib.is_space_platform(surface.name) then return end
     if surface.name == "hextorio-temp" then return end
     if storage.events.is_nauvis_generating then return end
 
@@ -245,6 +253,7 @@ script.on_event(defines.events.on_built_entity, function(event)
     if not player then return end
 
     event_system.trigger("player-built-entity", player, event.entity)
+    event_system.trigger("entity-built", event.entity)
 end)
 
 script.on_event(defines.events.on_player_mined_entity, function(event)
@@ -257,6 +266,7 @@ end)
 
 script.on_event(defines.events.on_robot_built_entity, function(event)
     event_system.trigger("player-built-entity", nil, event.entity)
+    event_system.trigger("entity-built", event.entity)
 end)
 
 script.on_event(defines.events.on_robot_mined_entity, function(event)
