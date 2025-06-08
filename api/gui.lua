@@ -1395,30 +1395,12 @@ function gui.update_trade_overview(player)
     for surface_name, _ in pairs(game.surfaces) do
         if storage.trade_overview.allowed_planet_filters[surface_name] then
             if not filter_frame["left"]["planet-flow"][surface_name] then
-                local surface_flow = filter_frame["left"]["planet-flow"].add {
-                    type = "flow",
-                    name = surface_name,
-                    direction = "vertical",
-                }
-                local surface_sprite = surface_flow.add {
+                local surface_sprite = filter_frame["left"]["planet-flow"].add {
                     type = "sprite-button",
-                    name = "sprite-button",
+                    name = surface_name,
                     sprite = "planet-" .. surface_name,
+                    toggled = true,
                 }
-                -- local surface_checkbox = surface_flow.add {
-                --     type = "checkbox",
-                --     name = "checkbox",
-                --     state = true,
-                -- }
-                local surface_status = surface_flow.add {
-                    type = "sprite",
-                    name = "status",
-                    sprite = "check-mark-green",
-                }
-                surface_status.style.left_margin = 8
-                -- surface_status.style.width = 24
-                -- surface_status.style.height = 24
-                surface_status.style.size = {24, 24}
             end
         end
     end
@@ -2377,15 +2359,9 @@ function gui.on_sprite_button_click(player, element)
             elseif gui.is_descendant_of(element, "quantum-bazaar") then
                 gui.on_quantum_bazaar_button_clicked(player, element)
             else
-                if element.parent.parent then
-                    if element.parent.parent.name == "planet-flow" then
-                        if element.parent["status"].sprite == "check-mark-green" then
-                            element.parent["status"].sprite = "red-ex"
-                        else
-                            element.parent["status"].sprite = "check-mark-green"
-                        end
-                        gui.update_trade_overview(player)
-                    end
+                if element.parent.name == "planet-flow" then
+                    element.toggled = not element.toggled
+                    gui.on_trade_overview_filter_changed(player)
                 end
             end
         end
@@ -2596,8 +2572,8 @@ end
 
 function gui.on_clear_filters_button_click(player, element)
     local filter_frame = element.parent.parent
-    for _, planet_filter in pairs(filter_frame["left"]["planet-flow"].children) do
-        planet_filter["status"].sprite = "check-mark-green"
+    for _, planet_button in pairs(filter_frame["left"]["planet-flow"].children) do
+        planet_button.toggled = true
     end
 
     for i = 1, 3 do
@@ -2935,12 +2911,8 @@ function gui.update_player_trade_overview_filters(player)
         filter.planets = {}
     end
 
-    for _, planet_filter_flow in pairs(filter_frame["left"]["planet-flow"].children) do
-        local planet_name = planet_filter_flow.name
-        -- local planet_checkbox = planet_filter_flow["checkbox"]
-        -- filter.planets[planet_name] = planet_checkbox.state
-        local planet_status = planet_filter_flow["status"]
-        filter.planets[planet_name] = planet_status.sprite == "check-mark-green"
+    for _, planet_button in pairs(filter_frame["left"]["planet-flow"].children) do
+        filter.planets[planet_button.name] = planet_button.toggled
     end
 
     filter.input_items = {}
