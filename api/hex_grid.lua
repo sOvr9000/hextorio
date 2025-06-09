@@ -349,7 +349,7 @@ function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.hex_core and item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
     if math.random() > 0.01 then return end
 
-    local trade = trades.random(state.hex_core.surface.name, volume, item_name)
+    local trade = trades.random(state.hex_core.surface.name, volume, false, item_name)
     if not trade then
         lib.log_error("hex_grid.apply_extra_trade_bonus: failed to get random trade item name from volume = " .. volume)
         return
@@ -374,7 +374,7 @@ function hex_grid.apply_extra_trades_bonus(state)
         if lib.is_catalog_item(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
             local rank = item_ranks.get_item_rank(item_name)
             if rank >= 2 then
-                local trade = hex_grid.apply_extra_trade_bonus(state, item_name, trades.get_random_volume_for_item(surface.name, item_name))
+                local trade = hex_grid.apply_extra_trade_bonus(state, item_name, item_values.get_item_value(surface.name, item_name))
                 if trade then -- "if" check isn't necessary, technically
                     added_trades[item_name] = trade
                 end
@@ -2531,7 +2531,7 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
         if surface then
             local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. surface.name)
             if surface then
-                local volume = trades.get_random_volume_for_item(surface.name, item_name)
+                local volume = item_values.get_item_value(surface.name, item_name)
                 if not item_values.is_item_interplanetary(surface.name, item_name) then
                     for _, Q in pairs(surface_hexes) do
                         for _, state in pairs(Q) do
@@ -2571,11 +2571,12 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
     local added = false
     local rank = item_ranks.get_item_rank(item_name)
     if rank >= 3 then
-        local volume = trades.get_random_volume_for_item(surface_name, item_name)
-        local trade = trades.random(surface_name, volume, item_name)
+        local volume = item_values.get_item_value(surface_name, item_name)
+        local trade = trades.random(surface_name, volume, true, item_name)
         if trade then
             hex_grid.add_trade(state, trade)
             added = true
+            lib.log("hex_grid.apply_interplanetary_trade_bonus: Added interplanetary trade for " .. item_name .. " on " .. surface_name .. ": " .. lib.get_trade_img_str(trade))
         else
             lib.log_error("hex_grid.apply_interplanetary_trade_bonus: Could not generate interplanetary trade")
         end

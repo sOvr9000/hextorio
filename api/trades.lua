@@ -658,10 +658,11 @@ end
 ---Generate a random trade on a given surface with a central value for input and output items.
 ---@param surface_name string
 ---@param volume number
+---@param allow_interplanetary boolean|nil
 ---@param include_item string|nil
 ---@return Trade|nil
-function trades.random(surface_name, volume, include_item)
-    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, surface_name == "aquilo", include_item)
+function trades.random(surface_name, volume, allow_interplanetary, include_item)
+    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, allow_interplanetary, include_item)
 
     if not next(output_item_names) and not next(input_item_names) then
         lib.log("trades.random: Not enough items centered around the value " .. volume)
@@ -689,9 +690,21 @@ function trades.random(surface_name, volume, include_item)
             coin_type = "gravity-coin"
         end
         if math.random() < lib.runtime_setting_value "sell-trade-chance" then
-            output_item_names[math.random(1, #output_item_names)] = coin_type
+            local idx = math.random(1, #output_item_names)
+            if #output_item_names[idx] > 1 and output_item_names[idx] == include_item then
+                idx = idx % #output_item_names + 1
+            end
+            if output_item_names[idx] ~= include_item then
+                output_item_names[idx] = coin_type
+            end
         else
-            input_item_names[math.random(1, #input_item_names)] = coin_type
+            local idx = math.random(1, #input_item_names)
+            if #input_item_names[idx] > 1 and input_item_names[idx] == include_item then
+                idx = idx % #input_item_names + 1
+            end
+            if input_item_names[idx] ~= include_item then
+                input_item_names[math.random(1, #input_item_names)] = coin_type
+            end
         end
     end
 
