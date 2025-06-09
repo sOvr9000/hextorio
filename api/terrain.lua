@@ -112,6 +112,10 @@ function terrain.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid_
     end
 
     terrain.set_tiles(surface, border_tiles, tile_type, ignore_tiles, quality)
+
+    if surface.name == "nauvis" and lib.runtime_setting_value "nauvis-filled-edges" then
+        terrain.set_tiles(surface, border_tiles, "hazard-concrete-left", ignore_tiles, quality)
+    end
 end
 
 ---@param surfaceID SurfaceIdentification|LuaSurface|string

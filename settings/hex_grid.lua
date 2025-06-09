@@ -247,4 +247,26 @@ data:extend({
         minimum_value = 1,
         maximum_value = 100,
     },
+
+    {
+        type = "bool-setting",
+        name = "hextorio-nauvis-filled-edges",
+        setting_type = "runtime-global",
+        default_value = false,
+        order = "a[deathworld]-f[nauvis-filled-edges]",
+    },
+    {
+        type = "bool-setting",
+        name = "hextorio-nauvis-grace",
+        setting_type = "runtime-global",
+        default_value = false,
+        order = "a[deathworld]-f[nauvis-grace]",
+    },
+    {
+        type = "bool-setting",
+        name = "hextorio-gleba-filled-edges",
+        setting_type = "runtime-global",
+        default_value = false,
+        order = "a[deathworld]-g[gleba-filled-edges]",
+    },
 })

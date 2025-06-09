@@ -15,10 +15,14 @@ local non_land_tile_names = {
     "lava",
     "lava-hot",
 }
-local non_land_tile_name_lookup = {}
-for _, name in pairs(non_land_tile_names) do
-    non_land_tile_name_lookup[name] = true
-end
+local non_land_tile_name_lookup = sets.new(non_land_tile_names)
+
+local hazard_tile_name_lookup = sets.new {
+    "hazard-concrete-left",
+    "hazard-concrete-right",
+    "refined-hazard-concrete-left",
+    "refined-hazard-concrete-right",
+}
 
 local immune_to_hex_core_clearing = sets.new {
     "big-demolisher",
@@ -461,6 +465,12 @@ function lib.is_land_tile(surface, tile_position)
     local tile = surface.get_tile(tile_position)
     if not tile or not tile.valid then return false end
     return not non_land_tile_name_lookup[tile.name]
+end
+
+function lib.is_hazard_tile(surface, tile_position)
+    local tile = surface.get_tile(tile_position)
+    if not tile or not tile.valid then return false end
+    return hazard_tile_name_lookup[tile.name]
 end
 
 -- Convert the recipe data into the structure:
@@ -1508,7 +1518,7 @@ end
 
 ---Reload the given turrets.
 ---@param entities LuaEntity[]
----@param params {bullet_type: string|nil, flamethrower_type: string|nil, rocket_type: string|nil, railgun_type: string|nil} | nil
+---@param params {bullet_type: string|nil, flamethrower_type: string|nil, rocket_type: string|nil, railgun_type: string|nil, bullet_count: int|nil, flamethrower_count: int|nil, rocket_count: int|nil, railgun_count: int|nil} | nil
 function lib.reload_turrets(entities, params)
     if not params then params = {} end
     if not params.bullet_type then
@@ -1524,10 +1534,10 @@ function lib.reload_turrets(entities, params)
         params.railgun_type = "railgun-ammo"
     end
     local stack_sizes = {
-        [params.bullet_type] = prototypes["item"][params.bullet_type].stack_size,
-        [params.flamethrower_type] = 1000,
-        [params.rocket_type] = prototypes["item"][params.rocket_type].stack_size,
-        [params.railgun_type] = prototypes["item"][params.railgun_type].stack_size,
+        [params.bullet_type] = params.bullet_count or prototypes["item"][params.bullet_type].stack_size,
+        [params.flamethrower_type] = params.flamethrower_count or 1000,
+        [params.rocket_type] = params.rocket_count or prototypes["item"][params.rocket_type].stack_size,
+        [params.railgun_type] = params.railgun_count or prototypes["item"][params.railgun_type].stack_size,
     }
     for _, e in pairs(entities) do
         if e.valid then

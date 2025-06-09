@@ -604,6 +604,23 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 position = {0, -5},
                 force = "player",
             }
+        elseif surface.name == "nauvis" then
+            if lib.runtime_setting_value "nauvis-grace" then
+                local turrets = {}
+                for _, pos in pairs {
+                    {-5, -5},
+                    {-5, 6},
+                    {6, -5},
+                    {6, 6},
+                } do
+                    table.insert(turrets, surface.create_entity {
+                        name = "gun-turret",
+                        position = pos,
+                        force = "player",
+                    })
+                end
+                lib.reload_turrets(turrets, {bullet_type = "firearm-magazine", bullet_count = 15})
+            end
         end
         state.is_starting_hex = true
     else
@@ -830,7 +847,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
 
         local inner_border_tiles = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
         for _, tile in pairs(inner_border_tiles) do
-            if lib.is_land_tile(surface, tile) then
+            if lib.is_land_tile(surface, tile) and not lib.is_hazard_tile(surface, tile) then
                 local resource, amount
                 if is_hexaprism then
                     resource = "hexaprism"
