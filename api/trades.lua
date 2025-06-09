@@ -663,7 +663,7 @@ end
 function trades.random(surface_name, volume, include_item)
     local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, surface_name == "aquilo", include_item)
 
-    if not output_item_names and not input_item_names then
+    if not next(output_item_names) and not next(input_item_names) then
         lib.log("trades.random: Not enough items centered around the value " .. volume)
         return
     end

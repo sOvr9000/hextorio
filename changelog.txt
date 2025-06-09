@@ -19,6 +19,7 @@ Date: 9/6/25
     - Fixed that hextreme quality was not decreasing the power consumption of beacons like other qualities do.
     - Fixed range of entity removal when hex cores spawn.
     - Fixed that the Quantum Bazaar wasn't allowing to trade interplanetary items.
+    - Fixed that extra trades from bonze and silver rank items' bonus effects never involved coins.
   Changes:
     - Clicking on a GPS tag in chat no longer opens pinged hex cores.
     - Changed Sentient Spider inventory size to 120 (50% higher than spidertron).
