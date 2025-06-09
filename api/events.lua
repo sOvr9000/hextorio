@@ -85,16 +85,16 @@ end
 -- Called when the player is on the temporary surface and the origin chunk on Nauvis is generated
 function events.on_nauvis_generated()
     -- Teleport players to Nauvis
-    lib.log("Teleporting players to Nauvis")
+    -- lib.log("Teleporting players to Nauvis")
     for _, player in pairs(game.connected_players) do
-        lib.log("(pre-teleport) player character is nil: " .. tostring(player.character == nil))
+        -- lib.log("(pre-teleport) player character is nil: " .. tostring(player.character == nil))
         if player.character then
-            lib.log("(pre-teleport) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
+            -- lib.log("(pre-teleport) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
         end
-        lib.teleport_player(player, {0, 5}, game.surfaces.nauvis)
-        lib.log("(post-teleport) player character is nil: " .. tostring(player.character == nil))
+        lib.teleport_player(player, {0, 0}, game.surfaces.nauvis)
+        -- lib.log("(post-teleport) player character is nil: " .. tostring(player.character == nil))
         if player.character then
-            lib.log("(post-teleport) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
+            -- lib.log("(post-teleport) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
         end
     end
 
@@ -102,9 +102,9 @@ function events.on_nauvis_generated()
     game.delete_surface(game.surfaces["hextorio-temp"])
 
     for _, player in pairs(game.connected_players) do
-        lib.log("(post-surface deletion) player character is nil: " .. tostring(player.character == nil))
+        -- lib.log("(post-surface deletion) player character is nil: " .. tostring(player.character == nil))
         if player.character then
-            lib.log("(post-surface deletion) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
+            -- lib.log("(post-surface deletion) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
         end
     end
 

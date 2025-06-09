@@ -620,6 +620,13 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 end
                 lib.reload_turrets(turrets, {bullet_type = "firearm-magazine", bullet_count = 15})
             end
+            for _, player in pairs(game.connected_players) do
+                if not player.character then
+                    player.create_character()
+                    player.set_controller {type = defines.controllers.character, character = player.character, surface = "nauvis"}
+                end
+                lib.teleport_player(player, {0, 5}, game.surfaces.nauvis)
+            end
         end
         state.is_starting_hex = true
     else
