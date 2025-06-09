@@ -845,45 +845,78 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             rotation = math.random() * math.pi * 2
         end
 
-        local inner_border_tiles = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
-        for _, tile in pairs(inner_border_tiles) do
-            if lib.is_land_tile(surface, tile) and not lib.is_hazard_tile(surface, tile) then
-                local resource, amount
-                if is_hexaprism then
-                    resource = "hexaprism"
-                    amount = 1
-                else
-                    if is_mixed then
-                        resource = weighted_choice.choice(resource_wc)
-                        if not resource then
-                            lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
-                            return
-                        end
-                    else
-                        local angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
-                        resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
+        local hex_center = lib.rounded_position(axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation), false)
+
+        local ore_positions
+        local ore_generation_mode = lib.runtime_setting_value "ore-generation-mode"
+        if ore_generation_mode == "along-edges" then
+            ore_positions = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
+        elseif ore_generation_mode == "single-hex" then
+            local offset_scale = math.min(hex_grid_scale / 3, 5 + resource_stroke_width)
+            local offset_rotation = math.random() * math.pi
+            local center_offset_hex = axial.get_hex_containing(hex_center, offset_scale, offset_rotation)
+            local offset_pos = axial.add(center_offset_hex, axial.get_adjacency_offset(math.random(1, 6)))
+            ore_positions = axial.get_hex_tile_positions(offset_pos, offset_scale, offset_rotation, 0)
+        elseif ore_generation_mode == "center-square" then
+            ore_positions = {}
+            local min_x = hex_center.x - 2 - resource_stroke_width
+            local max_x = hex_center.x + 2 + resource_stroke_width
+            local min_y = hex_center.y - 2 - resource_stroke_width
+            local max_y = hex_center.y + 2 + resource_stroke_width
+            for x = min_x, max_x do
+                for y = min_y, max_y do
+                    table.insert(ore_positions, {x = x, y = y})
+                end
+            end
+        end
+
+        -- Filter out positions that aren't good for ores, like underneath the hex core or on water.
+        for i = #ore_positions, 1, -1 do
+            local tile = ore_positions[i]
+            if not lib.is_land_tile(surface, tile) or lib.is_hazard_tile(surface, tile) or (math.abs(tile.x - hex_center.x) <= 2 and math.abs(tile.y - hex_center.y) <= 2) then
+                table.remove(ore_positions, i)
+            end
+        end
+
+        for _, tile in pairs(ore_positions) do
+            local resource, amount
+            if is_hexaprism then
+                resource = "hexaprism"
+                amount = 1
+            else
+                if is_mixed then
+                    resource = weighted_choice.choice(resource_wc)
+                    if not resource then
+                        lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
+                        return
                     end
-                    local amount_mean
-                    if surface.name == "vulcanus" then
-                        if resource == "coal" then
-                            amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
-                        elseif resource == "tungsten-ore" then
-                            amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
-                        else
-                            amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
-                        end
-                    elseif surface.name == "gleba" then
-                        amount_mean = scaled_richness * mgs.autoplace_controls.gleba_stone.richness
+                else
+                    local angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
+                    resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
+                end
+                local amount_mean
+                if surface.name == "vulcanus" then
+                    if resource == "coal" then
+                        amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
+                    elseif resource == "tungsten-ore" then
+                        amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
                     else
                         amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
                     end
-                    amount = math.floor(amount_mean * (0.8 + 0.4 * math.random()))
+                elseif surface.name == "gleba" then
+                    amount_mean = scaled_richness * mgs.autoplace_controls.gleba_stone.richness
+                else
+                    amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
                 end
-                if amount > 0 then
-                    local entity = surface.create_entity {name = resource, position = tile, amount = amount}
-                    if entity then
-                        state.resources[resource] = (state.resources[resource] or 0) + amount
+                amount = math.floor(amount_mean * (0.8 + 0.4 * math.random()))
+            end
+            if amount > 0 then
+                local entity = surface.create_entity {name = resource, position = tile, amount = amount}
+                if entity and entity.valid then
+                    if is_starting_hex then
+                        log("created entity at " .. serpent.line(entity.position))
                     end
+                    state.resources[resource] = (state.resources[resource] or 0) + amount
                 end
             end
         end
@@ -1643,7 +1676,7 @@ function hex_grid.spawn_hex_core(surface, position)
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
     local entities = surface.find_entities_filtered {
-        area = {{position.x - 2.5, position.y - 2.5}, {position.x + 2.5, position.y + 2.5}},
+        area = {{position.x - 2, position.y - 2}, {position.x + 3, position.y + 3}},
     }
 
     for _, e in pairs(entities) do

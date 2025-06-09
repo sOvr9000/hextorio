@@ -402,4 +402,13 @@ data:extend({
         default_value = 0.025,
         order = "pc",
     },
+
+    {
+        type = "string-setting",
+        name = "hextorio-ore-generation-mode",
+        setting_type = "runtime-global",
+        allowed_values = {"single-hex", "along-edges", "center-square"},
+        default_value = "along-edges",
+        order = "a[resources]-g[ore-generation-mode]",
+    },
 })

@@ -104,10 +104,11 @@ function axial.get_hex_containing(rect_pos, axial_scale, axial_rotation)
     return axial.round(hex)
 end
 
--- Convert axial coordinates to rectangular coordinates (center of hex)
--- hex_pos: {q, r} hex coordinates
--- axial_scale: size of hexes (distance from center to corner)
--- axial_rotation: rotation of the grid in radians
+---Convert axial coordinates to rectangular coordinates (center of hex)
+---@param hex_pos HexPos
+---@param axial_scale number
+---@param axial_rotation number
+---@return MapPosition
 function axial.get_hex_center(hex_pos, axial_scale, axial_rotation)
     -- Default values
     axial_scale = axial_scale or 1

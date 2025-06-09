@@ -262,11 +262,4 @@ data:extend({
         default_value = false,
         order = "a[deathworld]-f[nauvis-grace]",
     },
-    {
-        type = "bool-setting",
-        name = "hextorio-gleba-filled-edges",
-        setting_type = "runtime-global",
-        default_value = false,
-        order = "a[deathworld]-g[gleba-filled-edges]",
-    },
 })
