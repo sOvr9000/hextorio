@@ -17,8 +17,11 @@ Date: 9/6/25
   Bugfixes:
     - Fixed that some coin sprites would have tooltips with non-integer values while viewing higher quality trades in hex cores.
     - Fixed that hextreme quality was not decreasing the power consumption of beacons like other qualities do.
+    - Fixed range of entity removal when hex cores spawn.
   Changes:
     - Clicking on a GPS tag in chat no longer opens pinged hex cores.
+  Balancing:
+    - Made the Lazy Looter quest reward give a rare [item=spidertron] instead of normal, as well as equipment to go with it.
   Ease of use:
     - Clicking on the "find trade" button in the trade overview now immediately takes your remote view to the relevant hex core and opens it up for you.
     - Output loaders of hex cores can now be clicked directly to set their filters rather than having to go through the hex core interface.
