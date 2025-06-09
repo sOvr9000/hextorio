@@ -1721,6 +1721,7 @@ function gui.add_sprite_buttons(element, item_stacks, name_prefix)
             name = name_prefix .. item_stack.name,
             sprite = "item/" .. item_stack.name,
             number = item_stack.count,
+            quality = item_stack.quality,
         }
     end
 end

@@ -160,7 +160,14 @@ return {
                 {
                     type = "receive-items",
                     value = {
-                        {name = "spidertron", count = 1},
+                        {name = "spidertron", count = 1, quality = "rare"},
+                        {name = "personal-roboport-mk2-equipment", count = 3, quality = "rare"},
+                        {name = "discharge-defense-equipment", count = 2, quality = "rare"},
+                        {name = "energy-shield-mk2-equipment", count = 1, quality = "rare"},
+                        {name = "exoskeleton-equipment", count = 4, quality = "rare"},
+                        {name = "battery-mk3-equipment", count = 4, quality = "rare"},
+                        {name = "fission-reactor-equipment", count = 2, quality = "rare"},
+                        {name = "construction-robot", count = 120, quality = "rare"},
                     },
                     notes = {"first-spidertron"},
                 },
