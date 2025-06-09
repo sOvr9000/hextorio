@@ -108,6 +108,16 @@ function lib.vector_multiply(a, b)
     return {x=(a.x or a[1]) * b, y=(a.y or a[2]) * b}
 end
 
+---Get the squared Euclidean distance between two positions.
+---@param pos1 MapPosition
+---@param pos2 MapPosition
+---@return number
+function lib.square_distance(pos1, pos2)
+    local dx = pos1.x - pos2.x
+    local dy = pos1.y - pos2.y
+    return dx * dx + dy * dy
+end
+
 ---@param surface LuaSurface|SurfaceIdentification|int|string
 ---@return int
 function lib.get_surface_id(surface)

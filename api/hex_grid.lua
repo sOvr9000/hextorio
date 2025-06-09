@@ -858,11 +858,28 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         if ore_generation_mode == "along-edges" then
             ore_positions = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
         elseif ore_generation_mode == "single-hex" then
-            local offset_scale = math.min(hex_grid_scale / 3, 5 + resource_stroke_width)
+            local offset_scale = 5 + resource_stroke_width
             local offset_rotation = math.random() * math.pi
             local center_offset_hex = axial.get_hex_containing(hex_center, offset_scale, offset_rotation)
-            local offset_pos = axial.add(center_offset_hex, axial.get_adjacency_offset(math.random(1, 6)))
-            ore_positions = axial.get_hex_tile_positions(offset_pos, offset_scale, offset_rotation, 0)
+            local offset_hex_pos
+
+            if offset_scale > hex_grid_scale / 3 then
+                -- Resource hex is too big to be offset, so it must be partially under the hex core.
+                offset_hex_pos = center_offset_hex
+            else
+                -- Resource hex is small enough to be offset to an adjacent hex so that it's not completely under the hex core.
+                local closest_dist = math.huge
+                for _, adj_pos in pairs(axial.get_adjacent_hexes(center_offset_hex)) do
+                    local rect_pos = axial.get_hex_center(adj_pos, offset_scale, offset_rotation)
+                    local d = lib.square_distance(rect_pos, hex_center)
+                    if d < closest_dist then
+                        closest_dist = d
+                        offset_hex_pos = adj_pos
+                    end
+                end
+            end
+
+            ore_positions = axial.get_hex_tile_positions(offset_hex_pos, offset_scale, offset_rotation, 0)
         elseif ore_generation_mode == "center-square" then
             ore_positions = {}
             local min_x = hex_center.x - 2 - resource_stroke_width
