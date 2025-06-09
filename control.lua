@@ -131,7 +131,8 @@ script.on_init(function()
         remote.call("freeplay", "set_skip_intro", true)
     end
 
-    trades.generate_interplanetary_trade_locations("nauvis", 1)
+    local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
+    trades.generate_interplanetary_trade_locations("nauvis", num_trades)
 end)
 
 script.on_event(defines.events.on_tick, function (event)
@@ -484,11 +485,8 @@ script.on_event(defines.events.on_surface_created, function (event)
     end
 
     if storage.item_values.values[surface.name] then
-        local count = 1
-        if surface.name == "aquilo" then
-            count = 2
-        end
-        trades.generate_interplanetary_trade_locations(surface.name, count)
+        local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
+        trades.generate_interplanetary_trade_locations(surface.name, num_trades)
     end
 end)
 
