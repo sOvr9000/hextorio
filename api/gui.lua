@@ -890,6 +890,15 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
             tag_button.tooltip = {"hex-core-gui.tag-button"}
         end
 
+        if params.show_add_to_filters then
+            local add_to_filters_button = trade_control_flow.add {
+                type = "sprite-button",
+                name = "add-to-filters-" .. trade_number,
+                sprite = "item/loader",
+            }
+            add_to_filters_button.tooltip = {"hex-core-gui.add-to-filters-tooltip"}
+        end
+
         if params.show_quality_bounds then
             local allowed_qualities = trade.allowed_qualities or {"normal"}
             local min_quality = trade_control_flow.add {
@@ -1144,6 +1153,7 @@ function gui.update_hex_core(player)
     gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
         show_toggle_trade = state.claimed,
         show_tag_creator = true,
+        show_add_to_filters = state.claimed,
         show_core_finder = false,
         show_productivity = true,
         show_quality_bounds = show_quality_bounds,
@@ -1608,7 +1618,15 @@ function gui.update_trade_overview(player)
     storage.trade_overview.trades[player.name] = trades_list
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
-    gui.update_trades_scroll_pane(player, trade_table, trades_list, {show_toggle_trade=false, show_tag_creator=false, show_core_finder=true, show_productivity=false, expanded=false, show_quality_bounds=false})
+    gui.update_trades_scroll_pane(player, trade_table, trades_list, {
+        show_toggle_trade = false,
+        show_tag_creator = false,
+        show_add_to_filters = false,
+        show_core_finder = true,
+        show_productivity = false,
+        expanded = false,
+        show_quality_bounds = false
+    })
 end
 
 function gui.update_catalog(player, selected_item_surface, selected_item_name)
@@ -2354,7 +2372,7 @@ function gui.on_sprite_button_click(player, element)
                 gui.on_trade_overview_item_clicked(player, element)
             elseif gui.is_descendant_of(element, "hex-core") and element.parent.name ~= "hex-control-flow" then
                 if element.parent.name == "trade-control-flow" then
-                    gui.on_hex_core_control_flow_button_clicked(player, element)
+                    gui.on_hex_core_trade_control_flow_button_clicked(player, element)
                 else
                     gui.on_hex_core_trade_item_clicked(player, element)
                 end
@@ -2506,10 +2524,30 @@ function gui.set_trade_overview_item_filters(player, input_items, output_items)
     gui.update_trade_overview(player)
 end
 
-function gui.on_hex_core_control_flow_button_clicked(player, element)
+function gui.on_hex_core_trade_control_flow_button_clicked(player, element)
     if element.name:sub(1, 13) == "toggle-trade-" then
         gui.on_toggle_trade_button_click(player, element)
+    elseif element.name:sub(1, 15) == "add-to-filters-" then
+        gui.on_add_to_filters_button_click(player, element)
     end
+end
+
+function gui.on_add_to_filters_button_click(player, element)
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    local trade_number = tonumber(element.name:sub(16))
+    local trade_id = state.trades[trade_number]
+    if not trade_id then return end
+
+    local trade = trades.get_trade_from_id(trade_id)
+    if not trade then return end
+
+    local _, output_item_names = trades.get_input_output_item_names_of_trade(trade)
+    hex_grid.add_items_to_unloader_filters(state, output_item_names)
 end
 
 function gui.on_hex_core_trade_item_clicked(player, element)

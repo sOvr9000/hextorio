@@ -304,6 +304,46 @@ function hex_grid.remove_trade_by_index(hex_core_state, idx)
     trades.remove_trade_from_tree(trade)
 end
 
+---Add items to a hex core's unloader filters, only filling in some or all of the remaining empty filters.
+---Return whether there were enough empty filters available for the given item names.
+---@param state HexState
+---@param output_item_names string[]
+---@return boolean
+function hex_grid.add_items_to_unloader_filters(state, output_item_names)
+    output_item_names = table.deepcopy(output_item_names)
+
+    local has_coins = false
+    for i = #output_item_names, 1, -1 do
+        if lib.is_coin(output_item_names[i]) then
+            table.remove(output_item_names, i)
+            has_coins = true
+        end
+    end
+
+    if has_coins then
+        table.insert(output_item_names, 1, "hex-coin")
+        table.insert(output_item_names, 2, "gravity-coin")
+        table.insert(output_item_names, 3, "meteor-coin")
+        table.insert(output_item_names, 4, "hexaprism-coin")
+    end
+
+    local item_name_idx = 1
+    for _, unloader in pairs(state.output_loaders) do
+        ---@cast unloader LuaEntity
+        for n = 1, 2 do
+            if not unloader.get_filter(n) then
+                unloader.set_filter(n, output_item_names[item_name_idx])
+                item_name_idx = item_name_idx + 1
+                if item_name_idx > #output_item_names then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.mode == "sink" or state.mode == "generator" then return end
     if state.hex_core and item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
