@@ -913,9 +913,6 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             if amount > 0 then
                 local entity = surface.create_entity {name = resource, position = tile, amount = amount}
                 if entity and entity.valid then
-                    if is_starting_hex then
-                        log("created entity at " .. serpent.line(entity.position))
-                    end
                     state.resources[resource] = (state.resources[resource] or 0) + amount
                 end
             end
