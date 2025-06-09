@@ -225,11 +225,11 @@ function gui.init_hex_core(player)
     local generator_mode_confirmation = hex_core_gui.add {type = "sprite-button", name = "generator-mode-confirmation", sprite = "check-mark-green"}
     generator_mode_confirmation.tooltip = {"hex-core-gui.generator-mode-confirmation-tooltip"}
 
-    local upgrade_quality = hex_control_flow.add {type = "sprite-button", name = "upgrade-quality", sprite = "quality/uncommon"}
-
     local stats = hex_control_flow.add {type = "sprite-button", name = "stats", sprite = "utility/side_menu_production_icon"}
 
     local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/empty_trash_slot"}
+
+    local upgrade_quality = hex_control_flow.add {type = "sprite-button", name = "upgrade-quality", sprite = "quality/uncommon"}
 
     -- local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
     -- for i, dir in ipairs {"west", "north", "south", "east"} do
