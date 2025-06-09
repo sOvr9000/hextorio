@@ -372,7 +372,9 @@ script.on_event(defines.events.on_entity_died, function (event)
         -- This is not in on_player_died because the damage type for cause of death may be important.
         if event.cause then
             if sets.new(lib.get_entity_ammo_categories(event.cause))["railgun"] then
-                quests.increment_progress_for_type "die-to-railgun"
+                if event.cause.force == game.forces.player then
+                    quests.increment_progress_for_type "die-to-railgun"
+                end
             end
         end
     end
