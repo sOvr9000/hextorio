@@ -198,11 +198,10 @@ function item_values.get_item_values_for_surface(surface_name)
     return surface_vals
 end
 
+---Get all item values in the game, valued for the given surface.
+---@param surface_name string
+---@return {[string]: number}
 function item_values.get_expanded_item_values_for_surface(surface_name)
-    if not surface_name then
-        lib.log_error("item_values.get_expanded_item_values_for_surface: surface_name is nil")
-        return
-    end
     if not storage.item_values.expanded_values then
         storage.item_values.expanded_values = {}
     end

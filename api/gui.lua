@@ -1971,8 +1971,8 @@ function gui.update_catalog_inspect_frame(player)
         local elem_filter_items = sets.new()
         for _, surface in pairs(game.surfaces) do
             if not lib.is_space_platform(surface.name) then
-                local values = item_values.get_items_sorted_by_value(surface.name, true, false)
-                for _, name in pairs(values) do
+                local values = item_values.get_expanded_item_values_for_surface(surface.name)
+                for name, _ in pairs(values) do
                     if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then
                         sets.add(elem_filter_items, name)
                     end
