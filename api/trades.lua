@@ -590,8 +590,8 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
         end)
     end
 
-    if #possible_items < 2 then
-        lib.log_error("trades.random_trade_item_names: Not enough items found near value " .. volume .. "; found: " .. serpent.line(possible_items))
+    if #possible_items == 0 then
+        lib.log_error("trades.random_trade_item_names: No items found near value " .. volume)
         return {}, {}
     end
 
@@ -607,15 +607,16 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
         trade_items[math.random(1, #trade_items)] = include_item
     end
 
-    if #trade_items < 2 then
+    if #trade_items == 0 then
         lib.log_error("trades.random_trade_item_names: Not enough items selected for trade")
         return {}, {}
     end
 
     local input_item_names = {}
     local output_item_names = {}
+    local mod = math.random(0, 1) -- Controls whether inputs or outputs are selected first, removing bias from inputs having more items than outputs on average.
     for i = 1, #trade_items do
-        if i % 2 == 0 then
+        if i % 2 == mod then
             table.insert(output_item_names, trade_items[i])
         else
             table.insert(input_item_names, trade_items[i])
@@ -657,11 +658,12 @@ end
 ---Generate a random trade on a given surface with a central value for input and output items.
 ---@param surface_name string
 ---@param volume number
+---@param include_item string|nil
 ---@return Trade|nil
-function trades.random(surface_name, volume)
-    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, surface_name == "aquilo")
+function trades.random(surface_name, volume, include_item)
+    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, surface_name == "aquilo", include_item)
 
-    if not input_item_names or not output_item_names or (not next(input_item_names) and not next(output_item_names)) then
+    if not output_item_names and not input_item_names then
         lib.log("trades.random: Not enough items centered around the value " .. volume)
         return
     end
