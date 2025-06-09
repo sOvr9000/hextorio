@@ -229,7 +229,7 @@ function gui.init_hex_core(player)
 
     local stats = hex_control_flow.add {type = "sprite-button", name = "stats", sprite = "utility/side_menu_production_icon"}
 
-    local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/deconstruction_mark"}
+    local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/empty_trash_slot"}
 
     -- local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
     -- for i, dir in ipairs {"west", "north", "south", "east"} do
@@ -240,7 +240,7 @@ function gui.init_hex_core(player)
     local delete_core_confirmation = hex_core_gui.add {type = "flow", name = "delete-core-confirmation", direction = "horizontal"}
     delete_core_confirmation.visible = false
 
-    local delete_core_confirmation_button = delete_core_confirmation.add {type = "sprite-button", name = "confirmation-button", sprite = "utility/deconstruction_mark"}
+    local delete_core_confirmation_button = delete_core_confirmation.add {type = "sprite-button", name = "confirmation-button", sprite = "utility/empty_trash_slot"}
     local delete_core_confirmation_label = delete_core_confirmation.add {type = "label", name = "confirmation-label", caption = lib.color_localized_string({"hex-core-gui.delete-core-confirmation"}, "red")}
     delete_core_confirmation_label.style.font = "heading-1"
 
