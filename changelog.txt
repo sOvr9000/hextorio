@@ -20,6 +20,7 @@ Date: 9/6/25
     - Fixed range of entity removal when hex cores spawn.
   Changes:
     - Clicking on a GPS tag in chat no longer opens pinged hex cores.
+    - Changed Sentient Spider inventory size to 120 (50% higher than spidertron).
   Balancing:
     - Made the Lazy Looter quest reward give a rare [item=spidertron] instead of normal, as well as equipment to go with it.
   Ease of use:

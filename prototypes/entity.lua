@@ -126,6 +126,7 @@ local sentient_spider = table.deepcopy(data.raw["spider-vehicle"]["spidertron"])
 sentient_spider.name = "sentient-spider"
 sentient_spider.guns = {"sentient-spider-teslagun"}
 sentient_spider.equipment_grid = "sentient-spider-equipment-grid"
+sentient_spider.inventory_size = 120
 
 
 ---@diagnostic disable-next-line: assign-type-mismatch
