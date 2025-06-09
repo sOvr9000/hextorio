@@ -1587,6 +1587,17 @@ function lib.print_notification(notification_id, message)
     end
 end
 
+---Return a hex core entity from a hex core's loader. If the entity is the hex core entity, it is returned.
+---@param entity LuaEntity
+---@return LuaEntity|nil
+function lib.get_hex_core_from_entity(entity)
+    local entities = entity.surface.find_entities_filtered {
+        name = "hex-core",
+        area = {{entity.position.x - 2, entity.position.y - 2}, {entity.position.x + 3, entity.position.y + 3}},
+    }
+    return entities[1]
+end
+
 
 
 return lib
