@@ -1548,12 +1548,12 @@ function lib.reload_turrets(entities, params)
                 if ammo_categories then
                     for _, ammo_category in pairs(ammo_categories) do
                         if ammo_category == "flamethrower" then
-                            local fluid = params[ammo_category .. "_type"]
+                            local fluid = params[ammo_category .. "_type"] --[[@as string|nil]]
                             if fluid then
                                 e.insert_fluid {name = fluid, amount = stack_sizes[fluid]}
                             end
                         else
-                            local item = params[ammo_category .. "_type"]
+                            local item = params[ammo_category .. "_type"] --[[@as string|nil]]
                             if item then
                                 e.insert {name = item, count = stack_sizes[item]}
                             end
