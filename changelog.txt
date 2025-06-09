@@ -15,6 +15,7 @@ Date: 9/6/25
     - Improved hex core trade UI.
     - Made the planet filter buttons in the trade overview more compact.
     - Changed core deletion button sprite to a trash can.
+    - Quest icons now use the unlabeled versions of the icons (looks nicer in quest completion notifications).
   Bugfixes:
     - Fixed that some coin sprites would have tooltips with non-integer values while viewing higher quality trades in hex cores.
     - Fixed that hextreme quality was not decreasing the power consumption of beacons like other qualities do.
