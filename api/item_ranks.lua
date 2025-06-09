@@ -130,7 +130,7 @@ function item_ranks.rank_up(item_name)
         localization = "hextorio.item-rank-up-max"
     end
 
-    game.print({localization, "[item=" .. item_name .. "]", lib.get_rank_img_str(rank.rank)})
+    lib.print_notification("item-ranked-up", {localization, "[item=" .. item_name .. "]", lib.get_rank_img_str(rank.rank)})
     event_system.trigger("item-rank-up", item_name)
 
     quests.increment_progress_for_type "total-item-rank"

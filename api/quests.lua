@@ -502,7 +502,7 @@ function quests.print_quest_completion(quest)
     end
     table.insert(rewards_str, "\n")
 
-    game.print({"",
+    lib.print_notification("quest-completed", {"",
         "\n[font=heading-1][color=blue]-=-=-=-=-= ",
         {"hextorio.quest-complete"},
         " =-=-=-=-=-[.color][.font]\n",
@@ -639,7 +639,6 @@ function quests.complete_quest(quest)
 
     if quests.is_complete(q) then return end
 
-    log("completing quest " .. q.name)
     quests.print_quest_completion(q)
     quests.give_rewards(q)
     quests._mark_complete(q)

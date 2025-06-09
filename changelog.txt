@@ -1,12 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
-Date: 8/6/25
+Date: 9/6/25
   Features:
     - It is now possible to set which qualities a trade can use.
     - Added trade overview filters for maximum number of input and output items in trades.
     - Added trade overview filter for maximum number of trades to be shown.
         Helps with UPS if you specify enough filters to not have to search countless trades.
     - Added mod setting to change the shapes of ore patches.
+  Minor Features:
+    - Added mod settings for personally turning certain notifications in chat on or off.
   Gui:
     - Improved hex core trade UI.
     - Made the planet filter buttons in the trade overview more compact.

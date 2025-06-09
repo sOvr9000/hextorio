@@ -763,7 +763,7 @@ function trades.discover_items(items_list)
             end
             s = s .. "[img=item." .. item_name .. "]"
         end
-        game.print({"", {"hextorio.new-catalog-items"}, s})
+        lib.print_notification("item-ranked-up", {"", {"hextorio.new-catalog-items"}, s})
     end
 
     return new_discoveries

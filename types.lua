@@ -6,3 +6,11 @@
 ---@alias MapPositionSet {[int]: {[int]: true}}
 ---@alias StringSet {[string]: boolean}
 ---@alias StringFilters {whitelist: StringSet|nil, blacklist: StringSet|nil}
+
+---@alias NotificationID
+---| "quest-completed"
+---| "new-catalog-entry"
+---| "item-ranked-up"
+---| "extra-trade"
+---| "interplanetary-trade"
+---| "trade-recovered"

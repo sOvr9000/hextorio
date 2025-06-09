@@ -1555,6 +1555,17 @@ function lib.reload_turrets(entities, params)
     end
 end
 
+---Print a notification in chat.
+---@param notification_id NotificationID
+---@param message any
+function lib.print_notification(notification_id, message)
+    for _, player in pairs(game.connected_players) do
+        if lib.player_setting_value(player, "notifications-" .. notification_id) then
+            player.print(message)
+        end
+    end
+end
+
 
 
 return lib

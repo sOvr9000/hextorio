@@ -364,29 +364,31 @@ function hex_grid.apply_extra_trades_bonus(state)
     if not state or not state.hex_core or not state.trades then return end
     local surface = state.hex_core.surface
     local surface_values = item_values.get_item_values_for_surface(surface.name)
-    if surface_values then
-        local added_trades = {}
-        local item_names_set = sets.new(sets.to_array(surface_values))
-        local silver_items = sets.new(item_ranks.get_items_at_rank(3))
-        item_names_set = sets.union(item_names_set, silver_items)
-        for item_name, _ in pairs(item_names_set) do
-            if lib.is_catalog_item(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
-                local rank = item_ranks.get_item_rank(item_name)
-                if rank >= 2 then
-                    local trade = hex_grid.apply_extra_trade_bonus(state, item_name, trades.get_random_volume_for_item(surface.name, item_name))
-                    if trade then -- "if" check isn't necessary, technically
-                        added_trades[item_name] = trade
-                    end
+    if not surface_values then return end
+
+    local added_trades = {}
+    local item_names_set = sets.new(sets.to_array(surface_values))
+    local silver_items = sets.new(item_ranks.get_items_at_rank(3))
+    item_names_set = sets.union(item_names_set, silver_items)
+
+    for item_name, _ in pairs(item_names_set) do
+        if lib.is_catalog_item(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
+            local rank = item_ranks.get_item_rank(item_name)
+            if rank >= 2 then
+                local trade = hex_grid.apply_extra_trade_bonus(state, item_name, trades.get_random_volume_for_item(surface.name, item_name))
+                if trade then -- "if" check isn't necessary, technically
+                    added_trades[item_name] = trade
                 end
             end
         end
-        if next(added_trades) then
-            local new_trades_str = ""
-            for item_name, trade in pairs(added_trades) do
-                new_trades_str = new_trades_str .. "[img=item." .. item_name .. "]"
-            end
-            game.print{"hextorio.bonus-trade", lib.get_gps_str_from_hex_core(state.hex_core), new_trades_str}
+    end
+
+    if next(added_trades) then
+        local new_trades_str = ""
+        for item_name, trade in pairs(added_trades) do
+            new_trades_str = new_trades_str .. "[img=item." .. item_name .. "]"
         end
+        lib.print_notification("extra-trade", {"hextorio.bonus-trade", lib.get_gps_str_from_hex_core(state.hex_core), new_trades_str})
     end
 end
 
@@ -2507,8 +2509,7 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
             end
             hex_cores_str = hex_cores_str .. lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
         end
-        game.print({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"})
-        game.print(hex_cores_str)
+        lib.print_notification("extra-trade", {"", {"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"}, "\n", hex_cores_str})
     end
 end
 
@@ -2535,7 +2536,7 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
         end
     end
     if added then
-        game.print({"hextorio.bonus-trade-interplanetary", lib.get_gps_str_from_hex_core(state.hex_core), "[img=item." .. item_name .. "]"})
+        lib.print_notification("interplanetary-trade", {"hextorio.bonus-trade-interplanetary", lib.get_gps_str_from_hex_core(state.hex_core), "[img=item." .. item_name .. "]"})
     end
 end
 
@@ -2565,7 +2566,7 @@ function hex_grid.try_recover_trade(trade, states, notify)
         local state = states[math.random(1, #states)]
         hex_grid.add_trade(state, trade)
         if notify then
-            game.print({"hextorio.trade-recovered", lib.get_trade_img_str(trade), lib.get_gps_str_from_hex_core(state.hex_core)})
+            lib.print_notification("trade-recovered", {"hextorio.trade-recovered", lib.get_trade_img_str(trade), lib.get_gps_str_from_hex_core(state.hex_core)})
         end
     else
         -- This should never happen, but it's here just in case.
