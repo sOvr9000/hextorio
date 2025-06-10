@@ -453,7 +453,8 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_controls.gleba_stone.size = 0
         mgs.autoplace_controls.gleba_water.size = 0
         mgs.autoplace_controls.gleba_plants.size = 6
-        mgs.autoplace_controls.gleba_plants.frequency = 6
+        mgs.autoplace_controls.gleba_plants.frequency = 1/6
+        mgs.autoplace_controls.gleba_plants.size = 6
         mgs.autoplace_controls.gleba_plants.richness = 6
         mgs.autoplace_settings.tile.settings["gleba-deep-lake"].size = 0
         -- mgs.autoplace_settings.tile.settings["gleba-deep-lake"].frequency = 0

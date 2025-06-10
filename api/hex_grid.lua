@@ -1228,7 +1228,7 @@ function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, nu
         table.remove(entity_table, idx)
 
         local angle = math.random() * math.pi * 2
-        local r = math.random() * inner_radius
+        local r = math.sqrt(math.random()) * inner_radius
         local x = center.x + math.cos(angle) * r
         local y = center.y + math.sin(angle) * r
 

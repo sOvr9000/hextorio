@@ -1608,6 +1608,12 @@ function lib.get_hex_core_from_entity(entity)
     return entities[1]
 end
 
+-- ---Get the required tiles for placement of an entity prototype.
+-- ---@param prot LuaEntityPrototype
+-- function lib.entity_required_tiles(prot)
+
+-- end
+
 
 
 return lib
