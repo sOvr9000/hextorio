@@ -96,6 +96,56 @@ if lib.data.is_hextreme_enabled() then
 end
 
 
+-- local disintegrator = table.deepcopy(data.raw["technology"]["destroyer"])
+-- disintegrator.name = "disintegrator"
+-- disintegrator.unit = {
+--     count = 2000,
+--     time = 60,
+--     ingredients = {
+--         {"automation-science-pack", 1},
+--         {"logistic-science-pack", 1},
+--         {"military-science-pack", 1},
+--         {"chemical-science-pack", 1},
+--         {"utility-science-pack", 1},
+--         {"space-science-pack", 1},
+--         {"metallurgic-science-pack", 1},
+--     },
+-- }
+-- disintegrator.prerequisites = {"flamethrower", "metallurgic-science-pack"}
+-- disintegrator.effects = {
+--     {
+--         type  = "unlock-recipe",
+--         recipe = "disintegrator-capsule",
+--     },
+-- }
+-- disintegrator.localised_name = nil
+-- disintegrator.localised_description = nil
+
+-- local detonator = table.deepcopy(data.raw["technology"]["destroyer"])
+-- detonator.name = "detonator"
+-- detonator.unit = {
+--     count = 2000,
+--     time = 60,
+--     ingredients = {
+--         {"automation-science-pack", 1},
+--         {"logistic-science-pack", 1},
+--         {"military-science-pack", 1},
+--         {"chemical-science-pack", 1},
+--         {"utility-science-pack", 1},
+--         {"space-science-pack", 1},
+--         {"agricultural-science-pack", 1},
+--     },
+-- }
+-- detonator.prerequisites = {"plague-rocket"}
+-- detonator.effects = {
+--     {
+--         type  = "unlock-recipe",
+--         recipe = "detonator-capsule",
+--     },
+-- }
+-- detonator.localised_name = nil
+-- detonator.localised_description = nil
+
 local demolisher = table.deepcopy(data.raw["technology"]["destroyer"])
 demolisher.name = "demolisher"
 demolisher.unit = {
@@ -126,7 +176,11 @@ demolisher.localised_description = nil
 
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({demolisher})
+data:extend({
+    -- disintegrator,
+    -- detonator,
+    demolisher,
+})
 
 
 

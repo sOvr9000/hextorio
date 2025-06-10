@@ -85,18 +85,33 @@ end
 data:extend(modules)
 
 
+
+local sentient_spider = table.deepcopy(data.raw["item-with-entity-data"]["spidertron"])
+sentient_spider.name = "sentient-spider"
+sentient_spider.place_result = "sentient-spider"
+sentient_spider.order = "b[personal-transport]-d[sentient-spider]-a[spider]"
+
 -- Combat robot capsules
+-- local disintegrator_capsule = table.deepcopy(data.raw["capsule"]["destroyer-capsule"])
+-- disintegrator_capsule.name = "disintegrator-capsule"
+-- disintegrator_capsule.capsule_action.attack_parameters.ammo_type.action[1].action_delivery.projectile = "disintegrator-capsule"
+-- disintegrator_capsule.order = "g[disintegrator-capsule]"
+-- disintegrator_capsule.localised_name = nil
+-- disintegrator_capsule.localised_description = nil
+
+-- local detonator_capsule = table.deepcopy(data.raw["capsule"]["destroyer-capsule"])
+-- detonator_capsule.name = "detonator-capsule"
+-- detonator_capsule.capsule_action.attack_parameters.ammo_type.action[1].action_delivery.projectile = "detonator-capsule"
+-- detonator_capsule.order = "g[detonator-capsule]"
+-- detonator_capsule.localised_name = nil
+-- detonator_capsule.localised_description = nil
+
 local demolisher_capsule = table.deepcopy(data.raw["capsule"]["destroyer-capsule"])
 demolisher_capsule.name = "demolisher-capsule"
 demolisher_capsule.capsule_action.attack_parameters.ammo_type.action[1].action_delivery.projectile = "demolisher-capsule"
 demolisher_capsule.order = "g[demolisher-capsule]"
 demolisher_capsule.localised_name = nil
 demolisher_capsule.localised_description = nil
-
-local sentient_spider = table.deepcopy(data.raw["item-with-entity-data"]["spidertron"])
-sentient_spider.name = "sentient-spider"
-sentient_spider.place_result = "sentient-spider"
-sentient_spider.order = "b[personal-transport]-d[sentient-spider]-a[spider]"
 
 -- Items
 local hexaprism = table.deepcopy(data.raw["item"]["calcite"])
@@ -138,6 +153,8 @@ data:extend({
     hexic_transport_belt,
     hexic_underground_belt,
     hexic_splitter,
+    -- disintegrator_capsule,
+    -- detonator_capsule,
     demolisher_capsule,
     sentient_spider,
     hexaprism,

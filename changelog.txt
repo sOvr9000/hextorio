@@ -29,6 +29,7 @@ Date: 9/6/25
     - Changed Sentient Spider inventory size to 120 (50% higher than spidertron).
   Balancing:
     - Made the Lazy Looter quest reward give a rare [item=spidertron] instead of normal, as well as equipment to go with it.
+    - Changed demolisher capsule craft time from 1s to 20s.
   Ease of use:
     - Clicking on the "find trade" button in the trade overview now immediately takes your remote view to the relevant hex core and opens it up for you.
     - Output loaders of hex cores can now be clicked directly to set their filters rather than having to go through the hex core interface.

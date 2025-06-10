@@ -88,7 +88,43 @@ end
 data:extend(module_recipes)
 
 
-local demolisher_recipe = {
+-- local disintegrator_capsule = {
+--     type = "recipe",
+--     name = "disintegrator-capsule",
+--     category = "metallurgy",
+--     ingredients = {
+--         {type = "item", name = "destroyer-capsule", amount = 6},
+--         {type = "item", name = "processing-unit", amount = 10},
+--         {type = "item", name = "tungsten-plate", amount = 50},
+--         {type = "item", name = "flamethrower", amount = 1},
+--         {type = "fluid", name = "lava", amount = 1000},
+--     },
+--     results = {
+--         {type = "item", name = "disintegrator-capsule", amount = 1},
+--     },
+--     energy_required = 20,
+--     enabled = false,
+-- }
+
+-- local detonator_capsule = {
+--     type = "recipe",
+--     name = "detonator-capsule",
+--     category = "organic",
+--     ingredients = {
+--         {type = "item", name = "destroyer-capsule", amount = 6},
+--         {type = "item", name = "processing-unit", amount = 10},
+--         {type = "item", name = "plague-rocket", amount = 20},
+--         {type = "item", name = "rocket-launcher", amount = 1},
+--         {type = "fluid", name = "bioflux", amount = 10},
+--     },
+--     results = {
+--         {type = "item", name = "detonator-capsule", amount = 1},
+--     },
+--     energy_required = 20,
+--     enabled = false,
+-- }
+
+local demolisher_capsule = {
     type = "recipe",
     name = "demolisher-capsule",
     category = "metallurgy",
@@ -103,7 +139,7 @@ local demolisher_recipe = {
     results = {
         {type = "item", name = "demolisher-capsule", amount = 1},
     },
-    energy_required = 1,
+    energy_required = 20,
     enabled = false,
 }
 
@@ -250,7 +286,9 @@ data:extend({
     hexic_transport_belt,
     hexic_underground_belt,
     hexic_splitter,
-    demolisher_recipe,
+    -- disintegrator_capsule,
+    -- detonator_capsule,
+    demolisher_capsule,
     sentient_spider_recipe,
     energized_thruster_fuel,
     energized_thruster_oxidizer,
