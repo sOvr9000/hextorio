@@ -1,6 +1,27 @@
 
-local tile_names = require "api.tile_names"
+-- local tile_names = require "api.tile_names"
 
+
+local tile_names_for_hexes = {
+    "stone-path",
+    "concrete",
+    "hazard-concrete-left",
+    "hazard-concrete-right",
+    "refined-concrete",
+    "refined-hazard-concrete-left",
+    "refined-hazard-concrete-right",
+    "red-refined-concrete",
+    "green-refined-concrete",
+    "blue-refined-concrete",
+    "orange-refined-concrete",
+    "yellow-refined-concrete",
+    "pink-refined-concrete",
+    "purple-refined-concrete",
+    "black-refined-concrete",
+    "brown-refined-concrete",
+    "cyan-refined-concrete",
+    "acid-refined-concrete",
+}
 
 
 data:extend({
@@ -33,14 +54,14 @@ data:extend({
         name = "hextorio-claimed-hex-tile",
         setting_type = "runtime-per-user",
         default_value = "refined-concrete",
-        allowed_values = tile_names.space_age_land,
+        allowed_values = tile_names_for_hexes,
     },
     {
         type = "string-setting",
         name = "hextorio-edge-fill-tile",
         setting_type = "runtime-per-user",
         default_value = "black-refined-concrete",
-        allowed_values = tile_names.space_age_land,
+        allowed_values = tile_names_for_hexes,
     },
     {
         type = "string-setting",

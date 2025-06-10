@@ -27,6 +27,7 @@ Date: 9/6/25
   Changes:
     - Clicking on a GPS tag in chat no longer opens pinged hex cores.
     - Changed Sentient Spider inventory size to 120 (50% higher than spidertron).
+    - Trimmed the number of tiles that can be used in per-player tile settings for claiming hexes.
   Balancing:
     - Made the Lazy Looter quest reward give a rare [item=spidertron] instead of normal, as well as equipment to go with it.
     - Changed demolisher capsule craft time from 1s to 20s.
