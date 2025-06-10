@@ -1425,7 +1425,6 @@ function lib.get_str_from_hex_core_stats(stats)
 
     any = false
     if next(stats.total_items_consumed) then
-        log(serpent.block(stats.total_items_consumed))
         table.insert(str, "\n" .. lib.get_quality_item_counts_str(stats.total_items_consumed, false))
         any = true
     end
