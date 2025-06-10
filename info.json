@@ -5,6 +5,6 @@
   "author": "sOvr9000",
   "contact": "https://discord.gg/huJY7QK6UG",
   "factorio_version": "2.0",
-  "description": "(Not yet thoroughly tested for mod compatibility.)\nAs they've always said since 325 B.C., hexagons are the bestagons! You start inside a hexagon with water and limited resources. The goal is to reach the solar system edge, like normal.\n\nDuring your quest-filled journey, you'll discover many ways to take your factory to greater heights and breach the massive dungeons of each planet! And most importantly... get rich! Level up, explore, and discover a version of Factorio you wish you had all along.",
+  "description": "Adds dungeons, quests, an economy and trading system, the ability to level up items in the game, and an extra tier for transport belts, belt capacity, modules, quality, spidertrons, spaceship fuel recipes, chemical fuels, bullet magazines, rockets, combat robots, and nauvis ores (endgame).\n\nAlso divides the planets into hexagons, which contain resources, enemy bases, or profitable trades.\n\nGet rich by selling your excess items, buy hexagons, and plunder the powerful dungeons on every planet!",
   "dependencies": ["base >= 2.0.55", "space-age >= 2.0.55"]
 }

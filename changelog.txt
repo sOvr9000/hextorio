@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: ?/?/25
+  Changes:
+    - Changed mod description to briefly outline the changes and additions that this mod brings.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 9/6/25
