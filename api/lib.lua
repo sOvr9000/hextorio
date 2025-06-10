@@ -1539,7 +1539,7 @@ end
 
 ---Reload the given turrets.
 ---@param entities LuaEntity[]
----@param params {bullet_type: string|nil, flamethrower_type: string|nil, rocket_type: string|nil, railgun_type: string|nil, bullet_count: int|nil, flamethrower_count: int|nil, rocket_count: int|nil, railgun_count: int|nil} | nil
+---@param params AmmoReloadParameters | nil
 function lib.reload_turrets(entities, params)
     if not params then params = {} end
     if not params.bullet_type then

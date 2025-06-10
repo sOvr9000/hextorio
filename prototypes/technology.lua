@@ -174,12 +174,10 @@ demolisher.effects = {
 demolisher.localised_name = nil
 demolisher.localised_description = nil
 
-
----@diagnostic disable-next-line: assign-type-mismatch
 data:extend({
     -- disintegrator,
     -- detonator,
-    demolisher,
+    demolisher, ---@diagnostic disable-line: assign-type-mismatch
 })
 
 

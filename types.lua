@@ -14,3 +14,5 @@
 ---| "extra-trade"
 ---| "interplanetary-trade"
 ---| "trade-recovered"
+
+---@alias AmmoReloadParameters {bullet_type: string|nil, flamethrower_type: string|nil, rocket_type: string|nil, railgun_type: string|nil, bullet_count: int|nil, flamethrower_count: int|nil, rocket_count: int|nil, railgun_count: int|nil}
