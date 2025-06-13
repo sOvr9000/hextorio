@@ -1788,7 +1788,11 @@ function hex_grid.can_delete_hex_core(hex_core)
     if not hex_core.valid then return false end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
-    if not state then return false end
+    if not state then
+        lib.log_error("hex_grid.delete_hex_core: hex core has no state")
+        return false
+    end
+
     if state.position.q == 0 and state.position.r == 0 then return false end
 
     return true
@@ -1798,13 +1802,10 @@ end
 ---@param hex_core LuaEntity
 ---@return boolean
 function hex_grid.delete_hex_core(hex_core)
-    if not hex_core.valid then return false end
+    if not hex_grid.can_delete_hex_core(hex_core) then return false end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
-    if not state then
-        lib.log_error("hex_grid.delete_hex_core: hex core has no state")
-        return false
-    end
+    if not state then return false end
 
     local entities = hex_core.surface.find_entities_filtered {name = "hex-core-loader", radius = 3, position = hex_core.position}
     for _, e in pairs(entities) do

@@ -36,8 +36,7 @@ local function on_delete_core_tool_used(player, entities)
             local current_coin = coin_tiers.get_coin_from_inventory(inv)
             if coin_tiers.ge(current_coin, cost) then
                 if not hex_grid.delete_hex_core(e) then
-                    -- This only happens when something goes wrong with data handling, so this should not actually inform the player.
-                    -- failed = true
+                    failed = true
                 end
                 coin_tiers.remove_coin_from_inventory(inv, cost)
             else
