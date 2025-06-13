@@ -47,6 +47,7 @@ local versions = {
     "0.4.2",
     "0.4.3",
     "1.0.0",
+    "1.0.1",
 }
 
 local version_stepping = {}
@@ -351,6 +352,12 @@ local process_migration = {
         spiders.register_events()
         spiders.init()
         spiders.reindex_spiders()
+    end,
+    ["1.0.0"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
+
+        
     end,
 }
 

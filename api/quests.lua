@@ -9,6 +9,7 @@ local terrain      = require "api.terrain"
 
 
 
+---@alias QuestReward {type: string, value: string|number|table}
 ---@alias QuestIdentification Quest|int|string
 
 
@@ -96,10 +97,10 @@ function quests.init()
 
         if prev_quest and quests.is_complete(prev_quest) then
             -- check if extra rewards have been added due to migration
-            -- local extra_rewards = quests.get_reward_list_additions(quest, prev_quest)
-            -- for _, reward in pairs(extra_rewards) do
-            --     table.insert(prev_quest.rewards, reward)
-            -- end
+            local extra_rewards = quests.get_reward_list_additions(quest, prev_quest)
+            for _, reward in pairs(extra_rewards) do
+                quests.give_reward(reward)
+            end
 
             -- don't overwrite old quest progress
             quests._mark_complete(quest)
@@ -407,13 +408,28 @@ function quests._mark_complete(quest)
     quest.complete = true
 end
 
+---Process the obtainment of a quest reward.
+---@param reward QuestReward
+---@param from_quest Quest|nil
+function quests.give_reward(reward, from_quest)
+    if reward.type == "unlock-feature" then
+        storage.quests.unlocked_features[reward.value] = true
+    elseif reward.type == "receive-items" then
+        if from_quest then
+            for _, player in pairs(game.players) do
+                quests.try_receive_items_reward(player, from_quest, reward)
+            end
+        else
+            lib.log_error("quests.give_reward: Tried to give a quest reward of type 'receive-items' from a nil quest.")
+        end
+    end
+
+    event_system.trigger("quest-reward-received", reward.type, reward.value)
+end
+
 ---Dish out the rewards of a quest.
 ---@param quest QuestIdentification
-function quests.give_rewards(quest)
-    if not quest then
-        lib.log_error("quests.give_rewards: quest is nil")
-        return
-    end
+function quests.give_rewards_of_quest(quest)
     local q = quests.get_quest(quest)
     if not q then
         lib.log_error("quests.give_rewards: Quest not found: " .. tostring(quest))
@@ -422,15 +438,7 @@ function quests.give_rewards(quest)
     if quests.is_complete(q) then return end
 
     for _, reward in pairs(q.rewards) do
-        if reward.type == "unlock-feature" then
-            storage.quests.unlocked_features[reward.value] = true
-        elseif reward.type == "receive-items" then
-            for _, player in pairs(game.players) do
-                quests.try_receive_items_reward(player, q, reward)
-            end
-        end
-
-        event_system.trigger("quest-reward-received", reward.type, reward.value)
+        quests.give_reward(reward, q)
     end
 end
 
@@ -640,7 +648,7 @@ function quests.complete_quest(quest)
     if quests.is_complete(q) then return end
 
     quests.print_quest_completion(q)
-    quests.give_rewards(q)
+    quests.give_rewards_of_quest(q)
     quests._mark_complete(q)
 
     for _, condition in pairs(q.conditions) do
