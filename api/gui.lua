@@ -1087,14 +1087,16 @@ function gui.update_hex_core(player)
                 {"hex-core-gui.supercharge-tooltip-body"},
             }
         end
-        frame["hex-control-flow"]["delete-core"].enabled = true
-        frame["hex-control-flow"]["delete-core"].tooltip = {"",
-            lib.color_localized_string({"hex-core-gui.delete-core-tooltip-header"}, "red", "heading-2"),
-            "\n",
-            {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_delete_core_cost(hex_core))},
-            "\n",
-            {"hex-core-gui.delete-core-tooltip-body"},
-        }
+        frame["hex-control-flow"]["delete-core"].visible = hex_grid.can_delete_hex_core(hex_core)
+        if frame["hex-control-flow"]["delete-core"].visible then
+            frame["hex-control-flow"]["delete-core"].tooltip = {"",
+                lib.color_localized_string({"hex-core-gui.delete-core-tooltip-header"}, "red", "heading-2"),
+                "\n",
+                {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_delete_core_cost(hex_core))},
+                "\n",
+                {"hex-core-gui.delete-core-tooltip-body"},
+            }
+        end
 
         frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil and quests.is_feature_unlocked "sink-mode"
         frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil and quests.is_feature_unlocked "generator-mode"

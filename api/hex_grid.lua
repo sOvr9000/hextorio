@@ -1385,6 +1385,8 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
         return
     end
 
+    hex_grid.add_free_hex_claims(surface_name, -1)
+
     for _, adj_hex in pairs(adjacent_hexes) do
         if hex_grid.can_hex_core_spawn(surface_id, adj_hex) then
             hex_grid.spawn_hex_core(surface, axial.get_hex_center(adj_hex, transformation.scale, transformation.rotation))
@@ -1440,7 +1442,6 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
 
     hex_grid.check_hex_span(surface, hex_pos)
-    hex_grid.add_free_hex_claims(surface_name, -1)
     quests.increment_progress_for_type("claimed-hexes", 1)
     quests.increment_progress_for_type("claimed-hexes-on", 1, surface_name)
 
@@ -1780,14 +1781,29 @@ function hex_grid.add_initial_trades(state)
     hex_grid.apply_interplanetary_trade_bonus(state)
 end
 
--- Delete a hex core entity and its trades, but keep the ground tiles.
+---Return whether it's possible to delete a given hex core entity.
+---@param hex_core LuaEntity
+---@return boolean
+function hex_grid.can_delete_hex_core(hex_core)
+    if not hex_core.valid then return false end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return false end
+    if state.position.q == 0 and state.position.r == 0 then return false end
+
+    return true
+end
+
+---Delete a hex core entity and its trades, but keep the ground tiles. Return whether the deletion was successful.
+---@param hex_core LuaEntity
+---@return boolean
 function hex_grid.delete_hex_core(hex_core)
-    if not hex_core or not hex_core.valid then return end
+    if not hex_core.valid then return false end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then
         lib.log_error("hex_grid.delete_hex_core: hex core has no state")
-        return
+        return false
     end
 
     local entities = hex_core.surface.find_entities_filtered {name = "hex-core-loader", radius = 3, position = hex_core.position}
@@ -1800,9 +1816,6 @@ function hex_grid.delete_hex_core(hex_core)
     hex_grid.remove_from_pool(state)
     hex_core.destroy()
     event_system.trigger("hex-core-deleted", state)
-
-    if not state then return end
-
     state.hex_core = nil
 
     for _, trade_id in pairs(state.trades) do
@@ -1817,6 +1830,8 @@ function hex_grid.delete_hex_core(hex_core)
     state.input_loaders = nil
     state.output_loaders = nil
     state.deleted = true
+
+    return true
 end
 
 function hex_grid.supercharge_resources(hex_core)

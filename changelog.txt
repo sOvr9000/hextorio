@@ -3,6 +3,14 @@ Version: 1.0.1
 Date: ?/?/25
   Changes:
     - Changed mod description to briefly outline the changes and additions that this mod brings.
+    - You can no longer delete the hex core at spawn on any planet, mainly to prevent you from deleting every hex core on a planet accidentally.
+  Bugfixes:
+    - Fixed that the delete core tool was able to delete cores before hex core deletion was unlocked.
+    - Fixed hex claim rewards (again).
+  Features:
+    - Added quest on Fulgora which unlocks resource conversion.
+  Minor Features:
+    - If you use the delete core tool on hex cores that you cannot afford to delete, it'll notify you.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 9/6/25
