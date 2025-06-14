@@ -154,6 +154,33 @@ function weighted_choice.add_global_bias(wc, bias)
     return new_wc
 end
 
+---Return a new weighted choice object where the provided item is `ratio` of the total weight in the given weighted choice object.
+---@param wc WeightedChoice
+---@param item any
+---@param ratio number
+function weighted_choice.set_ratio(wc, item, ratio)
+    -- Algebraically,
+    -- Let W = current item weight
+    -- Let I = increment to item weight
+    -- Let T = total weight before item's weight adjustment
+    -- Let R = desired ratio of item weight to total weight
+    -- Then,
+    -- (W + I) / (T + I) = R
+    -- which means,
+    -- I = R * (T + I) - W
+    -- => I = RT + RI - W
+    -- => I * (1 - R) = RT - W
+    -- => I = (RT - W) / (1 - R)
+    -- So we set the weight of the item to W + (RT - W) / (1 - R)
+
+    local item_weight = weighted_choice.get_weight(wc, item)
+    local I = (ratio * wc["__total_weight"] - item_weight) / (1 - ratio)
+    local new_wc = weighted_choice.copy(wc)
+    weighted_choice.set_weight(new_wc, item, item_weight + I)
+
+    return new_wc
+end
+
 
 
 return weighted_choice

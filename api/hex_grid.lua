@@ -799,6 +799,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     local scaled_richness = base_richness + dist * lib.runtime_setting_value("resource-richness-per-dist-" .. surface.name)
 
     state.resources = {}
+    state.ore_entities = {}
 
     if is_well then
         state.is_well = true
@@ -839,7 +840,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                 position = {x, y},
                 amount = amount * (0.8 + 0.2 * math.random()),
             }
-            if entity then
+            if entity and entity.valid then
                 state.resources[resource] = (state.resources[resource] or 0) + entity.amount
             end
         end
@@ -937,6 +938,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                 local entity = surface.create_entity {name = resource, position = tile, amount = amount}
                 if entity and entity.valid then
                     state.resources[resource] = (state.resources[resource] or 0) + amount
+                    table.insert(state.ore_entities, entity)
                 end
             end
         end
@@ -1075,6 +1077,13 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
         local resource = weighted_choice.choice(wc)
+
+        -- If tungsten bias chance setting triggered, force the bias resource to be tungsten ore and set exact composition, and then apply the usual bias.
+        if can_be_tungsten and math.random() < lib.runtime_setting_value "tungsten-bias-chance" then
+            resource = "tungsten-ore"
+            bias_wc = weighted_choice.set_ratio(bias_wc, "tungsten-ore", 0.4)
+        end
+
         local bias_strength = lib.runtime_setting_value "resource-bias" --[[@as number]]
 
         -- Make the selected resource more likely to be chosen
@@ -1846,6 +1855,34 @@ function hex_grid.supercharge_resources(hex_core)
     state.is_infinite = true
 end
 
+function hex_grid.convert_resources(hex_core)
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state or not state.ore_entities then return end
+
+    local surface = hex_core.surface
+
+    -- Determine most abundant resource
+    local max_resource = hex_grid.get_most_abundant_ore(state)
+    if not max_resource then return end
+
+    -- Convert the other resources to the most abundant type
+    for i, e in ipairs(state.ore_entities) do
+        if e.valid then
+            if e.name ~= max_resource then
+                local new_entity = surface.create_entity {
+                    name = max_resource,
+                    amount = e.amount,
+                    position = e.position,
+                }
+                if new_entity and new_entity.valid then
+                    e.destroy()
+                    state.ore_entities[i] = new_entity
+                end
+            end
+        end
+    end
+end
+
 function hex_grid.set_quality(hex_core, quality)
     if not hex_core then
         lib.log_error("hex_grid.set_quality: hex core is nil")
@@ -2187,6 +2224,103 @@ function hex_grid.get_quality_upgrade_cost(hex_core)
     end
 
     return coin_tiers.multiply(coin_tiers.from_base_value(base_cost), mult)
+end
+
+---Get the cost of converting a hex's ores.
+---@param hex_core LuaEntity
+---@return Coin
+function hex_grid.get_convert_resources_cost(hex_core)
+    if not hex_core or not hex_core.valid then return coin_tiers.new() end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state or not state.ore_entities then return coin_tiers.new() end
+
+    local amounts = hex_grid.get_ore_amounts(state)
+    local max_resource = hex_grid.get_most_abundant_ore(state, amounts)
+    local count = 0
+    for name, amount in pairs(amounts) do
+        if name ~= max_resource then
+            count = count + amount
+        end
+    end
+
+    local item_value = item_values.get_item_value(hex_core.surface.name, max_resource)
+    local mult = lib.runtime_setting_value "resource-conversion-cost-multiplier"
+    local cost = coin_tiers.ceil(coin_tiers.multiply(coin_tiers.from_base_value(item_value), count * mult))
+
+    return cost
+end
+
+---Get the total minable amount of each type of ore entity in the hex state.
+---@param state HexState
+---@return {[string]: int}
+function hex_grid.get_ore_amounts(state)
+    if not state.ore_entities then return {} end
+    local amounts = {}
+    for _, entity in pairs(state.ore_entities) do
+        if entity.valid then
+            amounts[entity.name] = (amounts[entity.name] or 0) + entity.amount
+        end
+    end
+    return amounts
+end
+
+---Get the total number of ore entities for each type of ore entity in the hex state.
+---@param state HexState
+---@return {[string]: int}
+function hex_grid.get_ore_entity_counts(state)
+    if not state.ore_entities then return {} end
+    local amounts = {}
+    for _, entity in pairs(state.ore_entities) do
+        if entity.valid then
+            amounts[entity.name] = (amounts[entity.name] or 0) + 1
+        end
+    end
+    return amounts
+end
+
+---Return whether the hex state currently has multiple ore types.
+---@param state HexState
+---@return boolean
+function hex_grid.has_multiple_ore_types(state)
+    if not state.ore_entities then return false end
+
+    local single_type
+    for _, e in pairs(state.ore_entities) do
+        if e.valid then
+            if single_type then
+                if e.name ~= single_type then
+                    return true
+                end
+            else
+                single_type = e.name
+            end
+        end
+    end
+
+    return false
+end
+
+---Return the name of the most abundant ore in the hex. Returns nil for hexes with no ores.
+---@param state HexState
+---@param amounts {[string]: int}|nil If not provided, the amounts will be calculated automatically.
+---@return string|nil
+function hex_grid.get_most_abundant_ore(state, amounts)
+    if not amounts then
+        amounts = hex_grid.get_ore_entity_counts(state)
+    end
+
+    local max_amount = 0
+    local max_resource
+
+    for resource, amount in pairs(amounts) do
+        if amount > max_amount then
+            max_amount = amount
+            max_resource = resource
+        end
+    end
+
+    return max_resource
 end
 
 function hex_grid.process_hex_core_pool()

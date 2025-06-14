@@ -216,6 +216,12 @@ return {
             prerequisites = {"too-many-hex-cores"},
         },
         {
+            name = "electrocution",
+            conditions = {{type = "die-to-damage-type", value = "electric", progress_requirement = 1}},
+            rewards = {{type = "unlock-feature", value = "resource-conversion"}, {type = "claim-free-hexes", value = {"fulgora", 5}}},
+            prerequisites = {"too-many-hex-cores"},
+        },
+        {
             name = "you-are-the-destroyer",
             conditions = {{type = "use-capsule", value = "destroyer-capsule", progress_requirement = 5}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 5}}},

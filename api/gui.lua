@@ -231,11 +231,8 @@ function gui.init_hex_core(player)
 
     local upgrade_quality = hex_control_flow.add {type = "sprite-button", name = "upgrade-quality", sprite = "quality/uncommon"}
 
-    -- local unloader_filters_flow = hex_core_gui.add {type = "flow", name = "unloader-filters-flow", direction = "horizontal"}
-    -- for i, dir in ipairs {"west", "north", "south", "east"} do
-    --     local unloader_filters_dir = unloader_filters_flow.add {type = "sprite-button", name = dir, sprite = "arrow-" .. dir}
-    -- end
-    -- unloader_filters_flow.visible = false
+    local convert_resources = hex_control_flow.add {type = "sprite-button", name = "convert-resources", sprite = "virtual-signal.signal-recycle"}
+    convert_resources.tooltip = {"", lib.color_localized_string({"hex-core-gui.convert-resources-tooltip-header"}, "blue", "heading-2"), "\n", {"hex-core-gui.convert-resources-tooltip-body"}}
 
     local delete_core_confirmation = hex_core_gui.add {type = "flow", name = "delete-core-confirmation", direction = "horizontal"}
     delete_core_confirmation.visible = false
@@ -1076,23 +1073,38 @@ function gui.update_hex_core(player)
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["stats"].tooltip = lib.get_str_from_hex_core_stats(hex_grid.get_hex_core_stats(state))
         frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation" and player.character and state.hex_core and player.character.surface.name == state.hex_core.surface.name
-        -- frame["hex-control-flow"]["unloader-filters"].enabled = true
-        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging" and not coin_tiers.is_zero(hex_grid.get_supercharge_cost(hex_core))
+
+        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging"
         if frame["hex-control-flow"]["supercharge"].visible then
+            local cost = hex_grid.get_supercharge_cost(hex_core)
             frame["hex-control-flow"]["supercharge"].tooltip = {"",
                 lib.color_localized_string({"hex-core-gui.supercharge-tooltip-header"}, "orange", "heading-2"),
                 "\n",
-                {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_supercharge_cost(hex_core))},
+                {"hextorio-gui.cost", coin_tiers.coin_to_text(cost)},
                 "\n",
                 {"hex-core-gui.supercharge-tooltip-body"},
             }
         end
+
+        frame["hex-control-flow"]["convert-resources"].visible = quests.is_feature_unlocked "resource-conversion" and hex_grid.has_multiple_ore_types(state)
+        if frame["hex-control-flow"]["convert-resources"].visible then
+            local cost = hex_grid.get_convert_resources_cost(hex_core)
+            frame["hex-control-flow"]["convert-resources"].tooltip = {"",
+                lib.color_localized_string({"hex-core-gui.convert-resources-tooltip-header"}, "blue", "heading-2"),
+                "\n",
+                {"hextorio-gui.cost", coin_tiers.coin_to_text(cost)},
+                "\n",
+                {"hex-core-gui.convert-resources-tooltip-body", "[item=" .. hex_grid.get_most_abundant_ore(state) .. "]"},
+            }
+        end
+
         frame["hex-control-flow"]["delete-core"].visible = hex_grid.can_delete_hex_core(hex_core)
         if frame["hex-control-flow"]["delete-core"].visible then
+            local cost = hex_grid.get_delete_core_cost(hex_core)
             frame["hex-control-flow"]["delete-core"].tooltip = {"",
                 lib.color_localized_string({"hex-core-gui.delete-core-tooltip-header"}, "red", "heading-2"),
                 "\n",
-                {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_delete_core_cost(hex_core))},
+                {"hextorio-gui.cost", coin_tiers.coin_to_text(cost)},
                 "\n",
                 {"hex-core-gui.delete-core-tooltip-body"},
             }
@@ -2357,6 +2369,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_supercharge_button_click(player, element)
     elseif element.name == "delete-core" then
         gui.on_delete_core_button_click(player, element)
+    elseif element.name == "convert-resources" then
+        gui.on_convert_resources_button_click(player, element)
     elseif element.name == "confirmation-button" then
         gui.on_confirmation_button_click(player, element)
     elseif element.name:sub(-18) == "-mode-confirmation" then
@@ -2391,6 +2405,29 @@ function gui.on_sprite_button_click(player, element)
             end
         end
     end
+end
+
+function gui.on_convert_resources_button_click(player, element)
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    local inv = lib.get_player_inventory(player)
+    if not inv then return end
+
+    local coin = hex_grid.get_convert_resources_cost(hex_core)
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    if coin_tiers.gt(coin, inv_coin) then
+        player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
+        return
+    end
+
+    coin_tiers.remove_coin_from_inventory(inv, coin)
+
+    hex_grid.convert_resources(hex_core)
+    gui.update_hex_core(player)
 end
 
 function gui.on_catalog_control_button_clicked(player, element)

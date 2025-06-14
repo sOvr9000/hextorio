@@ -138,6 +138,15 @@ data:extend({
     },
     {
         type = "double-setting",
+        name = "hextorio-tungsten-bias-chance",
+        setting_type = "runtime-global",
+        default_value = 0.1,
+        minimum_value = 0.0,
+        maximum_value = 1.0,
+        order = "gia",
+    },
+    {
+        type = "double-setting",
         name = "hextorio-aquilo-crude-oil-frequency",
         setting_type = "runtime-global",
         default_value = 1.0,
@@ -401,6 +410,14 @@ data:extend({
         minimum_value = 0,
         default_value = 0.025,
         order = "pc",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-conversion-cost-multiplier",
+        setting_type = "runtime-global",
+        minimum_value = 0,
+        default_value = 100,
+        order = "pd",
     },
 
     {
