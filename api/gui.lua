@@ -1098,6 +1098,7 @@ function gui.update_hex_core(player)
             }
         end
 
+        frame["hex-control-flow"]["delete-core"].enabled = true
         frame["hex-control-flow"]["delete-core"].visible = hex_grid.can_delete_hex_core(hex_core)
         if frame["hex-control-flow"]["delete-core"].visible then
             local cost = hex_grid.get_delete_core_cost(hex_core)

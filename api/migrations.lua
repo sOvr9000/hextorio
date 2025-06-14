@@ -372,6 +372,10 @@ local process_migration = {
                 end
             end
         end
+
+        for _, player in pairs(game.players) do
+            gui.reinitialize_everything(player)
+        end
     end,
 }
 
