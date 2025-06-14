@@ -1802,6 +1802,7 @@ function hex_grid.can_delete_hex_core(hex_core)
         return false
     end
 
+    if not state.claimed then return false end
     if state.position.q == 0 and state.position.r == 0 then return false end
 
     return true
