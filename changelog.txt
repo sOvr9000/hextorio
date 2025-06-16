@@ -1,6 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.2
+Date: 16/6/25
+  Gui:
+    - Item tooltips in hex core trades, trade overview, and catalog now show the item's partial progress toward silver rank if it's a bronze rank.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.1
-Date: ?/?/25
+Date: 14/6/25
   Changes:
     - Changed mod description to briefly outline the changes and additions that this mod brings.
     - You can no longer delete the hex core at spawn on any planet, mainly to prevent you from deleting every hex core on a planet accidentally.
