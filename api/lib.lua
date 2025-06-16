@@ -783,9 +783,18 @@ function lib.ticks_to_string(ticks)
     return table.concat(parts, " ")
 end
 
-function lib.get_rank_img_str(rank)
+---Get a string formatted for displaying star images of a rank.
+---@param rank int
+---@param left_half boolean|nil If provided, a bronze rank image can be halved.
+---@return string
+function lib.get_rank_img_str(rank, left_half)
     if rank == 1 then
-        -- return "[img=rank-1-alt]"
+        if left_half ~= nil then
+            if left_half then
+                return "[img=bronze-star-left-half][img=star-silhouette][img=star-silhouette]"
+            end
+            return "[img=bronze-star-right-half][img=star-silhouette][img=star-silhouette]"
+        end
         return "[img=star-silhouette][img=star-silhouette][img=star-silhouette]"
     elseif rank == 2 then
         return "[img=bronze-star][img=star-silhouette][img=star-silhouette]"
@@ -796,6 +805,7 @@ function lib.get_rank_img_str(rank)
     elseif rank == 5 then
         return "[img=red-star][img=red-star][img=red-star]"
     end
+    return ""
 end
 
 function lib.get_trade_img_str(trade)

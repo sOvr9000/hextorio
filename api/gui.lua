@@ -707,7 +707,11 @@ function gui.give_item_tooltip(player, surface_name, element)
     local rank_str = {""}
     if lib.is_catalog_item(item_name) then
         local rank = item_ranks.get_item_rank(item_name)
-        rank_str = {"", lib.color_localized_string({"hextorio-gui.rank"}, "white", "heading-1"), " " , lib.get_rank_img_str(rank), "\n\n"}
+        local left_half
+        if rank == 1 then
+            left_half = gui.get_bronze_sprite_half(item_name)
+        end
+        rank_str = {"", lib.color_localized_string({"hextorio-gui.rank"}, "white", "heading-1"), " " , lib.get_rank_img_str(rank, left_half), "\n\n"}
     end
 
     local item_img_rich_text = "[" .. rich_type .. "=" .. item_name .. ",quality=" .. quality .. "]"
@@ -1671,7 +1675,7 @@ function gui.update_catalog(player, selected_item_surface, selected_item_name)
                     end
                     rank_flow["catalog-item"].sprite = "item/" .. item_name
                     rank_flow["catalog-item"].ignored_by_interaction = false
-                    rank_flow["rank-stars"].sprite = "rank-" .. rank
+                    rank_flow["rank-stars"].sprite = gui.get_rank_sprite(item_name, rank)
                     rank_flow["rank-stars"].visible = true
                     gui.give_item_tooltip(player, surface_name, rank_flow["catalog-item"])
                 else
@@ -1786,10 +1790,14 @@ function gui.update_catalog_inspect_frame(player)
         caption = "[font=heading-1][img=item." .. selection.item_name .. "][.font]",
     }
 
+    local left_half
+    if rank_obj.rank == 1 then
+        left_half = gui.get_bronze_sprite_half(selection.item_name)
+    end
     local rank_label2 = rank_flow.add {
         type = "label",
         name = "label2",
-        caption = "[font=heading-1]" .. lib.get_rank_img_str(rank_obj.rank) .. "[.font]",
+        caption = "[font=heading-1]" .. lib.get_rank_img_str(rank_obj.rank, left_half) .. "[.font]",
     }
     rank_label2.style.left_margin = 73 / 1.2
 
@@ -3159,6 +3167,45 @@ function gui.get_quality_name_from_dropdown(element)
         return "normal"
     end
     return item:sub(14)
+end
+
+---Get the sprite name for an item's rank.
+---@param item_name string
+---@param rank_value int|nil If not provided, the rank is automatically determined.
+---@return string
+function gui.get_rank_sprite(item_name, rank_value)
+    if not rank_value then
+        rank_value = item_ranks.get_item_rank(item_name)
+    end
+
+    local sprite = "rank-" .. rank_value
+    if rank_value == 1 then
+        local left_half = gui.get_bronze_sprite_half(item_name)
+        if left_half ~= nil then
+            if left_half then
+                sprite = "rank-1-bought"
+            else
+                sprite = "rank-1-sold"
+            end
+        end
+    end
+
+    return sprite
+end
+
+---Get which half, if any, of the bronze star that should be used.
+---@param item_name string
+---@return boolean|nil
+function gui.get_bronze_sprite_half(item_name)
+    local left_half
+
+    if trades.get_total_bought(item_name) > 0 then
+        left_half = true
+    elseif trades.get_total_sold(item_name) > 0 then
+        left_half = false
+    end
+
+    return left_half
 end
 
 
