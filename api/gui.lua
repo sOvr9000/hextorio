@@ -1401,7 +1401,7 @@ function gui.update_questbook(player, quest_name)
                 name = "receive-items-flow",
                 direction = "horizontal",
             }
-            gui.add_sprite_buttons(receive_items_flow, reward.value, "receive-items-")
+            gui.add_sprite_buttons(receive_items_flow, reward.value, "receive-items-", true)
         end
         if reward.notes then
             for j, note_name in ipairs(reward.notes) do
@@ -1732,8 +1732,14 @@ function gui.get_warning_caption(info_id)
     return {"", "[color=255,255,64][img=utility.warning_icon] ", info_id, "[.color]"}
 end
 
-function gui.add_sprite_buttons(element, item_stacks, name_prefix)
+function gui.add_sprite_buttons(element, item_stacks, name_prefix, give_item_tooltips)
     if not name_prefix then name_prefix = "" end
+
+    local player
+    if give_item_tooltips then
+        player = gui.get_player_from_element(element)
+    end
+
     for i, item_stack in ipairs(item_stacks) do
         local sprite_button = element.add {
             type = "sprite-button",
@@ -1742,6 +1748,11 @@ function gui.add_sprite_buttons(element, item_stacks, name_prefix)
             number = item_stack.count,
             quality = item_stack.quality,
         }
+        if give_item_tooltips then
+            if player then
+                gui.give_item_tooltip(player, player.surface.name, sprite_button)
+            end
+        end
     end
 end
 
@@ -3206,6 +3217,13 @@ function gui.get_bronze_sprite_half(item_name)
     end
 
     return left_half
+end
+
+---Return the player who owns this element. Not expected to return nil under any circumstances.
+---@param element LuaGuiElement
+---@return LuaPlayer|nil
+function gui.get_player_from_element(element)
+    return game.get_player(element.player_index)
 end
 
 

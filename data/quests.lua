@@ -146,6 +146,34 @@ return {
             prerequisites = {"find-some-trades"},
         },
         {
+            name = "i-really-need-that",
+            conditions = {{type = "hex-cores-in-mode", value = "generator", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "substation", count = 4, quality = "epic"},
+                    },
+                },
+                {type = "claim-free-hexes", value = {"nauvis", 3}},
+            },
+            prerequisites = {"getting-somewhere"},
+        },
+        {
+            name = "i-really-dont-need-that",
+            conditions = {{type = "hex-cores-in-mode", value = "sink", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "recycler", count = 1},
+                    },
+                },
+                {type = "claim-free-hexes", value = {"nauvis", 3}},
+            },
+            prerequisites = {"trades-galore"},
+        },
+        {
             name = "dark-factorian-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "nauvis", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"nauvis", 10}}},

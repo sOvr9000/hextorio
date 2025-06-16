@@ -441,6 +441,11 @@ function hex_grid.switch_hex_core_mode(state, mode)
         return false
     end
 
+    if state.mode then
+        quests.increment_progress_for_type("hex-cores-in-mode", -1, state.mode)
+    end
+    quests.increment_progress_for_type("hex-cores-in-mode", 1, mode)
+
     state.mode = mode
     return true
 end

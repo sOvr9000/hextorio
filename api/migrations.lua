@@ -50,6 +50,7 @@ local versions = {
     "0.4.3",
     "1.0.0",
     "1.0.1",
+    "1.0.2",
 }
 
 local version_stepping = {}
@@ -372,6 +373,12 @@ local process_migration = {
                 end
             end
         end
+    end,
+    ["1.0.1"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
+
+        storage.item_values.values = data_item_values.values
     end,
 }
 

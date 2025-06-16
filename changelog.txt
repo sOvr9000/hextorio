@@ -1,6 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 16/6/25
+  Features:
+    - Added two Nauvis quests involving the currently existing hex core modes.
+  Bugfixes:
+    - Fixed that [item=recycler] had no item value and thus could not be traded anywhere, ranked up, or exchanged at the Quantum Bazaar.
   Gui:
     - Item tooltips in hex core trades, trade overview, and catalog now show the item's partial progress toward bronze rank.
 ---------------------------------------------------------------------------------------------------
