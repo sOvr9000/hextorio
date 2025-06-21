@@ -127,6 +127,7 @@ sentient_spider.name = "sentient-spider"
 sentient_spider.guns = {"sentient-spider-teslagun"}
 sentient_spider.equipment_grid = "sentient-spider-equipment-grid"
 sentient_spider.inventory_size = 120
+sentient_spider.minable.result = "sentient-spider"
 
 
 ---@diagnostic disable-next-line: assign-type-mismatch
