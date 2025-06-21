@@ -1,10 +1,12 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.3
-Date: 20/6/25
+Date: 21/6/25
   Bugfixes:
     - Fixed that items couldn't be ranked up to silver rank.
   Changes:
     - Changed the silver rank bonus description to display the mod setting value.
+    - Improved the gold rank up instructions to be more intuitive with respect to the bonus effect of silver rank.
+    - Cleaned up catalog texts a little bit.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 16/6/25

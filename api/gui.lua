@@ -1847,7 +1847,7 @@ function gui.update_catalog_inspect_frame(player)
         local bonus_productivity = inspect_frame.add {
             type = "label",
             name = "bonus-productivity",
-            caption = {"", lib.color_localized_string({"hextorio-gui.main-bonus"}, "blue", "heading-2"), "\n", {"hextorio-gui.rank-bonus-trade-productivity", "[color=green]" .. math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)) .. "[.color]"}},
+            caption = {"", lib.color_localized_string({"hextorio-gui.main-bonus"}, "blue", "heading-2"), "\n", {"hextorio-gui.rank-bonus-trade-productivity", math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)), "green", "heading-2"}},
         }
         bonus_productivity.style.single_line = false
         gui.auto_width_height(bonus_productivity)
@@ -1862,23 +1862,38 @@ function gui.update_catalog_inspect_frame(player)
     end
 
     for i = 2, rank_obj.rank do
-        local color_rich_text = lib.color_to_rich_text(storage.item_ranks.rank_colors[i])
+        local color_text = table.concat(storage.item_ranks.rank_colors[i], ",")
+        local color_rich_text = "[color=" .. color_text .. "]"
         local rank_bonus_unique_heading = inspect_frame.add {
             type = "label",
             name = "rank-bonus-unique-heading-" .. i,
             caption = lib.color_localized_string({"", "[img=" .. storage.item_ranks.rank_star_sprites[i] .. "] ", {"hextorio-gui.unique-bonus"}}, color_rich_text, "heading-2"),
         }
+
         local caption
         if i == 2 then
-            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, color_rich_text .. lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false) .. "[.color]"}}
+            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false), color_text, "heading-2"}}
+        elseif i == 3 then
+            local planets_text = {""}
+            for _, surface in pairs(game.surfaces) do
+                if not lib.is_space_platform(surface.name) and item_values.is_item_interplanetary(surface.name, selection.item_name) then
+                    table.insert(planets_text, "[planet=" .. surface.name .. "]")
+                end
+            end
+            if #planets_text == 1 then
+                planets_text = lib.color_localized_string({"hextorio-gui.none-yet-visited"}, "gray")
+            end
+            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, lib.runtime_setting_value("rank-" .. i .. "-effect"), planets_text, color_text, "heading-2"}}
         else
             caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i}}
         end
+
         local rank_bonus_unique = inspect_frame.add {
             type = "label",
             name = "rank-bonus-unique-" .. i,
             caption = caption,
         }
+
         rank_bonus_unique.style.single_line = false
         gui.auto_width(rank_bonus_unique)
     end
