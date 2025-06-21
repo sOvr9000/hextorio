@@ -38,6 +38,14 @@ data:extend{
     },
     {
         type = "sprite",
+        name = "interplanetary-trade-arrow",
+        filename = "__hextorio__/graphics/icons/trade-arrow-cyan.png",
+        width = 150,
+        height = 150,
+        scale = 40/150,
+    },
+    {
+        type = "sprite",
         name = "questbook",
         filename = "__hextorio__/graphics/icons/questbook.png",
         width = 128,

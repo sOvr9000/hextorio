@@ -739,16 +739,24 @@ function gui.give_trade_arrow_tooltip(element, trade, quality, quality_cost_mult
     local s = {"",
         trades.get_total_values_str(trade, quality, quality_cost_mult),
     }
+
+    if trades.is_interplanetary_trade(trade) then
+        table.insert(s, 2, lib.color_localized_string({"hextorio-gui.interplanetary-trade-tooltip-header"}, "cyan", "heading-2"))
+        table.insert(s, 3, "\n\n")
+    end
+
     local prod = trades.get_productivity(trade, quality)
     local prod_mod = trades.get_productivity_modifier(quality)
     if prod ~= 0 or prod_mod ~= 0 then
         table.insert(s, "\n\n")
         table.insert(s, trades.get_productivity_bonus_str(trade, quality))
     end
+
     if not gui.is_descendant_of(element, "trade-contents-flow") then
         table.insert(s, "\n\n")
         table.insert(s, lib.color_localized_string({"hextorio-gui.click-to-ping"}, "gray"))
     end
+
     element.tooltip = s
 end
 
@@ -950,10 +958,15 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         end
     end
 
+    local sprite_name = "trade-arrow"
+    if trades.is_interplanetary_trade(trade) then
+        sprite_name = "interplanetary-trade-arrow"
+    end
+
     local trade_arrow_sprite = trade_table.add {
         type = "sprite",
         name = "trade-arrow",
-        sprite = "trade-arrow",
+        sprite = sprite_name,
     }
     trade_arrow_sprite.style.width = size / 1.2
     trade_arrow_sprite.style.height = size / 1.2

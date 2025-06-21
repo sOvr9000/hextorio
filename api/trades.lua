@@ -13,7 +13,7 @@ local quests      = require "api.quests"
 ---@alias TradeSide "give"|"receive"
 ---@alias TradeItem {name: string, count: int}
 ---@alias TentativeTradeItem {name: string, count: int|nil}
----@alias Trade {id: int, input_items: TradeItem[], output_items: TradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil}
+---@alias Trade {id: int, input_items: TradeItem[], output_items: TradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil, is_interplanetary: boolean|nil}
 ---@alias TentativeTrade {id: int, input_items: TradeItem[], output_items: TentativeTradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil}
 ---@alias TradeGenerationParameters {target_efficiency: number|nil}
 ---@alias TradeItemSamplingParameters StringFilters
@@ -1466,6 +1466,30 @@ function trades.get_interplanetary_trade_locations_for_item(surface_name, item_n
     end
 
     return locations
+end
+
+---Return whether the given trade is interplanetary to its surface.
+---@param trade Trade
+---@return boolean
+function trades.is_interplanetary_trade(trade)
+    if trade.is_interplanetary ~= nil then return trade.is_interplanetary end
+
+    local surface_name = trade.surface_name
+    for _, input in pairs(trade.input_items) do
+        if item_values.is_item_interplanetary(surface_name, input.name) then
+            trade.is_interplanetary = true
+            return true
+        end
+    end
+    for _, output in pairs(trade.output_items) do
+        if item_values.is_item_interplanetary(surface_name, output.name) then
+            trade.is_interplanetary = true
+            return true
+        end
+    end
+
+    trade.is_interplanetary = false
+    return false
 end
 
 

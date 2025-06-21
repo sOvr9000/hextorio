@@ -3,10 +3,13 @@ Version: 1.0.3
 Date: 21/6/25
   Bugfixes:
     - Fixed that items couldn't be ranked up to silver rank.
+    - Fixed that the Sentient Spider was turning into a spidertron when picked up.
   Changes:
     - Changed the silver rank bonus description to display the mod setting value.
     - Improved the gold rank up instructions to be more intuitive with respect to the bonus effect of silver rank.
     - Cleaned up catalog texts a little bit.
+  Gui:
+    - Interplanetary trades now have blue trade arrows instead of gray, and their tooltips indicate that they are interplanetary.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 16/6/25
