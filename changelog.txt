@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.3
+Date: 20/6/25
+  Bugfixes:
+    - Fixed that items couldn't be ranked up to silver rank.
+  Changes:
+    - Changed the silver rank bonus description to display the mod setting value.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 16/6/25
   Features:

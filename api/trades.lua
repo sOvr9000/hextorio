@@ -1346,7 +1346,7 @@ function trades._postprocess_items_traded(surface_name, total_traded, trade_side
     local process_again = {}
     for quality, item_names in pairs(total_traded) do
         local tier = lib.get_quality_tier(quality)
-        if tier >= 3 and trade_side == "sold" then
+        if tier >= 3 and trade_side == "give" then
             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
             for item_name, count in pairs(item_names) do
                 local rank = item_ranks.get_item_rank(item_name)
@@ -1360,7 +1360,7 @@ function trades._postprocess_items_traded(surface_name, total_traded, trade_side
                 end
             end
         end
-        if tier >= 4 then -- can be trade type can be either
+        if tier >= 4 then -- trade type can be either
             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
             for item_name, _ in pairs(item_names) do
                 if not item_values.has_item_value(surface_name, item_name) then
