@@ -1,8 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.5
+Date: 24/6/25
+  Bugfixes:
+    - Fixed a crash that occurs with some mods, related to character management on game start.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.4
 Date: 24/6/25
   Bugfixes:
-    - Fixed a crash that occurs with some mods.
+    - Fixed a crash that occurs with some mods, related to crafting recipes.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.3
 Date: 21/6/25

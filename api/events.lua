@@ -56,8 +56,13 @@ function events.on_nauvis_generating()
         if player and player.valid then
             -- Check for items in inventory
             storage.events.player_starter_inv = {}
-            for _, item in pairs(lib.get_player_inventory(player).get_contents()) do
-                table.insert(storage.events.player_starter_inv, item)
+            local inv = lib.get_player_inventory(player)
+            if inv then
+                for _, item in pairs(inv.get_contents()) do
+                    table.insert(storage.events.player_starter_inv, item)
+                end
+            else
+                lib.log_error("Failed to get player inventory for player " .. player.name .. " - skipping starter items")
             end
             lib.teleport_player(player, {16, 16}, temp)
             player.character = nil -- Force nil character so that going into map view doesn't crash the game
