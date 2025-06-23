@@ -21,6 +21,7 @@ function events.on_game_started()
         -- Make sure that all players have a character
         if not player.character then
             lib.log("Creating character for player " .. player.name)
+            player.set_controller {type = defines.controllers.god}
             if not player.create_character() then
                 lib.log_error("Failed to create character for player " .. player.name)
             end
