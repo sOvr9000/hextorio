@@ -21,6 +21,7 @@ local dungeons = {}
 
 function dungeons.register_events()
     event_system.register_callback("dungeon-update", function(player)
+        if lib.is_space_platform(player.surface.name) then return end
         local transformation = terrain.get_surface_transformation(player.surface)
         local hex_pos = axial.get_hex_containing(player.position, transformation.scale, transformation.rotation)
         for _, hex in pairs(axial.ring(hex_pos, 2)) do

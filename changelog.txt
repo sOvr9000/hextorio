@@ -2,7 +2,7 @@
 Version: 1.0.8
 Date: 25/6/25
   Bugfixes:
-    - Fixed an uncommon crash related to the teleportation or claiming keybinds.
+    - Fixed a crash related to several features that involved hex cores.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.7
 Date: 25/6/25
