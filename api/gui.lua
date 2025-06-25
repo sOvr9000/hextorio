@@ -1064,7 +1064,7 @@ function gui.update_hex_core(player)
         frame = player.gui.relative["hex-core"]
     end
 
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -1202,7 +1202,7 @@ function gui.update_hex_core_resources(player)
         return
     end
 
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then
         lib.log_error("gui.update_hex_core_resources: hex_core entity could not be found")
         return
@@ -2281,7 +2281,7 @@ function gui.on_trade_arrow_click(player, element)
         gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
     else
         -- it's in the hex core GUI
-        local hex_core = player.opened
+        local hex_core = lib.get_player_opened_entity(player)
         if not hex_core then return end
 
         local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -2387,7 +2387,7 @@ function gui.on_quest_name_selected(player, element)
 end
 
 function gui.on_toggle_trade_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -2454,7 +2454,7 @@ function gui.on_sprite_button_click(player, element)
 end
 
 function gui.on_convert_resources_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -2538,7 +2538,7 @@ function gui.on_quantum_bazaar_button_clicked(player, element)
 end
 
 function gui.on_upgrade_quality_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local inv = lib.get_player_inventory(player)
@@ -2558,7 +2558,7 @@ function gui.on_upgrade_quality_button_click(player, element)
 end
 
 function gui.on_supercharge_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -2619,7 +2619,7 @@ function gui.on_hex_core_trade_control_flow_button_clicked(player, element)
 end
 
 function gui.on_add_to_filters_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -2639,7 +2639,7 @@ end
 function gui.on_hex_core_trade_item_clicked(player, element)
     if not quests.is_feature_unlocked "catalog" then return end
 
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local item_name = element.sprite:sub(6)
@@ -2655,7 +2655,7 @@ function gui.on_hex_mode_button_click(player, element)
 end
 
 function gui.on_hex_mode_confirmation_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -2681,7 +2681,7 @@ end
 -- end
 
 -- function gui.on_unloader_filters_direction_click(player, element)
---     local hex_core = player.opened
+--     local hex_core = lib.get_player_opened_entity(player)
 --     if not hex_core then return end
 
 --     local dir = element.name
@@ -2724,7 +2724,7 @@ end
 
 function gui.on_confirmation_button_click(player, element)
     if element.parent.name == "delete-core-confirmation" then
-        local hex_core = player.opened
+        local hex_core = lib.get_player_opened_entity(player)
         if not hex_core then return end
 
         local inv = lib.get_player_inventory(player)
@@ -2750,7 +2750,7 @@ function gui.on_delete_core_button_click(player, element)
 end
 
 function gui.on_teleport_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
     if hex_core.surface.name ~= player.surface.name then return end
 
@@ -2790,7 +2790,7 @@ function gui.on_core_finder_button_click(player, element)
 end
 
 function gui.on_tag_button_click(player, element)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -2811,7 +2811,7 @@ function gui.on_tag_button_click(player, element)
 end
 
 function gui.on_claim_hex_button_click(player)
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then
         lib.log_error("on_claim_hex_button_click: Couldn't find hex core")
         return
@@ -2952,7 +2952,7 @@ end
 function gui.on_quality_bound_selected(player, element)
     local signal = element.elem_value
 
-    local hex_core = player.opened
+    local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     if not signal then
