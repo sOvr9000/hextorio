@@ -267,12 +267,6 @@ function gui.init_questbook(player)
 
     gui.add_titlebar(questbook, {"hextorio-questbook.questbook-title"})
 
-    -- TODO
-    -- local info_frame = questbook.add {type = "frame", name = "info-frame", direction = "horizontal"}
-    -- info_frame.style.horizontally_stretchable = true
-    -- info_frame.style.vertically_squashable = true
-    -- info_frame.style.natural_height = 75
-
     local lower_flow = questbook.add {type = "flow", name = "lower-flow", direction = "horizontal"}
     gui.auto_width_height(lower_flow)
 
@@ -1255,6 +1249,8 @@ function gui.update_questbook(player, quest_name)
         frame = player.gui.screen["questbook"]
     end
 
+    gui.repopulate_quest_lists(player) -- THIS IS NOT SUPPOSED TO BE NEEDED.  BUT AT LEAST ONE MOD (RPG) IS KNOWN DESTROY THE QUEST LIST ITEMS.  THIS ADDS "SUPPORT" FOR SUCH MODS THAT SOMEHOW DO THIS.
+
     local quest_frame = frame["lower-flow"]["quest-frame"]
 
     local quests_scroll_pane = frame["lower-flow"]["list-frame"]["scroll-pane"]
@@ -2073,6 +2069,8 @@ function gui.update_quest_lists(player, quest)
     end
 end
 
+---Repopulate a player's quest lists.  O(nlogn) time complexity.
+---@param player LuaPlayer
 function gui.repopulate_quest_lists(player)
     local scroll_pane = player.gui.screen["questbook"]["lower-flow"]["list-frame"]["scroll-pane"]
     local incomplete_list = scroll_pane["incomplete-list"]
@@ -2083,7 +2081,7 @@ function gui.repopulate_quest_lists(player)
 
     for _, q in pairs(storage.quests.quests) do
         if q.revealed then
-            if q.complete then
+            if quests.is_complete(q) then
                 gui.add_quest_to_list(complete_list, q)
             else
                 gui.add_quest_to_list(incomplete_list, q)

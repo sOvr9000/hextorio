@@ -1,6 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.7
-Date: 24/6/25
+Date: 25/6/25
+  Modding:
+    - Added support for mods that accidentally clear items from other mods' list boxes.
+      Current known mod that does this: RPG
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.6
 Date: 23/6/25
