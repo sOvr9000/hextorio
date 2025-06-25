@@ -1610,6 +1610,10 @@ end
 ---@param entity LuaEntity
 ---@return LuaEntity|nil
 function lib.get_hex_core_from_entity(entity)
+    if not entity.surface or not entity.position then
+        lib.log_error("lib.get_hex_core_from_entity: parameter passed is not a LuaEntity")
+        return
+    end
     local entities = entity.surface.find_entities_filtered {
         name = "hex-core",
         area = {{entity.position.x - 2, entity.position.y - 2}, {entity.position.x + 3, entity.position.y + 3}},

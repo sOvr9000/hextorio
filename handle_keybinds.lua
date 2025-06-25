@@ -12,7 +12,7 @@ script.on_event("teleport-to-hex-core", function(event)
     if not player.character then return end
 
     local target = player.opened or player.selected
-    if not target then return end
+    if not target or not target.surface then return end
     ---@cast target LuaEntity
 
     local hex_core = lib.get_hex_core_from_entity(target)
@@ -45,7 +45,7 @@ script.on_event("claim-hex-core", function(event)
     if not player then return end
 
     local target = player.opened or player.selected
-    if not target then return end
+    if not target or not target.surface then return end
     ---@cast target LuaEntity
 
     local hex_core = lib.get_hex_core_from_entity(target)
