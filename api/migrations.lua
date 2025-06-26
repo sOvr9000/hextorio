@@ -58,6 +58,7 @@ local versions = {
     "1.0.7",
     "1.0.8",
     "1.0.9",
+    "1.0.10",
 }
 
 local version_stepping = {}
@@ -400,6 +401,8 @@ local process_migration = {
     ["1.0.7"] = function()
     end,
     ["1.0.8"] = function()
+    end,
+    ["1.0.9"] = function()
     end,
 }
 
