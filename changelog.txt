@@ -5,7 +5,7 @@ Date: 27/6/25
 Version: 1.0.10
 Date: 27/6/25
   Translation:
-    - Added Russian translations.
+    - Added Russian translations. (courtesy Shadow_Man)
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.9
 Date: 26/6/25
