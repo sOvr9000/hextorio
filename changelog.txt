@@ -3,6 +3,7 @@ Version: 1.0.11
 Date: 27/6/25
   Bugfixes:
     - Fixed that the quest "It Wasn't Good Enough" wasn't able to be completed.
+    - Fixed that opening a hex core in editor mode would crash the game.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.10
 Date: 27/6/25
