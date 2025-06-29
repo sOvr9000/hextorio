@@ -1339,7 +1339,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
     end
     surface = game.surfaces[surface_id]
 
-    if not state.is_land and not allow_nonland then return end
+    if not state.is_land and not allow_nonland then return false end
     if hex_grid.get_free_hex_claims(surface.name) > 0 then return true end
 
     if lib.is_player_editor_like(player) then
@@ -1399,8 +1399,6 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
         return
     end
 
-    hex_grid.add_free_hex_claims(surface_name, -1)
-
     for _, adj_hex in pairs(adjacent_hexes) do
         if hex_grid.can_hex_core_spawn(surface_id, adj_hex) then
             hex_grid.spawn_hex_core(surface, axial.get_hex_center(adj_hex, transformation.scale, transformation.rotation))
@@ -1430,7 +1428,6 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
         storage.hex_grid.last_used_claim_tile = tile_name
     end
     terrain.set_hex_tiles(surface, hex_pos, tile_name)
-    -- hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation))
 
     local fill_tile_name
     if by_player then
@@ -1455,6 +1452,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     -- Add trade items to catalog list
     trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
 
+    hex_grid.add_free_hex_claims(surface_name, -1)
     hex_grid.check_hex_span(surface, hex_pos)
     quests.increment_progress_for_type("claimed-hexes", 1)
     quests.increment_progress_for_type("claimed-hexes-on", 1, surface_name)
