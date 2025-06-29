@@ -91,7 +91,11 @@ function quests.init()
     local reveal = {}
     local check_rev = {}
     for _, def in pairs(storage.quests.quest_defs) do
-        local prev_quest = quests.get_quest_from_name(def.name)
+        local prev_quest
+        if quests.quest_exists(def.name) then
+            prev_quest = quests.get_quest_from_name(def.name)
+        end
+
         local quest = quests.new_quest(def, (prev_quest or {}).id)
         storage.quests.quest_ids_by_name[def.name] = quest.id
 
@@ -328,6 +332,17 @@ function quests.get_quest_from_name(quest_name)
         return
     end
     return quests.get_quest_from_id(quest_id)
+end
+
+---Return whether a quest by the given name exists.
+---@param quest_name string
+---@return boolean
+function quests.quest_exists(quest_name)
+    local quest_id = storage.quests.quest_ids_by_name[quest_name]
+    if not quest_id then
+        return false
+    end
+    return storage.quests.quests[quest_id] ~= nil
 end
 
 ---@param quest_id int
