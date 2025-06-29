@@ -1843,6 +1843,23 @@ function gui.update_catalog_inspect_frame(player)
         tooltip = {"hextorio-gui.open-in-factoriopedia"},
     }
 
+    -- Display only discovered items so that the player can view them in the catalog.
+    local elem_filter_names = {}
+    for _, name in pairs(item_ranks.get_items_at_rank(1)) do
+        if trades.is_item_discovered(name) then
+            table.insert(elem_filter_names, name)
+        end
+    end
+    local elem_filters = {{filter = "name", name = elem_filter_names}}
+
+    local selected_item_view = control_flow.add {
+        type = "choose-elem-button",
+        name = "selected-item-view",
+        elem_type = "item",
+        elem_filters = elem_filters,
+        item = selection.item_name,
+    }
+
     inspect_frame.add {type = "line", direction = "horizontal"}
 
     local bonuses_label = inspect_frame.add {
@@ -2042,9 +2059,9 @@ function gui.update_catalog_inspect_frame(player)
             table.insert(elem_filters, {filter = "name", name = name})
         end
 
-        local selected_item = right_flow.add {
+        local selected_item_qb = right_flow.add {
             type = "choose-elem-button",
-            name = "selected-item",
+            name = "selected-item-qb",
             elem_type = "item",
             elem_filters = elem_filters,
             item = selection.item_name,
@@ -2363,9 +2380,15 @@ function gui.on_quantum_bazaar_changed(player, element)
     local selection = gui.get_catalog_selection(player)
     if element.name == "quality-dropdown" then
         selection.bazaar_quality = gui.get_quality_name_from_dropdown(element)
-    elseif element.name == "selected-item" then
+    elseif element.name == "selected-item-qb" then
         selection.item_name = element.elem_value
     end
+    gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
+end
+
+function gui.on_catalog_search_item_selected(player, element)
+    local selection = gui.get_catalog_selection(player)
+    selection.item_name = element.elem_value
     gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
@@ -2918,9 +2941,17 @@ function gui.on_gui_elem_changed(event)
     if event.element.name:sub(1, 11) == "input-item-" or event.element.name:sub(1, 12) == "output-item-" then
         gui.on_trade_overview_filter_changed(player)
     elseif gui.is_descendant_of(event.element, "catalog") then
-        gui.on_quantum_bazaar_changed(player, event.element)
+        gui.on_catalog_choose_elem_button_changed(player, event.element)
     elseif gui.is_descendant_of(event.element, "trade-control-flow") then
         gui.on_quality_bound_selected(player, event.element)
+    end
+end
+
+function gui.on_catalog_choose_elem_button_changed(player, element)
+    if element.name == "selected-item-view" then
+        gui.on_catalog_search_item_selected(player, element)
+    elseif element.name == "selected-item-qb" then
+        gui.on_quantum_bazaar_changed(player, element)
     end
 end
 
