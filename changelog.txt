@@ -4,6 +4,7 @@ Date: 27/6/25
   Bugfixes:
     - Fixed that the quest "It Wasn't Good Enough" wasn't able to be completed.
     - Fixed that opening a hex core in editor mode would crash the game.
+    - Fixed that the Lazy Looter quest was only able to be completed when you were not in remote view on the dungeon's planet.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.10
 Date: 27/6/25

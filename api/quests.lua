@@ -62,7 +62,7 @@ function quests.register_events()
 
         local passed = true
         for _, player in pairs(game.connected_players) do
-            if player.surface == dungeon.surface then
+            if player.character and player.character.surface == dungeon.surface then
                 passed = false
             end
         end
