@@ -72,11 +72,9 @@ function events.on_nauvis_generating()
     storage.events.is_nauvis_generating = true
 
     -- Regenerate chunks in Nauvis starting area
-    for x = -7, 6 do
-        for y = -7, 6 do
-            game.surfaces.nauvis.delete_chunk({x, y})
-            game.surfaces.nauvis.set_chunk_generated_status({x, y}, defines.chunk_generated_status.tiles)
-        end
+    for chunk in game.surfaces.nauvis.get_chunks() do
+        game.surfaces.nauvis.delete_chunk({chunk.x, chunk.y})
+        game.surfaces.nauvis.set_chunk_generated_status({chunk.x, chunk.y}, defines.chunk_generated_status.tiles)
     end
 
     -- Trigger chunk and hex generation on Nauvis
