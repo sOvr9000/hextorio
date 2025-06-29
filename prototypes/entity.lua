@@ -35,6 +35,26 @@ hex_core.resistances = {
     },
 }
 
+local shift_y = 1.8
+hex_core.circuit_connector.points.wire.red[2] = hex_core.circuit_connector.points.wire.red[2] + shift_y
+hex_core.circuit_connector.points.wire.green[2] = hex_core.circuit_connector.points.wire.green[2] + shift_y
+hex_core.circuit_connector.points.shadow.red[2] = hex_core.circuit_connector.points.shadow.red[2] + shift_y
+hex_core.circuit_connector.points.shadow.green[2] = hex_core.circuit_connector.points.shadow.green[2] + shift_y
+
+for _, pos in pairs {
+    hex_core.circuit_connector.sprites.blue_led_light_offset,
+    hex_core.circuit_connector.sprites.red_green_led_light_offset,
+    hex_core.circuit_connector.sprites.connector_main.shift,
+    hex_core.circuit_connector.sprites.connector_shadow.shift,
+    hex_core.circuit_connector.sprites.led_blue.shift,
+    hex_core.circuit_connector.sprites.led_blue_off.shift,
+    hex_core.circuit_connector.sprites.led_green.shift,
+    hex_core.circuit_connector.sprites.led_red.shift,
+    hex_core.circuit_connector.sprites.wire_pins.shift,
+    hex_core.circuit_connector.sprites.wire_pins_shadow.shift,
+} do
+    pos[2] = pos[2] + shift_y
+end
 
 
 
