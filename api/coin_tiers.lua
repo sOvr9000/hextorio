@@ -103,10 +103,10 @@ function coin_tiers.normalized(coin)
 
     -- If highest tier is negative, zero out everything
     if new_coin.values[new_coin.max_coin_tier] < 0 then
+        lib.log_error("coin_tiers.normalized: Encountered negative coin value: " .. serpent.line(new_coin.values))
         for i = 1, new_coin.max_coin_tier do
             new_coin.values[i] = 0
         end
-        lib.log_error("coin_tiers.normalized: Encountered negative coin value: " .. serpent.line(new_coin.values))
     end
 
     return new_coin
