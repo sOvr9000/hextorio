@@ -7,6 +7,7 @@ Date: 29/6/25
     - Fixed that hex core deletion was possible pre-unlock.
     - Fixed that the last free claim you have wasn't free.
     - Fixed that the catalog item selected wasn't being remembered after closing the catalog.
+    - Fixed a crash caused by trying to clear the selected item at the Quantum Bazaar.
   Changes:
     - Moved circuit connection point of hex cores.
 ---------------------------------------------------------------------------------------------------

@@ -15,7 +15,7 @@ local gui = {}
 
 
 
----@alias PlayerCatalogSelection {surface_name: string, item_name: string, bazaar_quality: string}
+---@alias PlayerCatalogSelection {surface_name: string, item_name: string, bazaar_quality: string, last_item_selected: string|nil, last_qb_item_selected: string|nil}
 
 
 
@@ -2380,14 +2380,14 @@ function gui.on_quantum_bazaar_changed(player, element)
     if element.name == "quality-dropdown" then
         selection.bazaar_quality = gui.get_quality_name_from_dropdown(element)
     elseif element.name == "selected-item-qb" then
-        selection.item_name = element.elem_value
+        selection.item_name = element.elem_value or selection.last_qb_item_selected
     end
     gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
 function gui.on_catalog_search_item_selected(player, element)
     local selection = gui.get_catalog_selection(player)
-    selection.item_name = element.elem_value or "stone"
+    selection.item_name = element.elem_value or selection.last_item_selected
     gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
@@ -3212,7 +3212,14 @@ function gui.set_catalog_selection(player, surface_name, item_name, bazaar_quali
     local selection = storage.catalog.current_selection[player.name]
     selection.surface_name = surface_name
     selection.item_name = item_name
+    selection.last_item_selected = selection.item_name
     selection.bazaar_quality = bazaar_quality
+
+    local rank = item_ranks.get_item_rank(selection.item_name)
+    if rank >= 5 then
+        selection.last_qb_item_selected = selection.item_name
+    end
+
     gui.update_catalog_inspect_frame(player)
 end
 
