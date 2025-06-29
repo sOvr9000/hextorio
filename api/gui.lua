@@ -22,18 +22,17 @@ local gui = {}
 function gui.register_events()
     event_system.register_callback("post-rank-up-command", function(player, params)
         gui.close_all(player)
+        local selection = gui.get_catalog_selection(player)
+        gui.set_catalog_selection(player, "nauvis", params[1], selection.bazaar_quality)
         gui.show_catalog(player)
-        gui.update_catalog(player, "nauvis", params[1])
     end)
     event_system.register_callback("post-rank-up-all-command", function(player, params)
         gui.close_all(player)
         gui.show_catalog(player)
-        gui.update_catalog(player, "nauvis", "stone")
     end)
     event_system.register_callback("post-discover-all-command", function(player, params)
         gui.close_all(player)
         gui.show_catalog(player)
-        gui.update_catalog(player, "nauvis", "stone")
     end)
     event_system.register_callback("trade-processed", function(trade)
         if not trade.hex_core_state or not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then return end
@@ -646,7 +645,7 @@ function gui.show_catalog(player)
     end
     frame.visible = true
     player.opened = frame
-    gui.update_catalog(player, "nauvis", "stone")
+    gui.update_catalog(player)
     frame.force_auto_center()
 end
 
@@ -1657,7 +1656,7 @@ function gui.update_trade_overview(player)
     })
 end
 
-function gui.update_catalog(player, selected_item_surface, selected_item_name)
+function gui.update_catalog(player)
     local frame = player.gui.screen["catalog"]
     if not frame then
         gui.init_catalog(player)
@@ -1710,7 +1709,7 @@ function gui.update_catalog(player, selected_item_surface, selected_item_name)
     end
 
     local selection = gui.get_catalog_selection(player)
-    gui.set_catalog_selection(player, selected_item_surface, selected_item_name, selection.bazaar_quality)
+    gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
 function gui.add_info(element, info_id, name)
