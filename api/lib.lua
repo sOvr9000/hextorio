@@ -400,9 +400,6 @@ function lib.unstuck_player(player)
     local position = surface.find_non_colliding_position("character", player.position, 20, 0.5, false)
     if not position then return end
     player.teleport(position, surface)
-    if not player.character then
-        lib.log_error("unstuck_player: player has no character after teleport")
-    end
 end
 
 function lib.teleport_player(player, position, surface)
@@ -423,12 +420,8 @@ function lib.teleport_player(player, position, surface)
     end
     if not position.x then position.x = position[1] end
     if not position.y then position.y = position[2] end
-    lib.log("Teleporting player to " .. position.x .. ", " .. position.y .. " on surface " .. surface.name)
     player.teleport(position, surface)
     lib.unstuck_player(player)
-    if not player.character then
-        lib.log_error("teleport_player: player has no character after teleport")
-    end
 end
 
 function lib.initial_player_spawn(player)

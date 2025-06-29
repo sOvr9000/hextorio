@@ -20,7 +20,6 @@ function events.on_game_started()
     for _, player in pairs(game.connected_players) do
         -- Make sure that all players have a character
         if not player.character then
-            lib.log("Creating character for player " .. player.name)
             player.set_controller {type = defines.controllers.god}
             if not player.create_character() then
                 lib.log_error("Failed to create character for player " .. player.name)
@@ -52,7 +51,6 @@ function events.on_nauvis_generating()
     end
 
     -- Teleport players to temporary surface
-    lib.log("Teleporting players to temporary surface")
     for _, player in pairs(game.connected_players) do
         if player and player.valid then
             -- Check for items in inventory
@@ -80,39 +78,28 @@ function events.on_nauvis_generating()
             game.surfaces.nauvis.set_chunk_generated_status({x, y}, defines.chunk_generated_status.tiles)
         end
     end
-    lib.log("Deleted Nauvis chunks")
 
     -- Trigger chunk and hex generation on Nauvis
-    -- game.forces.player.chart(game.surfaces.nauvis, {{-10,-10},{10,10}})
-    lib.log("Requesting chunk regeneration on Nauvis")
     game.surfaces.nauvis.request_to_generate_chunks({0, 0}, 0)
 end
 
 -- Called when the player is on the temporary surface and the origin chunk on Nauvis is generated
 function events.on_nauvis_generated()
     -- Teleport players to Nauvis
-    -- lib.log("Teleporting players to Nauvis")
     for _, player in pairs(game.connected_players) do
-        -- lib.log("(pre-teleport) player character is nil: " .. tostring(player.character == nil))
-        if player.character then
-            -- lib.log("(pre-teleport) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
+        -- Make sure that all players have a character
+        if not player.character then
+            player.set_controller {type = defines.controllers.god}
+            if not player.create_character() then
+                lib.log_error("Failed to create character for player " .. player.name)
+            end
         end
-        lib.teleport_player(player, {0, 0}, game.surfaces.nauvis)
-        -- lib.log("(post-teleport) player character is nil: " .. tostring(player.character == nil))
-        if player.character then
-            -- lib.log("(post-teleport) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
-        end
+
+        lib.teleport_player(player, {0.5, 3.35}, game.surfaces.nauvis)
     end
 
     -- Delete temporary surface
     game.delete_surface(game.surfaces["hextorio-temp"])
-
-    for _, player in pairs(game.connected_players) do
-        -- lib.log("(post-surface deletion) player character is nil: " .. tostring(player.character == nil))
-        if player.character then
-            -- lib.log("(post-surface deletion) player character surface and position: " .. player.character.surface.name .. ", " .. serpent.block(player.character.position))
-        end
-    end
 
     storage.events.is_nauvis_generating = false
     storage.events.is_ready_to_start = true
