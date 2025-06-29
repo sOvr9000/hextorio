@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.14
 Date: 30/6/25
+  Bugfixes:
+    - Fixed that the combination of mod settings to "unmix" resources and to spawn resources as "single hexes" was causing the hexagonal resources to omit some ore types.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.13
 Date: 30/6/25

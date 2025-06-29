@@ -860,6 +860,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         local hex_center = lib.rounded_position(axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation), false)
 
         local ore_positions
+        local offset_hex_center -- Used only by single-hex shapes.  Used to determine how unmixed ores should be generated.
         local ore_generation_mode = lib.runtime_setting_value "ore-generation-mode"
         if ore_generation_mode == "along-edges" then
             ore_positions = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
@@ -884,6 +885,8 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                     end
                 end
             end
+
+            offset_hex_center = axial.get_hex_center(offset_hex_pos, offset_scale, offset_rotation)
 
             ore_positions = axial.get_hex_tile_positions(offset_hex_pos, offset_scale, offset_rotation, 0)
         elseif ore_generation_mode == "center-square" then
@@ -920,7 +923,12 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                         return
                     end
                 else
-                    local angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
+                    local angle
+                    if ore_generation_mode == "single-hex" then
+                        angle = (math.atan2(tile.y - offset_hex_center.y, tile.x - offset_hex_center.x)) % (2 * math.pi)
+                    else
+                        angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
+                    end
                     resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
                 end
                 local amount_mean
