@@ -2387,7 +2387,7 @@ end
 
 function gui.on_catalog_search_item_selected(player, element)
     local selection = gui.get_catalog_selection(player)
-    selection.item_name = element.elem_value
+    selection.item_name = element.elem_value or "stone"
     gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
