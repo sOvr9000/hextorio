@@ -1311,17 +1311,22 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
                 if num_batches > 0 then
+                    quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
+
                     local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin)
                     input_coin = remaining_coin
                     total_coins_added = coin_tiers.add(total_coins_added, coins_added)
+
                     if not _total_removed[quality] then _total_removed[quality] = {} end
                     for item_name, amount in pairs(total_removed[quality] or {}) do
                         _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
                     end
+
                     if not _total_inserted[quality] then _total_inserted[quality] = {} end
                     for item_name, amount in pairs(total_inserted[quality] or {}) do
                         _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
                     end
+
                     if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
                     for item_name, amount in pairs(remaining_to_insert[quality] or {}) do
                         _remaining_to_insert[quality][item_name] = (_remaining_to_insert[quality][item_name] or 0) + amount
