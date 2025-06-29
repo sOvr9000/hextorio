@@ -2380,14 +2380,14 @@ function gui.on_quantum_bazaar_changed(player, element)
     if element.name == "quality-dropdown" then
         selection.bazaar_quality = gui.get_quality_name_from_dropdown(element)
     elseif element.name == "selected-item-qb" then
-        selection.item_name = element.elem_value or selection.last_qb_item_selected
+        selection.item_name = element.elem_value or selection.last_qb_item_selected or "stone"
     end
     gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
 function gui.on_catalog_search_item_selected(player, element)
     local selection = gui.get_catalog_selection(player)
-    selection.item_name = element.elem_value or selection.last_item_selected
+    selection.item_name = element.elem_value or selection.last_item_selected or "stone"
     gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
