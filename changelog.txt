@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.13
-Date: 29/6/25
+Date: 30/6/25
   Minor Features:
     - Added search button in the catalog.
   Bugfixes:
