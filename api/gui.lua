@@ -74,7 +74,7 @@ function gui.register_events()
     event_system.register_callback("hex-core-deleted", function(state)
         if not state then return end
         for _, player in pairs(game.connected_players) do
-            if player.gui.screen["trade-overview"].visible then
+            if gui.is_trade_overview_open(player) then
                 gui.update_trade_overview(player)
             end
         end
@@ -577,6 +577,26 @@ function gui.init_catalog(player)
             end
         end
     end
+end
+
+function gui.is_hex_core_open(player)
+    local frame = player.gui.relative["hex-core"]
+    return frame ~= nil and frame.visible
+end
+
+function gui.is_trade_overview_open(player)
+    local frame = player.gui.screen["trade-overview"]
+    return frame ~= nil and frame.visible
+end
+
+function gui.is_catalog_open(player)
+    local frame = player.gui.screen["catalog"]
+    return frame ~= nil and frame.visible
+end
+
+function gui.is_questbook_open(player)
+    local frame = player.gui.screen["questbook"]
+    return frame ~= nil and frame.visible
 end
 
 function gui.show_hex_core(player)
@@ -1498,6 +1518,11 @@ function gui.update_trade_overview(player)
     end
 
     local function filter_trade(trade)
+        if trade.hex_core_state then
+            if not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then
+                return true
+            end
+        end
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
                 return true

@@ -1083,9 +1083,10 @@ end
 ---@return Trade[]
 function trades.get_all_trades(only_existent)
     if only_existent == nil then only_existent = true end
+    trades._check_tree_existence()
     local all_trades = {}
     for trade_id, trade in pairs(trades.get_trades_lookup()) do
-        if not only_existent or not storage.tree.recoverable[trade_id] then
+        if not only_existent or not storage.trades.recoverable[trade_id] then
             table.insert(all_trades, trade)
         end
     end
