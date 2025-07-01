@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.15
+Date: 1/7/25
+  Bugfixes:
+    - Fixed that the trade overview crashed when a hex core gets deleted right before you locate a trade that the deleted core had.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.14
 Date: 30/6/25
   Bugfixes:
