@@ -15,6 +15,7 @@ local dungeons = require "api.dungeons"
 
 
 
+---@alias HexCoreMode "normal"|"sink"|"generator"
 ---@alias HexState table
 ---@alias HexCoreStats {total_items_produced: QualityItemCounts, total_items_consumed: QualityItemCounts, total_coins_produced: table, total_coins_consumed: table}
 ---@alias HexPoolParameters {surface_id: int, q: int, r: int}
@@ -397,6 +398,10 @@ function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
     -- Trigger an event maybe?
 end
 
+---Set the mode of a hex core. Return whether the mode was successfully changed.
+---@param state HexState
+---@param mode HexCoreMode
+---@return boolean
 function hex_grid.switch_hex_core_mode(state, mode)
     if not mode then
         lib.log_error("hex_grid.switch_hex_core_mode: Tried to set mode to nil")
@@ -448,6 +453,14 @@ function hex_grid.switch_hex_core_mode(state, mode)
 
     state.mode = mode
     return true
+end
+
+---Get a hex core state's current mode.
+---@param state HexState
+---@return HexCoreMode
+function hex_grid.get_hex_core_mode(state)
+    if not state.mode then return "normal" end
+    return state.mode
 end
 
 ---Set a trade's minimum and maximum allowed qualities. Return whether the trade's resulting quality bounds reflect exactly what was provided to this function.

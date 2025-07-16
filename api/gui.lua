@@ -355,7 +355,11 @@ function gui.init_trade_overview(player)
     local right_frame = filter_frame.add {type = "frame", name = "right", direction = "vertical"}
     gui.auto_width_height(right_frame)
 
-    local clear_filters_button = left_frame.add {type = "button", name = "clear-filters-button", caption = {"hextorio-gui.clear-filters"}}
+    local left_frame_buttons_flow = left_frame.add {type = "flow", name = "buttons-flow", direction = "horizontal"}
+    local clear_filters_button = left_frame_buttons_flow.add {type = "button", name = "clear-filters-button", caption = {"hextorio-gui.clear-filters"}}
+    local export_json_button = left_frame_buttons_flow.add {type = "button", name = "export-json", caption = {"hextorio-gui.export-json"}}
+    export_json_button.tooltip = {"hextorio-gui.export-json-tooltip"}
+
     local planet_flow = left_frame.add {type = "flow", name = "planet-flow", direction = "horizontal"}
     left_frame.add {type = "line", direction = "horizontal"}
     local trade_contents_flow = left_frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
@@ -2344,6 +2348,8 @@ function gui.on_button_click(player, element)
         gui.on_clear_filters_button_click(player, element)
     elseif element.name == "debug-complete-quest" then
         gui.on_debug_complete_quest_button_click(player, element)
+    elseif element.name == "export-json" then
+        gui.on_export_json_button_click(player, element)
     end
 end
 
@@ -2746,7 +2752,7 @@ end
 -- end
 
 function gui.on_clear_filters_button_click(player, element)
-    local filter_frame = element.parent.parent
+    local filter_frame = element.parent.parent.parent
     for _, planet_button in pairs(filter_frame["left"]["planet-flow"].children) do
         planet_button.toggled = true
     end
@@ -2767,6 +2773,56 @@ function gui.on_clear_filters_button_click(player, element)
     -- filter_frame["right"]["max-trades-flow"]["dropdown"].selected_index = #filter_frame["right"]["max-trades-flow"]["dropdown"].items
 
     gui.on_trade_overview_filter_changed(player)
+end
+
+function gui.on_export_json_button_click(player, element)
+    local seen_items = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
+    local item_value_lookup = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
+    local formatted_trades = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
+
+    for _, trade in pairs(trades.get_all_trades(true)) do
+        local transformation = terrain.get_surface_transformation(trade.surface_name)
+        table.insert(formatted_trades[trade.surface_name], {
+            axial_pos = trade.hex_core_state.position,
+            rect_pos = axial.get_hex_center(trade.hex_core_state.position, transformation.scale, transformation.rotation),
+            inputs = trade.input_items,
+            outputs = trade.output_items,
+            claimed = trade.hex_core_state.claimed,
+            productivity = trades.get_productivity(trade),
+            is_interplanetary = trades.is_interplanetary_trade(trade),
+            mode = hex_grid.get_hex_core_mode(trade.hex_core_state),
+        })
+
+        local seen = seen_items[trade.surface_name]
+        for _, input in pairs(trade.input_items) do
+            table.insert(seen, input.name)
+        end
+        for _, output in pairs(trade.output_items) do
+            table.insert(seen, output.name)
+        end
+    end
+
+    local hex_coin_value_inv = 1 / item_values.get_item_value("nauvis", "hex-coin")
+    for surface_name, item_names in pairs(seen_items) do
+        for _, item_name in pairs(item_names) do
+            item_value_lookup[surface_name][item_name] = item_values.get_item_value(surface_name, item_name, true, "normal") * hex_coin_value_inv
+        end
+    end
+
+    local to_export = {
+        trades = formatted_trades,
+        item_values = item_value_lookup,
+    }
+
+    local filename = "all-trades-encoded-json.txt"
+    helpers.write_file(
+        filename,
+        helpers.encode_string(helpers.table_to_json(to_export)),
+        false,
+        player.index
+    )
+
+    player.print({"hextorio.trades-exported", "Factorio/script-output/" .. filename})
 end
 
 function gui.on_confirmation_button_click(player, element)
