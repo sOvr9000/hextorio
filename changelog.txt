@@ -2,12 +2,12 @@
 Version: 1.0.17
 Date: 16/7/25
   Minor Features:
-    - Added ability to export trades list to JSON text from trade overview.
+    - Added ability to export all trades as JSON text from trade overview.
   Bugfixes:
     - Fixed that hex core spawning was deleting entities (such as ores) incorrectly.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.16
-Date: 1/7/25
+Date: 12/7/25
   Bugfixes:
     - Fixed crash with mods that modify steel chests.
 ---------------------------------------------------------------------------------------------------
