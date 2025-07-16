@@ -1708,6 +1708,8 @@ function hex_grid.spawn_hex_core(surface, position)
         return
     end
 
+    local rounded_position = lib.rounded_position(position, true)
+
     local hex_pos = axial.get_hex_containing(position, transformation.scale, transformation.rotation)
     local state = hex_grid.get_hex_state(surface_id, hex_pos)
     if state.hex_core then return end
@@ -1717,7 +1719,7 @@ function hex_grid.spawn_hex_core(surface, position)
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
     local entities = surface.find_entities_filtered {
-        area = {{position.x - 2, position.y - 2}, {position.x + 3, position.y + 3}},
+        area = {{rounded_position.x - 2.5, rounded_position.y - 2.5}, {rounded_position.x + 2.5, rounded_position.y + 2.5}},
     }
 
     for _, e in pairs(entities) do
@@ -1727,7 +1729,7 @@ function hex_grid.spawn_hex_core(surface, position)
     end
 
     -- Hex core
-    local hex_core = surface.create_entity {name = "hex-core", position = position, force = "player", quality = quality}
+    local hex_core = surface.create_entity {name = "hex-core", position = rounded_position, force = "player", quality = quality}
     if not hex_core then
         lib.log_error("hex_grid.spawn_hex_core: Failed to spawn hex core")
         return
