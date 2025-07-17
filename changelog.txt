@@ -1,6 +1,12 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.0.19
+Version: 1.1.0
 Date: 16/7/25
+  Major Features:
+    - Moved dungeons off of the oceans and into the main bulks of land.
+  Balancing:
+    - Made dungeons smaller but have better loot.
+    - Rebalanced dungeon difficulties to scale by distance.
+    - All endgame dungeons are now immune to atomic bombs.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.18
 Date: 16/7/25
