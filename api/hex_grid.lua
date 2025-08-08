@@ -579,9 +579,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
-    local min_dungeon_dist = planet_size + 2
     local dist = axial.distance(hex_pos, {q=0, r=0})
-    local is_dungeon = dist >= min_dungeon_dist
 
     local hex_quality = hex_grid.get_quality_from_distance(surface.name, dist)
     terrain.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, nil, hex_quality)
@@ -612,6 +610,9 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     if dist > planet_size then
         is_land = false
     end
+
+    local dungeon_chance = lib.runtime_setting_value("dungeon-chance-" .. surface.name)
+    local is_dungeon = is_land and dist >= 2 and math.random() < dungeon_chance and not dungeons.is_adjacent_to_dungeon(surface_id, hex_pos)
 
     if is_starting_hex then
         if surface.name == "fulgora" then
@@ -675,37 +676,39 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
 
         hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
 
-        if surface.name == "nauvis" then
-            local min_biter_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
-            local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
-            if is_biter_hex then
-                local biter_chance = lib.remap_map_gen_setting(mgs.autoplace_controls["enemy-base"].frequency)
-
-                if storage.hex_grid.total_biter_multiplier then
-                    biter_chance = biter_chance * storage.hex_grid.total_biter_multiplier
-                end
-
-                is_biter_hex = math.random() < biter_chance
+        if not is_dungeon then
+            if surface.name == "nauvis" then
+                local min_biter_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
+                local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
                 if is_biter_hex then
-                    if hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
-                        state.is_biters = true
+                    local biter_chance = lib.remap_map_gen_setting(mgs.autoplace_controls["enemy-base"].frequency)
+
+                    if storage.hex_grid.total_biter_multiplier then
+                        biter_chance = biter_chance * storage.hex_grid.total_biter_multiplier
+                    end
+
+                    is_biter_hex = math.random() < biter_chance
+                    if is_biter_hex then
+                        if hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
+                            state.is_biters = true
+                        end
                     end
                 end
-            end
-        elseif surface.name == "gleba" then
-            local min_pentapod_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
-            local is_pentapod_hex = not is_starting_hex and dist >= min_pentapod_distance
-            if is_pentapod_hex then
-                local pentapod_chance = math.sqrt(lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency))
-
-                if storage.hex_grid.total_pentapod_multiplier then
-                    pentapod_chance = pentapod_chance * storage.hex_grid.total_pentapod_multiplier
-                end
-
-                is_pentapod_hex = math.random() < pentapod_chance
+            elseif surface.name == "gleba" then
+                local min_pentapod_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
+                local is_pentapod_hex = not is_starting_hex and dist >= min_pentapod_distance
                 if is_pentapod_hex then
-                    if hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
-                        state.is_pentapods = true
+                    local pentapod_chance = math.sqrt(lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency))
+
+                    if storage.hex_grid.total_pentapod_multiplier then
+                        pentapod_chance = pentapod_chance * storage.hex_grid.total_pentapod_multiplier
+                    end
+
+                    is_pentapod_hex = math.random() < pentapod_chance
+                    if is_pentapod_hex then
+                        if hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
+                            state.is_pentapods = true
+                        end
                     end
                 end
             end
@@ -714,15 +717,15 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         terrain.generate_non_land_tiles(surface, hex_pos)
     end
 
-    if is_dungeon then
-        hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, 3)
-    end
-
     state.generated = true
 
     local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
     if hex_grid.can_hex_core_spawn(surface, hex_pos) then
         hex_grid.spawn_hex_core(surface, center)
+    end
+
+    if is_dungeon then
+        hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, 3)
     end
 
     axial.clear_cache('overlapping-chunks', hex_pos, hex_grid_scale, hex_grid_rotation)

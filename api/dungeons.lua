@@ -423,9 +423,10 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount)
     return positions, open
 end
 
----Return whether the given hex position is available for a dungeon.
+---Return whether the given hex position is used by a dungeon.
 ---@param surface_id int
 ---@param hex_pos HexPos
+---@return boolean
 function dungeons.is_hex_pos_used(surface_id, hex_pos)
     if storage.dungeons.used_hexes[surface_id] and storage.dungeons.used_hexes[surface_id][hex_pos.q] and storage.dungeons.used_hexes[surface_id][hex_pos.q][hex_pos.r] then
         return true
@@ -440,6 +441,19 @@ end
 ---@return boolean
 function dungeons.is_hex_pos_internal(dungeon, hex_pos)
     return hex_sets.contains(dungeon.internal_hexes, hex_pos)
+end
+
+---Return whether the hex pos is adjacent to an existing dungeon hex.
+---@param surface_id int
+---@param hex_pos HexPos
+---@return boolean
+function dungeons.is_adjacent_to_dungeon(surface_id, hex_pos)
+    for _, adj_pos in pairs(axial.get_adjacent_hexes(hex_pos)) do
+        if dungeons.is_hex_pos_used(surface_id, adj_pos) then
+            return true
+        end
+    end
+    return false
 end
 
 ---Get the prototype that a dungeon uses.
@@ -539,7 +553,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
         return {}
     end
 
-    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
+    local planet_size = lib.runtime_setting_value("planet-size-" .. surface_id.name)
     local dist = axial.distance(hex_pos, {q = 0, r = 0}) - planet_size - 1
     dist = math.max(0, dist) -- Shouldn't need this, but it's here just in case.
 
