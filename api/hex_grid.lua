@@ -612,7 +612,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     local dungeon_chance = lib.runtime_setting_value("dungeon-chance-" .. surface.name)
-    local is_dungeon = is_land and dist >= 2 and math.random() < dungeon_chance and not dungeons.is_adjacent_to_dungeon(surface_id, hex_pos)
+    local is_dungeon = dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 2 and math.random() < dungeon_chance)
 
     if is_starting_hex then
         if surface.name == "fulgora" then
@@ -729,6 +729,8 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     axial.clear_cache('overlapping-chunks', hex_pos, hex_grid_scale, hex_grid_rotation)
+
+    event_system.trigger("hex-generated", surface_id, hex_pos)
 end
 
 -- Generate a small ring of mixed resources right up to the border of the hex

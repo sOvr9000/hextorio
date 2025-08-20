@@ -7,14 +7,17 @@ Date: 16/7/25
     - Added mod setting to squeeze hex sizes so that they reconcile with the game's rectangular grid (allowing easy tileable blueprints, rails, etc).
   Minor Features:
     - JSON trades export now includes core quality information and whether they're in dungeon hexes.
+    - Added secondary starter quest as a tutorial for explaining negative trade productivity.
   Balancing:
     - Made dungeons smaller and have better loot on each planet.
     - Rebalanced dungeon difficulties to scale by distance.
     - All dungeons past Nauvis are now immune to atomic bombs.
     - Added Vulcanus quest that can be completed before claiming the center hex, removing the need to bring coins to Vulcanus.
+    - Added per-planet global trade productivity modifiers.
   Bugfixes:
     - Fixed /force-claim command not being able to claim liquid hexes.
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.
+    - Fixed crash when opening trade overview while an equipment grid is open.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.18
 Date: 16/7/25

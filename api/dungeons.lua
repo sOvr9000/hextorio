@@ -25,7 +25,7 @@ function dungeons.register_events()
         local transformation = terrain.get_surface_transformation(player.surface)
         local hex_pos = axial.get_hex_containing(player.position, transformation.scale, transformation.rotation)
         for _, hex in pairs(axial.ring(hex_pos, 2)) do
-            local dungeon = dungeons.get_dungeon_at_hex_pos(player.surface.index, hex)
+            local dungeon = dungeons.get_dungeon_at_hex_pos(player.surface.index, hex, false)
             if dungeon then
                 dungeons.try_reload_turrets(dungeon)
             end
@@ -36,6 +36,18 @@ function dungeons.register_events()
         if entity.name == "dungeon-chest" then
             dungeons.on_dungeon_chest_picked_up(entity)
         end
+    end)
+
+    event_system.register_callback("hex-generated", function(surface_id, hex_pos)
+        local used = storage.dungeons.used_hexes[surface_id]
+        if not used then
+            used = {}
+            storage.dungeons.used_hexes[surface_id] = used
+        end
+
+        -- Doing this prevents dungeons from trying to generate on top of hexes that have already generated.
+        -- We don't want to see dungeons popping up out of nowhere on top of your factory if the newly generating dungeons are large enough to do so.
+        hex_sets.add(used, hex_pos)
     end)
 end
 
@@ -103,11 +115,14 @@ function dungeons.new(surface, prot)
     return dungeon
 end
 
----Get the dungeon that occupies a given hex position. Generate one if it doesn't yet exist and can be generated. Return nil if a dungeon cannot be generated.
+---Get the dungeon that occupies a given hex position. If try_generate = true|nil, then generate one if it doesn't yet exist and can be generated. Return nil if a dungeon cannot be generated.
 ---@param surface_id int
 ---@param hex_pos HexPos
+---@param try_generate boolean|nil
 ---@return Dungeon|nil
-function dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos)
+function dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, try_generate)
+    if try_generate == nil then try_generate = true end
+
     local dungeon_idx = storage.dungeons.dungeon_idx_by_position[surface_id]
 
     -- Always create a mapping for an unseen surface.
@@ -125,9 +140,11 @@ function dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos)
 
     -- If it's a used position, return nil without errors.
     local used_hexes = storage.dungeons.used_hexes[surface_id]
-    if used_hexes and used_hexes[hex_pos.q] and used_hexes[hex_pos.q][hex_pos.r] then
+    if used_hexes and hex_sets.contains(used_hexes, hex_pos) then
         return
     end
+
+    if not try_generate then return end
 
     -- Otherwise, try to generate one.
     local surface = game.get_surface(surface_id)
@@ -160,6 +177,30 @@ function dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos)
     return dungeon
 end
 
+---Return whether the given hex is occupied by a dungeon.
+---@param surface_id any
+---@param hex_pos any
+---@return boolean
+function dungeons.is_dungeon_hex(surface_id, hex_pos)
+    local dungeon_idx = storage.dungeons.dungeon_idx_by_position[surface_id]
+
+    -- Always create a mapping for an unseen surface.
+    if not dungeon_idx then
+        dungeon_idx = {}
+        storage.dungeons.dungeon_idx_by_position[surface_id] = dungeon_idx
+    end
+
+    -- If there is a dungeon at this position, return true.
+    if dungeon_idx[hex_pos.q] and dungeon_idx[hex_pos.q][hex_pos.r] then
+        return true
+        -- local idx = dungeon_idx[hex_pos.q][hex_pos.r]
+        -- local dungeon = storage.dungeons.dungeons[idx]
+        -- if dungeon then return true end
+    end
+
+    return false
+end
+
 ---Get a random dungeon prototype for a given surface.
 ---@param surface_name string
 ---@param hex_pos HexPos
@@ -181,7 +222,7 @@ end
 ---@param hex_grid_rotation number
 ---@param hex_stroke_width number
 function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
-    local dungeon = dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos)
+    local dungeon = dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, true)
     if not dungeon then return end
     local prot = dungeons.get_prototype_of_dungeon(dungeon)
     if not prot then return end
@@ -321,15 +362,25 @@ end
 ---@param start_pos HexPos
 ---@return boolean
 function dungeons.init_maze(dungeon, start_pos)
-    local allowed_positions, perimeter = dungeons.get_positions_for_maze(dungeon.surface.index, start_pos, math.random(9, 49))
+    local prot = dungeons.get_prototype_of_dungeon(dungeon)
+    if not prot then
+        lib.log("dungeons.init_maze: Could not find dungeon prototype")
+        return false
+    end
 
-    -- Mark all perimeter hexes outside of generated positions as used.
-    -- This makes it so that separate dungeons don't meet at the edges and are instead separated by non-land tiles like water or heavy oil ocean.
+    local dist = axial.distance(start_pos, {q=0, r=0})
+    -- local size = 2 + math.floor(0.5 + dist ^ 0.5)
+    local size = 4
+
+    local allowed_positions, perimeter = dungeons.get_positions_for_maze(dungeon.surface.index, start_pos, size, 3)
+
     local used_hexes = storage.dungeons.used_hexes[dungeon.surface.index]
     if not used_hexes then
         used_hexes = {}
         storage.dungeons.used_hexes[dungeon.surface.index] = used_hexes
     end
+
+    -- Mark all perimeter hexes outside of generated positions as used.
     for _, hex in pairs(perimeter) do
         hex_sets.add(used_hexes, hex)
     end
@@ -359,17 +410,17 @@ function dungeons.init_maze(dungeon, start_pos)
     -- Attempt to generate the maze.
     dungeon.maze = hex_maze.new(allowed_positions)
     if not hex_maze.generate(dungeon.maze) then
-        lib.log_error("Failed to generate dungeon maze for surface " .. surface.name)
+        lib.log_error("dungeons.init_maze: Failed to generate dungeon maze for surface " .. surface.name)
         return false
     end
 
     -- Determine which hexes are internal.
-    for _, tile in pairs(dungeon.maze.tiles) do
-        local is_internal = #hex_maze.get_adjacent_tiles(dungeon.maze, tile.pos) == 6
-        if is_internal then
-            hex_sets.add(dungeon.internal_hexes, tile.pos)
-        end
-    end
+    -- for _, tile in pairs(dungeon.maze.tiles) do
+    --     local is_internal = #hex_maze.get_adjacent_tiles(dungeon.maze, tile.pos) == 6
+    --     if is_internal then
+    --         hex_sets.add(dungeon.internal_hexes, tile.pos)
+    --     end
+    -- end
 
     return true
 end
@@ -379,7 +430,7 @@ end
 ---@param start_pos HexPos
 ---@param amount int
 ---@return HexSet, HexPos[]
-function dungeons.get_positions_for_maze(surface_id, start_pos, amount)
+function dungeons.get_positions_for_maze(surface_id, start_pos, amount, max_dist)
     local surface = game.get_surface(surface_id)
     if not surface then return {}, {} end
 
@@ -406,7 +457,8 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount)
         -- Add unvisited, unused adjacent hexes to the open list.
         local adj_hexes = axial.get_adjacent_hexes(cur)
         for _, adj in pairs(adj_hexes) do
-            if axial.distance(adj, {q=0, r=0}) > planet_size + 1 then
+            local dist = axial.distance(adj, {q=0, r=0})
+            if dist <= planet_size and dist >= 2 and axial.distance(adj, start_pos) <= max_dist then
                 local is_visited = hex_sets.contains(visited, adj)
                 local is_used = hex_sets.contains(used_hexes, adj)
                 if not is_visited and not is_used then
@@ -428,7 +480,8 @@ end
 ---@param hex_pos HexPos
 ---@return boolean
 function dungeons.is_hex_pos_used(surface_id, hex_pos)
-    if storage.dungeons.used_hexes[surface_id] and storage.dungeons.used_hexes[surface_id][hex_pos.q] and storage.dungeons.used_hexes[surface_id][hex_pos.q][hex_pos.r] then
+    local used = storage.dungeons.used_hexes[surface_id]
+    if used and hex_sets.contains(used, hex_pos) then
         return true
     end
     -- There may be more logic here in the future.
@@ -443,11 +496,12 @@ function dungeons.is_hex_pos_internal(dungeon, hex_pos)
     return hex_sets.contains(dungeon.internal_hexes, hex_pos)
 end
 
----Return whether the hex pos is adjacent to an existing dungeon hex.
+---Return whether the hex pos is adjacent to an existing dungeon hex and the given hex is not a dungeon hex itself.
 ---@param surface_id int
 ---@param hex_pos HexPos
 ---@return boolean
 function dungeons.is_adjacent_to_dungeon(surface_id, hex_pos)
+    if dungeons.is_hex_pos_used(surface_id, hex_pos) then return false end
     for _, adj_pos in pairs(axial.get_adjacent_hexes(hex_pos)) do
         if dungeons.is_hex_pos_used(surface_id, adj_pos) then
             return true
@@ -553,8 +607,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
         return {}
     end
 
-    local planet_size = lib.runtime_setting_value("planet-size-" .. surface_id.name)
-    local dist = axial.distance(hex_pos, {q = 0, r = 0}) - planet_size - 1
+    local dist = axial.distance(hex_pos, {q = 0, r = 0})
     dist = math.max(0, dist) -- Shouldn't need this, but it's here just in case.
 
     local hex_center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
@@ -617,7 +670,7 @@ function dungeons.on_dungeon_chest_picked_up(chest)
     local surface = chest.surface
     local transformation = terrain.get_surface_transformation(surface.name)
     local hex_pos = axial.get_hex_containing(chest.position, transformation.scale, transformation.rotation)
-    local dungeon = dungeons.get_dungeon_at_hex_pos(surface.index, hex_pos)
+    local dungeon = dungeons.get_dungeon_at_hex_pos(surface.index, hex_pos, false)
     if not dungeon then return end
 
     dungeons.remove_loot_chest(dungeon, chest)
