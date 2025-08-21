@@ -12,6 +12,8 @@ Date: 22/8/25
     - Added per-planet global trade productivity modifiers.
       These are mod settings that can be tweaked or reverted to 0 if this change is unpreferred.
     - Added extra huge volcanic rocks to Vulcanus' first hex to help with starting up if you don't bring coins.
+  Changes:
+    - Fully looting dungeons now destroys their turrets and walls.
   Bugfixes:
     - Fixed /force-claim command not being able to claim liquid hexes.
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.
