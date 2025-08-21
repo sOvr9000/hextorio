@@ -1,6 +1,6 @@
 
 ---@alias EntityRadii {[string]: number[]}
----@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, qualities: string[], tile_type: string, ammo: AmmoReloadParameters, chests_per_hex: int}
+---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, qualities: string[], tile_type: string, ammo: AmmoReloadParameters, chests_per_hex: int, amount_scaling: number}
 ---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet, is_looted: boolean|nil}
 
 local lib = require "api.lib"
