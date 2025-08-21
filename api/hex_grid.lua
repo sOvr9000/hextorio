@@ -624,6 +624,10 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     local dungeon_chance = lib.runtime_setting_value("dungeon-chance-" .. surface.name)
     local is_dungeon = dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 2 and dist < planet_size and math.random() < dungeon_chance)
 
+    if is_dungeon then
+        is_land = true
+    end
+
     if is_starting_hex then
         if surface.name == "fulgora" then
             surface.create_entity {
