@@ -682,11 +682,15 @@ function dungeons.remove_loot_chest(dungeon, chest)
 
         -- The dungeon was looted! Destroy all of its entities.
         for _, e in pairs(dungeon.walls) do
-            e.destroy()
+            if e.valid then
+                e.destroy()
+            end
         end
         dungeon.walls = {}
         for _, e in pairs(dungeon.turrets) do
-            e.destroy()
+            if e.valid then
+                e.destroy()
+            end
         end
         dungeon.turrets = {}
 
