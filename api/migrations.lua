@@ -430,6 +430,10 @@ local process_migration = {
     ["1.0.17"] = function()
     end,
     ["1.0.18"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
+
+        game.print("Save migrated from Hextorio v1.0.18 to v1.1.0. [color=red]It is strongly advised that you start a new game.[.color]")
     end,
 }
 
