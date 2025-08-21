@@ -47,6 +47,7 @@ function quests.register_events()
 
     event_system.register_callback("player-built-entity", function(player, entity)
         quests.increment_progress_for_type("place-entity", 1, entity.name)
+        quests.increment_progress_for_type("place-entity-on-planet", 1, {entity.name, entity.surface.name})
     end)
 
     event_system.register_callback("player-mined-entity", function(player, entity)
@@ -55,6 +56,7 @@ function quests.register_events()
 
     event_system.register_callback("entity-picked-up", function(entity)
         quests.increment_progress_for_type("place-entity", -1, entity.name)
+        quests.increment_progress_for_type("place-entity-on-planet", -1, {entity.name, entity.surface.name})
     end)
 
     event_system.register_callback("dungeon-looted", function(dungeon)
@@ -140,14 +142,25 @@ function quests.index_by_condition_types(quest)
             t = {}
             storage.quests.quests_by_condition_type[condition.type] = t
         end
-        local condition_value = condition.value or "none"
-        local s = t[condition_value]
+        local condition_value_key = quests.get_condition_value_key(condition.value, condition.value_is_table)
+        log(condition_value_key)
+        local s = t[condition_value_key]
         if not s then
             s = {}
-            t[condition_value] = s
+            t[condition_value_key] = s
         end
         s[quest.id] = true
     end
+end
+
+function quests.get_condition_value_key(condition_value, is_table)
+    if condition_value == nil then
+        return "none"
+    end
+    if is_table then
+        return table.concat(condition_value, "-")
+    end
+    return condition_value
 end
 
 function quests.get_reward_list_additions(new_quest, old_quest)
@@ -227,6 +240,7 @@ function quests.new_condition(params)
     local condition = {
         type = params.type,
         value = params.value,
+        value_is_table = type(params.value) == "table",
         progress_requirement = params.progress_requirement or 1,
         progress = 0,
         show_progress_bar = params.show_progress_bar,
@@ -555,12 +569,13 @@ end
 ---@param condition_value string|nil
 ---@return table[]
 function quests.get_quests_by_condition_type(condition_type, condition_value)
-    if not condition_value then condition_value = "none" end
+    if condition_value == nil then condition_value = "none" end
     if not storage.quests.quests_by_condition_type[condition_type] then
         lib.log_error("quests.get_quests_by_condition_type: No quests found with condition type " .. condition_type)
         return {}
     end
-    local quest_ids = storage.quests.quests_by_condition_type[condition_type][condition_value] or {}
+    local condition_value_key = quests.get_condition_value_key(condition_value, type(condition_value) == "table")
+    local quest_ids = storage.quests.quests_by_condition_type[condition_type][condition_value_key] or {}
     local q = {}
     for quest_id, _ in pairs(quest_ids) do
         table.insert(q, storage.quests.quests[quest_id])
@@ -582,7 +597,11 @@ function quests.set_progress_for_type(condition_type, amount, condition_value)
     for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
         if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
-                if condition.type == condition_type and (condition.value == nil or condition.value == condition_value) then
+                local pass = condition.type == condition_type and (condition.value == nil or condition.value == condition_value)
+                if not pass and condition.value_is_table then
+                    pass = lib.tables_equal(condition_value, condition.value)
+                end
+                if pass then
                     quests.set_progress(quest, condition, amount)
                 end
             end
@@ -597,7 +616,15 @@ function quests.increment_progress_for_type(condition_type, amount, condition_va
     for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
         if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
-                if condition.type == condition_type and (condition.value == nil or condition.value == condition_value) then
+                local pass = condition.type == condition_type and (condition.value == nil or condition.value == condition_value)
+                log(condition.value_is_table)
+                -- log(condition_value[1])
+                -- log(condition_value[2])
+                -- log(lib.tables_equal({"offshore-pump", "vulcanus"}, condition_value))
+                if not pass and condition.value_is_table then
+                    pass = lib.tables_equal(condition_value, condition.value)
+                end
+                if pass then
                     quests.set_progress(quest, condition, condition.progress + amount)
                 end
             end

@@ -1350,7 +1350,7 @@ function gui.update_questbook(player, quest_name)
                 condition_value = {condition_value}
             end
             local t = {table.unpack(condition_value)}
-            if condition.type == "kill-entity" or condition.type == "place-entity" or condition.type == "mine-entity" then
+            if condition.type == "kill-entity" or condition.type == "place-entity" or condition.type == "mine-entity" or condition.type == "place-entity-on-planet" then
                 table.insert(t, lib.get_true_localized_name(t[1], "entity"))
             elseif condition.type == "use-capsule" then
                 table.insert(t, lib.get_true_localized_name(t[1], "item"))

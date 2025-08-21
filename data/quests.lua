@@ -206,10 +206,16 @@ return {
 
         -- Vulcanus
         {
+            name = "copper-flavored-lava",
+            conditions = {{type = "place-entity-on-planet", value = {"offshore-pump", "vulcanus"}, progress_requirement = 1}},
+            rewards = {{type = "claim-free-hexes", value = {"vulcanus", 1}}},
+            prerequisites = {"too-many-hex-cores"},
+        },
+        {
             name = "this-is-fine",
             conditions = {{type = "claimed-hexes-on", value = "vulcanus", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"vulcanus", 10}}},
-            prerequisites = {"too-many-hex-cores"},
+            prerequisites = {"copper-flavored-lava"},
         },
         {
             name = "stepping-on-ants",
