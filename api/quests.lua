@@ -143,7 +143,6 @@ function quests.index_by_condition_types(quest)
             storage.quests.quests_by_condition_type[condition.type] = t
         end
         local condition_value_key = quests.get_condition_value_key(condition.value, condition.value_is_table)
-        log(condition_value_key)
         local s = t[condition_value_key]
         if not s then
             s = {}
@@ -617,10 +616,6 @@ function quests.increment_progress_for_type(condition_type, amount, condition_va
         if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
                 local pass = condition.type == condition_type and (condition.value == nil or condition.value == condition_value)
-                log(condition.value_is_table)
-                -- log(condition_value[1])
-                -- log(condition_value[2])
-                -- log(lib.tables_equal({"offshore-pump", "vulcanus"}, condition_value))
                 if not pass and condition.value_is_table then
                     pass = lib.tables_equal(condition_value, condition.value)
                 end
