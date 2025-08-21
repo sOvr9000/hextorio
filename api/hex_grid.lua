@@ -622,6 +622,17 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 position = {0, -5},
                 force = "player",
             }
+        elseif surface.name == "vulcanus" then
+            for i = 1, 16 do
+                local pos = surface.find_non_colliding_position("huge-volcanic-rock", {x = math.random(-20, 20), y = math.random(-20, 20)}, 10, 0.5, false)
+                if pos then
+                    surface.create_entity {
+                        name = "huge-volcanic-rock",
+                        position = pos,
+                        force = "neutral",
+                    }
+                end
+            end
         elseif surface.name == "nauvis" then
             if lib.runtime_setting_value "nauvis-grace" then
                 local turrets = {}
