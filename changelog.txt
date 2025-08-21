@@ -6,6 +6,7 @@ Date: 22/8/25
   Features:
     - Dungeon turrets and walls now fall when the dungeon is looted.
     - Hex cores generate inside dungeons and get auto-claimed upon looting their dungeon.
+    - There are now easy, medium, and hard types of dungeons to fight on each planet, containing appropriate amounts of loot.
   Minor Features:
     - JSON trades export now includes core quality information and whether the core is or was in a dungeon.
   Balancing:
