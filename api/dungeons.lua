@@ -454,7 +454,7 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount, max_dist
         local adj_hexes = axial.get_adjacent_hexes(cur)
         for _, adj in pairs(adj_hexes) do
             local dist = axial.distance(adj, {q=0, r=0})
-            if dist <= planet_size and dist >= 2 and axial.distance(adj, start_pos) <= max_dist then
+            if dist < planet_size and dist >= 2 and axial.distance(adj, start_pos) <= max_dist then
                 local is_visited = hex_sets.contains(visited, adj)
                 local is_used = hex_sets.contains(used_hexes, adj)
                 if not is_visited and not is_used then
