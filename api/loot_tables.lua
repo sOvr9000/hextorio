@@ -90,9 +90,10 @@ end
 ---@param surface_name string
 ---@param expected_num_samples int The expected length of the returned list. The length varies randomly.
 ---@param total_value number
+---@param amount_scaling number
 ---@return LootItemWithCount[]
-function loot_tables.sample_until_total_value(loot_table, surface_name, expected_num_samples, max_num_samples, total_value)
-    local value_per_sample = total_value / expected_num_samples
+function loot_tables.sample_until_total_value(loot_table, surface_name, expected_num_samples, max_num_samples, total_value, amount_scaling)
+    local value_per_sample = total_value / (expected_num_samples * amount_scaling)
     local remaining_value = total_value
 
     local loot_items = {}
@@ -103,7 +104,7 @@ function loot_tables.sample_until_total_value(loot_table, surface_name, expected
         local item = loot_table.loot[idx]
         local stack_size = lib.get_stack_size(item.item_name)
         local item_value = item_values.get_item_value(surface_name, item.item_name, true, lib.get_quality_at_tier(item.quality_tier))
-        local count = math.min(stack_size, math.max(1, math.floor(0.5 + value_per_sample / item_value)))
+        local count = math.min(stack_size, math.max(1, math.floor(0.5 + amount_scaling * value_per_sample / item_value)))
         local total_item_value = item_value * count
 
         loot_items[index] = {loot_item = item, count = count}

@@ -1,6 +1,6 @@
 
 ---@alias EntityRadii {[string]: number[]}
----@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, max_loot_radius: number, qualities: string[], tile_type: string, ammo: AmmoReloadParameters}
+---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, qualities: string[], tile_type: string, ammo: AmmoReloadParameters, chests_per_hex: int}
 ---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet, is_looted: boolean|nil}
 
 local lib = require "api.lib"
@@ -58,7 +58,7 @@ function dungeons.init()
     storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
 
     for _, def in pairs(storage.dungeons.defs) do
-        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.qualities, def.tile_type, def.ammo)
+        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.chests, def.amount_scaling, def.qualities, def.tile_type, def.ammo)
         if not storage.dungeons.prototypes[def.surface_name] then
             storage.dungeons.prototypes[def.surface_name] = {}
         end
@@ -68,25 +68,23 @@ end
 
 ---@param wall_entities EntityRadii
 ---@param loot_value number
+---@param rolls int
+---@param chests int
 ---@param qualities string[]
+---@param tile_type string
+---@param ammo AmmoReloadParameters
 ---@return DungeonPrototype
-function dungeons.new_prototype(wall_entities, loot_value, rolls, qualities, tile_type, ammo)
+function dungeons.new_prototype(wall_entities, loot_value, rolls, chests, amount_scaling, qualities, tile_type, ammo)
     local prot = table.deepcopy {
         wall_entities = wall_entities,
         loot_value = loot_value,
         rolls = rolls,
+        chests_per_hex = chests,
+        amount_scaling = amount_scaling,
         qualities = qualities,
         tile_type = tile_type,
         ammo = ammo,
     }
-
-    prot.max_loot_radius = math.huge
-    for _, radii in pairs(prot.wall_entities) do
-        for _, radius in pairs(radii) do
-            prot.max_loot_radius = math.min(prot.max_loot_radius, radius)
-        end
-    end
-    prot.max_loot_radius = math.max(0, prot.max_loot_radius - 2)
 
     return prot
 end
@@ -239,9 +237,7 @@ function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotati
     dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
 
     -- Spawn loot
-    if dungeons.is_hex_pos_internal(dungeon, hex_pos) then
-        dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
-    end
+    dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
 
     if surface.name == "fulgora" then
         local transformation = terrain.get_surface_transformation(surface_id)
@@ -607,46 +603,55 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
         return {}
     end
 
-    local dist = axial.distance(hex_pos, {q = 0, r = 0})
+    local loot_table = loot_tables.get_loot_table(dungeon.surface.name, "dungeon")
+    if not loot_table then
+        lib.log_error("dungeons.spawn_loot: No loot table found for dungeon on surface " .. dungeon.surface.name)
+        return {}
+    end
+
+    local dist = axial.distance(hex_pos, {q = 0, r = 0}) - 2
     dist = math.max(0, dist) -- Shouldn't need this, but it's here just in case.
 
-    local hex_center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
-    local chest = dungeon.surface.create_entity {
-        name = "dungeon-chest",
-        position = hex_center,
-        force = "player",
-    }
-
-    if not chest then return {} end
-    local entities = {chest}
-
-    local inv = chest.get_inventory(defines.inventory.chest)
-    if not inv then return entities end
-
-    local loot_table = loot_tables.get_loot_table(dungeon.surface.name, "dungeon")
-    if not loot_table then return entities end
-
-    local loot_value = prot.loot_value * (1 + dist * 0.25)
+    local loot_value = prot.loot_value * (1 + dist * 0.0625)
     local expected_num_samples = prot.rolls
-    local min_item_value = loot_value / expected_num_samples / 10
-    local max_item_value = math.huge
+    local min_item_value = loot_value / (10 * expected_num_samples * prot.amount_scaling)
+    local max_item_value = math.huge -- No upper limit. Allow for very rare but valuable loot.
     local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
 
-    local max_num_samples = #inv
+    local hex_center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
+    local entities = {}
 
-    local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value)
-    for _, item in pairs(loot_items) do
-        inv.insert {
-            name = item.loot_item.item_name,
-            quality = lib.get_quality_at_tier(item.loot_item.quality_tier),
-            count = item.count,
-        }
-    end
-    inv.sort_and_merge()
+    for i = 1, prot.chests_per_hex do
+        local random_pos = lib.vector_add(lib.random_unit_vector(math.random() ^ 0.5 * 8), hex_center)
+        local pos = surface.find_non_colliding_position("dungeon-chest", lib.rounded_position(random_pos, true), 2, 1, true)
+        if pos then
+            local chest = dungeon.surface.create_entity {
+                name = "dungeon-chest",
+                position = pos,
+                force = "player",
+            }
 
-    for _, e in pairs(entities) do
-        e.destructible = false
-        table.insert(dungeon.loot_chests, e)
+            if chest then
+                local inv = chest.get_inventory(defines.inventory.chest)
+                if inv then
+                    local max_num_samples = #inv
+                    local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling)
+                    for _, item in pairs(loot_items) do
+                        inv.insert {
+                            name = item.loot_item.item_name,
+                            quality = lib.get_quality_at_tier(item.loot_item.quality_tier),
+                            count = item.count,
+                        }
+                    end
+                    inv.sort_and_merge()
+                end
+
+                chest.destructible = false
+
+                table.insert(entities, chest)
+                table.insert(dungeon.loot_chests, chest)
+            end
+        end
     end
 
     return entities
