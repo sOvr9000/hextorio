@@ -4,7 +4,7 @@ Date: 22/8/25
   Major Features:
     - Moved dungeons off of the oceans and into the main bulks of land.
   Minor Features:
-    - JSON trades export now includes core quality information and whether they're in dungeon hexes.
+    - JSON trades export now includes core quality information.
   Balancing:
     - Made dungeons smaller and have better loot on each planet.
     - Rebalanced dungeon difficulties to scale by distance.

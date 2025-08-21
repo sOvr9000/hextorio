@@ -2782,6 +2782,11 @@ function gui.on_export_json_button_click(player, element)
 
     for _, trade in pairs(trades.get_all_trades(true)) do
         local transformation = terrain.get_surface_transformation(trade.surface_name)
+        local hex_core = trade.hex_core_state.hex_core
+        local quality = "normal"
+        if hex_core and hex_core.valid then
+            quality = hex_core.quality.name
+        end
         table.insert(formatted_trades[trade.surface_name], {
             axial_pos = trade.hex_core_state.position,
             rect_pos = axial.get_hex_center(trade.hex_core_state.position, transformation.scale, transformation.rotation),
@@ -2791,6 +2796,7 @@ function gui.on_export_json_button_click(player, element)
             productivity = trades.get_productivity(trade),
             is_interplanetary = trades.is_interplanetary_trade(trade),
             mode = hex_grid.get_hex_core_mode(trade.hex_core_state),
+            core_quality = quality,
         })
 
         local seen = seen_items[trade.surface_name]
