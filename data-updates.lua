@@ -1,4 +1,6 @@
 
+require "nerf_atomic_bomb"
+
 local lib = require "api.lib"
 
 -- Sort all belt, splitter, and underground belt recipes by their belt speed and put them into new subcategories
