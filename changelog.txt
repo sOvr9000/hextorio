@@ -5,7 +5,8 @@ Date: 22/8/25
     - Moved dungeons off of the oceans and into the main bulks of land.
   Features:
     - Dungeon turrets and walls now fall when the dungeon is looted.
-    - Hex cores generate inside dungeons and get auto-claimed upon looting their dungeon.
+    - Hex cores generate inside dungeons.
+      They get auto-claimed upon looting their dungeon if at least one of them is unclaimed.
     - There are now easy, medium, and hard types of dungeons to fight on each planet, containing appropriate amounts of loot.
   Minor Features:
     - JSON trades export now includes core quality information and whether the core is or was in a dungeon.
@@ -22,6 +23,7 @@ Date: 22/8/25
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.
     - Fixed crash when opening trade overview while an equipment grid is open.
     - Fixed that the completion of a quest before its revelation was not revealing it.
+    - Fixed that the ammo in dungeon turrets was not infinite.
   Changes:
     - JSON trades export now has a more consistent structure, where entries that were nonexistent are now entered as false.
   Optimizations:

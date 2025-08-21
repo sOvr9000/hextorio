@@ -592,7 +592,7 @@ end
 ---Attempt to reload the turrets in the dungeon.
 ---@param dungeon Dungeon
 function dungeons.try_reload_turrets(dungeon)
-    if dungeon.last_turret_reload + TURRET_RELOAD_INTERVAL < game.tick then return end
+    if dungeon.last_turret_reload + TURRET_RELOAD_INTERVAL > game.tick then return end
     dungeon.last_turret_reload = game.tick
     local prot = dungeons.get_prototype_of_dungeon(dungeon)
     if not prot then return end
