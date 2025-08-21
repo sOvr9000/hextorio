@@ -1,7 +1,7 @@
 
 ---@alias EntityRadii {[string]: number[]}
 ---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, qualities: string[], tile_type: string, ammo: AmmoReloadParameters, chests_per_hex: int, amount_scaling: number}
----@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet, is_looted: boolean|nil}
+---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], walls: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet, is_looted: boolean|nil}
 
 local lib = require "api.lib"
 local axial = require "api.axial"
@@ -105,6 +105,7 @@ function dungeons.new(surface, prot)
         prototype_idx = prot_idx,
         id = #storage.dungeons.dungeons + 1,
         turrets = {},
+        walls = {},
         loot_chests = {},
         last_turret_reload = 0,
         internal_hexes = {},
@@ -275,7 +276,8 @@ function dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rota
         end
     end
 
-    local entities = {}
+    local wall_entities = {}
+    local turret_entities = {}
     local used_positions = {}
     for entity_name, radii in pairs(prot.wall_entities) do
         local entity_prot = prototypes["entity"][entity_name]
@@ -309,8 +311,13 @@ function dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rota
                         quality = quality,
                     }
                     if entity then
-                        table.insert(dungeon.turrets, entity)
-                        table.insert(entities, entity)
+                        if entity.prototype.turret_range then
+                            table.insert(dungeon.turrets, entity)
+                            table.insert(turret_entities, entity)
+                        else
+                            table.insert(dungeon.walls, entity)
+                            table.insert(wall_entities, entity)
+                        end
                     end
                 end
             end
@@ -318,7 +325,7 @@ function dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     -- Initial ammo load of turrets
-    lib.reload_turrets(entities, prot.ammo)
+    lib.reload_turrets(turret_entities, prot.ammo)
 end
 
 ---Fill the edges between dungeon hexes.

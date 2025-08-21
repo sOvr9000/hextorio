@@ -20,6 +20,8 @@ Date: 22/8/25
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.
     - Fixed crash when opening trade overview while an equipment grid is open.
     - Fixed that the completion of a quest before its revelation was not revealing it.
+  Optimizations:
+    - Improved dungeon generation speed.
   Modding:
     - Flagged mod Resource Spawner Overhaul as incompatible, as it disrupts this mod's initialization.
       That mod's effects can be achieved with this mod's handling of map generation settings.
