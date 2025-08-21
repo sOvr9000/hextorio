@@ -1418,8 +1418,11 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
 
     local state = hex_grid.get_hex_state(surface_id, hex_pos)
     if state.claimed then return end
-    if not state.hex_core then return end
-    if not state.is_land and not allow_nonland then return end
+
+    log(allow_nonland)
+    if not allow_nonland then
+        if not state.hex_core or not state.is_land then return end
+    end
 
     state.claimed = true
     if by_player then
@@ -1534,7 +1537,7 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
         surface_name = surface.name,
         hex_pos = hex_pos,
         by_player = by_player,
-        alow_nonland = allow_nonland,
+        allow_nonland = allow_nonland,
     })
 end
 
@@ -1585,6 +1588,12 @@ function hex_grid.process_claim_queue()
     if not found then
         -- The remaining params are probably for non-land hexes.
         params = table.remove(storage.hex_grid.claim_queue, 1)
+    end
+
+    -- Set in-queue flag to nil
+    local state = hex_grid.get_hex_state(params.surface_name, params.hex_pos)
+    if state then
+        state.is_in_claim_queue = nil
     end
 
     hex_grid.claim_hex(params.surface_name, params.hex_pos, params.by_player, params.allow_nonland)
