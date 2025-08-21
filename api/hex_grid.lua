@@ -181,10 +181,11 @@ function hex_grid.register_events()
     event_system.register_callback("dungeon-looted", function(dungeon)
         for _, tile in pairs(dungeon.maze.tiles) do
             local hex_pos = tile.pos
-            local state = hex_grid.get_hex_state(dungeon.surface.name, hex_pos)
+            local state = hex_grid.get_hex_state(dungeon.surface.index, hex_pos)
             if state then
                 state.is_dungeon = nil
                 state.was_dungeon = true
+                hex_grid.add_hex_to_claim_queue(dungeon.surface.index, hex_pos, nil, true)
             end
         end
     end)

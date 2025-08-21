@@ -5,6 +5,7 @@ Date: 22/8/25
     - Moved dungeons off of the oceans and into the main bulks of land.
   Features:
     - Dungeon turrets and walls now fall when the dungeon is looted.
+    - Hex cores generate inside dungeons and get auto-claimed upon looting their dungeon.
   Minor Features:
     - JSON trades export now includes core quality information.
   Balancing:
