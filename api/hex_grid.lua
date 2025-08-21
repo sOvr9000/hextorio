@@ -184,6 +184,7 @@ function hex_grid.register_events()
             local state = hex_grid.get_hex_state(dungeon.surface.name, hex_pos)
             if state then
                 state.is_dungeon = nil
+                state.was_dungeon = true
             end
         end
     end)
@@ -1491,7 +1492,10 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     else
         storage.hex_grid.last_used_claim_tile = tile_name
     end
-    terrain.set_hex_tiles(surface, hex_pos, tile_name)
+
+    if not (state.is_dungeon or state.was_dungeon) then
+        terrain.set_hex_tiles(surface, hex_pos, tile_name)
+    end
 
     local fill_tile_name
     if by_player then
