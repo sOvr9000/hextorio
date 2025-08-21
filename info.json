@@ -6,5 +6,5 @@
   "contact": "https://discord.gg/huJY7QK6UG",
   "factorio_version": "2.0",
   "description": "Adds dungeons, quests, an economy and trading system, the ability to level up items in the game, and an extra tier for transport belts, belt capacity, modules, quality, spidertrons, spaceship fuel recipes, chemical fuels, bullet magazines, rockets, combat robots, and nauvis ores (endgame).\n\nAlso divides the planets into hexagons, which contain resources, enemy bases, or profitable trades.\n\nGet rich by selling your excess items, buy hexagons, and plunder the powerful dungeons on every planet!",
-  "dependencies": ["base >= 2.0.60", "space-age >= 2.0.60", "!lignumis", "!bobwarfare"]
+  "dependencies": ["base >= 2.0.60", "space-age >= 2.0.60", "!lignumis", "!bobwarfare", "!rso-mod"]
 }
