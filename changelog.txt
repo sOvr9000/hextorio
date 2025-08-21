@@ -7,7 +7,7 @@ Date: 22/8/25
     - Dungeon turrets and walls now fall when the dungeon is looted.
     - Hex cores generate inside dungeons and get auto-claimed upon looting their dungeon.
   Minor Features:
-    - JSON trades export now includes core quality information.
+    - JSON trades export now includes core quality information and whether the core is or was in a dungeon.
   Balancing:
     - Made dungeons smaller and have better loot on each planet.
     - Rebalanced dungeon difficulties to scale by distance.
@@ -21,6 +21,8 @@ Date: 22/8/25
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.
     - Fixed crash when opening trade overview while an equipment grid is open.
     - Fixed that the completion of a quest before its revelation was not revealing it.
+  Changes:
+    - JSON trades export now has a more consistent structure, where entries that were nonexistent are now entered as false.
   Optimizations:
     - Improved dungeon generation speed.
   Modding:
