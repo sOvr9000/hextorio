@@ -14,6 +14,7 @@ Date: 16/7/25
     - All dungeons past Nauvis are now immune to atomic bombs.
     - Added Vulcanus quest that can be completed before claiming the center hex, removing the need to bring coins to Vulcanus.
     - Added per-planet global trade productivity modifiers.
+      These are mod settings that can be tweaked or reverted to 0 if this change is unpreferred.
   Bugfixes:
     - Fixed /force-claim command not being able to claim liquid hexes.
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.

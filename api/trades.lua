@@ -393,15 +393,35 @@ function trades.get_productivity_bonus_str(trade, quality)
         color = "red"
     end
 
+    local s = "\n" .. table.concat(bonus_strs, "\n")
+    if #bonus_strs > 0 then
+        s = s .. "\n"
+    end
+
     local str = {"",
         lib.color_localized_string({"hextorio-gui.productivity-bonus"}, "purple", "heading-2"),
-        "\n" .. table.concat(bonus_strs, "\n") .. "\n[font=heading-2]= [color=" .. color .. "]" .. lib.format_percentage(prod, 0, true, true) .. "[.color][.font]",
+        s .. "[font=heading-2]= [color=" .. color .. "]" .. lib.format_percentage(prod, 0, true, true) .. "[.color][.font]",
     }
 
-    if trades.get_base_trade_productivity() ~= 0 then
+    if storage.trades.base_productivity ~= nil and storage.trades.base_productivity ~= 0 then
         table.insert(str, 3, "\n")
         table.insert(str, 4, lib.color_localized_string({"hextorio-gui.quest-reward"}, "white", "heading-2"))
-        table.insert(str, 5, " [color=green]" .. lib.format_percentage(trades.get_base_trade_productivity(), 0, true, true) .. "[.color]")
+        table.insert(str, 5, " [color=green]" .. lib.format_percentage(storage.trades.base_productivity, 0, true, true) .. "[.color]")
+    end
+
+    local planet_prod = lib.runtime_setting_value("base-trade-prod-" .. trade.surface_name)
+    if planet_prod ~= 0 then
+        color = "green"
+        if planet_prod < 0 then
+            color = "red"
+        end
+
+        table.insert(str, #str, "\n")
+        table.insert(str, #str, "([planet=" .. trade.surface_name .. "]) [color=" .. color .. "]" .. lib.format_percentage(planet_prod, 0, true, true) .. "[.color]")
+    end
+
+    if prod < 0 then
+        table.insert(str, {"", "\n\n[img=utility.warning_icon] ", lib.color_localized_string({"hextorio-gui.negative-prod-meaning"}, "red")})
     end
 
     return str
@@ -935,9 +955,12 @@ function trades.increment_current_prod_value(trade, times, quality)
 end
 
 ---Get the current base productivity bonus for all trades.
+---@param surface_name string
 ---@return number
-function trades.get_base_trade_productivity()
-    return storage.trades.base_productivity or 0
+function trades.get_base_trade_productivity(surface_name)
+    local base_prod = storage.trades.base_productivity or 0 -- Upgrades from quests.
+    local planet_prod = lib.runtime_setting_value("base-trade-prod-" .. surface_name) -- Planet-wide buff/debuff
+    return base_prod + planet_prod
 end
 
 ---Set the base productivity bonus for all trades.
@@ -955,7 +978,7 @@ end
 ---Recalculate the trade's productivity effect based on base productivity and its input and output item ranks.
 ---@param trade Trade
 function trades.check_productivity(trade)
-    trades.set_productivity(trade, trades.get_base_trade_productivity())
+    trades.set_productivity(trade, trades.get_base_trade_productivity(trade.surface_name))
     for j, item in ipairs(trade.input_items) do
         if lib.is_catalog_item(item.name) then
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
