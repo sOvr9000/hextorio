@@ -1,7 +1,7 @@
 
 ---@alias EntityRadii {[string]: number[]}
 ---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, max_loot_radius: number, qualities: string[], tile_type: string, ammo: AmmoReloadParameters}
----@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet}
+---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet, is_looted: boolean|nil}
 
 local lib = require "api.lib"
 local axial = require "api.axial"
@@ -662,6 +662,11 @@ function dungeons.remove_loot_chest(dungeon, chest)
         return
     end
     table.remove(dungeon.loot_chests, index)
+    if not dungeon.is_looted and dungeons.is_looted(dungeon) then
+        dungeon.is_looted = true
+        event_system.trigger("dungeon-looted", dungeon)
+        game.print("looted")
+    end
 end
 
 ---Handle the event where a dungeon chest is picked up.
@@ -674,18 +679,14 @@ function dungeons.on_dungeon_chest_picked_up(chest)
     if not dungeon then return end
 
     dungeons.remove_loot_chest(dungeon, chest)
-
-    if dungeons.is_looted(dungeon) then
-        event_system.trigger("dungeon-looted", dungeon)
-    end
 end
 
 ---Return whether the dungeon is fully looted, where all loot chests have been mined.
 ---@param dungeon Dungeon
 ---@return boolean
 function dungeons.is_looted(dungeon)
-    for _, _chest in pairs(dungeon.loot_chests) do
-        if _chest.valid then -- Chests can become invalid if an /editor mode deconstruction planner is used.
+    for _, chest in pairs(dungeon.loot_chests) do
+        if chest.valid then -- Chests can become invalid if an /editor mode deconstruction planner is used.
             return false
         end
     end
