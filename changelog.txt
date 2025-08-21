@@ -8,7 +8,6 @@ Date: 22/8/25
   Balancing:
     - Made dungeons smaller and have better loot on each planet.
     - Rebalanced dungeon difficulties to scale by distance.
-    - All dungeons past Nauvis are now immune to atomic bombs.
     - Added Vulcanus quest that can be completed before claiming the center hex, removing the need to bring coins to Vulcanus.
     - Added per-planet global trade productivity modifiers.
       These are mod settings that can be tweaked or reverted to 0 if this change is unpreferred.
