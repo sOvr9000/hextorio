@@ -19,6 +19,7 @@ Date: 16/7/25
     - Fixed /force-claim command not being able to claim liquid hexes.
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.
     - Fixed crash when opening trade overview while an equipment grid is open.
+    - Fixed that the completion of a quest before its revelation was not revealing it.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.18
 Date: 16/7/25

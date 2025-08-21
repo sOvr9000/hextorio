@@ -690,6 +690,7 @@ function quests.complete_quest(quest)
 
     if quests.is_complete(q) then return end
 
+    quests.reveal_quest(quest)
     quests.print_quest_completion(q)
     quests.give_rewards_of_quest(q)
     quests._mark_complete(q)
