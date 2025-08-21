@@ -665,7 +665,6 @@ function dungeons.remove_loot_chest(dungeon, chest)
     if not dungeon.is_looted and dungeons.is_looted(dungeon) then
         dungeon.is_looted = true
         event_system.trigger("dungeon-looted", dungeon)
-        game.print("looted")
     end
 end
 
