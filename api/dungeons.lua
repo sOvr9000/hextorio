@@ -670,12 +670,26 @@ end
 function dungeons.remove_loot_chest(dungeon, chest)
     local index = lib.table_index(dungeon.loot_chests, chest)
     if not index then
+        -- This may happen if a player places a dungeon chest in a dungeon hex and then picks it up again.
         lib.log_error("dungeons.remove_loot_chest: Loot chest not found in dungeon")
         return
     end
+
     table.remove(dungeon.loot_chests, index)
+
     if not dungeon.is_looted and dungeons.is_looted(dungeon) then
         dungeon.is_looted = true
+
+        -- The dungeon was looted! Destroy all of its entities.
+        for _, e in pairs(dungeon.walls) do
+            e.destroy()
+        end
+        dungeon.walls = {}
+        for _, e in pairs(dungeon.turrets) do
+            e.destroy()
+        end
+        dungeon.turrets = {}
+
         event_system.trigger("dungeon-looted", dungeon)
     end
 end
