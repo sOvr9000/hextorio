@@ -177,6 +177,16 @@ function hex_grid.register_events()
     event_system.register_callback("interplanetary-trade-generated", function(surface_name, item_name, hex_pos)
         hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
     end)
+
+    event_system.register_callback("dungeon-looted", function(dungeon)
+        for _, tile in pairs(dungeon.maze.tiles) do
+            local hex_pos = tile.pos
+            local state = hex_grid.get_hex_state(dungeon.surface.name, hex_pos)
+            if state then
+                state.is_dungeon = nil
+            end
+        end
+    end)
 end
 
 -- Get or create surface storage
@@ -736,6 +746,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     if is_dungeon then
+        state.is_dungeon = true -- Gets set to nil when the dungeon gets looted.
         hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, 3)
     end
 
@@ -1372,14 +1383,23 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
     local surface_id = lib.get_surface_id(surface)
     if surface_id == -1 then
         lib.log_error("hex_grid.can_claim_hex: No surface found")
-        return
+        return false
     end
     surface = game.surfaces[surface_id]
 
-    if not state.is_land and not allow_nonland then return false end
-    if hex_grid.get_free_hex_claims(surface.name) > 0 then return true end
-
     if lib.is_player_editor_like(player) then
+        return true
+    end
+
+    if state.is_dungeon then
+        return false
+    end
+
+    if not state.is_land and not allow_nonland then
+        return false
+    end
+
+    if hex_grid.get_free_hex_claims(surface.name) > 0 then
         return true
     end
 
@@ -1391,7 +1411,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
     local inv = lib.get_player_inventory(player)
     if not inv then
         lib.log_error("hex_grid.can_claim_hex: No inventory found")
-        return
+        return false
     end
 
     return coin_tiers.ge(coin_tiers.get_coin_from_inventory(inv), coin)

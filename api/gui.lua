@@ -2944,7 +2944,12 @@ function gui.on_claim_hex_button_click(player)
     local hex_pos = axial.get_hex_containing(hex_core.position, transformation.scale, transformation.rotation)
 
     if not hex_grid.can_claim_hex(player, player.surface, hex_pos) then
-        player.print(lib.color_localized_string({"hextorio.cannot-afford"}, "red"))
+        local state = hex_grid.get_hex_state(hex_core.surface.index, hex_pos)
+        if state.is_dungeon then
+            player.print(lib.color_localized_string({"hextorio.loot-dungeon-first"}, "red"))
+        else
+            player.print(lib.color_localized_string({"hextorio.cannot-afford"}, "red"))
+        end
         return
     end
 
