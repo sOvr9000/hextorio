@@ -129,6 +129,14 @@ function gui.reinitialize_everything(player)
     gui.hide_all_frames(player)
 end
 
+---Return whether the given player has the given frame open. Safely handles situations (and returns false) when the player's currently opened object is not a GUI.
+---@param player LuaPlayer
+---@param frame_name string
+---@return boolean
+function gui.is_frame_open(player, frame_name)
+    return player.opened ~= nil and player.opened.object_name == "LuaGuiElement" and player.opened.name == frame_name
+end
+
 function gui.init_all_buttons(player)
     gui.init_questbook_button(player)
     gui.init_trade_overview_button(player)
@@ -2944,7 +2952,7 @@ function gui.on_claim_hex_button_click(player)
 end
 
 function gui.on_questbook_button_click(player)
-    if player.opened and player.opened.name == "questbook" then
+    if gui.is_frame_open(player, "questbook") then
         gui.hide_questbook(player)
     else
         gui.close_all(player)
@@ -2953,7 +2961,7 @@ function gui.on_questbook_button_click(player)
 end
 
 function gui.on_trade_overview_button_click(player)
-    if player.opened and player.opened.name == "trade-overview" then
+    if gui.is_frame_open(player, "trade-overview") then
         gui.hide_trade_overview(player)
     else
         gui.close_all(player)
@@ -2962,7 +2970,7 @@ function gui.on_trade_overview_button_click(player)
 end
 
 function gui.on_catalog_button_click(player)
-    if player.opened and player.opened.name == "catalog" then
+    if gui.is_frame_open(player, "catalog") then
         gui.hide_catalog(player)
     else
         gui.close_all(player)
