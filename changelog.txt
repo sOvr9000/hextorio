@@ -26,6 +26,7 @@ Date: 22/8/25
     - Fixed that the ammo in dungeon turrets was not infinite.
   Changes:
     - JSON trades export now has a more consistent structure, where entries that were nonexistent are now entered as false.
+    - Changed mod thumbnail from hexaprism coin to a hexagon.
   Optimizations:
     - Improved dungeon generation speed.
   Modding:
