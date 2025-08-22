@@ -2,7 +2,7 @@
 Version: 1.1.0
 Date: 22/8/25
   Major Features:
-    - Moved dungeons off of the oceans and into the main bulks of land.
+    - Moved dungeons off of the oceans and into the main bulk of land.
   Features:
     - Dungeon turrets and walls now fall when the dungeon is looted.
     - Hex cores generate inside dungeons.
@@ -12,8 +12,7 @@ Date: 22/8/25
     - JSON trades export now includes core quality information and whether the core is or was in a dungeon.
   Balancing:
     - Made dungeons smaller and have better loot on each planet.
-    - Rebalanced dungeon difficulties to scale by distance.
-    - Dungeon walls and turrets are generally easier to kill now.
+    - Rebalanced dungeon difficulties.
     - Nerfed [item=atomic-bomb]. Can be tweaked or disabled in mod settings.
     - Added per-planet global trade productivity modifiers. Can be tweaked or disabled in mod settings.
     - Added Vulcanus quest that can be completed before claiming the center hex, removing the need to bring coins to Vulcanus.
