@@ -1,9 +1,21 @@
 
 local blueprints = require "api.blueprints"
+local event_system = require "api.event_system"
 
 local space_platforms = {}
 
 
+
+function space_platforms.register_events()
+    event_system.register_callback("quest-reward-received", function(reward_type, reward_value)
+        if reward_type == "receive-spaceship" then
+            local sp = space_platforms.new "nauvis"
+            if sp then
+                space_platforms.generate(sp, reward_value)
+            end
+        end
+    end)
+end
 
 ---@param planet_name string
 ---@param name string|nil
@@ -21,14 +33,9 @@ function space_platforms.new(planet_name, name)
 end
 
 ---@param sp LuaSpacePlatform
----@param blueprint_name string
-function space_platforms.generate(sp, blueprint_name)
-    
-end
-
----@param sp LuaSpacePlatform
-function space_platforms.generate_tier1_ship(sp)
-    local stack = blueprints.get_item_stack "starter-ship"
+---@param ship_name string
+function space_platforms.generate(sp, ship_name)
+    local stack = blueprints.get_item_stack(ship_name)
     if not stack then return end
     if not sp.hub then return end
 

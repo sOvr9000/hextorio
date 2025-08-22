@@ -176,7 +176,10 @@ return {
         {
             name = "dark-factorian-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "nauvis", progress_requirement = 1}},
-            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"nauvis", 10}}},
+            rewards = {
+                {type = "all-trades-productivity", value = 5},
+                {type = "claim-free-hexes", value = {"nauvis", 10}},
+            },
             prerequisites = {"getting-somewhere"},
             notes = {"dungeon-location"},
         },
@@ -208,7 +211,17 @@ return {
         {
             name = "copper-flavored-lava",
             conditions = {{type = "place-entity-on-planet", value = {"offshore-pump", "vulcanus"}, progress_requirement = 1}},
-            rewards = {{type = "claim-free-hexes", value = {"vulcanus", 1}}},
+            rewards = {
+                {type = "claim-free-hexes", value = {"vulcanus", 4}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "big-mining-drill", count = 1, quality = "rare"},
+                        {name = "efficiency-module-2", count = 1, quality = "rare"},
+                        {name = "gravity-coin", count = 2},
+                    },
+                },
+            },
             prerequisites = {"too-many-hex-cores"},
         },
         {
@@ -220,7 +233,11 @@ return {
         {
             name = "stepping-on-ants",
             conditions = {{type = "kill-entity", value = "small-demolisher", progress_requirement = 3}},
-            rewards = {{type = "unlock-feature", value = "supercharging"}, {type = "claim-free-hexes", value = {"vulcanus", 5}}},
+            rewards = {
+                {type = "unlock-feature", value = "supercharging"},
+                {type = "receive-spaceship", value = "starter-ship"},
+                {type = "claim-free-hexes", value = {"vulcanus", 5},
+            }},
             prerequisites = {"biter-rammer"},
         },
         {
@@ -252,7 +269,18 @@ return {
         {
             name = "electrocution",
             conditions = {{type = "die-to-damage-type", value = "electric", progress_requirement = 1}},
-            rewards = {{type = "unlock-feature", value = "resource-conversion"}, {type = "claim-free-hexes", value = {"fulgora", 5}}},
+            rewards = {
+                {type = "unlock-feature", value = "resource-conversion"},
+                {type = "claim-free-hexes", value = {"fulgora", 5}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "recycler", count = 1, quality = "rare"},
+                        {name = "efficiency-module-2", count = 1, quality = "rare"},
+                        {name = "gravity-coin", count = 2},
+                    },
+                },
+            },
             prerequisites = {"too-many-hex-cores"},
         },
         {
@@ -296,13 +324,23 @@ return {
         {
             name = "farm-fresh-produce",
             conditions = {
-                {type = "mine-entity", value = "yumako-tree", progress_requirement = 25},
-                {type = "mine-entity", value = "jellystem", progress_requirement = 25},
-                {type = "mine-entity", value = "boompuff", progress_requirement = 10},
-                {type = "mine-entity", value = "stingfrond", progress_requirement = 10},
-                {type = "mine-entity", value = "lickmaw", progress_requirement = 10},
+                {type = "mine-entity", value = "yumako-tree", progress_requirement = 2},
+                {type = "mine-entity", value = "jellystem", progress_requirement = 2},
+                {type = "mine-entity", value = "boompuff", progress_requirement = 1},
+                {type = "mine-entity", value = "stingfrond", progress_requirement = 1},
+                {type = "mine-entity", value = "lickmaw", progress_requirement = 1},
             },
-            rewards = {{type = "claim-free-hexes", value = {"gleba", 8}}},
+            rewards = {
+                {type = "claim-free-hexes", value = {"gleba", 6}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "biochamber", count = 1, quality = "epic"},
+                        {name = "efficiency-module-2", count = 1, quality = "epic"},
+                        {name = "gravity-coin", count = 2},
+                    },
+                },
+            },
             prerequisites = {"too-many-hex-cores"},
             has_img = false,
         },
@@ -329,13 +367,33 @@ return {
         {
             name = "pond-filler",
             conditions = {{type = "place-tile", value = "foundation", progress_requirement = 100}},
-            rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
+            rewards = {
+                {type = "claim-free-hexes", value = {"aquilo", 5}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "cryogenic-plant", count = 1, quality = "legendary"},
+                        {name = "productivity-module-3", count = 1, quality = "legendary"},
+                        {name = "meteor-coin", count = 1},
+                    },
+                },
+            },
             prerequisites = {"this-is-fine", "my-hair-feels-funny", "yummy-co"},
         },
         {
             name = "world-paver",
             conditions = {{type = "place-tile", value = "foundation", progress_requirement = 2000}},
-            rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
+            rewards = {
+                {type = "claim-free-hexes", value = {"aquilo", 5}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "fusion-reactor", count = 1, quality = "legendary"},
+                        {name = "fusion-generator", count = 2, quality = "legendary"},
+                        {name = "hexa-productivity-module", count = 1, quality = "legendary"},
+                    },
+                },
+            },
             prerequisites = {"pond-filler"},
         },
         {
@@ -353,7 +411,16 @@ return {
                 {type = "loot-dungeons-on", value = "gleba", progress_requirement = 3},
                 {type = "loot-dungeons-on", value = "aquilo", progress_requirement = 3},
             },
-            rewards = {{type = "all-trades-productivity", value = 10}, {type = "claim-free-hexes", value = {"aquilo", 10}}},
+            rewards = {
+                {type = "all-trades-productivity", value = 10},
+                {type = "claim-free-hexes", value = {"aquilo", 10}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "mech-armor", count = 1, quality = "hextreme"},
+                    },
+                },
+            },
             prerequisites = {"overwatch-dungeon"},
             has_img = false,
         },
@@ -364,6 +431,12 @@ return {
             conditions = {{type = "items-at-rank", value = 5, progress_requirement = 1}},
             rewards = {
                 {type = "unlock-feature", value = "quantum-bazaar"},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "meteor-coin", count = 1000},
+                    },
+                },
                 {type = "claim-free-hexes", value = {"nauvis", 40}},
                 {type = "claim-free-hexes", value = {"vulcanus", 30}},
                 {type = "claim-free-hexes", value = {"fulgora", 30}},
@@ -377,13 +450,31 @@ return {
         {
             name = "it-wasnt-good-enough",
             conditions = {{type = "sell-item-of-quality", value = "hextreme", progress_requirement = 1}},
-            rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "big-mining-drill", count = 2, quality = "hextreme"},
+                        {name = "recycler", count = 2, quality = "hextreme"},
+                        {name = "hexa-quality-module", count = 16, quality = "hextreme"},
+                    },
+                },
+            },
             prerequisites = {"catalog-initiate"},
         },
         {
             name = "the-factory-must-grow",
             conditions = {{type = "place-entity", value = "sentient-spider", progress_requirement = 1}},
-            rewards = {{type = "claim-free-hexes", value = {"aquilo", 10}}},
+            rewards = {
+                {type = "claim-free-hexes", value = {"aquilo", 10}},
+                {type = "reduce-biters", value = 90},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "personal-roboport-mk2-equipment", count = 1, quality = "hextreme"},
+                    },
+                },
+            },
             prerequisites = {"five-legs-werent-enough", "cant-step-on-that"},
         },
     },

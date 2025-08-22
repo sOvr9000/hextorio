@@ -108,9 +108,9 @@ function on_command(player, command, params)
         player.clear_recipe_notifications()
 
         -- Spawn midgame spaceship
-        local sp = space_platforms.new("nauvis", "Hexaclysm")
+        local sp = space_platforms.new "nauvis"
         if sp then
-            space_platforms.generate_tier1_ship(sp)
+            space_platforms.generate(sp, "starter-ship")
         end
 
         -- Claim hexes
@@ -121,9 +121,9 @@ function on_command(player, command, params)
         local range = params[2] or 300
         player.force.chart(params[1], {{-range, -range}, {range, range}})
     elseif command == "spawn-ship" then
-        local sp = space_platforms.new("nauvis", "Hexaclysm")
+        local sp = space_platforms.new "nauvis"
         if sp then
-            space_platforms.generate_tier1_ship(sp)
+            space_platforms.generate(sp, "starter-ship")
         end
     elseif command == "skip-flight" then
         local sp = player.surface.platform

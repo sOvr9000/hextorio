@@ -29,6 +29,7 @@ quests.register_events()
 dungeons.register_events()
 spiders.register_events()
 hex_island.register_events()
+space_platforms.register_events()
 
 require "commands"
 require "handle_keybinds"
