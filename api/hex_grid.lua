@@ -602,7 +602,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     local is_land = hex_island.is_land_hex(surface.name, hex_pos)
 
     local dungeon_chance = lib.runtime_setting_value("dungeon-chance-" .. surface.name)
-    local is_dungeon = is_land and (dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 2 and math.random() < dungeon_chance))
+    local is_dungeon = is_land and (dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 3 and math.random() < dungeon_chance))
 
     if is_starting_hex then
         if surface.name == "fulgora" then
