@@ -6,6 +6,9 @@ demolisher_capsule.action.action_delivery.target_effects.entity_name = "demolish
 local poison_capsule = table.deepcopy(data.raw["projectile"]["poison-capsule"])
 local plague_rocket = table.deepcopy(data.raw["projectile"]["rocket"])
 plague_rocket.name = "plague-rocket"
+plague_rocket.acceleration = plague_rocket.acceleration * 2.5
+plague_rocket.action.action_delivery.target_effects[2].damage.amount = 240
+
 local create_smoke = poison_capsule.action[1].action_delivery.target_effects[1]
 create_smoke.entity_name = "plague-cloud"
 table.insert(plague_rocket.action.action_delivery.target_effects, create_smoke)

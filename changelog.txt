@@ -29,6 +29,7 @@ Date: 22/8/25
     - JSON trades export now has a more consistent structure, where entries that were nonexistent are now entered as false.
     - Changed mod thumbnail from hexaprism coin to a hexagon.
     - Changed enemy force color to dark purple, giving dungeons a sicker look.
+    - Buffed plague rocket acceleration and direct damage.
   Optimizations:
     - Improved dungeon generation speed.
   Modding:
