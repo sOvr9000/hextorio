@@ -138,6 +138,9 @@ script.on_init(function()
 
     local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
     trades.generate_interplanetary_trade_locations("nauvis", num_trades)
+
+    -- Set enemy force color.
+    game.forces.enemy.custom_color = {0.6, 0.1, 0.6}
 end)
 
 script.on_event(defines.events.on_tick, function (event)
