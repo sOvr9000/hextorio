@@ -2,6 +2,7 @@
 local lib = require "api.lib"
 local sets = require "api.sets"
 local axial = require "api.axial"
+local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"
 
@@ -128,7 +129,7 @@ function hex_grid.register_events()
     end)
 
     event_system.register_callback("command-tp-to-edge", function(player, params)
-        local planet_size = lib.runtime_setting_value("planet-size-" .. player.surface.name)
+        local planet_size = lib.startup_setting_value("planet-size-" .. player.surface.name)
         local edge_pos = {q = planet_size, r = 0}
         local transformation = terrain.get_surface_transformation(player.surface)
         local center = axial.get_hex_center(edge_pos, transformation.scale, transformation.rotation)
@@ -590,45 +591,18 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         return
     end
 
-    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
+    -- local planet_size = lib.startup_setting_value("planet-size-" .. surface.name)
     local dist = axial.distance(hex_pos, {q=0, r=0})
 
     local hex_quality = hex_grid.get_quality_from_distance(surface.name, dist)
     terrain.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, nil, hex_quality)
 
-    local land_chance
-    if surface.name == "nauvis" then
-        if mgs.autoplace_controls.water.size == 0 then
-            land_chance = 0
-        else
-            land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.water.size)) * 0.5
-        end
-    elseif surface.name == "vulcanus" then
-        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vulcanus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
-    elseif surface.name == "fulgora" then
-        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
-    elseif surface.name == "gleba" then
-        land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.gleba_water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_water.size)) * 0.5
-    elseif surface.name == "aquilo" then
-        land_chance = 0.60
-    end
-    if surface.name ~= "fulgora" and surface.name ~= "aquilo" then
-        land_chance = (1 - land_chance * land_chance) ^ 0.5 -- basically turning a triangle into a circle
-    end
-
     local is_starting_hex = dist == 0
-    local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
-
-    if dist > planet_size then
-        is_land = false
-    end
+    -- local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
+    local is_land = hex_island.is_land_hex(surface.name, hex_pos)
 
     local dungeon_chance = lib.runtime_setting_value("dungeon-chance-" .. surface.name)
-    local is_dungeon = dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 2 and dist < planet_size and math.random() < dungeon_chance)
-
-    if is_dungeon then
-        is_land = true
-    end
+    local is_dungeon = is_land and (dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 2 and math.random() < dungeon_chance))
 
     if is_starting_hex then
         if surface.name == "fulgora" then
@@ -782,7 +756,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         return
     end
 
-    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
+    local planet_size = lib.startup_setting_value("planet-size-" .. surface.name)
     local dist = axial.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
 
@@ -1354,7 +1328,6 @@ function hex_grid.get_quality_tier_from_distance(surface_name, dist)
     return i
 end
 
-
 -- Check if a hex core can be spawned within a hex
 function hex_grid.can_hex_core_spawn(surface, hex_pos)
     local state = hex_grid.get_hex_state(surface, hex_pos)
@@ -1445,7 +1418,6 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     local state = hex_grid.get_hex_state(surface_id, hex_pos)
     if state.claimed then return end
 
-    log(allow_nonland)
     if not allow_nonland then
         if not state.hex_core or not state.is_land then return end
     end
@@ -1842,7 +1814,7 @@ function hex_grid.add_initial_trades(state)
             table.insert(hex_core_trades, trades.from_item_names(state.hex_core.surface.name, table.unpack(trade)))
         end
     else
-        local planet_size = lib.runtime_setting_value("planet-size-" .. state.hex_core.surface.name)
+        local planet_size = lib.startup_setting_value("planet-size-" .. state.hex_core.surface.name)
         local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. state.hex_core.surface.name)
 
         local items_sorted_by_value = item_values.get_items_sorted_by_value(state.hex_core.surface.name, true, false)

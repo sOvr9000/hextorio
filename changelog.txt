@@ -3,6 +3,7 @@ Version: 1.1.0
 Date: 22/8/25
   Major Features:
     - Moved dungeons off of the oceans and into the main bulk of land.
+    - All land hexes on all planets are now claimable, instead of possibly being separated by liquid hexes.
   Features:
     - Dungeon turrets and walls now fall when the dungeon is looted.
     - Hex cores generate inside dungeons.

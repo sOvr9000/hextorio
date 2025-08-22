@@ -194,14 +194,6 @@ data:extend({
         order = "zec",
     },
     {
-        type = "int-setting",
-        name = "hextorio-planet-size-nauvis",
-        setting_type = "runtime-global",
-        default_value = 48,
-        minimum_value = 1,
-        maximum_value = 100,
-    },
-    {
         type = "double-setting",
         name = "hextorio-tiles-per-quality-nauvis",
         setting_type = "runtime-global",
@@ -238,8 +230,16 @@ data:extend({
     },
     {
         type = "int-setting",
+        name = "hextorio-planet-size-nauvis",
+        setting_type = "startup",
+        default_value = 48,
+        minimum_value = 1,
+        maximum_value = 100,
+    },
+    {
+        type = "int-setting",
         name = "hextorio-planet-size-vulcanus",
-        setting_type = "runtime-global",
+        setting_type = "startup",
         default_value = 30,
         minimum_value = 1,
         maximum_value = 100,
@@ -247,7 +247,7 @@ data:extend({
     {
         type = "int-setting",
         name = "hextorio-planet-size-fulgora",
-        setting_type = "runtime-global",
+        setting_type = "startup",
         default_value = 30,
         minimum_value = 1,
         maximum_value = 100,
@@ -255,7 +255,7 @@ data:extend({
     {
         type = "int-setting",
         name = "hextorio-planet-size-gleba",
-        setting_type = "runtime-global",
+        setting_type = "startup",
         default_value = 36,
         minimum_value = 1,
         maximum_value = 100,
@@ -263,7 +263,7 @@ data:extend({
     {
         type = "int-setting",
         name = "hextorio-planet-size-aquilo",
-        setting_type = "runtime-global",
+        setting_type = "startup",
         default_value = 24,
         minimum_value = 1,
         maximum_value = 100,

@@ -5,6 +5,7 @@
 
 local lib = require "api.lib"
 local axial = require "api.axial"
+local hex_island = require "api.hex_island"
 local weighted_choice = require "api.weighted_choice"
 -- local item_values = require "api.item_values"
 local loot_tables = require "api.loot_tables"
@@ -437,7 +438,7 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount, max_dist
     local surface = game.get_surface(surface_id)
     if not surface then return {}, {} end
 
-    local planet_size = lib.runtime_setting_value("planet-size-" .. surface.name)
+    -- local planet_size = lib.startup_setting_value("planet-size-" .. surface.name)
 
     local used_hexes = storage.dungeons.used_hexes[surface_id] or {}
     local positions = {} --[[@as HexSet]]
@@ -461,7 +462,7 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount, max_dist
         local adj_hexes = axial.get_adjacent_hexes(cur)
         for _, adj in pairs(adj_hexes) do
             local dist = axial.distance(adj, {q=0, r=0})
-            if dist < planet_size and dist >= 2 and axial.distance(adj, start_pos) <= max_dist then
+            if dist >= 2 and hex_island.is_land_hex(surface.name, adj) and axial.distance(adj, start_pos) <= max_dist then
                 local is_visited = hex_sets.contains(visited, adj)
                 local is_used = hex_sets.contains(used_hexes, adj)
                 if not is_visited and not is_used then

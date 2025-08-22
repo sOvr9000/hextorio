@@ -19,6 +19,7 @@ local space_platforms = require "api.space_platforms"
 local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
 local spiders = require "api.spiders"
+local hex_island = require "api.hex_island"
 
 hex_grid.register_events()
 trades.register_events()
@@ -27,6 +28,7 @@ gui.register_events()
 quests.register_events()
 dungeons.register_events()
 spiders.register_events()
+hex_island.register_events()
 
 require "commands"
 require "handle_keybinds"
@@ -45,6 +47,7 @@ local data_trade_overview = require "data.trade_overview"
 local data_blueprints = require "data.blueprints"
 local data_dungeons = require "data.dungeons"
 local data_spiders = require "data.spiders"
+local data_hex_island = require "data.hex_island"
 
 
 
@@ -73,6 +76,7 @@ script.on_init(function()
     storage.blueprints = data_blueprints
     storage.dungeons = data_dungeons
     storage.spiders = data_spiders
+    storage.hex_island = data_hex_island
 
     local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
     storage.hex_grid.mgs["nauvis"] = mgs_original
@@ -121,6 +125,7 @@ script.on_init(function()
     loot_tables.init()
     dungeons.init()
     spiders.init()
+    hex_island.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -406,6 +411,8 @@ script.on_event(defines.events.on_surface_created, function (event)
     local mgs_original = surface.map_gen_settings -- makes copy
     storage.hex_grid.mgs[surface.name] = mgs_original
 
+    local unknown = false
+
     if surface.name == "vulcanus" then
         local mgs = surface.map_gen_settings
         mgs.autoplace_controls.vulcanus_coal.size = 0
@@ -488,6 +495,12 @@ script.on_event(defines.events.on_surface_created, function (event)
             ["lithium-brine"] = mgs_original.autoplace_controls.lithium_brine.size * lithium_brine_frequency,
             ["fluorine-vent"] = mgs_original.autoplace_controls.fluorine_vent.size * fluorine_vent_frequency,
         }
+    else
+        unknown = true
+    end
+
+    if not unknown then
+        event_system.trigger("surface-created", surface)
     end
 
     if storage.item_values.values[surface.name] then

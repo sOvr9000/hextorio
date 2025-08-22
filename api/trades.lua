@@ -1443,7 +1443,7 @@ function trades.generate_interplanetary_trade_locations(surface_name, trades_per
     end
 
     local item_vals = item_values.get_interplanetary_item_values(surface_name, true, false, "normal")
-    local planet_size = lib.runtime_setting_value("planet-size-" .. surface_name)
+    local planet_size = lib.startup_setting_value("planet-size-" .. surface_name)
     for item_name, _ in pairs(item_vals) do
         for i = 1, trades_per_item do
             local hex_pos = axial.random_hex({q=0, r=0}, planet_size)
