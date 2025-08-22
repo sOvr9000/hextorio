@@ -74,11 +74,30 @@ function hex_island.is_land_hex(surface_name, hex_pos)
 
     local island = storage.hex_island.islands[surface_name]
     if not island then
-        lib.log_error("hex_island.is_land_hex: Could not find islands structure for surface " .. surface_name)
+        lib.log_error("hex_island.is_land_hex: Could not find island structure for surface " .. surface_name)
         return false
     end
 
     return hex_sets.contains(island, hex_pos)
+end
+
+---Get a list of all land hexes on the surface.
+---@param surface_name string
+---@return HexPos[]
+function hex_island.get_land_hex_list(surface_name)
+    if not storage.hex_island then
+        storage.hex_island = {islands = {}}
+    elseif not storage.hex_island.islands then
+        storage.hex_island.islands = {}
+    end
+
+    local island = storage.hex_island.islands[surface_name]
+    if not island then
+        lib.log_error("hex_island.is_land_hex: Could not find island structure for surface " .. surface_name)
+        return {}
+    end
+
+    return hex_sets.to_array(island)
 end
 
 ---Generate a hexagonal island.

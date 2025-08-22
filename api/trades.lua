@@ -7,6 +7,7 @@ local item_ranks  = require "api.item_ranks"
 local coin_tiers  = require "api.coin_tiers"
 local event_system= require "api.event_system"
 local quests      = require "api.quests"
+local hex_island  = require "api.hex_island"
 
 
 
@@ -1442,11 +1443,14 @@ function trades.generate_interplanetary_trade_locations(surface_name, trades_per
         storage.trades.interplanetary_trade_locations[surface_name] = {}
     end
 
+    local land_hexes = hex_island.get_land_hex_list(surface_name)
+    local total_land_hexes = #land_hexes
+
     local item_vals = item_values.get_interplanetary_item_values(surface_name, true, false, "normal")
     local planet_size = lib.startup_setting_value("planet-size-" .. surface_name)
     for item_name, _ in pairs(item_vals) do
         for i = 1, trades_per_item do
-            local hex_pos = axial.random_hex({q=0, r=0}, planet_size)
+            local hex_pos = land_hexes[math.random(1, total_land_hexes)]
             if not storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q] then
                 storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q] = {}
             end
