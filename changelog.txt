@@ -18,6 +18,7 @@ Date: 22/8/25
     - Added per-planet global trade productivity modifiers. Can be tweaked or disabled in mod settings.
     - Added Vulcanus quest that can be completed before claiming the center hex, removing the need to bring coins to Vulcanus.
     - Added extra huge volcanic rocks to Vulcanus' first hex to help with starting up if you don't bring coins.
+    - Buffed [entity=defender] and [entity=distractor].
   Bugfixes:
     - Fixed /force-claim command not being able to claim liquid hexes.
     - Fixed dungeon looting quests being completed by picking up manually placed dungeon chests.
