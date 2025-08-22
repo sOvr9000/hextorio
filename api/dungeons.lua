@@ -7,12 +7,13 @@ local lib = require "api.lib"
 local axial = require "api.axial"
 local hex_island = require "api.hex_island"
 local weighted_choice = require "api.weighted_choice"
--- local item_values = require "api.item_values"
+local item_values = require "api.item_values"
 local loot_tables = require "api.loot_tables"
 local terrain = require "api.terrain"
 local hex_maze = require "api.hex_maze"
 local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
+local coin_tiers = require "api.coin_tiers"
 
 local TURRET_RELOAD_INTERVAL = 3600
 
@@ -645,13 +646,23 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
                 if inv then
                     local max_num_samples = #inv
                     local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling)
+
+                    local total_coin_value = 0
                     for _, item in pairs(loot_items) do
+                        local item_name = item.loot_item.item_name
+                        local quality = lib.get_quality_at_tier(item.loot_item.quality_tier)
+                        local count = item.count
                         inv.insert {
-                            name = item.loot_item.item_name,
-                            quality = lib.get_quality_at_tier(item.loot_item.quality_tier),
-                            count = item.count,
+                            name = item_name,
+                            quality = quality,
+                            count = count,
                         }
+                        total_coin_value = total_coin_value + item_values.get_item_value(dungeon.surface.name, item_name, true, quality) * count
                     end
+
+                    local coin = coin_tiers.from_base_value(total_coin_value / (10 * item_values.get_item_value("nauvis", "hex-coin")))
+                    coin_tiers.add_coin_to_inventory(inv, coin)
+
                     inv.sort_and_merge()
                 end
 

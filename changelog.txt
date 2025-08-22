@@ -6,13 +6,13 @@ Date: 22/8/25
     - All land hexes on all planets are now claimable, instead of possibly being separated by liquid hexes.
   Features:
     - Dungeon turrets and walls now fall when the dungeon is looted.
-    - Hex cores generate inside dungeons.
-      They get auto-claimed upon looting their dungeon if at least one of them is unclaimed.
+    - Hex cores generate inside dungeons. They get auto-claimed upon looting their dungeon.
     - There are now easy, medium, and hard types of dungeons to fight on each planet, containing appropriate amounts of loot.
   Minor Features:
     - JSON trades export now includes core quality information and whether the core is or was in a dungeon.
   Balancing:
     - Made dungeons smaller and have better loot on each planet.
+    - Coins are now found in every dungeon loot chest, an amount proportional to the overall loot value.
     - Rebalanced dungeon difficulties.
     - Nerfed [item=atomic-bomb]. Can be tweaked or disabled in mod settings.
     - Added per-planet global trade productivity modifiers. Can be tweaked or disabled in mod settings.
