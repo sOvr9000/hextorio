@@ -151,9 +151,9 @@ script.on_event(defines.events.on_tick, function (event)
             if not lib.is_hextreme_enabled() then
                 game.print(lib.color_localized_string({"hextorio.hextreme-disabled"}, "pink", "heading-1"))
             end
-            if not lib.startup_setting_value "pvp-mode" then
-                game.print(lib.color_localized_string({"hextorio.try-pvp", "orange", "heading-1"}))
-            end
+            -- if not lib.startup_setting_value "pvp-mode" then
+            --     game.print(lib.color_localized_string({"hextorio.try-pvp"}, "orange", "heading-1"))
+            -- end
             storage.events.intro_finished = true
         end
     end
