@@ -356,28 +356,16 @@ end
 function coin_tiers.update_inventory(inventory, current_coin, new_coin)
     storage.coin_tiers.is_processing[inventory] = true
 
-    if new_coin.values[1] > current_coin.values[1] then
-        inventory.insert {name = "hex-coin", count = new_coin.values[1] - current_coin.values[1]}
-    elseif new_coin.values[1] < current_coin.values[1] then
-        inventory.remove {name = "hex-coin", count = current_coin.values[1] - new_coin.values[1]}
-    end
+    for tier = 1, 4 do
+        local coin_name = lib.get_coin_name_of_tier(tier)
+        local new_amount = new_coin.values[tier]
+        local current_amount = current_coin.values[tier]
 
-    if new_coin.values[2] > current_coin.values[2] then
-        inventory.insert {name = "gravity-coin", count = new_coin.values[2] - current_coin.values[2]}
-    elseif new_coin.values[2] < current_coin.values[2] then
-        inventory.remove {name = "gravity-coin", count = current_coin.values[2] - new_coin.values[2]}
-    end
-
-    if new_coin.values[3] > current_coin.values[3] then
-        inventory.insert {name = "meteor-coin", count = new_coin.values[3] - current_coin.values[3]}
-    elseif new_coin.values[3] < current_coin.values[3] then
-        inventory.remove {name = "meteor-coin", count = current_coin.values[3] - new_coin.values[3]}
-    end
-
-    if new_coin.values[4] > current_coin.values[4] then
-        inventory.insert {name = "hexaprism-coin", count = new_coin.values[4] - current_coin.values[4]}
-    elseif new_coin.values[4] < current_coin.values[4] then
-        inventory.remove {name = "hexaprism-coin", count = current_coin.values[4] - new_coin.values[4]}
+        if new_amount > current_amount then
+            inventory.insert {name = coin_name, count = new_amount - current_amount}
+        elseif new_amount < current_amount then
+            inventory.remove {name = coin_name, count = current_amount - new_amount}
+        end
     end
 
     storage.coin_tiers.is_processing[inventory] = nil

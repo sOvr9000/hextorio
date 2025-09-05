@@ -1303,6 +1303,23 @@ function lib.get_tier_of_coin_name(coin_name)
     return  1
 end
 
+---Get the name of a coin from its tier, defaulting to the lowest tier name if the tier is unrecognized.
+---@param coin_tier int
+---@return string
+function lib.get_coin_name_of_tier(coin_tier)
+    if coin_tier == 1 then
+        return "hex-coin"
+    elseif coin_tier == 2 then
+        return "gravity-coin"
+    elseif coin_tier == 3 then
+        return "meteor-coin"
+    elseif coin_tier == 4 then
+        return "hexaprism-coin"
+    else
+        return "hex-coin"
+    end
+end
+
 ---@param quality string
 ---@return number
 function lib.get_quality_value_scale(quality)
