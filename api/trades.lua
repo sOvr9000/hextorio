@@ -45,15 +45,20 @@ function trades.register_events()
         local loops = trade_loop_finder.find_simple_loops(all_trades)
 
         local s = ""
-        for _, loop in pairs(loops) do
+        for i, loop in ipairs(loops) do
+            s = s .. "LOOP #" .. i .. "\n"
             for _, idx in pairs(loop) do
                 local trade = all_trades[idx]
                 if trade then
-                    s = s .. lib.tostring_trade(trade)
+                    local trade_str = lib.tostring_trade(trade)
+                    s = s .. trade_str
                     s = s .. "\n"
+                    local gps = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
+                    s = s .. gps
+                    s = s .. "\n\n"
                 end
             end
-            s = s .. "\n\n"
+            s = s .. "\n"
         end
 
         helpers.write_file("simple_trade_loops.txt", s, false, player.index)
