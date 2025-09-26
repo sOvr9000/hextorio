@@ -285,6 +285,10 @@ function hex_grid.generate_random_trade(hex_core_state, volume, allow_interplane
         lib.log_error("hex_grid.generate_random_trade: hex core state has no hex core")
         return
     end
+    if not hex_core_state.trades then
+        lib.log_error("hex_grid.generate_random_trade: hex core state has no trades")
+        return
+    end
 
     local cur_trades = trades.convert_trade_id_array_to_trade_array(hex_core_state.trades)
     local idx = #cur_trades + 1
@@ -1846,10 +1850,9 @@ function hex_grid.add_initial_trades(state)
     local dist = axial.distance(state.position, {q=0, r=0})
     local is_starting_hex = dist == 0
 
-    local hex_core_trades = {}
     if is_starting_hex then
         for _, trade in pairs(storage.trades.starting_trades[state.hex_core.surface.name]) do
-            table.insert(hex_core_trades, trades.from_item_names(state.hex_core.surface.name, table.unpack(trade)))
+            hex_grid.add_trade(state, trades.from_item_names(state.hex_core.surface.name, table.unpack(trade)))
         end
     else
         local planet_size = lib.startup_setting_value("planet-size-" .. state.hex_core.surface.name)
@@ -1867,13 +1870,9 @@ function hex_grid.add_initial_trades(state)
             local random_volume = math.max(1, r * r * max_volume)
             local trade = hex_grid.generate_random_trade(state, random_volume)
             if trade then
-                table.insert(hex_core_trades, trade)
+                hex_grid.add_trade(state, trade)
             end
         end
-    end
-
-    for _, trade in pairs(hex_core_trades) do
-        hex_grid.add_trade(state, trade)
     end
 
     hex_grid.apply_extra_trades_bonus(state)
