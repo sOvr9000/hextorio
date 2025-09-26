@@ -5,6 +5,7 @@ local axial = require "api.axial"
 local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"
+local trade_loop_finder = require "api.trade_loop_finder"
 
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
@@ -268,6 +269,43 @@ function hex_grid.get_hex_state_from_core(hex_core)
     return state
 end
 
+---Attempt to generate a random trade for the given hex core state, but don't add it if successful.
+---This is intended as a wrapper for `trades.random()` with added restrictions to prevent simple single-core trade loops from being generated.
+---@param hex_core_state HexState
+---@param volume number
+---@param allow_interplanetary boolean|nil
+---@param include_item string|nil
+---@return Trade|nil
+function hex_grid.generate_random_trade(hex_core_state, volume, allow_interplanetary, include_item)
+    if not hex_core_state then
+        lib.log_error("hex_grid.generate_random_trade: hex core state is nil")
+        return
+    end
+    if not hex_core_state.hex_core then
+        lib.log_error("hex_grid.generate_random_trade: hex core state has no hex core")
+        return
+    end
+
+    local cur_trades = trades.convert_trade_id_array_to_trade_array(hex_core_state.trades)
+    local idx = #cur_trades + 1
+
+    for _ = 1, 10 do
+        local trade = trades.random(hex_core_state.hex_core.surface.name, volume, allow_interplanetary, include_item)
+        if trade then
+            cur_trades[idx] = trade -- Overwrite previously generated trades if they failed.
+            local loops = trade_loop_finder.find_simple_loops(cur_trades)
+
+            -- This can more efficiently be something like "trade_loop_finder.has_simple_loop()", but I don't know how to properly implement generator functions (like from Python) in Lua,
+            -- which is what would be ideal to avoid copying and pasting 20-30 lines of code in the case of implementing that function.
+            if not next(loops) then
+                return trade
+            end
+        end
+    end
+
+    -- Failed to generate trade. Return nil.
+end
+
 -- Add a trade to a hex core.
 function hex_grid.add_trade(hex_core_state, trade)
     if not hex_core_state then
@@ -363,7 +401,7 @@ function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.hex_core and item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
     if math.random() > 0.01 then return end
 
-    local trade = trades.random(state.hex_core.surface.name, volume, false, item_name)
+    local trade = hex_grid.generate_random_trade(state, volume, false, item_name)
     if not trade then
         lib.log_error("hex_grid.apply_extra_trade_bonus: failed to get random trade item name from volume = " .. volume)
         return
@@ -1827,7 +1865,7 @@ function hex_grid.add_initial_trades(state)
         for _ = 1, trades_per_hex do
             local r = math.random()
             local random_volume = math.max(1, r * r * max_volume)
-            local trade = trades.random(state.hex_core.surface.name, random_volume)
+            local trade = hex_grid.generate_random_trade(state, random_volume)
             if trade then
                 table.insert(hex_core_trades, trade)
             end
@@ -2799,7 +2837,10 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
     local rank = item_ranks.get_item_rank(item_name)
     if rank >= 3 then
         local volume = item_values.get_item_value(surface_name, item_name)
+
+        -- This should not need to check for infinite single-core loops (by using hex_grid.generate_random_trade() instead) since that's so unlikely to happen with interplanetary trades that it almost certainly will never happen.
         local trade = trades.random(surface_name, volume, true, item_name)
+
         if trade then
             hex_grid.add_trade(state, trade)
             added = true

@@ -2,7 +2,8 @@
 Version: 1.1.2
 Date: 4/9/25
   Bugfixes:
-    - Hex cores can no longer accidentally contain two trades that feed each other infinitely.
+    - Trade generation inside a single hex core no longer permits infinite trade loops between two trades (preserving performance).
+        Single-hex loops of three trades or more are still possible but are very unlikely, and detection of such more heavily impacts performance.
     - Steel chests and modded entities derived from steel chests no longer show the hex core GUI.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
