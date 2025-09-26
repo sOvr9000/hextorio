@@ -8,6 +8,7 @@ local coin_tiers  = require "api.coin_tiers"
 local event_system= require "api.event_system"
 local quests      = require "api.quests"
 local hex_island  = require "api.hex_island"
+local trade_loop_finder = require "api.trade_loop_finder"
 
 
 
@@ -37,6 +38,25 @@ function trades.register_events()
         end
         trades.discover_items(items_list)
         event_system.trigger("post-discover-all-command", player, params)
+    end)
+
+    event_system.register_callback("command-simple-trade-loops", function(player, params)
+        local all_trades = trades.get_all_trades(true)
+        local loops = trade_loop_finder.find_simple_loops(all_trades)
+
+        local s = ""
+        for _, loop in pairs(loops) do
+            for _, idx in pairs(loop) do
+                local trade = all_trades[idx]
+                if trade then
+                    s = s .. lib.tostring_trade(trade)
+                    s = s .. "\n"
+                end
+            end
+            s = s .. "\n\n"
+        end
+
+        helpers.write_file("simple_trade_loops.txt", s, false, player.index)
     end)
 end
 
