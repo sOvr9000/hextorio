@@ -2,7 +2,8 @@
 Version: 1.1.2
 Date: 4/9/25
   Bugfixes:
-    - Fixed rare crash from dungeon loot generation.
+    - Hex cores can no longer accidentally contain two trades that feed each other infinitely.
+    - Steel chests and modded entities derived from steel chests no longer show the hex core GUI.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 27/8/25
