@@ -3014,18 +3014,14 @@ function gui.on_gui_closed(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    if event.entity and event.entity.name == "hex-core" then
-        gui.hide_hex_core(player)
-    end
+    gui.close_all(player)
 end
 
 function gui.on_gui_confirmed(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    if event.entity and event.entity.name == "hex-core" then
-        gui.hide_hex_core(player)
-    end
+    gui.close_all(player)
 end
 
 function gui.on_gui_elem_changed(event)
