@@ -3014,24 +3014,18 @@ function gui.on_gui_closed(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    -- THIS SHOULD NOT BE NECESSARY
-    -- THE BUG IN 2.0.43 WHICH MADE THIS NECESSARY
-    -- HAS BEEN FIXED FOR 2.0.44 (https://forums.factorio.com/viewtopic.php?t=127900)
-    -- (not yet released)
-    -- THANKS DEVBRO
-    gui.close_all(player)
+    if event.entity and event.entity.name == "hex-core" then
+        gui.hide_hex_core(player)
+    end
 end
 
 function gui.on_gui_confirmed(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    -- THIS SHOULD NOT BE NECESSARY
-    -- THE BUG IN 2.0.43 WHICH MADE THIS NECESSARY
-    -- HAS BEEN FIXED FOR 2.0.44 (https://forums.factorio.com/viewtopic.php?t=127900)
-    -- (not yet released)
-    -- THANKS DEVBRO
-    gui.close_all(player)
+    if event.entity and event.entity.name == "hex-core" then
+        gui.hide_hex_core(player)
+    end
 end
 
 function gui.on_gui_elem_changed(event)
