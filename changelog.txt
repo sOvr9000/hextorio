@@ -1,6 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.2
 Date: 27/9/25
+  Minor Features:
+    - Added command /simple-trade-loops, which dumps to the script-output all existing two-trade loops in your game involving only two items at a time.
+        Faster and more convenient than analyzing trade JSON exports yourself, but less useful since no metrics are measured.
+  Changes:
+    - Revised item rank up requirements to better reflect the theme of the mod:
+        Bronze - unchanged (buy and sell item once)
+        Silver - buy this item from a trade with at least +10% productivity
+        Gold - electrocute 100 enemy units in the same hex as a trade that takes this item with +70% productivity
+        Red - buy this item from 5 different trades with +110% productivity
   Bugfixes:
     - Trade generation inside a single hex core no longer permits infinite trade loops between two trades (preserving performance).
         Single-hex loops of three trades or more are still possible but are very unlikely, and detection of such more heavily impacts performance.
