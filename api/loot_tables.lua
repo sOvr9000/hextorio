@@ -7,12 +7,6 @@ local item_values = require "api.item_values"
 
 
 
----@alias LootItem {item_name: string, quality_tier: int}
----@alias LootItemWithCount {loot_item: LootItem, count: int}
----@alias LootTable {wc: WeightedChoice, loot: LootItem[]}
-
-
-
 local loot_tables = {}
 
 

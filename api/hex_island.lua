@@ -1,7 +1,5 @@
 -- Generate hex sets which represent a single, connected island.
 
----@alias IslandConfig {radius: int, fill_ratio: number, algorithm: string, seed: int?, start_pos: HexPos?}
-
 local lib = require "api.lib"
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"

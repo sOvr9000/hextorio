@@ -3,11 +3,6 @@
 -- as well as various utility functions for working with an axial coordinate system.
 -- i.e. squares vs. hexagons
 
----@alias HexPos {q: int, r: int}
----@alias HexPosMap {[int]: {[int]: any}}
----@alias AxialDirection 1|2|3|4|5|6
----@alias AxialDirectionSet {[AxialDirection]: boolean}
-
 local core_math = require "api.core_math"
 local lib = require "api.lib"
 

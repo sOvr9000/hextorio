@@ -1,16 +1,9 @@
 
----@alias Quest table
-
 local lib = require "api.lib"
 local event_system = require "api.event_system"
 local sets         = require "api.sets"
 local axial        = require "api.axial"
 local terrain      = require "api.terrain"
-
-
-
----@alias QuestReward {type: string, value: string|number|table}
----@alias QuestIdentification Quest|int|string
 
 
 

@@ -1,7 +1,4 @@
 
----@alias HexMazeTile {pos: HexPos, open: boolean[]}
----@alias HexMaze {tiles: HexMazeTile[], tiles_by_position: IndexMap, generated: boolean}
-
 local lib = require "api.lib"
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"

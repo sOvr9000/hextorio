@@ -1,8 +1,4 @@
 
----@alias HexSet {[int]: {[int]: true}}
-
-
-
 local hex_sets = {}
 
 

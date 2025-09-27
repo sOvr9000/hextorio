@@ -12,16 +12,6 @@ local trade_loop_finder = require "api.trade_loop_finder"
 
 
 
----@alias TradeSide "give"|"receive"
----@alias TradeItem {name: string, count: int}
----@alias TentativeTradeItem {name: string, count: int|nil}
----@alias Trade {id: int, input_items: TradeItem[], output_items: TradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil, is_interplanetary: boolean|nil}
----@alias TentativeTrade {id: int, input_items: TradeItem[], output_items: TentativeTradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil}
----@alias TradeGenerationParameters {target_efficiency: number|nil}
----@alias TradeItemSamplingParameters StringFilters
-
-
-
 local trades = {}
 
 

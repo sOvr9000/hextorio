@@ -1,8 +1,6 @@
 
 local lib = require "api.lib"
 
----@alias WeightedChoice {[any]: number, __total_weight: number}
-
 local weighted_choice = {}
 
 

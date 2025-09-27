@@ -5,10 +5,6 @@ local quests       = require "api.quests"
 
 
 
----@alias Rank {item_name: string, rank: int, progress: int[]}
-
-
-
 local item_ranks = {}
 
 
@@ -32,7 +28,7 @@ end
 
 ---Initialize a rank object for an item, failing if the item cannot have a rank.
 ---@param item_name string
----@return Rank|nil
+---@return ItemRank|nil
 function item_ranks.init_item(item_name)
     if lib.is_coin(item_name) or not lib.is_item(item_name) then
         lib.log_error("item_ranks.init_item: tried to define rank for coin or non-item: " .. item_name)
@@ -65,7 +61,7 @@ end
 
 ---Get the rank object for an item if it exists.  An attempt to create a rank object will be made if it doesn't exist.
 ---@param item_name string
----@return Rank|nil
+---@return ItemRank|nil
 function item_ranks.get_rank_obj(item_name)
     local rank = storage.item_ranks.item_ranks[item_name]
     if not rank then
@@ -104,7 +100,7 @@ function item_ranks.progress_item_rank(item_name, toward_rank, amount)
 end
 
 ---Try to rank up a rank object by one tier, respecting progress requirements.
----@param rank Rank
+---@param rank ItemRank
 function item_ranks._try_rank_up(rank)
     if rank.rank >= 5 then return end
     if rank.rank <= 0 then return end

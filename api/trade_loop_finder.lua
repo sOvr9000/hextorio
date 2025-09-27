@@ -5,10 +5,6 @@ local trade_loop_finder = {}
 
 
 
----@alias TradeInputMap {[string]: int[]}
-
-
-
 ---Generate a mapping of item names to trade indices based on each trade's input items.
 ---@param trades_list Trade[]
 ---@return TradeInputMap

@@ -15,10 +15,6 @@ local gui = {}
 
 
 
----@alias PlayerCatalogSelection {surface_name: string, item_name: string, bazaar_quality: string, last_item_selected: string|nil, last_qb_item_selected: string|nil}
-
-
-
 function gui.register_events()
     event_system.register_callback("post-rank-up-command", function(player, params)
         gui.close_all(player)

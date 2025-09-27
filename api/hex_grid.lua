@@ -17,13 +17,6 @@ local dungeons = require "api.dungeons"
 
 
 
----@alias HexCoreMode "normal"|"sink"|"generator"
----@alias HexState table
----@alias HexCoreStats {total_items_produced: QualityItemCounts, total_items_consumed: QualityItemCounts, total_coins_produced: table, total_coins_consumed: table}
----@alias HexPoolParameters {surface_id: int, q: int, r: int}
-
-
-
 local allowed_surfaces = sets.new {
     "nauvis",
     "vulcanus",

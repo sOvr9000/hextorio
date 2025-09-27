@@ -11,13 +11,6 @@ local lib          = require "api.lib"
 
 
 
----@alias SpiderClientAIMode "build"|"hunt"|"claim"|"trade"
----@alias SpiderClientAI {current_mode: SpiderClientAIMode}
----@alias SpiderServerAI {force: LuaForce, enabled_modes: {[SpiderClientAIMode]: boolean}}
----@alias Spider {entity: LuaEntity, client_ai: SpiderClientAI}
-
-
-
 local spiders = {}
 
 

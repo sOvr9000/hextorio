@@ -3,11 +3,6 @@ local lib = require "api.lib"
 
 
 
----@alias CoinValues number[]
----@alias Coin {tier_scaling: number, max_coin_tier: int, values: CoinValues}
-
-
-
 local coin_tiers = {}
 
 
