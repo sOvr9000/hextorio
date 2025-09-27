@@ -1937,9 +1937,9 @@ function gui.update_catalog_inspect_frame(player)
             caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false), color_text, "heading-2"}}
         elseif i == 3 then
             local planets_text = {""}
-            for _, surface in pairs(game.surfaces) do
-                if not lib.is_space_platform(surface.name) and item_values.is_item_interplanetary(surface.name, selection.item_name) then
-                    table.insert(planets_text, "[planet=" .. surface.name .. "]")
+            for surface_name, _ in pairs(storage.item_values.values) do
+                if item_values.is_item_interplanetary(surface_name, selection.item_name) then
+                    table.insert(planets_text, "[planet=" .. surface_name .. "]")
                 end
             end
             if #planets_text == 1 then
