@@ -1,10 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.2
-Date: 4/9/25
+Date: 26/9/25
   Bugfixes:
     - Trade generation inside a single hex core no longer permits infinite trade loops between two trades (preserving performance).
         Single-hex loops of three trades or more are still possible but are very unlikely, and detection of such more heavily impacts performance.
     - Steel chests and modded entities derived from steel chests no longer show the hex core GUI.
+    - Fixed the quadratic interpolation of random trade volume sampling, making higher valued items show up in trades closer to the center of each planet.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 27/8/25

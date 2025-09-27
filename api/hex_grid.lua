@@ -1862,12 +1862,12 @@ function hex_grid.add_initial_trades(state)
         local max_item_value = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[#items_sorted_by_value])
 
         local base = hex_grid.get_trade_volume_base(state.hex_core.surface.name)
-        local exponent = (max_item_value / base) ^ (1 / planet_size)
-        local max_volume = base * (exponent ^ dist)
-        max_volume = math.min(max_volume, max_item_value * 0.5)
+        local exponent = (max_item_value * 0.5 / base) ^ (1 / planet_size)
+
         for _ = 1, trades_per_hex do
             local r = math.random()
-            local random_volume = math.max(1, r * r * max_volume)
+            local random_volume = math.min(max_item_value * 0.5, base * (exponent ^ (r * r * dist)))
+
             local trade = hex_grid.generate_random_trade(state, random_volume)
             if trade then
                 hex_grid.add_trade(state, trade)
@@ -2942,7 +2942,7 @@ function hex_grid.get_trade_volume_base(surface_name)
         lib.log_error("hex_grid.get_trade_volume_base: No minimal item found, defaulting to 1")
         return 1
     end
-    val = item_values.get_item_value(surface_name, min_item)
+    val = item_values.get_item_value(surface_name, min_item) * 1.5
     storage.trades.trade_volume_base[surface_name] = val
     return val
 end

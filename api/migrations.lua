@@ -440,6 +440,11 @@ local process_migration = {
     ["1.1.0"] = function()
     end,
     ["1.1.1"] = function()
+        -- Recalculate trade volume base per planet.
+        for surface_name, _ in pairs(storage.trades.trade_volume_base) do
+            storage.trades.trade_volume_base[surface_name] = nil -- Triggers recalculating the correct value
+            hex_grid.get_trade_volume_base(surface_name) -- Stores a value for above
+        end
     end,
 }
 
