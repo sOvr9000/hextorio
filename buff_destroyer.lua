@@ -5,7 +5,7 @@ destroyer.attack_parameters = table.deepcopy(data.raw["electric-turret"]["tesla-
 destroyer.attack_parameters.damage_modifier = 0.125
 destroyer.attack_parameters.cooldown = 20 -- vanilla
 -- destroyer.attack_parameters.range = 27 -- default 30 is fine
-destroyer.localised_name = {"item-name.tesla-destroyer"}
+destroyer.localised_name = {"entity-name.tesla-destroyer"}
 destroyer.speed = 0.05
 destroyer.friction = 0.03
 
@@ -23,8 +23,8 @@ tech.unit = {
     time = tesla_tech.unit.time,
 }
 table.insert(tech.prerequisites, "tesla-weapons")
-tech.localised_name = {"item-name.tesla-destroyer"}
-tech.localised_description = {"item-description.tesla-destroyer"}
+tech.localised_name = {"entity-name.tesla-destroyer"}
+tech.localised_description = {"item-description.tesla-destroyer-capsule"}
 
 -- Adjust other localization
 local capsule = data.raw["capsule"]["destroyer-capsule"]
