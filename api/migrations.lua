@@ -445,6 +445,12 @@ local process_migration = {
             storage.trades.trade_volume_base[surface_name] = nil -- Triggers recalculating the correct value
             hex_grid.get_trade_volume_base(surface_name) -- Stores a value for above
         end
+
+        storage.item_ranks.productivity_requirements = {
+            [2] = 0.1, -- Bronze -> Silver
+            [3] = 0.7, -- Silver -> Gold
+            [4] = 1.1 -- Gold -> Red
+        }
     end,
 }
 

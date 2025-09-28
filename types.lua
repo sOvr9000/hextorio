@@ -28,6 +28,7 @@
 ---@alias HexMaze {tiles: HexMazeTile[], tiles_by_position: IndexMap, generated: boolean}
 
 ---@alias HexSet {[int]: {[int]: true}}
+---@alias IntSet {[int]: true}
 
 ---@alias ItemRank {item_name: string, rank: int, progress: int[]}
 

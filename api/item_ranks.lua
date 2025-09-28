@@ -88,7 +88,7 @@ function item_ranks.progress_item_rank(item_name, toward_rank, amount)
     end
     local rank = item_ranks.get_rank_obj(item_name)
     if not rank then return 0 end
-    if toward_rank < 2 or toward_rank > 4 then
+    if toward_rank < 2 or toward_rank > 5 then
         lib.log_error("item_ranks.progress_item_rank: toward_rank is out of range")
         return 0
     end

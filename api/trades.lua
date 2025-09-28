@@ -1344,6 +1344,19 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     local _remaining_to_insert = {}
     local total_coins_added = coin_tiers.new()
 
+    local function handle_item_in_trade(trade_id, quality, item_name, amount, trade_side)
+        local rank = item_ranks.get_item_rank(item_name)
+        if rank ~= 2 and rank ~= 4 then return end
+
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            local prod = trades.get_productivity(trade, quality)
+            if prod >= storage.item_ranks.productivity_requirements[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
+                item_ranks.progress_item_rank(item_name, rank + 1)
+            end
+        end
+    end
+
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
         if trade and trade.active then
@@ -1360,16 +1373,19 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                     if not _total_removed[quality] then _total_removed[quality] = {} end
                     for item_name, amount in pairs(total_removed[quality] or {}) do
                         _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
+                        handle_item_in_trade(trade_id, quality, item_name, amount, "give")
                     end
 
                     if not _total_inserted[quality] then _total_inserted[quality] = {} end
                     for item_name, amount in pairs(total_inserted[quality] or {}) do
                         _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
+                        handle_item_in_trade(trade_id, quality, item_name, amount, "receive")
                     end
 
                     if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
                     for item_name, amount in pairs(remaining_to_insert[quality] or {}) do
                         _remaining_to_insert[quality][item_name] = (_remaining_to_insert[quality][item_name] or 0) + amount
+                        handle_item_in_trade(trade_id, quality, item_name, amount, "receive")
                     end
                 end
             end
@@ -1378,51 +1394,51 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
     local total_coins_removed = coin_tiers.subtract(initial_input_coin, input_coin)
 
-    trades._postprocess_items_traded(surface_name, _total_removed, "give")
-    trades._postprocess_items_traded(surface_name, _total_inserted, "receive")
+    -- trades._postprocess_items_traded(surface_name, _total_removed, "give")
+    -- trades._postprocess_items_traded(surface_name, _total_inserted, "receive")
     return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
 end
 
----Process the traded items after a trade had occurred.
----@param surface_name string
----@param total_traded QualityItemCounts
----@param trade_side TradeSide
-function trades._postprocess_items_traded(surface_name, total_traded, trade_side)
-    local process_again = {}
-    for quality, item_names in pairs(total_traded) do
-        local tier = lib.get_quality_tier(quality)
-        if tier >= 3 and trade_side == "give" then
-            -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
-            for item_name, count in pairs(item_names) do
-                local rank = item_ranks.get_item_rank(item_name)
-                if rank == 2 then
-                    -- A bronze rank item was sold at rare+ quality.
-                    item_ranks.rank_up(item_name)
-                    if not process_again[quality] then
-                        process_again[quality] = {}
-                    end
-                    process_again[quality][item_name] = count
-                end
-            end
-        end
-        if tier >= 4 then -- trade type can be either
-            -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
-            for item_name, _ in pairs(item_names) do
-                if not item_values.has_item_value(surface_name, item_name) then
-                    local rank = item_ranks.get_item_rank(item_name)
-                    if rank == 3 then
-                        -- A silver rank item was sold at epic+ quality on a planet where it cannot be naturally produced.
-                        item_ranks.rank_up(item_name)
-                    end
-                end
-            end
-        end
-    end
-    if next(process_again) then
-        trades._postprocess_items_traded(surface_name, process_again, "give")
-        trades._postprocess_items_traded(surface_name, process_again, "receive")
-    end
-end
+-- ---Process the traded items after a trade had occurred.
+-- ---@param surface_name string
+-- ---@param total_traded QualityItemCounts
+-- ---@param trade_side TradeSide
+-- function trades._postprocess_items_traded(surface_name, total_traded, trade_side)
+--     local process_again = {}
+--     for quality, item_names in pairs(total_traded) do
+--         local tier = lib.get_quality_tier(quality)
+--         if tier >= 3 and trade_side == "give" then
+--             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
+--             for item_name, count in pairs(item_names) do
+--                 local rank = item_ranks.get_item_rank(item_name)
+--                 if rank == 2 then
+--                     -- A bronze rank item was sold at rare+ quality.
+--                     item_ranks.rank_up(item_name)
+--                     if not process_again[quality] then
+--                         process_again[quality] = {}
+--                     end
+--                     process_again[quality][item_name] = count
+--                 end
+--             end
+--         end
+--         if tier >= 4 then -- trade type can be either
+--             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
+--             for item_name, _ in pairs(item_names) do
+--                 if not item_values.has_item_value(surface_name, item_name) then
+--                     local rank = item_ranks.get_item_rank(item_name)
+--                     if rank == 3 then
+--                         -- A silver rank item was sold at epic+ quality on a planet where it cannot be naturally produced.
+--                         item_ranks.rank_up(item_name)
+--                     end
+--                 end
+--             end
+--         end
+--     end
+--     if next(process_again) then
+--         trades._postprocess_items_traded(surface_name, process_again, "give")
+--         trades._postprocess_items_traded(surface_name, process_again, "receive")
+--     end
+-- end
 
 ---Calculate the productivity modifier for a given quality.
 ---@param quality string

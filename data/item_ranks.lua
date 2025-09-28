@@ -3,9 +3,20 @@ return {
     item_ranks = {},
 
     rank_up_requirements = {1, 1, 1, 1},
+    productivity_requirements = {
+        [2] = 0.1, -- Bronze -> Silver
+        [3] = 0.7, -- Silver -> Gold
+        [4] = 1.1 -- Gold -> Red
+    },
 
-    -- rank_colors = {"gray", "orange", "white", "yellow", "red"},
-    rank_colors = {{102, 102, 102}, {221, 127, 33}, {204, 204, 204}, {212, 169, 19}, {207, 6, 0}},
+    rank_colors = {
+        {102, 102, 102}, -- gray
+        {221, 127, 33}, -- orange
+        {204, 204, 204}, -- white
+        {212, 169, 19}, -- yellow
+        {207, 6, 0} -- red
+    },
+
     rank_star_sprites = {
         "star-silhouette",
         "bronze-star",

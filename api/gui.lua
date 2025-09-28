@@ -1973,11 +1973,17 @@ function gui.update_catalog_inspect_frame(player)
                 table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
             end
         elseif rank_obj.rank == 2 then
-            table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=rare]")
+            table.insert(rank_up_localized_str, "+10") -- TODO: make these numbers a setting or auto-calculated based on intention of challenge
+            table.insert(rank_up_localized_str, "green")
+            table.insert(rank_up_localized_str, "heading-2")
         elseif rank_obj.rank == 3 then
-            table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=epic]")
+            table.insert(rank_up_localized_str, "+70")
+            table.insert(rank_up_localized_str, "green")
+            table.insert(rank_up_localized_str, "heading-2")
         elseif rank_obj.rank == 4 then
-            table.insert(rank_up_localized_str, "[item=" .. selection.item_name .. ",quality=hextreme]")
+            table.insert(rank_up_localized_str, "+110")
+            table.insert(rank_up_localized_str, "green")
+            table.insert(rank_up_localized_str, "heading-2")
         end
 
         local rank_up_instructions = inspect_frame.add {
@@ -1992,8 +1998,8 @@ function gui.update_catalog_inspect_frame(player)
     if rank_obj.rank == 1 then
         gui.add_info(inspect_frame, {"hextorio-gui.buying-info"}, "info-buying")
         gui.add_info(inspect_frame, {"hextorio-gui.selling-info"}, "info-selling")
-    elseif rank_obj.rank == 2 or rank_obj.rank == 3 then
-        gui.add_info(inspect_frame, {"hextorio-gui.higher-qualities-count"}, "info-qualities")
+    -- elseif rank_obj.rank == 2 or rank_obj.rank == 3 then
+    --     gui.add_info(inspect_frame, {"hextorio-gui.higher-qualities-count"}, "info-qualities")
     end
 
     if rank_obj.rank == 5 then
