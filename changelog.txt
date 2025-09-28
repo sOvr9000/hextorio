@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.2
 Date: 27/9/25
+  Features:
+    - Added quest "Catalog Professional".
   Minor Features:
     - Added command /simple-trade-loops, which dumps to the script-output all existing two-trade loops in your game involving only two items at a time.
         Faster and more convenient than analyzing trade JSON exports yourself, but less useful since no metrics are measured.
@@ -10,6 +12,8 @@ Date: 27/9/25
         Silver - buy this item using a trade with at least +10% productivity
         Gold - electrocute an enemy unit near a trade involving this item with +70% productivity
         Red - sell this item using a trade with at least +110% productivity
+    - The quest "It's Just a Scratch" was removed.
+    - The Quantum Bazaar is now unlocked from the new quest "Catalog Professional".
   Gui:
     - Trade productivity info now always shows even when the total amount sums to 0%.
   Bugfixes:

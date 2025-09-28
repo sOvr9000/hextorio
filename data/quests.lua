@@ -350,6 +350,21 @@ return {
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"gleba", 10}}},
             prerequisites = {"dark-factorian-dungeon"},
         },
+        {
+            name = "catalog-professional",
+            conditions = {{type = "items-at-rank", value = 5, progress_requirement = 1}},
+            rewards = {
+                {type = "unlock-feature", value = "quantum-bazaar"},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "meteor-coin", count = 1},
+                    },
+                },
+            },
+            prerequisites = {"catalog-initiate"},
+            has_img = false,
+        },
 
         -- Aquilo
         {
@@ -426,27 +441,27 @@ return {
         },
 
         -- Post-Aquilo
-        {
-            name = "its-just-a-scratch",
-            conditions = {{type = "items-at-rank", value = 5, progress_requirement = 1}},
-            rewards = {
-                {type = "unlock-feature", value = "quantum-bazaar"},
-                {
-                    type = "receive-items",
-                    value = {
-                        {name = "meteor-coin", count = 1000},
-                    },
-                },
-                {type = "claim-free-hexes", value = {"nauvis", 40}},
-                {type = "claim-free-hexes", value = {"vulcanus", 30}},
-                {type = "claim-free-hexes", value = {"fulgora", 30}},
-                {type = "claim-free-hexes", value = {"gleba", 30}},
-                {type = "claim-free-hexes", value = {"aquilo", 20}},
-            },
-            prerequisites = {"it-wasnt-good-enough"},
-            notes = {"multiple-rank-ups"},
-            has_img = false,
-        },
+        -- {
+        --     name = "its-just-a-scratch",
+        --     conditions = {{type = "items-at-rank", value = 5, progress_requirement = 1}},
+        --     rewards = {
+        --         {type = "unlock-feature", value = "quantum-bazaar"},
+        --         {
+        --             type = "receive-items",
+        --             value = {
+        --                 {name = "meteor-coin", count = 1000},
+        --             },
+        --         },
+        --         {type = "claim-free-hexes", value = {"nauvis", 40}},
+        --         {type = "claim-free-hexes", value = {"vulcanus", 30}},
+        --         {type = "claim-free-hexes", value = {"fulgora", 30}},
+        --         {type = "claim-free-hexes", value = {"gleba", 30}},
+        --         {type = "claim-free-hexes", value = {"aquilo", 20}},
+        --     },
+        --     prerequisites = {"it-wasnt-good-enough"},
+        --     notes = {"multiple-rank-ups"},
+        --     has_img = false,
+        -- },
         {
             name = "it-wasnt-good-enough",
             conditions = {{type = "sell-item-of-quality", value = "hextreme", progress_requirement = 1}},
