@@ -768,7 +768,7 @@ function gui.give_trade_arrow_tooltip(element, trade, quality, quality_cost_mult
 
     local prod = trades.get_productivity(trade, quality)
     local prod_mod = trades.get_productivity_modifier(quality)
-    if prod ~= 0 or prod_mod ~= 0 then
+    if trades.has_any_productivity_modifiers(trade, quality) then
         table.insert(s, "\n\n")
         table.insert(s, trades.get_productivity_bonus_str(trade, quality))
     end

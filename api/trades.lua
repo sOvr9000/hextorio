@@ -375,7 +375,7 @@ function trades.get_productivity_bonus_str(trade, quality)
     local prod = trades.get_productivity(trade, quality)
     local prod_mod = trades.get_productivity_modifier(quality)
 
-    if prod == 0 and prod_mod == 0 then
+    if not trades.has_any_productivity_modifiers(trade, quality) then
         return ""
     end
 
@@ -977,6 +977,26 @@ function trades.get_base_trade_productivity(surface_name)
     local base_prod = storage.trades.base_productivity or 0 -- Upgrades from quests.
     local planet_prod = lib.runtime_setting_value("base-trade-prod-" .. surface_name) -- Planet-wide buff/debuff
     return base_prod + planet_prod
+end
+
+---Return whether the given trade has any modifiers applying to it, even if the total is 0%.
+---@param trade Trade
+---@param quality string|nil
+---@return boolean
+function trades.has_any_productivity_modifiers(trade, quality)
+    for j, item in ipairs(trade.input_items) do
+        if lib.is_catalog_item(item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
+            return true
+        end
+    end
+    for j, item in ipairs(trade.output_items) do
+        if lib.is_catalog_item(item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
+            return true
+        end
+    end
+    return lib.runtime_setting_value("base-trade-prod-" .. trade.surface_name) ~= 0
+        or (storage.trades.base_productivity ~= nil and storage.trades.base_productivity ~= 0)
+        or (quality ~= nil and quality ~= "normal")
 end
 
 ---Set the base productivity bonus for all trades.

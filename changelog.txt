@@ -7,9 +7,9 @@ Date: 27/9/25
   Changes:
     - Revised item rank up requirements:
         Bronze - unchanged (buy and sell item once)
-        Silver - buy this item from a trade with at least +10% productivity
+        Silver - buy this item using a trade with at least +10% productivity
         Gold - electrocute an enemy unit near a trade involving this item with +70% productivity
-        Red - buy this item from a trade with at least +110% productivity
+        Red - sell this item using a trade with at least +110% productivity
   Gui:
     - Trade productivity info now always shows even when the total amount sums to 0%.
   Bugfixes:
