@@ -6,7 +6,7 @@ Date: 27/9/25
   Minor Features:
     - Added command /simple-trade-loops, which dumps to the script-output all existing two-trade loops in your game involving only two items at a time.
         Faster and more convenient than analyzing trade JSON exports yourself, but less useful since no metrics are measured.
-    - When pinging an interplanetary trade in chat, the blue arrow is now used instead of the gray arrow.
+    - When pinging an interplanetary trade in chat or creating a tag for one, the blue arrow is now used instead of the gray arrow.
   Changes:
     - Revised item rank up requirements:
         Bronze - unchanged (buy and sell item once)

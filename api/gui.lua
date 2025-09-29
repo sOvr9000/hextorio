@@ -2347,7 +2347,7 @@ function gui.on_trade_arrow_click(player, element)
         gps_str = hex_core.gps_tag
     end
 
-    local trade_str = lib.get_trade_img_str(trade)
+    local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
     game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
 end
 
@@ -2919,9 +2919,14 @@ function gui.on_tag_button_click(player, element)
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
 
-    local trade_number = tonumber(element.name:sub(12))
-    local trade = trades.get_trade_from_id(state.trades[trade_number])
-    local trade_str = lib.get_trade_img_str(trade)
+    local trade_serial = tonumber(element.name:sub(12))
+    local trade_id = state.trades[trade_serial]
+    if not trade_id then return end
+
+    local trade = trades.get_trade_from_id(trade_id)
+    if not trade then return end
+
+    local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
 
     state.tags_created = (state.tags_created or -1) + 1
 

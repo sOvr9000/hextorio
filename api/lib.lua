@@ -847,12 +847,16 @@ function lib.get_rank_img_str(rank, left_half)
     return ""
 end
 
-function lib.get_trade_img_str(trade)
+function lib.get_trade_img_str(trade, is_interplanetary)
     local s = ""
     for _, item in pairs(trade.input_items) do
         s = s .. "[img=item." .. item.name .. "]"
     end
-    s = s .. "[img=trade-arrow]"
+    if is_interplanetary then
+        s = s .. "[img=interplanetary-trade-arrow]"
+    else
+        s = s .. "[img=trade-arrow]"
+    end
     for i = 1, #trade.output_items do
         s = s .. "[img=item." .. trade.output_items[#trade.output_items + 1 - i].name .. "]"
     end

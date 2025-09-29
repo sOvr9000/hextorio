@@ -72,7 +72,9 @@ function hex_grid.register_events()
             return
         end
         local trade = trades.get_trade_from_id(state.trades[idx])
-        player.print("Removed trade: " .. lib.get_trade_img_str(trade))
+        if not trade then return end
+
+        player.print("Removed trade: " .. lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade)))
         hex_grid.remove_trade_by_index(state, idx)
     end)
 
@@ -2857,7 +2859,6 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
 
             hex_grid.add_trade(state, trade)
             added = true
-            lib.log("hex_grid.apply_interplanetary_trade_bonus: Added interplanetary trade for " .. item_name .. " on " .. surface_name .. ": " .. lib.get_trade_img_str(trade))
         else
             lib.log_error("hex_grid.apply_interplanetary_trade_bonus: Could not generate interplanetary trade")
         end
