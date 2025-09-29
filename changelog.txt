@@ -26,6 +26,7 @@ Date: 27/9/25
     - Fixed locale for tesla destroyer robot tech.
     - Fixed quest condition checking for getting items to specific ranks.
     - Fixed that the hex core GUI would initially show for steel chests upon loading a save.
+    - Fixed that opening a hex core while in editor mode would sometimes crash the game.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 27/8/25
