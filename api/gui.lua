@@ -190,6 +190,9 @@ function gui.init_hex_core(player)
     hex_core_gui.style.natural_height = 625
     hex_core_gui.style.vertically_stretchable = true
 
+    -- Default to invisible in case the player opens a steel chest before a hex core (sometimes happens when loading up a save).
+    hex_core_gui.visible = false
+
     local resources_header = hex_core_gui.add {type = "label", name = "resources-header", caption = {"hex-core-gui.initial-resources"}}
     resources_header.style.font = "heading-2"
 
