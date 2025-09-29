@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.2
-Date: 27/9/25
+Date: 29/9/25
   Features:
     - Added quest "Catalog Professional".
   Minor Features:
@@ -17,7 +17,7 @@ Date: 27/9/25
     - The Quantum Bazaar is now unlocked from the new quest "Catalog Professional".
     - Trades added to hexes via the bronze, silver, and gold star rank bonus effects now default to being toggled off to avoid interfering with active trading lines.
   Gui:
-    - Trade productivity info now always shows even when the total amount sums to 0%.
+    - Trade productivity details now show when the sum is 0% if there are nonzero modifiers contributing to that zero sum.
   Bugfixes:
     - Trade generation inside a single hex core no longer permits infinite trade loops between two trades (preserving performance).
         Single-hex loops of three trades or more are still possible but are very unlikely, and detection of such more heavily impacts performance.
