@@ -16,6 +16,7 @@ Date: 29/9/25
     - Removed quest "It's Just a Scratch".
     - The Quantum Bazaar is now unlocked from the new quest "Catalog Professional".
     - Trades added to hexes via the bronze, silver, and gold star rank bonus effects now default to being toggled off to avoid interfering with active trading lines.
+    - Electric damage research levels 1 and 2 now require electromagnetic science packs.
   Gui:
     - Trade productivity details now show when the sum is 0% if there are nonzero modifiers contributing to that zero sum.
   Bugfixes:

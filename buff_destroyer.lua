@@ -26,6 +26,10 @@ table.insert(tech.prerequisites, "tesla-weapons")
 tech.localised_name = {"entity-name.tesla-destroyer"}
 tech.localised_description = {"item-description.tesla-destroyer-capsule"}
 
+-- Adjust electric damage research (following destroyer tech) to require pink science also.
+table.insert(data.raw["technology"]["electric-weapons-damage-1"].unit.ingredients, {"electromagnetic-science-pack", 1})
+table.insert(data.raw["technology"]["electric-weapons-damage-2"].unit.ingredients, {"electromagnetic-science-pack", 1})
+
 -- Adjust other localization
 local capsule = data.raw["capsule"]["destroyer-capsule"]
 capsule.localised_name = {"item-name.tesla-destroyer-capsule"}
