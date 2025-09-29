@@ -894,6 +894,13 @@ function trades.get_total_bought(item_name)
     return storage.trades.total_items_bought[item_name] or 0
 end
 
+---Return whether the given trade is currently enabled to be used in trading.
+---@param trade Trade
+---@return boolean
+function trades.is_active(trade)
+    return trade.active == true -- If somehow it is ever nil, it'll return false in that case.
+end
+
 ---Set a trade to be active or inactive, returning whether the activity was really changed.
 ---@param trade Trade
 ---@param flag boolean|nil Defaults to `true`.

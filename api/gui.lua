@@ -2454,9 +2454,14 @@ function gui.on_toggle_trade_button_click(player, element)
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
 
-    local trade_number = tonumber(element.name:sub(14))
-    local active = element.sprite == "virtual-signal/signal-check"
-    hex_grid.set_trade_active(state, trade_number, not active)
+    local trade_serial = tonumber(element.name:sub(14)) -- The location in the hex's trades listing
+    local trade_id = state.trades[trade_serial] -- The global identifier of the trade
+    if not trade_id then return end
+
+    local trade = trades.get_trade_from_id(trade_id)
+    if not trade then return end
+
+    trades.set_trade_active(trade, not trades.is_active(trade))
     gui.update_hex_core(player)
 end
 

@@ -6,14 +6,16 @@ Date: 27/9/25
   Minor Features:
     - Added command /simple-trade-loops, which dumps to the script-output all existing two-trade loops in your game involving only two items at a time.
         Faster and more convenient than analyzing trade JSON exports yourself, but less useful since no metrics are measured.
+    - When pinging an interplanetary trade in chat, the blue arrow is now used instead of the gray arrow.
   Changes:
     - Revised item rank up requirements:
         Bronze - unchanged (buy and sell item once)
         Silver - buy this item using a trade with at least +10% productivity
         Gold - electrocute an enemy unit near a trade involving this item with +70% productivity
         Red - sell this item using a trade with at least +110% productivity
-    - The quest "It's Just a Scratch" was removed.
+    - Removed quest "It's Just a Scratch".
     - The Quantum Bazaar is now unlocked from the new quest "Catalog Professional".
+    - Trades added to hexes via the bronze, silver, and gold star rank bonus effects now default to being toggled off to avoid interfering with active trading lines.
   Gui:
     - Trade productivity info now always shows even when the total amount sums to 0%.
   Bugfixes:
@@ -23,6 +25,7 @@ Date: 27/9/25
     - Fixed the planet listing method for the silver bonus description in the catalog so that modded surfaces don't show up.
     - Fixed locale for tesla destroyer robot tech.
     - Fixed quest condition checking for getting items to specific ranks.
+    - Fixed that the hex core GUI would initially show for steel chests upon loading a save.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 27/8/25

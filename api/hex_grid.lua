@@ -462,12 +462,6 @@ function hex_grid.apply_extra_trades_bonus(state)
     end
 end
 
-function hex_grid.set_trade_active(hex_core_state, trade_index, flag)
-    local trade = trades.get_trade_from_id(hex_core_state.trades[trade_index])
-    if not trade or not trades.set_trade_active(trade, flag) then return end
-    -- Trigger an event maybe?
-end
-
 ---Set the mode of a hex core. Return whether the mode was successfully changed.
 ---@param state HexState
 ---@param mode HexCoreMode
@@ -2817,6 +2811,8 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
                             if state.trades and #state.trades == trades_per_hex then
                                 local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
                                 if trade and trade.hex_core_state then
+                                    -- Avoid interfering with currently active trading lines by deactivating the new trade.
+                                    trades.set_trade_active(trade, false)
                                     table.insert(added_trades, trade)
                                 end
                             end
@@ -2856,6 +2852,9 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
         local trade = trades.random(surface_name, volume, true, item_name)
 
         if trade then
+            -- Avoid interfering with currently active trading lines by deactivating the new trade.
+            trades.set_trade_active(trade, false)
+
             hex_grid.add_trade(state, trade)
             added = true
             lib.log("hex_grid.apply_interplanetary_trade_bonus: Added interplanetary trade for " .. item_name .. " on " .. surface_name .. ": " .. lib.get_trade_img_str(trade))
@@ -2891,8 +2890,12 @@ function hex_grid.try_recover_trade(trade, states, notify)
         states = hex_grid.get_states_with_fewest_trades(trade.surface_name)
     end
     if #states > 0 then
+        -- Avoid interfering with currently active trading lines by deactivating the relocated trade.
+        trades.set_trade_active(trade, false)
+
         local state = states[math.random(1, #states)]
         hex_grid.add_trade(state, trade)
+
         if notify then
             lib.print_notification("trade-recovered", {"hextorio.trade-recovered", lib.get_trade_img_str(trade), lib.get_gps_str_from_hex_core(state.hex_core)})
         end
