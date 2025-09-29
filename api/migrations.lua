@@ -70,6 +70,7 @@ local versions = {
     "1.1.0",
     "1.1.1",
     "1.1.2",
+    "1.1.3",
 }
 
 local version_stepping = {}
@@ -454,6 +455,8 @@ local process_migration = {
             [3] = 0.7, -- Silver -> Gold
             [4] = 1.1 -- Gold -> Red
         }
+    end,
+    ["1.1.2"] = function()
     end,
 }
 
