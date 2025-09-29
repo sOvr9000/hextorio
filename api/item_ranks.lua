@@ -130,7 +130,7 @@ function item_ranks.rank_up(item_name)
     event_system.trigger("item-rank-up", item_name)
 
     quests.increment_progress_for_type "total-item-rank"
-    quests.increment_progress_for_type("items-at-rank-" .. rank.rank)
+    quests.increment_progress_for_type("items-at-rank", 1, rank.rank)
 
     return true
 end

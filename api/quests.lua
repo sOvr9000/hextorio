@@ -604,7 +604,7 @@ end
 -- Increment the progress of all quest conditions of a certain type.
 function quests.increment_progress_for_type(condition_type, amount, condition_value)
     if not amount then amount = 1 end
-    if not storage.quests.quests_by_condition_type[condition_type] then return end
+    if not storage.quests.quests_by_condition_type[condition_type] then log("quests not found for condition type " .. condition_type) return end
     for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
         if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do

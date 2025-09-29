@@ -22,6 +22,7 @@ Date: 27/9/25
     - Fixed the quadratic interpolation of random trade volume sampling, making higher valued items show up in trades closer to the center of each planet.
     - Fixed the planet listing method for the silver bonus description in the catalog so that modded surfaces don't show up.
     - Fixed locale for tesla destroyer robot tech.
+    - Fixed quest condition checking for getting items to specific ranks.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.1
 Date: 27/8/25
