@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.3
 Date: 1/10/25
+  Gui:
+    - Added image for the "Catalog Professional" quest.
   Bugfixes:
     - Fixed that updating the mod would duplicate rewards for quests.
     - Fixed that landfill was blocking the spawning of concrete between hexes.

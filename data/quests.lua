@@ -363,7 +363,6 @@ return {
                 },
             },
             prerequisites = {"catalog-initiate"},
-            has_img = false,
         },
 
         -- Aquilo
