@@ -3,7 +3,7 @@ Version: 1.1.3
 Date: 1/10/25
   Bugfixes:
     - Fixed that updating the mod would duplicate rewards for quests.
-    - Fixed that landfill was blocking the placement of concrete between hexes.
+    - Fixed that landfill was blocking the spawning of concrete between hexes.
     - Fixed crash caused by looting a 1.0.x dungeon in 1.1.0 or later.
     - Fixed crash caused by visiting a previously unvisited planet after migrating from a 1.0.x save.
 ---------------------------------------------------------------------------------------------------
