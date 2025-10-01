@@ -14,6 +14,13 @@ function hex_island.register_events()
 end
 
 function hex_island.process_surface_creation(surface)
+    if not storage.hex_island then
+        storage.hex_island = {}
+    end
+    if not storage.hex_island.islands then
+        storage.hex_island.islands = {}
+    end
+
     local planet_size = lib.startup_setting_value("planet-size-" .. surface.name)
 
     if planet_size then

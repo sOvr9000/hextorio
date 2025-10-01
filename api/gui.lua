@@ -2136,7 +2136,7 @@ function gui.repopulate_quest_lists(player)
     incomplete_list.clear_items()
 
     for _, q in pairs(storage.quests.quests) do
-        if q.revealed then
+        if quests.is_revealed(q) then
             if quests.is_complete(q) then
                 gui.add_quest_to_list(complete_list, q)
             else

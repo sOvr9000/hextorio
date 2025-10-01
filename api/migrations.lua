@@ -457,6 +457,12 @@ local process_migration = {
         }
     end,
     ["1.1.2"] = function()
+        quests.reinitialize_everything()
+
+        log("all quests:")
+        for id, quest in pairs(storage.quests.quests) do
+            log(id .. " = " .. quest.name)
+        end
     end,
 }
 

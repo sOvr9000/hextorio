@@ -81,37 +81,44 @@ function quests.init()
     if not storage.quests.quest_ids_by_name then
         storage.quests.quest_ids_by_name = {}
     end
+
+    -- Remove any duplicates just in case duplication ever happens (a bug pre-1.1.3).
+    quests.remove_duplicates()
+
+    local old_quests = table.deepcopy(storage.quests.quests)
+    local old_quest_ids_by_name = table.deepcopy(storage.quests.quest_ids_by_name)
+    storage.quests.quests = {}
+    storage.quests.quest_ids_by_name = {}
     storage.quests.quest_id_counter = 0
 
     local reveal = {}
     local check_rev = {}
     for _, def in pairs(storage.quests.quest_defs) do
-        local prev_quest
-        if quests.quest_exists(def.name) then
-            prev_quest = quests.get_quest_from_name(def.name)
+        local old_quest
+        if old_quest_ids_by_name[def.name] then
+            old_quest = old_quests[old_quest_ids_by_name[def.name]]
         end
 
-        local quest = quests.new_quest(def, (prev_quest or {}).id)
-        storage.quests.quest_ids_by_name[def.name] = quest.id
+        local new_quest = quests.new_quest(def)
+        storage.quests.quests[new_quest.id] = new_quest
+        storage.quests.quest_ids_by_name[def.name] = new_quest.id
 
-        if prev_quest and quests.is_complete(prev_quest) then
+        if old_quest and quests.is_complete(old_quest) then
             -- check if extra rewards have been added due to migration
-            local extra_rewards = quests.get_reward_list_additions(quest, prev_quest)
+            local extra_rewards = quests.get_reward_list_additions(new_quest, old_quest)
             for _, reward in pairs(extra_rewards) do
                 quests.give_reward(reward)
             end
 
             -- don't overwrite old quest progress
-            quests._mark_complete(quest)
-            table.insert(check_rev, quest)
+            quests._mark_complete(new_quest)
+            table.insert(check_rev, new_quest)
         end
 
-        quests.index_by_condition_types(quest)
-        storage.quests.quests[quest.id] = quest
-        quest.order = 0
+        quests.index_by_condition_types(new_quest)
 
-        if not quest.prerequisites or not next(quest.prerequisites) then
-            table.insert(reveal, quest)
+        if not new_quest.prerequisites or not next(new_quest.prerequisites) then
+            table.insert(reveal, new_quest)
         end
     end
 
@@ -142,6 +149,40 @@ function quests.index_by_condition_types(quest)
             t[condition_value_key] = s
         end
         s[quest.id] = true
+    end
+end
+
+function quests.remove_duplicates()
+    local complete = {}
+    local revealed = {}
+    for i, q in pairs(storage.quests.quests) do
+        if quests.is_complete(q) then
+            complete[q.name] = true
+        end
+        if quests.is_revealed(q) then
+            revealed[q.name] = true
+        end
+    end
+    local seen = {}
+    for i, q in pairs(storage.quests.quests) do
+        if seen[q.name] then
+            local lowest_i = seen[q.name]
+            storage.quests.quest_ids_by_name[q.name] = lowest_i
+            for j, q2 in pairs(storage.quests.quests) do
+                if q2.name == q.name then
+                    storage.quests.quests[lowest_i] = q2
+                    storage.quests.quests[j] = nil
+                    if complete[q.name] then
+                        quests._mark_complete(q2)
+                    end
+                    if revealed[q.name] then
+                        quests._mark_revealed(q2)
+                    end
+                end
+            end
+        else
+            seen[q.name] = i
+        end
     end
 end
 
@@ -188,7 +229,7 @@ function quests.new_quest(params, id)
         lib.log("quests.new_quest: Quest has no rewards")
     end
 
-    if id and storage.quests.quests[id] then
+    if id and storage.quests.quests[id] and storage.quests.quests[id].name ~= params.name then
         lib.log_error("quests.new_quest: Provided id " .. id .. " is already used by another quest: " .. storage.quests.quests[id].name)
         id = nil
     end
@@ -208,6 +249,7 @@ function quests.new_quest(params, id)
         unlocks = params.unlocks, -- can be nil
         prerequisites = params.prerequisites, -- can be nil
         has_img = params.has_img, -- can be nil, defaults to true
+        order = 0,
     }
 
     for _, condition in pairs(params.conditions or {}) do
@@ -427,6 +469,26 @@ end
 
 function quests._mark_complete(quest)
     quest.complete = true
+    quest.revealed = true
+end
+
+---@param quest QuestIdentification
+---@return boolean
+function quests.is_revealed(quest)
+    if not quest then
+        lib.log_error("quests.is_revealed: quest is nil")
+        return false
+    end
+    local q = quests.get_quest(quest)
+    if not q then
+        lib.log_error("quests.is_revealed: Quest not found: " .. tostring(quest))
+        return false
+    end
+    return q.revealed == true or quests.is_complete(q)
+end
+
+function quests._mark_revealed(quest)
+    quest.revealed = true
 end
 
 ---Process the obtainment of a quest reward.
