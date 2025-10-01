@@ -71,6 +71,7 @@ local versions = {
     "1.1.1",
     "1.1.2",
     "1.1.3",
+    "1.1.4",
 }
 
 local version_stepping = {}
@@ -457,6 +458,14 @@ local process_migration = {
         }
     end,
     ["1.1.2"] = function()
+        quests.reinitialize_everything()
+
+        log("all quests:")
+        for id, quest in pairs(storage.quests.quests) do
+            log(id .. " = " .. quest.name)
+        end
+    end,
+    ["1.1.3"] = function()
         quests.reinitialize_everything()
 
         log("all quests:")
