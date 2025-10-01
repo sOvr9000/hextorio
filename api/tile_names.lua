@@ -266,6 +266,19 @@ tile_names.space_age_non_land = {
     "brash-ice",
 }
 
+-- Tiles that are placeable by the player
+tile_names.space_age_player_placeable = {
+    "landfill",
+    "foundation",
+    "stone-path",
+    "concrete",
+    "refined-concrete",
+    "hazard-concrete-left",
+    "hazard-concrete-right",
+    "refined-hazard-concrete-left",
+    "refined-hazard-concrete-right",
+}
+
 -- Tiles that are not land tiles in Space Age only
 tile_names.space_age_exclusive_non_land = sets.to_array(sets.difference(sets.new(tile_names.space_age_non_land), sets.new(tile_names.non_land)))
 
@@ -300,6 +313,12 @@ end
 ---@return boolean
 function tile_names.is_nonland_tile(name)
     return tile_names.lookup.space_age_non_land[name] == true
+end
+
+---@param name string
+---@return boolean
+function tile_names.is_player_placeable_tile(name)
+    return tile_names.lookup.space_age_player_placeable[name] == true
 end
 
 ---@param name string

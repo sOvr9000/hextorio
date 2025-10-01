@@ -257,7 +257,7 @@ function terrain.fill_edges_between_hexes(surface, hex_pos1, hex_pos2, tile_type
         if sum_squared <= threshold then
             -- Check if it's a water tile
             local game_tile = surface.get_tile(tile.x, tile.y)
-            if game_tile and game_tile.valid and tile_names.is_nonland_tile(game_tile.name) then
+            if game_tile and game_tile.valid and (tile_names.is_nonland_tile(game_tile.name) or game_tile.name == "landfill") then
                 table.insert(edge_tiles, {x = tile.x, y = tile.y})
             end
         end
@@ -343,7 +343,7 @@ function terrain.fill_corners_between_hexes(surface, hex_pos1, hex_pos2, hex_pos
             if corner_dist_squared < corner_radius_squared * 0.5 then
                 -- Check if it's a water tile
                 local game_tile = surface.get_tile(tile.x, tile.y)
-                if game_tile and game_tile.valid and tile_names.is_nonland_tile(game_tile.name) then
+                if game_tile and game_tile.valid and (tile_names.is_nonland_tile(game_tile.name) or game_tile.name == "landfill") then
                     table.insert(corner_tiles, {x = tile.x, y = tile.y})
                 end
             end
