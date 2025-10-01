@@ -619,14 +619,14 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
 
     local loot_value = prot.loot_value * (1 + dist * 0.0625)
     local expected_num_samples = prot.rolls
-    local min_item_value = loot_value / (10 * expected_num_samples * prot.amount_scaling)
+    local min_item_value = loot_value / (10 * expected_num_samples * (prot.amount_scaling or 1))
     local max_item_value = math.huge -- No upper limit. Allow for very rare but valuable loot.
     local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
 
     local hex_center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
     local entities = {}
 
-    for i = 1, prot.chests_per_hex do
+    for i = 1, prot.chests_per_hex or 1 do
         local radius = math.max(5, math.random() ^ 0.5 * 10)
         local random_pos = lib.vector_add(lib.random_unit_vector(radius), hex_center)
         local pos = surface.find_non_colliding_position("dungeon-chest", lib.rounded_position(random_pos, true), 2, 1, true)
@@ -641,7 +641,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
                 local inv = chest.get_inventory(defines.inventory.chest)
                 if inv then
                     local max_num_samples = #inv
-                    local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling)
+                    local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling or 1)
 
                     local total_coin_value = 0
                     for _, item in pairs(loot_items) do
