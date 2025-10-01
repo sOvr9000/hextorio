@@ -4,6 +4,7 @@ Date: 1/10/25
   Bugfixes:
     - Fixed that updating the mod would duplicate rewards from completed quests.
     - Fixed that landfill was blocking the placement of concrete between hexes.
+    - Fixed crash caused by looting a 1.0.x dungeon in 1.1.0 or later.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.2
 Date: 29/9/25
