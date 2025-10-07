@@ -34,6 +34,7 @@ space_platforms.register_events()
 require "commands"
 require "handle_keybinds"
 require "handle_selections"
+require "handle_coin_splitting"
 
 local data_constants = require "data.constants"
 local data_events = require "data.events"
@@ -235,6 +236,13 @@ script.on_event(defines.events.on_player_trash_inventory_changed, function(event
     if not player then return end
 
     local inv = player.get_inventory(defines.inventory.character_trash)
+    if not inv then return end
+
+    coin_tiers.normalize_inventory(inv)
+end)
+
+script.on_event(defines.events.on_player_dropped_item_into_entity, function(event)
+    local inv = event.entity.get_inventory(defines.inventory.chest)
     if not inv then return end
 
     coin_tiers.normalize_inventory(inv)

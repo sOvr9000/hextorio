@@ -248,7 +248,7 @@ function coin_tiers.le(coin1, coin2)
     return coin_tiers.compare(coin1, coin2) <= 0
 end
 
----Return whether the given coin object represents zero value.
+---Return whether the given coin object represents zero value.  Normalization may need needed if negative and positive values from different tiers cancel everything out.
 ---@param coin Coin
 ---@return boolean
 function coin_tiers.is_zero(coin)
@@ -258,6 +258,13 @@ function coin_tiers.is_zero(coin)
         end
     end
     return true
+end
+
+---Return whether the given coin object represents a negative total value.  Normalization is not needed for this to accurately detect negative values because it uses `coin_tiers.to_base_value()`.
+---@param coin Coin
+---@return boolean
+function coin_tiers.is_negative(coin)
+    return coin_tiers.to_base_value(coin) < 0
 end
 
 ---Get the total value in terms of the lowest tier.
