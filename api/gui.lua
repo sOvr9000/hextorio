@@ -120,7 +120,9 @@ function gui.reinitialize_everything(player)
     gui.init_all_buttons(player)
     gui.init_all_frames(player)
 
+    log("repopulating quest lists with quests:\n" .. serpent.block(storage.quests.quests))
     gui.repopulate_quest_lists(player)
+    log("repopulated quest lists")
 
     gui.hide_all_frames(player)
 end
@@ -1389,7 +1391,7 @@ function gui.update_questbook(player, quest_name)
             local progress_bar = condition_frame.add {
                 type = "progressbar",
                 name = "progressbar",
-                value = condition.progress / condition.progress_requirement,
+                value = quests.get_condition_progress(quest, condition),
             }
             gui.auto_width(progress_bar)
             local r, g, b = lib.hsv_to_rgb(progress_bar.value * 0.3333, 1, 1)

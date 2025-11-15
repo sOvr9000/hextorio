@@ -459,18 +459,17 @@ local process_migration = {
     end,
     ["1.1.2"] = function()
         quests.reinitialize_everything()
-
-        log("all quests:")
-        for id, quest in pairs(storage.quests.quests) do
-            log(id .. " = " .. quest.name)
-        end
     end,
     ["1.1.3"] = function()
-        quests.reinitialize_everything()
+        storage.quests.quest_defs = table.deepcopy(data_quests.quest_defs)
 
-        log("all quests:")
-        for id, quest in pairs(storage.quests.quests) do
-            log(id .. " = " .. quest.name)
+        local complete = quests.is_complete "catalog-professional"
+
+        quests.reinitialize_everything()
+        item_ranks.recalculate_items_at_rank_quests()
+
+        if complete then
+            quests._mark_complete(quests.get_quest "first-red-star") -- the new name for the old "Catalog Professional" quest
         end
     end,
 }

@@ -71,6 +71,7 @@ end
 function quests.reinitialize_everything()
     event_system.trigger("quests-reinitializing")
     quests.init()
+    quests.recalculate_all_revelations()
     event_system.trigger("quests-reinitialized")
 end
 
@@ -491,6 +492,18 @@ function quests._mark_revealed(quest)
     quest.revealed = true
 end
 
+---Get the current progress of completion for a condition in a quest.
+---If the quest is complete, assume 100% progress completion.
+---@param quest Quest
+---@param condition table
+---@return float
+function quests.get_condition_progress(quest, condition)
+    if quests.is_complete(quest) then
+        return 1
+    end
+    return condition.progress / condition.progress_requirement
+end
+
 ---Process the obtainment of a quest reward.
 ---@param reward QuestReward
 ---@param from_quest Quest|nil
@@ -620,7 +633,7 @@ function quests.check_quest_completion(quest)
 end
 
 ---@param condition_type string
----@param condition_value string|nil
+---@param condition_value any
 ---@return table[]
 function quests.get_quests_by_condition_type(condition_type, condition_value)
     if condition_value == nil then condition_value = "none" end
@@ -722,6 +735,40 @@ function quests.check_revelations(quest)
             end
         end
     end
+end
+
+---Particularly meant for migrations, force check all quests for whether they should be revealed or hidden.
+function quests.recalculate_all_revelations()
+    for _, quest in pairs(storage.quests.quests) do
+        quest.revealed = false
+    end
+    for _, quest in pairs(storage.quests.quests) do
+        if quests.is_complete(quest) then
+            quests.check_revelations(quest)
+        end
+    end
+end
+
+---Remove a quest from the game.
+---Particularly meant for migrations and replacing old quests with new ones using the same name.
+---@param quest QuestIdentification
+function quests.remove_quest(quest)
+    local q = quests.get_quest(quest)
+    if not q then return end
+
+    local found_i = -1
+    for i, def in ipairs(storage.quests.quest_defs) do
+        if def.name == q.name then
+            found_i = i
+            break
+        end
+    end
+    if found_i >= 1 then
+        storage.quests.quest_defs[i] = nil
+    end
+
+    storage.quests.quest_ids_by_name[q.name] = nil
+    storage.quests.quests[q.id] = nil
 end
 
 ---Complete a quest, bypassing any progress requirements.

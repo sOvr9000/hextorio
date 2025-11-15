@@ -1,6 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.4
-Date: 1/10/25
+Date: 14/11/25
+  Features:
+    - Added several quests.
+  Balancing:
+    - Added tiered quests for item ranks and qualities to fill the progression gaps.
+    - Replaced the "Catalog Professional" quest with the "First Red Star" quest.
+    - Moved the "Catalog Professional" quest to an earlier stage of the game, having easier requirements.
+  Bugfixes:
+    - Fixed that completed quests weren't showing complete progress bars after updating the mod.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.3
 Date: 1/10/25

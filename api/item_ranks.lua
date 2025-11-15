@@ -132,7 +132,34 @@ function item_ranks.rank_up(item_name)
     quests.increment_progress_for_type "total-item-rank"
     quests.increment_progress_for_type("items-at-rank", 1, rank.rank)
 
+    -- Used to verify how many items in total can be ranked up.
+    -- if item_ranks.get_item_rank("iron-ore") == 3 then
+    --     log("total unique item rank definitions: " .. lib.table_length(storage.item_ranks.item_ranks))
+    -- end
+
     return true
+end
+
+---For migrations.
+function item_ranks.recalculate_items_at_rank_quests()
+    local total_ranks = {}
+
+    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if rank_obj.rank > 1 then
+            total_ranks[rank_obj.rank] = (total_ranks[rank_obj.rank] or 0) + 1
+        end
+    end
+
+    -- Also count higher tier ranks as lower tier ones
+    for rank = 2, 4 do
+        for higher_rank = rank + 1, 5 do
+            total_ranks[rank] = (total_ranks[rank] or 0) + (total_ranks[higher_rank] or 0)
+        end
+    end
+
+    for rank, count in pairs(total_ranks) do
+        quests.set_progress_for_type("items-at-rank", count, rank)
+    end
 end
 
 ---Get the bonus effect from a rank tier.

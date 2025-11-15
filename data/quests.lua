@@ -110,10 +110,53 @@ return {
             prerequisites = {"ground-zero"},
         },
         {
+            name = "first-bronze-star",
+            conditions = {{type = "items-at-rank", value = 2, progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "hex-coin", count = 50},
+                    },
+                },
+            },
+            prerequisites = {"ground-zero"},
+            has_img = false,
+        },
+        {
+            name = "first-silver-star",
+            conditions = {{type = "items-at-rank", value = 3, progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "bulk-inserter", count = 10, quality = "rare"},
+                    },
+                },
+            },
+            prerequisites = {"first-bronze-star"},
+            has_img = false,
+        },
+        {
             name = "catalog-initiate",
             conditions = {{type = "total-item-rank", progress_requirement = 20}},
             rewards = {{type = "all-trades-productivity", value = 10}, {type = "claim-free-hexes", value = {"nauvis", 5}}},
-            prerequisites = {"ground-zero"},
+            prerequisites = {"first-bronze-star"},
+        },
+        {
+            name = "catalog-professional",
+            conditions = {{type = "total-item-rank", progress_requirement = 80}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "boiler", count = 20, quality = "epic"},
+                        {name = "steam-engine", count = 40, quality = "epic"},
+                    },
+                },
+            },
+            prerequisites = {"catalog-initiate"},
+            has_img = false,
         },
         {
             name = "sprawling-base",
@@ -205,6 +248,66 @@ return {
                 {type = "claim-free-hexes", value = {"nauvis", 20}}
             },
             prerequisites = {"dark-factorian-dungeon"},
+        },
+
+        -- Post-Nauvis
+        {
+            name = "first-gold-star",
+            conditions = {{type = "items-at-rank", value = 4, progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "construction-robot", count = 50, quality = "epic"},
+                    },
+                },
+            },
+            prerequisites = {"first-silver-star"},
+            has_img = false,
+        },
+        {
+            name = "catalog-master",
+            conditions = {{type = "total-item-rank", progress_requirement = 100}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "steam-turbine", count = 20, quality = "legendary"},
+                    },
+                },
+            },
+            prerequisites = {"catalog-professional"},
+            has_img = false,
+        },
+        {
+            name = "catalog-obsession",
+            conditions = {{type = "total-item-rank", progress_requirement = 150}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "nuclear-reactor", count = 4, quality = "hextreme"},
+                    },
+                },
+            },
+            prerequisites = {"catalog-master"},
+            has_img = false,
+        },
+        {
+            name = "catalog-completionist",
+            conditions = {{type = "items-at-rank", value = 5, progress_requirement = 286}},
+            rewards = {
+                {type = "all-trades-productivity", value = 100},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "hexic-transport-belt", count = 400},
+                        {name = "hexic-underground-belt", count = 400},
+                        {name = "hexic-splitter", count = 100},
+                    },
+                },
+            },
+            prerequisites = {"catalog-obsession"},
         },
 
         -- Vulcanus
@@ -351,18 +454,13 @@ return {
             prerequisites = {"dark-factorian-dungeon"},
         },
         {
-            name = "catalog-professional",
+            name = "first-red-star",
             conditions = {{type = "items-at-rank", value = 5, progress_requirement = 1}},
             rewards = {
                 {type = "unlock-feature", value = "quantum-bazaar"},
-                {
-                    type = "receive-items",
-                    value = {
-                        {name = "meteor-coin", count = 1},
-                    },
-                },
             },
-            prerequisites = {"catalog-initiate"},
+            prerequisites = {"first-gold-star"},
+            has_img = false,
         },
 
         -- Aquilo
