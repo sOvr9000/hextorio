@@ -83,21 +83,21 @@ function on_command(player, command, params)
         -- player.insert {name = "decimator-capsule", quality = "hextreme", count = 100} -- bullets robot
 
         -- Give items for making trades at spawn hexes on all planets
-        for _, starting_trades in pairs(storage.trades.starting_trades) do
-            for _, trade_items in pairs(starting_trades) do
-                if type(trade_items[1]) == "string" then
-                    trade_items[1] = {trade_items[1]}
-                end
-                for _, item_name in pairs(trade_items[1]) do
-                    if not lib.is_coin(item_name) then
-                        player.insert {
-                            name = item_name,
-                            count = 200,
-                        }
-                    end
-                end
-            end
-        end
+        -- for _, starting_trades in pairs(storage.trades.starting_trades) do
+        --     for _, trade_items in pairs(starting_trades) do
+        --         if type(trade_items[1]) == "string" then
+        --             trade_items[1] = {trade_items[1]}
+        --         end
+        --         for _, item_name in pairs(trade_items[1]) do
+        --             if not lib.is_coin(item_name) then
+        --                 player.insert {
+        --                     name = item_name,
+        --                     count = 200,
+        --                 }
+        --             end
+        --         end
+        --     end
+        -- end
 
         -- Research all technologies
         for _, tech in pairs(game.forces.player.technologies) do
