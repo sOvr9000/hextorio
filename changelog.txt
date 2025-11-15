@@ -2,16 +2,20 @@
 Version: 1.1.4
 Date: 15/11/25
   Features:
-    - Added several quests.
+    - Added several quests. There are now 50 in total.
   Balancing:
     - Added tiered quests for item ranks to fill the progression gap.
-    - Replaced the "Catalog Professional" quest with the new "First Red Star" quest.
+    - Replaced the "Catalog Professional" quest with the new, equivalent "First Red Star" quest.
     - Moved the "Catalog Professional" quest to an earlier stage of the game, having easier requirements.
   Gui:
-    - Added info tooltip for the quality preview dropdown in the hex core GUI.
+    - Added info tooltip for the quality preview dropdown in the hex core GUI. Removed the relevant clutter.
     - Added an intermediate quest for each planet which unlocks the other quests on that planet by visiting it, cleaning up the questbook early-game.
+    - Added extra info to the tooltip of the upgrade quality button in hex cores.
+  Changes:
+    - Changed the shortcut tool icons (for "Claim Hexes" and "Delete Hex Cores") from white to black.
   Bugfixes:
     - Fixed that completed quests weren't showing complete progress bars after updating the mod.
+    - Fixed that an overflowing trade could block other trades from occurring in some situations.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.3
 Date: 1/10/25
