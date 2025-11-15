@@ -267,7 +267,7 @@ return {
         },
         {
             name = "catalog-master",
-            conditions = {{type = "total-item-rank", progress_requirement = 100}},
+            conditions = {{type = "total-item-rank", progress_requirement = 120}},
             rewards = {
                 {
                     type = "receive-items",
@@ -281,12 +281,14 @@ return {
         },
         {
             name = "catalog-obsession",
-            conditions = {{type = "total-item-rank", progress_requirement = 150}},
+            conditions = {{type = "total-item-rank", progress_requirement = 160}},
             rewards = {
                 {
                     type = "receive-items",
                     value = {
                         {name = "nuclear-reactor", count = 4, quality = "hextreme"},
+                        {name = "heat-exchanger", count = 12, quality = "hextreme"},
+                        {name = "steam-turbine", count = 21, quality = "hextreme"},
                     },
                 },
             },
