@@ -349,31 +349,42 @@ function quests.rewards_equal(reward1, reward2)
 end
 
 function quests.calculate_quest_order()
+    for _, quest in pairs(storage.quests.quests) do
+        quest.order = 0
+    end
+
     local visited = {}
     local function dfs(quest)
         if visited[quest.name] then return end
         visited[quest.name] = true
-        local q
-        if quest.unlocks then
-            for _, unlock in pairs(quest.unlocks) do
-                q = quests.get_quest_from_name(unlock)
+
+        if quest.prerequisites then
+            for _, prereq in pairs(quest.prerequisites) do
+                local q = quests.get_quest_from_name(prereq)
                 if q then
-                    q.order = math.min(q.order, quest.order + 1)
                     dfs(q)
+                    quest.order = math.max(quest.order, q.order + 1)
                 end
             end
         end
-        if quest.prerequisites then
-            for _, prereq in pairs(quest.prerequisites) do
-                q = quests.get_quest_from_name(prereq)
+
+        if quest.unlocks then
+            for _, unlock in pairs(quest.unlocks) do
+                local q = quests.get_quest_from_name(unlock)
                 if q then
-                    quest.order = math.min(quest.order, q.order + 1)
+                    q.order = math.max(q.order, quest.order + 1)
                     dfs(q)
                 end
             end
         end
     end
-    dfs(quests.get_quest_from_name "ground-zero")
+
+    dfs(quests.get_quest_from_name("ground-zero"))
+
+    -- Need to figure out why everything's still zero:
+    -- for _, quest in pairs(storage.quests.quests) do
+    --     log(quest.name .. " -> " .. quest.order)
+    -- end
 end
 
 ---@param quest_name string
