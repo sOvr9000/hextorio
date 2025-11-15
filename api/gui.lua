@@ -254,10 +254,9 @@ function gui.init_hex_core(player)
     trades_header_label.style.font = "heading-1"
 
     local quality_dropdown = gui.create_quality_dropdown(trades_header_flow)
-
-    gui.add_info(hex_core_gui, {"hex-core-gui.trades-quality-info"}, "trades-quality-info")
-    gui.add_warning(hex_core_gui, {"hex-core-gui.trades-quality-warning-1"}, "trades-quality-warning-1")
-    gui.add_warning(hex_core_gui, {"hex-core-gui.trades-quality-warning-2"}, "trades-quality-warning-2")
+    local quality_dropdown_info = trades_header_flow.add {type = "label", name = "info", caption = "[img=virtual-signal.signal-info]"}
+    quality_dropdown_info.tooltip = {"hex-core-gui.quality-dropdown-info"}
+    quality_dropdown_info.style.top_margin = 4
 
     local trades_scroll_pane = hex_core_gui.add {type = "scroll-pane", name = "trades", direction = "vertical"}
     trades_scroll_pane.style.horizontally_stretchable = true
@@ -1192,14 +1191,6 @@ function gui.update_hex_core(player)
 
     local quality_dropdown = frame["trades-header"]["quality-dropdown"]
     local quality_name = gui.get_quality_name_from_dropdown(quality_dropdown)
-
-    frame["trades-quality-info"].visible = quality_name ~= "normal"
-    frame["trades-quality-warning-1"].visible = frame["trades-quality-info"].visible
-    frame["trades-quality-warning-2"].visible = frame["trades-quality-info"].visible
-    if frame["trades-quality-warning-1"].visible then
-        frame["trades-quality-warning-1"].caption = gui.get_warning_caption {"hex-core-gui.trades-quality-warning-1", "[color=red]" .. lib.format_percentage(lib.get_quality_cost_multiplier(quality_name) - 1, 0, true) .. "[.color]"}
-        frame["trades-quality-warning-2"].caption = gui.get_warning_caption {"hex-core-gui.trades-quality-warning-2", "[color=red]" .. lib.format_percentage(-trades.get_productivity_modifier(quality_name), 0, true) .. "[.color]"}
-    end
 
     local show_quality_bounds = false
     if state.claimed then
