@@ -494,6 +494,15 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
 
+    if trade.hex_core_state.output_buffer then
+        -- Ensure that if the output buffer has any of the output items, it does not process.
+        for _, outp in pairs(trade.output_items) do
+            if ((trade.hex_core_state.output_buffer[quality] or {})[outp.name] or 0) > 0 then
+                return 0
+            end
+        end
+    end
+
     if not max_items_per_output then
         max_items_per_output = trade.max_items_per_output or 1000
     end

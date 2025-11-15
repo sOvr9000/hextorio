@@ -2642,30 +2642,29 @@ function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
     local inventory_output = state.hex_core_output_inventory
     if not inventory_output then return end
 
-    if hex_grid.try_unload_output_buffer(state) then
-        local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
-        hex_grid.add_to_output_buffer(state, remaining_to_insert)
+    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
+    hex_grid.add_to_output_buffer(state, remaining_to_insert)
+    hex_grid.try_unload_output_buffer(state)
 
-        if not state.total_items_sold then
-            state.total_items_sold = {}
-        end
-        lib.add_to_quality_item_counts(state.total_items_sold, total_removed)
-
-        if not state.total_items_bought then
-            state.total_items_bought = {}
-        end
-        lib.add_to_quality_item_counts(state.total_items_bought, total_inserted)
-
-        if not state.total_coins_produced then
-            state.total_coins_produced = coin_tiers.new()
-        end
-        state.total_coins_produced = coin_tiers.add(state.total_coins_produced, total_coins_added)
-
-        if not state.total_coins_consumed then
-            state.total_coins_consumed = coin_tiers.new()
-        end
-        state.total_coins_consumed = coin_tiers.add(state.total_coins_consumed, total_coins_removed)
+    if not state.total_items_sold then
+        state.total_items_sold = {}
     end
+    lib.add_to_quality_item_counts(state.total_items_sold, total_removed)
+
+    if not state.total_items_bought then
+        state.total_items_bought = {}
+    end
+    lib.add_to_quality_item_counts(state.total_items_bought, total_inserted)
+
+    if not state.total_coins_produced then
+        state.total_coins_produced = coin_tiers.new()
+    end
+    state.total_coins_produced = coin_tiers.add(state.total_coins_produced, total_coins_added)
+
+    if not state.total_coins_consumed then
+        state.total_coins_consumed = coin_tiers.new()
+    end
+    state.total_coins_consumed = coin_tiers.add(state.total_coins_consumed, total_coins_removed)
 end
 
 function hex_grid.add_to_output_buffer(state, items)
@@ -2711,35 +2710,8 @@ function hex_grid.try_unload_output_buffer(state)
     local inventory_output = state.hex_core_output_inventory
     if not inventory_output then return true end
 
-    local uninsertable = {}
-    for quality, buf in pairs(state.output_buffer) do
-        for item_name, count in pairs(buf) do
-            local ins = inventory_output.get_insertable_count {name = item_name, quality = quality}
-            if ins < count then
-                if not uninsertable[quality] then
-                    uninsertable[quality] = {}
-                end
-                uninsertable[quality][item_name] = ins
-            end
-        end
-    end
-    local num_uninsertable = 0
-    for _, unins in pairs(state.output_buffer) do
-        num_uninsertable = num_uninsertable + lib.table_length(unins)
-    end
-    local to_insert
-    if num_uninsertable > 0 then
-        for quality, unins in pairs(uninsertable) do
-            if not to_insert then to_insert = {} end
-            if not to_insert[quality] then to_insert[quality] = {} end
-            for item_name, count in pairs(unins) do
-                to_insert[quality][item_name] = math.max(1, math.floor(count / num_uninsertable))
-            end
-        end
-    end
-
     local empty = true
-    for quality, counts in pairs(to_insert or state.output_buffer) do
+    for quality, counts in pairs(state.output_buffer) do
         for item_name, count in pairs(counts) do
             -- "AND" with prev value of empty because it needs to stay false if it ever becomes false
             local inserted = inventory_output.insert {name = item_name, count = math.min(1000000000, count), quality = quality}
