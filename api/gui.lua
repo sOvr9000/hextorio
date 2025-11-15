@@ -1163,6 +1163,8 @@ function gui.update_hex_core(player)
                     lib.color_localized_string({"hex-core-gui.upgrade-quality-tooltip-header"}, "green", "heading-2"),
                     "\n",
                     {"hextorio-gui.cost", coin_tiers.coin_to_text(hex_grid.get_quality_upgrade_cost(hex_core))},
+                    "\n",
+                    {"hex-core-gui.upgrade-quality-tooltip-body"},
                 }
             end
         else
