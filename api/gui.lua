@@ -1362,8 +1362,6 @@ function gui.update_questbook(player, quest_name)
             table.insert(t, "green")
             table.insert(t, "heading-2") -- Lua table.unpack() and ... is weird, so this is necessary
             caption = quests.get_condition_localized_description(condition, condition_str, table.unpack(t))
-        elseif condition.type ~= "visit-planet" then
-            caption = quests.get_condition_localized_description(condition, condition_str)
         else
             caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2")
         end
