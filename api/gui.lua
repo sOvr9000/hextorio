@@ -120,9 +120,7 @@ function gui.reinitialize_everything(player)
     gui.init_all_buttons(player)
     gui.init_all_frames(player)
 
-    log("repopulating quest lists with quests:\n" .. serpent.block(storage.quests.quests))
     gui.repopulate_quest_lists(player)
-    log("repopulated quest lists")
 
     gui.hide_all_frames(player)
 end

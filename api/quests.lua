@@ -69,7 +69,7 @@ function quests.register_events()
 end
 
 function quests.reinitialize_everything()
-    event_system.trigger("quests-reinitializing")
+    -- event_system.trigger("quests-reinitializing")
     quests.init()
     quests.recalculate_all_revelations()
     event_system.trigger("quests-reinitialized")
