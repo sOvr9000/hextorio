@@ -7,6 +7,8 @@ Date: 14/11/25
     - Added tiered quests for item ranks and qualities to fill the progression gaps.
     - Replaced the "Catalog Professional" quest with the "First Red Star" quest.
     - Moved the "Catalog Professional" quest to an earlier stage of the game, having easier requirements.
+  Gui:
+    - Added info tooltip for the quality preview dropdown in the hex core GUI.
   Bugfixes:
     - Fixed that completed quests weren't showing complete progress bars after updating the mod.
 ---------------------------------------------------------------------------------------------------
