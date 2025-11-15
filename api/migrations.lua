@@ -72,6 +72,7 @@ local versions = {
     "1.1.2",
     "1.1.3",
     "1.1.4",
+    "1.2.0",
 }
 
 local version_stepping = {}
@@ -471,6 +472,8 @@ local process_migration = {
         if complete then
             quests._mark_complete(quests.get_quest "first-red-star") -- the new name for the old "Catalog Professional" quest
         end
+    end,
+    ["1.1.4"] = function()
     end,
 }
 
