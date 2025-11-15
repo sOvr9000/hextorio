@@ -1,14 +1,15 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.4
-Date: 14/11/25
+Date: 15/11/25
   Features:
     - Added several quests.
   Balancing:
-    - Added tiered quests for item ranks and qualities to fill the progression gaps.
-    - Replaced the "Catalog Professional" quest with the "First Red Star" quest.
+    - Added tiered quests for item ranks to fill the progression gap.
+    - Replaced the "Catalog Professional" quest with the new "First Red Star" quest.
     - Moved the "Catalog Professional" quest to an earlier stage of the game, having easier requirements.
   Gui:
     - Added info tooltip for the quality preview dropdown in the hex core GUI.
+    - Added an intermediate quest for each planet which unlocks the other quests on that planet by visiting it, cleaning up the questbook early-game.
   Bugfixes:
     - Fixed that completed quests weren't showing complete progress bars after updating the mod.
 ---------------------------------------------------------------------------------------------------

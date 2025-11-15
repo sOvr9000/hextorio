@@ -1339,11 +1339,13 @@ function gui.update_questbook(player, quest_name)
         local condition_str = condition.progress_requirement
         if condition.type == "coins-in-inventory" then
             condition_str = coin_tiers.base_coin_value_to_text(condition.progress_requirement)
+        elseif condition.type == "visit-planet" then
+            condition_str = condition.value
         end
 
         local caption
-        local condition_value = condition.value
-        if condition_value then
+        if condition.value and condition.type ~= "visit-planet" then
+            local condition_value = condition.value
             if type(condition.value) ~= "table" then
                 condition_value = {condition_value}
             end
@@ -1360,6 +1362,8 @@ function gui.update_questbook(player, quest_name)
             table.insert(t, "green")
             table.insert(t, "heading-2") -- Lua table.unpack() and ... is weird, so this is necessary
             caption = quests.get_condition_localized_description(condition, condition_str, table.unpack(t))
+        elseif condition.type ~= "visit-planet" then
+            caption = quests.get_condition_localized_description(condition, condition_str)
         else
             caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2")
         end

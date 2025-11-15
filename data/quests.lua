@@ -314,6 +314,12 @@ return {
 
         -- Vulcanus
         {
+            name = "visit-vulcanus",
+            conditions = {{type = "visit-planet", value = "vulcanus", show_progress_bar = false}},
+            rewards = {},
+            prerequisites = {"too-many-hex-cores"},
+        },
+        {
             name = "copper-flavored-lava",
             conditions = {{type = "place-entity-on-planet", value = {"offshore-pump", "vulcanus"}, progress_requirement = 1}},
             rewards = {
@@ -327,7 +333,7 @@ return {
                     },
                 },
             },
-            prerequisites = {"too-many-hex-cores"},
+            prerequisites = {"visit-vulcanus"},
         },
         {
             name = "this-is-fine",
@@ -343,7 +349,7 @@ return {
                 {type = "receive-spaceship", value = "starter-ship"},
                 {type = "claim-free-hexes", value = {"vulcanus", 5},
             }},
-            prerequisites = {"biter-rammer"},
+            prerequisites = {"biter-rammer", "visit-vulcanus"},
         },
         {
             name = "stepping-on-beetles",
@@ -361,15 +367,21 @@ return {
             name = "metallurgic-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "vulcanus", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
-            prerequisites = {"dark-factorian-dungeon"},
+            prerequisites = {"dark-factorian-dungeon", "visit-vulcanus"},
         },
 
         -- Fulgora
         {
+            name = "visit-fulgora",
+            conditions = {{type = "visit-planet", value = "fulgora", show_progress_bar = false}},
+            rewards = {},
+            prerequisites = {"too-many-hex-cores"},
+        },
+        {
             name = "my-hair-feels-funny",
             conditions = {{type = "claimed-hexes-on", value = "fulgora", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"fulgora", 10}}},
-            prerequisites = {"too-many-hex-cores"},
+            prerequisites = {"visit-fulgora"},
         },
         {
             name = "electrocution",
@@ -386,39 +398,45 @@ return {
                     },
                 },
             },
-            prerequisites = {"too-many-hex-cores"},
+            prerequisites = {"too-many-hex-cores", "visit-fulgora"},
         },
         {
             name = "you-are-the-destroyer",
             conditions = {{type = "use-capsule", value = "destroyer-capsule", progress_requirement = 5}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 5}}},
-            prerequisites = {"biter-rammer"},
+            prerequisites = {"biter-rammer", "visit-fulgora"},
         },
         {
             name = "tesla-freak",
             conditions = {{type = "kill-with-damage-type", value = "electric", progress_requirement = 50}},
             rewards = {{type = "claim-free-hexes", value = {"fulgora", 5}}},
-            prerequisites = {"biter-rammer"},
+            prerequisites = {"biter-rammer", "visit-fulgora"},
         },
         {
             name = "electromagnetic-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "fulgora", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 10}}},
-            prerequisites = {"dark-factorian-dungeon"},
+            prerequisites = {"dark-factorian-dungeon", "visit-fulgora"},
         },
 
         -- Gleba
         {
+            name = "visit-gleba",
+            conditions = {{type = "visit-planet", value = "gleba", show_progress_bar = false}},
+            rewards = {},
+            prerequisites = {"too-many-hex-cores"},
+        },
+        {
             name = "yummy-co",
             conditions = {{type = "claimed-hexes-on", value = "gleba", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 10}}},
-            prerequisites = {"too-many-hex-cores"},
+            prerequisites = {"visit-gleba"},
         },
         {
             name = "five-legs-werent-enough",
             conditions = {{type = "kill-entity", value = "small-stomper-pentapod", progress_requirement = 10}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 5}}},
-            prerequisites = {"biter-rammer"},
+            prerequisites = {"biter-rammer", "visit-gleba"},
         },
         {
             name = "farm-fresh-eggs",
@@ -446,14 +464,14 @@ return {
                     },
                 },
             },
-            prerequisites = {"too-many-hex-cores"},
+            prerequisites = {"too-many-hex-cores", "visit-gleba"},
             has_img = false,
         },
         {
             name = "biochemical-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "gleba", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"gleba", 10}}},
-            prerequisites = {"dark-factorian-dungeon"},
+            prerequisites = {"dark-factorian-dungeon", "visit-gleba"},
         },
         {
             name = "first-red-star",
@@ -467,16 +485,22 @@ return {
 
         -- Aquilo
         {
+            name = "visit-aquilo",
+            conditions = {{type = "visit-planet", value = "aquilo", show_progress_bar = false}},
+            rewards = {},
+            prerequisites = {"visit-vulcanus", "visit-fulgora", "visit-gleba"},
+        },
+        {
             name = "i-am-the-demolisher",
             conditions = {{type = "use-capsule", value = "demolisher-capsule", progress_requirement = 5}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
-            prerequisites = {"you-are-the-destroyer"},
+            prerequisites = {"you-are-the-destroyer", "visit-aquilo"},
         },
         {
             name = "collateral-damage",
             conditions = {{type = "die-to-railgun", progress_requirement = 1}},
             rewards = {{type = "claim-free-hexes", value = {"aquilo", 5}}},
-            prerequisites = {"this-is-fine", "my-hair-feels-funny", "yummy-co"},
+            prerequisites = {"visit-aquilo"},
         },
         {
             name = "pond-filler",
@@ -492,7 +516,7 @@ return {
                     },
                 },
             },
-            prerequisites = {"this-is-fine", "my-hair-feels-funny", "yummy-co"},
+            prerequisites = {"visit-aquilo"},
         },
         {
             name = "world-paver",
@@ -514,7 +538,7 @@ return {
             name = "overwatch-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "aquilo", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"aquilo", 10}}},
-            prerequisites = {"metallurgic-dungeon", "electromagnetic-dungeon", "biochemical-dungeon"},
+            prerequisites = {"metallurgic-dungeon", "electromagnetic-dungeon", "biochemical-dungeon", "visit-aquilo"},
         },
         {
             name = "dungeon-mastery",
@@ -574,7 +598,7 @@ return {
                     },
                 },
             },
-            prerequisites = {"catalog-initiate"},
+            prerequisites = {"catalog-initiate", "visit-aquilo"},
         },
         {
             name = "the-factory-must-grow",
@@ -589,7 +613,7 @@ return {
                     },
                 },
             },
-            prerequisites = {"five-legs-werent-enough", "cant-step-on-that"},
+            prerequisites = {"five-legs-werent-enough", "cant-step-on-that", "visit-aquilo"},
         },
     },
 }

@@ -66,6 +66,10 @@ function quests.register_events()
             quests.increment_progress_for_type "loot-dungeons-off-planet"
         end
     end)
+
+    event_system.register_callback("surface-created", function(surface)
+        quests.set_progress_for_type("visit-planet", 1, surface.name)
+    end)
 end
 
 function quests.reinitialize_everything()
