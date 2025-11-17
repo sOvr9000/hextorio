@@ -6,6 +6,7 @@ local sets = require "api.sets"
 local hex_grid = require "api.hex_grid"
 local item_values = require "api.item_values"
 local item_ranks = require "api.item_ranks"
+local item_buffs = require "api.item_buffs"
 local trades = require "api.trades"
 local gui = require "api.gui"
 local quests = require "api.quests"
@@ -24,6 +25,7 @@ local data_trades = require "data.trades"
 local data_hex_grid = require "data.hex_grid"
 local data_dungeons = require "data.dungeons"
 local data_spiders = require "data.spiders"
+local data_item_buffs = require "data.item_buffs"
 
 local migrations = {}
 
@@ -474,6 +476,10 @@ local process_migration = {
         end
     end,
     ["1.1.4"] = function()
+        storage.item_values.minimal_values = {}
+
+        storage.item_buffs = data_item_buffs
+        item_buffs.init()
     end,
 }
 

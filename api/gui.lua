@@ -10,6 +10,7 @@ local trades = require "api.trades"
 local sets = require "api.sets"
 local event_system = require "api.event_system"
 local quests = require "api.quests"
+local item_buffs = require "api.item_buffs"
 
 local gui = {}
 
@@ -1888,6 +1889,88 @@ function gui.update_catalog_inspect_frame(player)
         item = selection.item_name,
     }
 
+    if rank_obj.rank >= 2 and next(item_buffs.get_buffs(selection.item_name)) then
+        inspect_frame.add {type = "line", direction = "horizontal"}
+
+        local item_buff_flow = inspect_frame.add {
+            type = "flow",
+            name = "item-buff-flow",
+            direction = "horizontal",
+        }
+
+        local is_buff_unlocked = item_buffs.is_unlocked(selection.item_name)
+        local item_buff_level = item_buffs.get_item_buff_level(selection.item_name)
+        local cost = item_buffs.get_item_buff_cost(selection.item_name)
+
+        local buff_button_type = "item-buff-unlock"
+        if is_buff_unlocked then
+            buff_button_type = "item-buff-enhance"
+        end
+
+        local buff_button = item_buff_flow.add {
+            type = "sprite-button",
+            name = buff_button_type,
+            sprite = buff_button_type,
+        }
+        -- buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip", coin_tiers.coin_to_text(cost)}
+        buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
+
+        local coin_tier_flow = gui.create_coin_tier(item_buff_flow, "cost")
+        gui.update_coin_tier(coin_tier_flow, cost)
+
+        local buff_table = inspect_frame.add {
+            type = "table",
+            name = "buff-table",
+            column_count = 2,
+        }
+
+        local function format_buff_values(buff)
+            local values = item_buffs.get_scaled_buff_values(buff, item_buff_level)
+            if not values then
+                lib.log_error("gui.update_catalog_inspect_frame.format_buff_values: Failed to format buff values for " .. selection.item_name)
+                return {"", ""}
+            end
+            if #values == 1 then
+                if storage.item_buffs.show_as_linear[buff.type] then
+                    return {"", "[color=green]+" .. (math.floor(values[1] * 100 + 0.5) * 0.01) .. "[.color]"}
+                end
+                return {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color]"}
+            end
+            return {"item-buff-name." .. buff.type, table.unpack(buff.values)}
+        end
+
+        for i, buff in ipairs(item_buffs.get_buffs(selection.item_name)) do
+            if buff.value then
+                local label_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray", "heading-2")
+                local value_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
+                if is_buff_unlocked then
+                    label_caption = lib.color_localized_string({"item-buff-name." .. buff.type}, "white", "heading-2")
+                    value_caption = format_buff_values(buff)
+                end
+                local buff_label = buff_table.add {
+                    type = "label",
+                    name = "buff-label-" .. i,
+                    caption = label_caption,
+                }
+                local buff_value = buff_table.add {
+                    type = "label",
+                    name = "buff-value-" .. i,
+                    caption = value_caption,
+                }
+            elseif buff.values then
+                local caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
+                if is_buff_unlocked then
+                    caption = format_buff_values(buff)
+                end
+                local buff_label = inspect_frame.add {
+                    type = "label",
+                    name = "buff-label-" .. i,
+                    caption = caption,
+                }
+            end
+        end
+    end
+
     inspect_frame.add {type = "line", direction = "horizontal"}
 
     local bonuses_label = inspect_frame.add {
@@ -2485,8 +2568,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_confirmation_button_click(player, element)
     elseif element.name:sub(-18) == "-mode-confirmation" then
         gui.on_hex_mode_confirmation_button_click(player, element)
-    -- elseif element.name == "unloader-filters" then
-    --     gui.on_unloader_filters_button_click(player, element)
+    elseif element.name == "item-buff-unlock" or element.name == "item-buff-enhance" then
+        gui.on_item_buff_button_click(player, element)
     elseif element.name == "upgrade-quality" then
         gui.on_upgrade_quality_button_click(player, element)
     else
@@ -3005,6 +3088,27 @@ function gui.on_catalog_item_click(player, button)
     local item_name = button.parent.name:sub(11)
     local surface_name = button.parent.parent.name:sub(7)
     gui.set_catalog_selection(player, surface_name, item_name, selection.bazaar_quality)
+end
+
+function gui.on_item_buff_button_click(player, element)
+    local inv = lib.get_player_inventory(player)
+    if not inv then return end
+
+    local selection = gui.get_catalog_selection(player)
+    local cost = item_buffs.get_item_buff_cost(selection.item_name)
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+
+    if coin_tiers.gt(cost, inv_coin) then
+        game.print({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(cost), coin_tiers.coin_to_text(inv_coin)})
+        return
+    end
+
+    item_buffs.set_item_buff_level(
+        selection.item_name,
+        item_buffs.get_item_buff_level(selection.item_name) + 1
+    )
+
+    gui.update_catalog_inspect_frame(player)
 end
 
 function gui.on_trade_overview_filter_changed(player)

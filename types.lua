@@ -31,6 +31,8 @@
 ---@alias IntSet {[int]: true}
 
 ---@alias ItemRank {item_name: string, rank: int, progress: int[]}
+---@alias ItemBuff {type: ItemBuffType, value: float|nil, values: float[]|nil, level_scaling: float|nil, level_scalings: float[]|nil}
+---@alias ItemBuffType "moving-speed"|"mining-speed"|"reach-distance"|"inventory-size"|"trade-productivity"|"all-buffs-amplified"|"all-buffs-cost-reduced"
 
 ---@alias LootItem {item_name: string, quality_tier: int}
 ---@alias LootItemWithCount {loot_item: LootItem, count: int}

@@ -90,23 +90,7 @@ function item_values.get_interplanetary_item_value(surface_name, item_name)
         return storage.item_values.interplanetary_values[item_name]
     end
 
-    local min_value = math.huge
-    local min_surface_name
-    for _surface_name, surface_vals in pairs(storage.item_values.values) do
-        local val = surface_vals[item_name]
-        if val then
-            val = val * (storage.item_values.value_multipliers[_surface_name] or 1)
-            if val < min_value then
-                min_value = val
-                min_surface_name = _surface_name
-            end
-        end
-    end
-
-    if not min_surface_name then
-        lib.log_error("item_values.get_interplanetary_item_value: No item value found for item " .. item_name .. ", defaulting to 1")
-        return 1
-    end
+    local min_value = item_values.get_minimal_item_value(item_name)
 
     local mult
     if surface_name == "aquilo" then
@@ -117,6 +101,34 @@ function item_values.get_interplanetary_item_value(surface_name, item_name)
 
     storage.item_values.interplanetary_values[item_name] = min_value * mult
     return storage.item_values.interplanetary_values[item_name]
+end
+
+---Get the lowest value of an item across all surfaces.
+---@param item_name string
+---@return number
+function item_values.get_minimal_item_value(item_name)
+    if storage.item_values.minimal_values[item_name] then
+        return storage.item_values.minimal_values[item_name]
+    end
+
+    local min_value = math.huge
+    for surface_name, surface_vals in pairs(storage.item_values.values) do
+        local val = surface_vals[item_name]
+        if val then
+            val = val * (storage.item_values.value_multipliers[surface_name] or 1)
+            if val < min_value then
+                min_value = val
+            end
+        end
+    end
+
+    if min_value == math.huge then
+        lib.log_error("item_values.get_interplanetary_item_value: No item value found for item " .. item_name .. ", defaulting to 1")
+        return 1
+    end
+
+    storage.item_values.minimal_values[item_name] = min_value
+    return min_value
 end
 
 function item_values.has_item_value(surface_name, item_name)

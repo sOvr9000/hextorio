@@ -326,6 +326,20 @@ data:extend{
         width = 64,
         height = 64,
     },
+    {
+        type = "sprite",
+        name = "item-buff-enhance",
+        filename = "__hextorio__/graphics/icons/item-buff-enhance.png",
+        width = 64,
+        height = 64,
+    },
+    {
+        type = "sprite",
+        name = "item-buff-unlock",
+        filename = "__hextorio__/graphics/icons/padlock-unlocked.png",
+        width = 64,
+        height = 64,
+    },
 }
 
 local data_quests = require "data.quests"

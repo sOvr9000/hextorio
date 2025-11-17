@@ -113,6 +113,7 @@ return {
             name = "first-bronze-star",
             conditions = {{type = "items-at-rank", value = 2, progress_requirement = 1}},
             rewards = {
+                {type = "unlock-feature", value = "item-buffs"},
                 {
                     type = "receive-items",
                     value = {

@@ -2,7 +2,7 @@
 Version: 1.2.0
 Date: 15/11/25
   Major Features:
-    - Added equippable item buffs, unique to each item. Find them in the Catalog.
+    - Added item buffs unique to each item, unlocked and upgraded in the Catalog.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.4
 Date: 15/11/25

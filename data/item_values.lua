@@ -8,6 +8,7 @@ return {
     },
 
     interplanetary_values = {}, -- constant for each surface, calculated from values below
+    minimal_values = {}, -- also constant, representing lowest value of any surface
 
     value_multipliers = {
         nauvis = 1,

@@ -50,6 +50,7 @@ local data_blueprints = require "data.blueprints"
 local data_dungeons = require "data.dungeons"
 local data_spiders = require "data.spiders"
 local data_hex_island = require "data.hex_island"
+local data_item_buffs = require "data.item_buffs"
 
 
 
@@ -79,6 +80,7 @@ script.on_init(function()
     storage.dungeons = data_dungeons
     storage.spiders = data_spiders
     storage.hex_island = data_hex_island
+    storage.item_buffs = data_item_buffs
 
     local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
     storage.hex_grid.mgs["nauvis"] = mgs_original
