@@ -1889,6 +1889,8 @@ function gui.update_catalog_inspect_frame(player)
         item = selection.item_name,
     }
 
+    inspect_frame.add {type = "line", direction = "horizontal"}
+
     local bonuses_label = inspect_frame.add {
         type = "label",
         name = "bonuses-label",
@@ -1897,8 +1899,6 @@ function gui.update_catalog_inspect_frame(player)
     bonuses_label.style.font = "heading-2"
 
     if rank_obj.rank >= 2 and next(item_buffs.get_buffs(selection.item_name)) then
-        inspect_frame.add {type = "line", direction = "horizontal"}
-
         local item_buff_flow = inspect_frame.add {
             type = "flow",
             name = "item-buff-flow",
@@ -1910,14 +1910,16 @@ function gui.update_catalog_inspect_frame(player)
         local cost = item_buffs.get_item_buff_cost(selection.item_name)
 
         local buff_button_type = "item-buff-unlock"
+        local buff_button_sprite = buff_button_type
         if is_buff_unlocked then
             buff_button_type = "item-buff-enhance"
+            buff_button_sprite = "utility/side_menu_bonus_icon"
         end
 
         local buff_button = item_buff_flow.add {
             type = "sprite-button",
             name = buff_button_type,
-            sprite = buff_button_type,
+            sprite = buff_button_sprite,
         }
         -- buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip", coin_tiers.coin_to_text(cost)}
         buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
