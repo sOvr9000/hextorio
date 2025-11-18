@@ -75,21 +75,35 @@ return {
             {
                 type = "inventory-size",
                 value = 1,
-                level_scaling = 1.4,
+                level_scaling = 1.2,
             },
         },
         ["copper-plate"] = {
             {
                 type = "inventory-size",
                 value = 1,
-                level_scaling = 1.4,
+                level_scaling = 1.2,
             },
         },
         ["steel-plate"] = {
             {
                 type = "inventory-size",
                 value = 1,
-                level_scaling = 1.4,
+                level_scaling = 1.2,
+            },
+        },
+        ["beacon"] = {
+            {
+                type = "beacon-efficiency",
+                value = 0.05,
+                level_scaling = 1.03,
+            },
+        },
+        ["stack-inserter"] = {
+            {
+                type = "belt-stack-size",
+                value = 1,
+                level_scaling = 1.05,
             },
         },
         ["transport-belt"] = {
@@ -249,21 +263,21 @@ return {
         ["iron-gear-wheel"] = {
             {
                 type = "crafting-speed",
-                value = 0.10,
+                value = 0.06,
                 level_scaling = 1.1,
             },
         },
         ["iron-stick"] = {
             {
                 type = "crafting-speed",
-                value = 0.10,
+                value = 0.06,
                 level_scaling = 1.1,
             },
         },
         ["copper-cable"] = {
             {
                 type = "crafting-speed",
-                value = 0.05,
+                value = 0.06,
                 level_scaling = 1.1,
             },
         },
@@ -398,28 +412,28 @@ return {
             {
                 type = "crafting-speed",
                 value = 0.20,
-                level_scaling = 1.10,
+                level_scaling = 1.11,
             },
         },
         ["speed-module-2"] = {
             {
                 type = "crafting-speed",
-                value = 0.20,
-                level_scaling = 1.10,
+                value = 0.25,
+                level_scaling = 1.11,
             },
         },
         ["speed-module-3"] = {
             {
                 type = "crafting-speed",
                 value = 0.30,
-                level_scaling = 1.10,
+                level_scaling = 1.12,
             },
         },
         ["hexa-speed-module"] = {
             {
                 type = "crafting-speed",
                 value = 0.50,
-                level_scaling = 1.10,
+                level_scaling = 1.15,
             },
         },
         ["efficiency-module"] = {
@@ -514,7 +528,7 @@ return {
             {
                 type = "inventory-size",
                 value = 5,
-                level_scaling = 1.3,
+                level_scaling = 1.2,
             },
         },
         ["hexaprism"] = {
@@ -535,8 +549,26 @@ return {
 
     show_as_linear = { -- Numbers aren't percentages for these buff types
         ["reach-distance"] = true,
+        ["build-distance"] = true,
         ["inventory-size"] = true,
         ["all-buffs-level"] = true,
+    },
+
+    has_description = {
+        ["all-buffs-level"] = true,
+        ["all-buffs-cost-reduced"] = true,
+    },
+
+    is_fractional = { -- Some bonuses like inventory slots must be integers, so the fractional bonuses are combined here to then be rounded before applying.
+        ["reach-distance"] = true,
+        ["build-distance"] = true,
+        ["inventory-size"] = true,
+        ["all-buffs-level"] = true,
+        ["belt-stack-size"] = true,
+    },
+
+    is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.
+        ["all-buffs-cost-reduced"] = true,
     },
 
     unlocked = {},
@@ -544,6 +576,8 @@ return {
     levels = {},
     cost = {},
 
-    global_cost_reduction = 0,
-    global_amplifier = 0,
+    fractional_bonuses = {},
+
+    cost_multiplier = 1,
+    level_bonus = 0,
 }

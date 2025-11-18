@@ -1898,7 +1898,8 @@ function gui.update_catalog_inspect_frame(player)
     }
     bonuses_label.style.font = "heading-2"
 
-    if rank_obj.rank >= 2 and next(item_buffs.get_buffs(selection.item_name)) then
+    local buffs = item_buffs.get_buffs(selection.item_name)
+    if rank_obj.rank >= 2 and next(buffs) then
         local item_buff_flow = inspect_frame.add {
             type = "flow",
             name = "item-buff-flow",
@@ -1935,6 +1936,7 @@ function gui.update_catalog_inspect_frame(player)
 
         local function format_buff_values(buff)
             local values = item_buffs.get_scaled_buff_values(buff, item_buff_level)
+            local incremental_buff = item_buffs.get_incremental_buff(buff, item_buff_level)
 
             if not values then
                 lib.log_error("gui.update_catalog_inspect_frame.format_buff_values: Failed to format buff values for " .. selection.item_name)
@@ -1943,31 +1945,42 @@ function gui.update_catalog_inspect_frame(player)
 
             if #values == 1 then
                 if storage.item_buffs.show_as_linear[buff.type] then
-                    return {"", "[color=green]+" .. (math.floor(values[1] * 100 + 0.5) * 0.01) .. "[.color]"}
+                    return {"", "[color=green]+" .. (math.floor(values[1] * 10 + 0.5) * 0.1) .. "[.color] [color=gray](+" .. (math.floor((incremental_buff.value or incremental_buff.values[1]) * 100 + 0.5) * 0.01) .. ")[.color]"}
                 end
-                return {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color]"}
+                return {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.value or incremental_buff.values[1], 2, true, true) .. ")[.color]"}
             end
 
             if buff.type == "recipe-productivity" then
-                return {"", "[recipe=" .. values[1] .. "] [color=green]" .. lib.format_percentage(values[2], 1, true, true) .. "[.color]"}
+                return {"", "[color=green]" .. lib.format_percentage(values[2], 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[2], 2, true, true) .. ")[.color]"}
             end
 
             for i, v in pairs(values) do
-                ---@diagnostic disable-next-line: assign-type-mismatch
-                values[i] = "[color=green]" .. v .. "[.color]"
+                if type(v) == "number" then
+                    ---@diagnostic disable-next-line: assign-type-mismatch
+                    values[i] = "[color=green]" .. v .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[i], 2, true, true) .. ")[.color]"
+                end
             end
 
             return {"item-buff-name." .. buff.type, table.unpack(values)}
         end
 
-        for i, buff in ipairs(item_buffs.get_buffs(selection.item_name)) do
+        for i, buff in ipairs(buffs) do
             if buff.value or buff.type == "recipe-productivity" then
                 local label_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray", "heading-2")
                 local value_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
+
                 if is_buff_unlocked then
-                    label_caption = lib.color_localized_string({"item-buff-name." .. buff.type}, "white", "heading-2")
+                    if buff.type == "recipe-productivity" then
+                        label_caption = lib.color_localized_string({"item-buff-name." .. buff.type, "[recipe=" .. buff.values[1] .. "]"}, "white", "heading-2")
+                    else
+                        label_caption = lib.color_localized_string({"item-buff-name." .. buff.type}, "white", "heading-2")
+                    end
+                    if storage.item_buffs.has_description[buff.type] then
+                        table.insert(label_caption, 2, "[img=virtual-signal.signal-info] ")
+                    end
                     value_caption = format_buff_values(buff)
                 end
+
                 local buff_label = buff_table.add {
                     type = "label",
                     name = "buff-label-" .. i,
@@ -1978,11 +1991,17 @@ function gui.update_catalog_inspect_frame(player)
                     name = "buff-value-" .. i,
                     caption = value_caption,
                 }
+
+                if is_buff_unlocked and storage.item_buffs.has_description[buff.type] then
+                    buff_label.tooltip = {"item-buff-description." .. buff.type}
+                end
             elseif buff.values then
                 local caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
+
                 if is_buff_unlocked then
                     caption = format_buff_values(buff)
                 end
+
                 local buff_label = inspect_frame.add {
                     type = "label",
                     name = "buff-label-" .. i,
@@ -3119,6 +3138,8 @@ function gui.on_item_buff_button_click(player, element)
         selection.item_name,
         item_buffs.get_item_buff_level(selection.item_name) + 1
     )
+
+    coin_tiers.remove_coin_from_inventory(inv, cost)
 
     gui.update_catalog_inspect_frame(player)
 end
