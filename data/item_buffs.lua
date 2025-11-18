@@ -36,11 +36,53 @@ return {
                 level_scaling = 1.1,
             },
         },
+        ["uranium-ore"] = {
+            {
+                type = "mining-speed",
+                value = 0.08,
+                level_scaling = 1.1,
+            },
+        },
+        ["tungsten-ore"] = {
+            {
+                type = "mining-speed",
+                value = 0.10,
+                level_scaling = 1.1,
+            },
+        },
+        ["holmium-ore"] = {
+            {
+                type = "recipe-productivity",
+                values = {"scrap-recycling", 0.10},
+                level_scaling = 1.1,
+            },
+        },
         ["iron-plate"] = {
             {
                 type = "inventory-size",
-                value = 0.05,
-                level_scaling = 1.1,
+                value = 1,
+                level_scaling = 1.4,
+            },
+        },
+        ["copper-plate"] = {
+            {
+                type = "inventory-size",
+                value = 1,
+                level_scaling = 1.4,
+            },
+        },
+        ["steel-plate"] = {
+            {
+                type = "inventory-size",
+                value = 1,
+                level_scaling = 1.4,
+            },
+        },
+        ["tungsten-plate"] = {
+            {
+                type = "inventory-size",
+                value = 2,
+                level_scaling = 1.4,
             },
         },
         ["transport-belt"] = {

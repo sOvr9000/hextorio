@@ -15,10 +15,10 @@ local buff_type_actions = {
         game.forces.player.character_running_speed_modifier = game.forces.player.character_running_speed_modifier + value
     end,
     ["reach-distance"] = function(value)
-        game.forces.player.character_reach_distance_bonus = game.forces.player.character_reach_distance_bonus + math.floor(value)
+        game.forces.player.character_reach_distance_bonus = game.forces.player.character_reach_distance_bonus + math.floor(value + 0.5)
     end,
     ["build-distance"] = function(value)
-        game.forces.player.character_build_distance_bonus = game.forces.player.character_build_distance_bonus + math.floor(value)
+        game.forces.player.character_build_distance_bonus = game.forces.player.character_build_distance_bonus + math.floor(value + 0.5)
     end,
     ["robot-battery"] = function(value)
         game.forces.player.worker_robots_battery_modifier = game.forces.player.worker_robots_battery_modifier + value
@@ -33,7 +33,10 @@ local buff_type_actions = {
         game.forces.player.mining_drill_productivity_bonus = game.forces.player.mining_drill_productivity_bonus + value
     end,
     ["inventory-size"] = function(value)
-        game.forces.player.character_inventory_slots_bonus = game.forces.player.character_inventory_slots_bonus + value
+        game.forces.player.character_inventory_slots_bonus = game.forces.player.character_inventory_slots_bonus + math.floor(value + 0.5)
+    end,
+    ["recipe-productivity"] = function(recipe_name, value)
+        game.forces.player.recipes[recipe_name].productivity_bonus = game.forces.player.recipes[recipe_name].productivity_bonus + value
     end,
 }
 

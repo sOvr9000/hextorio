@@ -1889,6 +1889,13 @@ function gui.update_catalog_inspect_frame(player)
         item = selection.item_name,
     }
 
+    local bonuses_label = inspect_frame.add {
+        type = "label",
+        name = "bonuses-label",
+        caption = {"hextorio-gui.bonuses"},
+    }
+    bonuses_label.style.font = "heading-2"
+
     if rank_obj.rank >= 2 and next(item_buffs.get_buffs(selection.item_name)) then
         inspect_frame.add {type = "line", direction = "horizontal"}
 
@@ -1926,17 +1933,29 @@ function gui.update_catalog_inspect_frame(player)
 
         local function format_buff_values(buff)
             local values = item_buffs.get_scaled_buff_values(buff, item_buff_level)
+
             if not values then
                 lib.log_error("gui.update_catalog_inspect_frame.format_buff_values: Failed to format buff values for " .. selection.item_name)
                 return {"", ""}
             end
+
             if #values == 1 then
                 if storage.item_buffs.show_as_linear[buff.type] then
                     return {"", "[color=green]+" .. (math.floor(values[1] * 100 + 0.5) * 0.01) .. "[.color]"}
                 end
                 return {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color]"}
             end
-            return {"item-buff-name." .. buff.type, table.unpack(buff.values)}
+
+            if buff.type == "recipe-productivity" then
+                return {"", "[recipe=" .. values[1] .. "] [color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color]"}
+            end
+
+            for i, v in pairs(values) do
+                ---@diagnostic disable-next-line: assign-type-mismatch
+                values[i] = "[color=green]" .. v .. "[.color]"
+            end
+
+            return {"item-buff-name." .. buff.type, table.unpack(values)}
         end
 
         for i, buff in ipairs(item_buffs.get_buffs(selection.item_name)) do
@@ -1970,15 +1989,6 @@ function gui.update_catalog_inspect_frame(player)
             end
         end
     end
-
-    inspect_frame.add {type = "line", direction = "horizontal"}
-
-    local bonuses_label = inspect_frame.add {
-        type = "label",
-        name = "bonuses-label",
-        caption = {"hextorio-gui.bonuses"},
-    }
-    bonuses_label.style.font = "heading-2"
 
     if rank_obj.rank > 1 then
         local bonus_productivity = inspect_frame.add {
