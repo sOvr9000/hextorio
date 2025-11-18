@@ -552,6 +552,7 @@ return {
         ["build-distance"] = true,
         ["inventory-size"] = true,
         ["all-buffs-level"] = true,
+        ["belt-stack-size"] = true,
     },
 
     has_description = {
