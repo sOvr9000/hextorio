@@ -1949,7 +1949,7 @@ function gui.update_catalog_inspect_frame(player)
             end
 
             if buff.type == "recipe-productivity" then
-                return {"", "[recipe=" .. values[1] .. "] [color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color]"}
+                return {"", "[recipe=" .. values[1] .. "] [color=green]" .. lib.format_percentage(values[2], 1, true, true) .. "[.color]"}
             end
 
             for i, v in pairs(values) do
@@ -1961,7 +1961,7 @@ function gui.update_catalog_inspect_frame(player)
         end
 
         for i, buff in ipairs(item_buffs.get_buffs(selection.item_name)) do
-            if buff.value then
+            if buff.value or buff.type == "recipe-productivity" then
                 local label_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray", "heading-2")
                 local value_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
                 if is_buff_unlocked then

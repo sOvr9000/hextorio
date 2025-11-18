@@ -109,7 +109,9 @@ function item_buffs.get_scaled_buff_values(buff, level)
 
     -- Scale the modifiers by the level
     for i, v in ipairs(modifiers) do
-        modifiers[i] = v * level_scalings[i] ^ (level - 1)
+        if type(v) == "number" then
+            modifiers[i] = v * level_scalings[i] ^ (level - 1)
+        end
     end
 
     return modifiers
@@ -125,7 +127,9 @@ function item_buffs.apply_buff_modifiers(buff, level, removing)
 
     if removing then
         for i, v in ipairs(modifiers) do
-            modifiers[i] = -v
+            if type(v) == "number" then
+                modifiers[i] = -v
+            end
         end
     end
 
@@ -144,8 +148,10 @@ function item_buffs.apply_buff_modifiers(buff, level, removing)
     if selector then return end
 
     for i = 1, #modifiers do
-        local t, key = selector(i)
-        t[key] = t[key] + modifiers[i]
+        if type(modifiers[i]) == "number" then
+            local t, key = selector(i)
+            t[key] = t[key] + modifiers[i]
+        end
     end
 end
 
