@@ -2009,7 +2009,7 @@ function gui.update_catalog_inspect_frame(player)
 
         local caption
         if i == 2 then
-            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false), color_text, "heading-2"}}
+            caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false), color_text, "heading-2", selection.item_name}}
         elseif i == 3 then
             local planets_text = {""}
             for surface_name, _ in pairs(storage.item_values.values) do

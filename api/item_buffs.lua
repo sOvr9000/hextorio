@@ -15,7 +15,25 @@ local buff_type_actions = {
         game.forces.player.character_running_speed_modifier = game.forces.player.character_running_speed_modifier + value
     end,
     ["reach-distance"] = function(value)
-        game.forces.player.character_reach_distance_bonus = game.forces.player.character_reach_distance_bonus + value
+        game.forces.player.character_reach_distance_bonus = game.forces.player.character_reach_distance_bonus + math.floor(value)
+    end,
+    ["build-distance"] = function(value)
+        game.forces.player.character_build_distance_bonus = game.forces.player.character_build_distance_bonus + math.floor(value)
+    end,
+    ["robot-battery"] = function(value)
+        game.forces.player.worker_robots_battery_modifier = game.forces.player.worker_robots_battery_modifier + value
+    end,
+    ["robot-speed"] = function(value)
+        game.forces.player.worker_robots_speed_modifier = game.forces.player.worker_robots_speed_modifier + value
+    end,
+    ["crafting-speed"] = function(value)
+        game.forces.player.manual_crafting_speed_modifier = game.forces.player.manual_crafting_speed_modifier + value
+    end,
+    ["mining-productivity"] = function(value)
+        game.forces.player.mining_drill_productivity_bonus = game.forces.player.mining_drill_productivity_bonus + value
+    end,
+    ["inventory-size"] = function(value)
+        game.forces.player.character_inventory_slots_bonus = game.forces.player.character_inventory_slots_bonus + value
     end,
 }
 
