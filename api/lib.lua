@@ -1374,6 +1374,25 @@ function lib.get_true_localized_name(item_name, prototype_category, localization
     return {localization_prefix .. "." .. item_name}
 end
 
+---Get the lowest available quality in the game.
+---@return LuaQualityPrototype
+function lib.get_lowest_quality()
+    local lowest_quality
+
+    for _, q in pairs(prototypes.quality) do
+        if not lowest_quality then
+            lowest_quality = q
+        else
+            if q.level < lowest_quality.level then
+                lowest_quality = q
+                break
+            end
+        end
+    end
+
+    return lowest_quality
+end
+
 ---@return LuaQualityPrototype
 function lib.get_highest_unlocked_quality()
     local q = prototypes.quality.normal

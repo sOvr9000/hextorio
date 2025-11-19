@@ -109,4 +109,20 @@ data:extend({
         maximum_value = 10,
         order = "m[trades]-p[nauvis]-t[base-prod]",
     },
+
+    {
+        type = "bool-setting",
+        name = "hextorio-increment-trade-quality",
+        setting_type = "runtime-global",
+        default_value = true,
+        order = "m[trades]-w[increment-trade-quality]",
+    },
+    {
+        type = "string-setting",
+        name = "hextorio-default-trade-quality",
+        setting_type = "runtime-global",
+        allowed_values = {"lowest", "lowest-to-highest", "highest"},
+        default_value = "lowest",
+        order = "m[trades]-w[default-trade-quality]",
+    },
 })

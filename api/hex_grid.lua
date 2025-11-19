@@ -533,15 +533,28 @@ end
 ---Return true if no qualities were automatically excluded due to hex core quality or currently unlocked qualities.
 ---@param hex_core HexState
 ---@param trade Trade
----@param min_quality string|nil If not provided, it will be set to "normal".
----@param max_quality string|nil If not provided, it will be set to the minimum between the highest unlocked quality and the hex core's current quality.
+---@param min_quality string|nil If not provided, this and max_quality will be set based on the "default-trade-quality" mod setting.
+---@param max_quality string|nil If not provided, this and min_quality will be set based on the "default-trade-quality" mod setting.
 ---@return boolean
 function hex_grid.set_trade_allowed_qualities(hex_core, trade, min_quality, max_quality)
+    local default_qualities_setting
+
     if not min_quality then
-        min_quality = "normal"
+        default_qualities_setting = lib.runtime_setting_value "default-trade-quality"
+        if default_qualities_setting == "highest" then
+            min_quality = lib.get_highest_unlocked_quality().name
+        else
+            min_quality = lib.get_lowest_quality().name
+        end
     end
+
     if not max_quality then
-        max_quality = lib.get_highest_unlocked_quality().name
+        default_qualities_setting = default_qualities_setting or lib.runtime_setting_value "default-trade-quality"
+        if default_qualities_setting == "lowest" then
+            max_quality = min_quality
+        else
+            max_quality = lib.get_highest_unlocked_quality().name
+        end
     end
 
     local min_quality_tier = lib.get_quality_tier(min_quality)
@@ -1546,6 +1559,14 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     -- Add trade items to catalog list
     trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
 
+    -- Set default qualities once more just in case mod setting "Default Trade Quality" changed
+    for _, trade_id in pairs(state.trades or {}) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            hex_grid.set_trade_allowed_qualities(state.hex_core, trade) -- Leaving both min and max quality nil makes it use defaults as defined by the mod setting
+        end
+    end
+
     hex_grid.add_free_hex_claims(surface_name, -1)
     hex_grid.check_hex_span(surface, hex_pos)
     quests.increment_progress_for_type("claimed-hexes", 1)
@@ -2052,10 +2073,12 @@ function hex_grid.set_quality(hex_core, quality)
         player.opened = new_hex_core
     end
 
-    for _, trade_id in pairs(state.trades or {}) do
-        local trade = trades.get_trade_from_id(trade_id)
-        if trade then
-            hex_grid.set_trade_allowed_qualities(new_hex_core, trade)
+    if lib.runtime_setting_value "increment-trade-quality" then
+        for _, trade_id in pairs(state.trades or {}) do
+            local trade = trades.get_trade_from_id(trade_id)
+            if trade then
+                hex_grid.set_trade_allowed_qualities(new_hex_core, trade, (trade.allowed_qualities or {})[#(trade.allowed_qualities or {})], quality.name)
+            end
         end
     end
 end
