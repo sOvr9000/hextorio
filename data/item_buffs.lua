@@ -577,6 +577,8 @@ return {
     levels = {},
     cost = {},
 
+    fetch_settings = true, -- Flag used to determine whether it's safe and necessary to retrieve the settings on the fly.  When mass-upgrading, all item costs are calculated and must fetch settings values, which would be very slow in that case.
+
     fractional_bonuses = {},
 
     cost_multiplier = 1,

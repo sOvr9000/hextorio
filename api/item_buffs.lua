@@ -328,6 +328,10 @@ end
 ---@param item_name string
 ---@return Coin
 function item_buffs.get_item_buff_cost(item_name)
+    if storage.item_buffs.fetch_settings then
+        item_buffs.fetch_settings()
+    end
+
     if not storage.item_buffs.levels[item_name] then
         item_buffs.set_item_buff_level(item_name, 0)
     end
@@ -343,9 +347,9 @@ function item_buffs.get_item_buff_cost(item_name)
 
     local coin = coin_tiers.from_base_value(item_values.get_minimal_item_value(item_name) * storage.item_buffs.cost_multiplier / item_values.get_item_value("nauvis", "hex-coin"))
 
-    coin = coin_tiers.multiply(coin, 2000)
+    coin = coin_tiers.multiply(coin, storage.item_buffs.cost_scale)
     for i = level_bonus + 1, level do
-        coin = coin_tiers.multiply(coin, 4) -- Separate function calls to avoid potential integer overflow in raw exponentiation
+        coin = coin_tiers.multiply(coin, storage.item_buffs.cost_base) -- Separate function calls to avoid potential integer overflow in raw exponentiation
     end
     coin = coin_tiers.floor(coin)
 
@@ -402,6 +406,20 @@ function item_buffs.gives_buff_of_type(item_name, buff_type)
         end
     end
     return false
+end
+
+function item_buffs.fetch_settings()
+
+    local cost_scale = lib.runtime_setting_value "item-buff-cost-scale"
+    ---@cast cost_scale number
+    storage.item_buffs.cost_scale = cost_scale
+
+    local cost_base = lib.runtime_setting_value "item-buff-cost-base"
+    ---@cast cost_base number
+    storage.item_buffs.cost_base = cost_base
+
+    -- Set the flag back to true to re-fetch the settings.
+    storage.item_buffs.fetch_settings = false
 end
 
 

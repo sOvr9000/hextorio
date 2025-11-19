@@ -1,10 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
-Date: 15/11/25
+Date: 19/11/25
   Major Features:
     - Added item buffs unique to each item, unlocked and upgraded in the Catalog.
+        Unlocking and enhancement difficulty is configurable with two new settings, "Item Buff Cost Scale" and "Item Buff Cost Base".
   Minor Features:
-    - Added mod settings to control how trade quality bounds are initialized or managed.
+    - Added two mod settings, "Default Trade Quality" and "Increment Trade Quality", to control how trade quality bounds are initialized or managed.
   Locale:
     - Removed the period after the "Trade Productivity" mod settings in the EN locale.
   Modding:

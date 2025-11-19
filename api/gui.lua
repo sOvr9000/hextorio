@@ -1900,6 +1900,8 @@ function gui.update_catalog_inspect_frame(player)
 
     local buffs = item_buffs.get_buffs(selection.item_name)
     if rank_obj.rank >= 2 and next(buffs) then
+        item_buffs.fetch_settings()
+
         local item_buff_flow = inspect_frame.add {
             type = "flow",
             name = "item-buff-flow",
@@ -3125,6 +3127,31 @@ function gui.on_item_buff_button_click(player, element)
     local inv = lib.get_player_inventory(player)
     if not inv then return end
 
+    item_buffs.fetch_settings()
+    local selection = gui.get_catalog_selection(player)
+    local cost = item_buffs.get_item_buff_cost(selection.item_name)
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+
+    if coin_tiers.gt(cost, inv_coin) then
+        game.print({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(cost), coin_tiers.coin_to_text(inv_coin)})
+        return
+    end
+
+    item_buffs.set_item_buff_level(
+        selection.item_name,
+        item_buffs.get_item_buff_level(selection.item_name) + 1
+    )
+
+    coin_tiers.remove_coin_from_inventory(inv, cost)
+
+    gui.update_catalog_inspect_frame(player)
+end
+
+function gui.on_item_buff_all_button_click(player, element)
+    local inv = lib.get_player_inventory(player)
+    if not inv then return end
+
+    item_buffs.fetch_settings()
     local selection = gui.get_catalog_selection(player)
     local cost = item_buffs.get_item_buff_cost(selection.item_name)
     local inv_coin = coin_tiers.get_coin_from_inventory(inv)
