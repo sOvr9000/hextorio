@@ -41,6 +41,18 @@ local buff_type_actions = {
     ["belt-stack-size"] = function(value)
         game.forces.player.belt_stack_size_bonus = game.forces.player.belt_stack_size_bonus + value
     end,
+    ["physical-damage"] = function(value)
+        game.forces.player.set_ammo_damage_modifier("physical", game.forces.player.get_ammo_damage_modifier("physical") + value)
+    end,
+    ["laser-damage"] = function(value)
+        game.forces.player.set_ammo_damage_modifier("laser", game.forces.player.get_ammo_damage_modifier("laser") + value)
+    end,
+    ["explosion-damage"] = function(value)
+        game.forces.player.set_ammo_damage_modifier("explosion", game.forces.player.get_ammo_damage_modifier("explosion") + value)
+    end,
+    ["fire-damage"] = function(value)
+        game.forces.player.set_ammo_damage_modifier("fire", game.forces.player.get_ammo_damage_modifier("fire") + value)
+    end,
     ["trade-productivity"] = function(value)
         storage.trades.base_productivity = storage.trades.base_productivity + value
     end,

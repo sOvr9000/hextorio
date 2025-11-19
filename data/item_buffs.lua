@@ -215,49 +215,49 @@ return {
             {
                 type = "mining-productivity",
                 value = 0.05,
-                level_scaling = 1.2,
+                level_scaling = 1.1,
             },
         },
         ["big-mining-drill"] = {
             {
                 type = "mining-productivity",
                 value = 0.10,
-                level_scaling = 1.5,
+                level_scaling = 1.2,
             },
         },
         ["stone-brick"] = {
             {
                 type = "moving-speed",
-                value = 0.05,
-                level_scaling = 1.4,
+                value = 0.04,
+                level_scaling = 1.08,
             },
         },
         ["concrete"] = {
             {
                 type = "moving-speed",
-                value = 0.06,
-                level_scaling = 1.4,
+                value = 0.05,
+                level_scaling = 1.08,
             },
         },
         ["refined-concrete"] = {
             {
                 type = "moving-speed",
-                value = 0.07,
-                level_scaling = 1.4,
+                value = 0.06,
+                level_scaling = 1.08,
             },
         },
         ["refined-hazard-concrete"] = {
             {
                 type = "moving-speed",
-                value = 0.08,
-                level_scaling = 1.4,
+                value = 0.07,
+                level_scaling = 1.08,
             },
         },
         ["foundation"] = {
             {
                 type = "moving-speed",
-                value = 0.05,
-                level_scaling = 1.1,
+                value = 0.08,
+                level_scaling = 1.08,
             },
         },
         ["iron-gear-wheel"] = {
