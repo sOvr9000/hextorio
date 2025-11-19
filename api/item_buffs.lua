@@ -64,6 +64,10 @@ local buff_type_actions = {
     end,
 
     ["recipe-productivity"] = function(recipe_name, value)
+        if not game.forces.player.recipes[recipe_name] then
+            log("unknown recipe: " .. recipe_name)
+            return
+        end
         game.forces.player.recipes[recipe_name].productivity_bonus = game.forces.player.recipes[recipe_name].productivity_bonus + value
     end,
 }
@@ -379,9 +383,6 @@ function item_buffs.get_incremental_buff(buff, level)
             end
         end
     end
-
-    log("for buff: " .. serpent.line(buff))
-    log("increment: " .. serpent.line(incremental_buff))
 
     return incremental_buff
 end
