@@ -569,6 +569,7 @@ function hex_grid.set_trade_allowed_qualities(hex_core, trade, min_quality, max_
     local highest_quality_tier = lib.get_quality_tier(lib.get_highest_unlocked_quality().name)
 
     local adjusted = max_quality_tier > math.min(hex_quality_tier, highest_quality_tier)
+    min_quality_tier = math.min(min_quality_tier, highest_quality_tier, hex_quality_tier)
     max_quality_tier = math.min(max_quality_tier, highest_quality_tier, hex_quality_tier)
 
     trade.allowed_qualities = {}
