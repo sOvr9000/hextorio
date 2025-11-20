@@ -764,6 +764,7 @@ return {
     fetch_settings = true, -- Flag used to determine whether it's safe and necessary to retrieve the settings on the fly.  When mass-upgrading, all item costs are calculated and must fetch settings values, which would be very slow in that case.
 
     fractional_bonuses = {},
+    enhance_all = {processing = false}, -- Cross-tick data for enhancing all item buffs
 
     cost_multiplier = 1,
     level_bonus = 0,

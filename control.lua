@@ -1,5 +1,6 @@
 
 require "util" -- For table.deepcopy()
+local item_buffs = require("api.item_buffs")
 
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
@@ -160,6 +161,8 @@ script.on_event(defines.events.on_tick, function (event)
             storage.events.intro_finished = true
         end
     end
+
+    item_buffs._enhance_all_item_buffs_tick()
     gui._process_trades_scroll_panes()
 end)
 
@@ -219,6 +222,9 @@ end)
 script.on_nth_tick(10, function()
     hex_grid.process_hex_core_pool()
 end)
+
+-- script.on_nth_tick(4, function()
+-- end)
 
 script.on_event(defines.events.on_player_main_inventory_changed, function(event)
     local player = game.get_player(event.player_index)

@@ -87,6 +87,21 @@ function gui.register_events()
             end
         end
     end)
+
+    event_system.register_callback("item-buff-level-changed", function(item_name)
+        for _, player in pairs(game.connected_players) do
+            if gui.is_catalog_open(player) then
+                local selection = gui.get_catalog_selection(player)
+                if selection.item_name == item_name then
+                    gui.update_catalog_inspect_frame(player)
+                end
+            end
+        end
+    end)
+
+    event_system.register_callback("item-buffs-enhance-all-finished", function(player, total_cost, enhanced_items)
+        gui.update_catalog_inspect_frame(player)
+    end)
 end
 
 function gui.reinitialize_everything(player)
@@ -3157,86 +3172,9 @@ function gui.on_item_buff_button_click(player, element)
 end
 
 function gui.on_item_buff_all_button_click(player, element)
-    local inv = lib.get_player_inventory(player)
-    if not inv then return end
-
-    item_buffs.fetch_settings()
-
-    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
-
-    local item_names = {}
-    for item_name, _ in pairs(storage.trades.discovered_items) do
-        if item_ranks.get_item_rank(item_name) >= 2 and next(item_buffs.get_buffs(item_name)) then
-            table.insert(item_names, item_name)
-        end
-    end
-
-    local function get_cheapest_item_buff()
-        local cheapest
-        local cheapest_cost
-
-        for i = #item_names, 1, -1 do
-            local item_name = item_names[i]
-            local cost = item_buffs.get_item_buff_cost(item_name)
-            if coin_tiers.gt(cost, inv_coin) then
-                table.remove(item_names, i)
-            else
-                if not cheapest or coin_tiers.lt(cost, cheapest_cost) then
-                    cheapest = item_name
-                    cheapest_cost = cost
-                end
-            end
-        end
-
-        return cheapest, cheapest_cost
-    end
-
-    -- Don't attempt to upgrade more than 1000 times, just in case somehow this loop becomes infinite. (it shouldn't)
-    max_iterations = 2000
-
-    local total_cost = coin_tiers.new()
-    local enhanced_items = {}
-    for i = 1, max_iterations do
-        local item_name, cost = get_cheapest_item_buff()
-        if not item_name then
-            break
-        end
-
-        item_buffs.set_item_buff_level(
-            item_name,
-            item_buffs.get_item_buff_level(item_name) + 1
-        )
-
-        inv_coin = coin_tiers.subtract(inv_coin, cost)
-        total_cost = coin_tiers.add(total_cost, cost)
-        enhanced_items[item_name] = (enhanced_items[item_name] or 0) + 1
-
-        if i >= max_iterations then
-            lib.log("gui.on_item_buff_all_button_click: WARNING!!! Failed to finish the task in under " .. max_iterations .. " iterations.")
-        end
-    end
-
-    coin_tiers.remove_coin_from_inventory(inv, total_cost)
-
-    if next(enhanced_items) then
-        local str = "[font=heading-2][color=green]"
-        for item_name, levels in pairs(enhanced_items) do
-            str = str .. " [img=item." .. item_name .. "]+" .. levels
-        end
-        str = str .. "[.color][.font]"
-
-        player.print {
-            "",
-            lib.color_localized_string({"hextorio.item-buffs-enhanced"}, "yellow", "heading-2"),
-            str,
-            "\n",
-            {"hextorio-gui.cost", coin_tiers.coin_to_text(total_cost)},
-        }
-    else
-        player.print {"hextorio.none-enhanced"}
-    end
-
-    gui.update_catalog_inspect_frame(player)
+    item_buffs.enhance_all_item_buffs {
+        player = player,
+    }
 end
 
 function gui.on_trade_overview_filter_changed(player)

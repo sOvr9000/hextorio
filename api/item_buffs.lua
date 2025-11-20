@@ -2,6 +2,8 @@
 local lib = require "api.lib"
 local coin_tiers = require "api.coin_tiers"
 local item_values = require "api.item_values"
+local item_ranks = require "api.item_ranks"
+local event_system = require "api.event_system"
 
 local item_buffs = {}
 
@@ -322,13 +324,15 @@ end
 ---@return int
 function item_buffs.get_item_buff_level(item_name)
     if not storage.item_buffs.levels[item_name] then
+        local trigger_event = true
         local level
         if item_buffs.is_unlocked(item_name) then
             level = 1
         else
+            trigger_event = false
             level = 0
         end
-        item_buffs.set_item_buff_level(item_name, level)
+        item_buffs.set_item_buff_level(item_name, level, trigger_event)
     end
     return storage.item_buffs.levels[item_name]
 end
@@ -337,11 +341,14 @@ end
 ---Automatically triggers the unlock if the item is currently at level 0 (locked).
 ---@param item_name string
 ---@param level int
-function item_buffs.set_item_buff_level(item_name, level)
+---@param trigger_event boolean|nil Whether to trigger the `item-buff-level-changed` event.  Defaults to `true` if not provided.
+function item_buffs.set_item_buff_level(item_name, level, trigger_event)
     local prev_level = storage.item_buffs.levels[item_name]
     if prev_level == level then
         return
     end
+
+    if trigger_event == nil then trigger_event = true end
 
     local reapply = false
     local buffs
@@ -371,6 +378,10 @@ function item_buffs.set_item_buff_level(item_name, level)
                 item_buffs.apply_buff_modifiers(item_buffs.get_incremental_buff(buff, level - 1), 1, false)
             end
         end
+    end
+
+    if trigger_event then
+        event_system.trigger("item-buff-level-changed", item_name)
     end
 end
 
@@ -467,6 +478,98 @@ function item_buffs.fetch_settings()
 
     -- Set the flag back to true to re-fetch the settings.
     storage.item_buffs.fetch_settings = false
+end
+
+function item_buffs.enhance_all_item_buffs(config)
+    local player = config.player
+
+    local inv = lib.get_player_inventory(player)
+    if not inv then
+        lib.log_error("item_buffs.enhance_all_item_buffs: no player inventory found")
+        return
+    end
+
+    item_buffs.fetch_settings()
+
+    local item_names = {}
+    for item_name, _ in pairs(storage.trades.discovered_items) do
+        if item_ranks.get_item_rank(item_name) >= 2 and next(item_buffs.get_buffs(item_name)) then
+            table.insert(item_names, item_name)
+        end
+    end
+
+    player.print({"hextorio.checking-for-enhancements"})
+
+    storage.item_buffs.enhance_all.player = player
+    storage.item_buffs.enhance_all.inventory = inv
+    storage.item_buffs.enhance_all.item_names = item_names
+    storage.item_buffs.enhance_all.enhanced_items = {}
+    storage.item_buffs.enhance_all.total_cost = coin_tiers.new()
+    storage.item_buffs.enhance_all.processing = true
+end
+
+function item_buffs._enhance_all_item_buffs_tick()
+    if not storage.item_buffs.enhance_all.processing then return end
+
+    local player = storage.item_buffs.enhance_all.player
+    local inv = storage.item_buffs.enhance_all.inventory
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv) -- Check each time because the player can modify the coins they have available to spend while this processes over time.
+    local item_names = storage.item_buffs.enhance_all.item_names
+    local enhanced_items = storage.item_buffs.enhance_all.enhanced_items
+    local total_cost = storage.item_buffs.enhance_all.total_cost
+
+    -- Find the cheapest item buff
+    local item_name
+    local cost
+    for i = #item_names, 1, -1 do
+        local _item_name = item_names[i]
+        local _cost = item_buffs.get_item_buff_cost(_item_name)
+        if coin_tiers.gt(_cost, inv_coin) then
+            table.remove(item_names, i)
+        else
+            if not item_name or coin_tiers.lt(_cost, cost) then
+                item_name = _item_name
+                cost = _cost
+            end
+        end
+    end
+
+    -- If found, the process should enhance it and continue on the next tick
+    if item_name then
+        total_cost = coin_tiers.add(total_cost, cost)
+        enhanced_items[item_name] = (enhanced_items[item_name] or 0) + 1
+        coin_tiers.remove_coin_from_inventory(inv, cost)
+
+        item_buffs.set_item_buff_level(
+            item_name,
+            item_buffs.get_item_buff_level(item_name) + 1
+        )
+
+        return
+    end
+
+    -- Process is now finished
+    storage.item_buffs.enhance_all.processing = false
+
+    if next(enhanced_items) then
+        local str = "[font=heading-2][color=green]"
+        for _item_name, levels in pairs(enhanced_items) do
+            str = str .. " [img=item." .. _item_name .. "]+" .. levels
+        end
+        str = str .. "[.color][.font]"
+
+        player.print {
+            "",
+            lib.color_localized_string({"hextorio.item-buffs-enhanced"}, "yellow", "heading-2"),
+            str,
+            "\n",
+            {"hextorio-gui.cost", coin_tiers.coin_to_text(total_cost)},
+        }
+    else
+        player.print {"hextorio.none-enhanced"}
+    end
+
+    event_system.trigger("item-buffs-enhance-all-finished", player, total_cost, enhanced_items)
 end
 
 
