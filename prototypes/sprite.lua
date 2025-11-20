@@ -328,10 +328,10 @@ data:extend{
     },
     {
         type = "sprite",
-        name = "item-buff-enhance",
-        filename = "__hextorio__/graphics/icons/item-buff-enhance.png",
-        width = 64,
-        height = 64,
+        name = "item-buff-enhance-all",
+        filename = "__hextorio__/graphics/icons/big-bonus.png",
+        width = 56,
+        height = 56,
     },
     {
         type = "sprite",

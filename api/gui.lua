@@ -1896,12 +1896,19 @@ function gui.update_catalog_inspect_frame(player)
         direction = "horizontal",
     }
 
+    local show_buffs = quests.is_feature_unlocked("item-buffs")
+
+    local tooltip = {"hextorio-gui.obfuscated-text"}
+    if show_buffs then
+        tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"}
+    end
     local item_buff_enhance_all = control_flow.add {
         type = "sprite-button",
         name = "item-buff-enhance-all",
-        sprite = "utility/side_menu_bonus_icon",
-        tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"},
+        sprite = "item-buff-enhance-all",
+        tooltip = tooltip,
     }
+    item_buff_enhance_all.enabled = show_buffs
 
     local open_in_factoriopedia = control_flow.add {
         type = "sprite-button",
@@ -1937,7 +1944,7 @@ function gui.update_catalog_inspect_frame(player)
     bonuses_label.style.font = "heading-2"
 
     local buffs = item_buffs.get_buffs(selection.item_name)
-    if rank_obj.rank >= 2 and next(buffs) then
+    if show_buffs and rank_obj.rank >= 2 and next(buffs) then
         item_buffs.fetch_settings()
 
         local item_buff_flow = inspect_frame.add {
