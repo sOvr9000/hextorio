@@ -99,10 +99,179 @@ return {
                 level_scaling = 1.03,
             },
         },
+        ["fast-inserter"] = {
+            {
+                type = "inserter-capacity",
+                value = 1,
+                level_scaling = 1.04,
+            },
+        },
+        ["bulk-inserter"] = {
+            {
+                type = "bulk-inserter-capacity",
+                value = 1,
+                level_scaling = 1.04,
+            },
+        },
         ["stack-inserter"] = {
             {
                 type = "belt-stack-size",
                 value = 1,
+                level_scaling = 1.04,
+            },
+        },
+        ["yumako"] = {
+            {
+                type = "health",
+                value = 5,
+                level_scaling = 1.04,
+            },
+        },
+        ["jellynut"] = {
+            {
+                type = "health",
+                value = 5,
+                level_scaling = 1.04,
+            },
+        },
+        ["yumako-seed"] = {
+            {
+                type = "health",
+                value = 5,
+                level_scaling = 1.04,
+            },
+        },
+        ["jellynut-seed"] = {
+            {
+                type = "health",
+                value = 5,
+                level_scaling = 1.04,
+            },
+        },
+        ["carbon-fiber"] = {
+            {
+                type = "recipe-productivity",
+                value = {"carbon-fiber", 0.5},
+                level_scaling = 1.03,
+            },
+        },
+        ["automation-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"automation-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["logistics-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"logistics-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["military-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"military-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["chemical-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"chemical-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["production-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"production-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["utility-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"utility-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        -- No way to level up space sci; it's untradable
+        ["metallurgic-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"metallurgic-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["electromagnetic-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"electromagnetic-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["agricultural-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"agricultural-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["cryogenic-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"cryogenic-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["promethium-science-pack"] = {
+            {
+                type = "recipe-productivity",
+                value = {"promethium-science-pack", 0.05},
+                level_scaling = 1.04,
+            },
+        },
+        ["lab"] = {
+            {
+                type = "research-productivity",
+                value = 0.05,
+                level_scaling = 1.02,
+            },
+        },
+        ["biolab"] = {
+            {
+                type = "research-speed",
+                value = 0.5,
+                level_scaling = 1.1,
+            },
+        },
+        ["defender-capsule"] = {
+            {
+                type = "combat-robot-count",
+                value = 5,
+                level_scaling = 1.06,
+            },
+        },
+        ["distractor-capsule"] = {
+            {
+                type = "combat-robot-count",
+                value = 5,
+                level_scaling = 1.06,
+            },
+        },
+        ["destroyer-capsule"] = {
+            {
+                type = "combat-robot-lifetime",
+                value = 0.1,
+                level_scaling = 1.05,
+            },
+        },
+        ["demolisher-capsule"] = {
+            {
+                type = "combat-robot-lifetime",
+                value = 0.1,
                 level_scaling = 1.05,
             },
         },
@@ -486,28 +655,37 @@ return {
         },
         ["logistic-robot"] = {
             {
-                type = "robot-battery",
-                value = 0.10,
-                level_scaling = 1.1,
+                type = "robot-cargo-size",
+                value = 1,
+                level_scaling = 1.05,
             },
         },
         ["construction-robot"] = {
             {
                 type = "robot-speed",
                 value = 0.10,
-                level_scaling = 1.1,
+                level_scaling = 1.07,
             },
         },
         ["roboport"] = {
             {
-                type = "robot-speed",
-                value = 0.10,
-                level_scaling = 1.1,
-            },
-            {
                 type = "robot-battery",
                 value = 0.10,
-                level_scaling = 1.1,
+                level_scaling = 1.05,
+            },
+        },
+        ["spidertron"] = {
+            {
+                type = "trade-productivity",
+                value = 0.05,
+                level_scaling = 1.03,
+            },
+        },
+        ["rocket-silo"] = {
+            {
+                type = "recipe-productivity",
+                value = {"rocket-part", 0.05},
+                level_scaling = 1.04,
             },
         },
         ["advanced-circuit"] = {
@@ -553,6 +731,9 @@ return {
         ["inventory-size"] = true,
         ["all-buffs-level"] = true,
         ["belt-stack-size"] = true,
+        ["bulk-inserter-capacity"] = true,
+        ["combat-robot-count"] = true,
+        ["robot-cargo-size"] = true,
     },
 
     has_description = {
@@ -566,6 +747,9 @@ return {
         ["inventory-size"] = true,
         ["all-buffs-level"] = true,
         ["belt-stack-size"] = true,
+        ["bulk-inserter-capacity"] = true,
+        ["combat-robot-count"] = true,
+        ["robot-cargo-size"] = true,
     },
 
     is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.

@@ -26,6 +26,9 @@ local buff_type_actions = {
     ["robot-speed"] = function(value)
         game.forces.player.worker_robots_speed_modifier = game.forces.player.worker_robots_speed_modifier + value
     end,
+    ["robot-cargo-size"] = function(value)
+        game.forces.player.worker_robots_storage_bonus = game.forces.player.worker_robots_storage_bonus + value
+    end,
     ["crafting-speed"] = function(value)
         game.forces.player.manual_crafting_speed_modifier = game.forces.player.manual_crafting_speed_modifier + value
     end,
@@ -40,6 +43,27 @@ local buff_type_actions = {
     end,
     ["belt-stack-size"] = function(value)
         game.forces.player.belt_stack_size_bonus = game.forces.player.belt_stack_size_bonus + value
+    end,
+    ["bulk-inserter-capacity"] = function(value)
+        game.forces.player.bulk_inserter_capacity_bonus = game.forces.player.bulk_inserter_capacity_bonus + value
+    end,
+    ["inserter-capacity"] = function(value)
+        game.forces.player.inserter_stack_size_bonus = game.forces.player.inserter_stack_size_bonus + value
+    end,
+    ["health"] = function(value)
+        game.forces.player.character_health_bonus = game.forces.player.character_health_bonus + value
+    end,
+    ["combat-robot-lifetime"] = function(value)
+        game.forces.player.following_robots_lifetime_modifier = game.forces.player.following_robots_lifetime_modifier + value
+    end,
+    ["combat-robot-count"] = function(value)
+        game.forces.player.maximum_following_robot_count = game.forces.player.maximum_following_robot_count + value
+    end,
+    ["research-productivity"] = function(value)
+        game.forces.player.laboratory_productivity_bonus = game.forces.player.laboratory_productivity_bonus + value
+    end,
+    ["research-speed"] = function(value)
+        game.forces.player.laboratory_speed_modifier = game.forces.player.laboratory_speed_modifier + value
     end,
     ["physical-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("physical", game.forces.player.get_ammo_damage_modifier("physical") + value)
