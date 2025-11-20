@@ -128,7 +128,8 @@ local buff_type_actions = {
             log("unknown recipe: " .. recipe_name)
             return
         end
-        game.forces.player.recipes[recipe_name].productivity_bonus = game.forces.player.recipes[recipe_name].productivity_bonus + value
+        local recipe = game.forces.player.recipes[recipe_name]
+        recipe.productivity_bonus = recipe.productivity_bonus + value * 0.01
     end,
 }
 

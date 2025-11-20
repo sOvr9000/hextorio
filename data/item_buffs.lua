@@ -46,7 +46,7 @@ return {
         ["tungsten-plate"] = {
             {
                 type = "recipe-productivity",
-                values = {"tungsten-plate", 0.05},
+                values = {"tungsten-plate", 5},
                 level_scaling = 1.05,
             },
         },
@@ -60,14 +60,14 @@ return {
         ["holmium-ore"] = {
             {
                 type = "recipe-productivity",
-                values = {"scrap-recycling", 0.10},
+                values = {"scrap-recycling", 10},
                 level_scaling = 1.13,
             },
         },
         ["holmium-plate"] = {
             {
                 type = "recipe-productivity",
-                values = {"holmium-plate", 0.05},
+                values = {"holmium-plate", 5},
                 level_scaling = 1.05,
             },
         },
@@ -151,49 +151,49 @@ return {
         ["carbon-fiber"] = {
             {
                 type = "recipe-productivity",
-                values = {"carbon-fiber", 0.5},
+                values = {"carbon-fiber", 5},
                 level_scaling = 1.03,
             },
         },
         ["automation-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"automation-science-pack", 0.05},
+                values = {"automation-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["logistics-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"logistics-science-pack", 0.05},
+                values = {"logistics-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["military-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"military-science-pack", 0.05},
+                values = {"military-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["chemical-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"chemical-science-pack", 0.05},
+                values = {"chemical-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["production-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"production-science-pack", 0.05},
+                values = {"production-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["utility-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"utility-science-pack", 0.05},
+                values = {"utility-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
@@ -201,35 +201,35 @@ return {
         ["metallurgic-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"metallurgic-science-pack", 0.05},
+                values = {"metallurgic-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["electromagnetic-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"electromagnetic-science-pack", 0.05},
+                values = {"electromagnetic-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["agricultural-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"agricultural-science-pack", 0.05},
+                values = {"agricultural-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["cryogenic-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"cryogenic-science-pack", 0.05},
+                values = {"cryogenic-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
         ["promethium-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"promethium-science-pack", 0.05},
+                values = {"promethium-science-pack", 5},
                 level_scaling = 1.04,
             },
         },
@@ -486,24 +486,44 @@ return {
         ["gun-turret"] = {
             {
                 type = "recipe-productivity",
-                values = {"firearm-magazine", 0.05},
+                values = {"firearm-magazine", 5},
                 level_scaling = 1.05,
             },
             {
                 type = "recipe-productivity",
-                values = {"piercing-rounds-magazine", 0.05},
+                values = {"piercing-rounds-magazine", 5},
                 level_scaling = 1.05,
             },
             {
                 type = "recipe-productivity",
-                values = {"uranium-rounds-magazine", 0.05},
+                values = {"uranium-rounds-magazine", 5},
+                level_scaling = 1.05,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"magmatic-rounds-magazine", 15},
                 level_scaling = 1.05,
             },
         },
         ["rocket-turret"] = {
             {
                 type = "recipe-productivity",
-                values = {"rocket", 0.05},
+                values = {"rocket", 5},
+                level_scaling = 1.05,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"explosive-rocket", 5},
+                level_scaling = 1.05,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"plague-rocket", 5},
+                level_scaling = 1.05,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"atomic-bomb", 5},
                 level_scaling = 1.05,
             },
         },
@@ -517,7 +537,7 @@ return {
         ["flamethrower-turret"] = {
             {
                 type = "recipe-productivity",
-                values = {"heavy-oil-cracking-to-light-oil", 0.05},
+                values = {"heavy-oil-cracking-to-light-oil", 5},
                 level_scaling = 1.05,
             },
         },
@@ -545,7 +565,7 @@ return {
         ["electronic-circuit"] = {
             {
                 type = "recipe-productivity",
-                values = {"electronic-circuit", 0.08},
+                values = {"electronic-circuit", 8},
                 level_scaling = 1.07,
             },
         },
@@ -608,7 +628,7 @@ return {
         ["efficiency-module"] = {
             {
                 type = "recipe-productivity",
-                values = {"electronic-circuit", 0.08},
+                values = {"electronic-circuit", 8},
                 level_scaling = 1.07,
             },
             {
@@ -620,7 +640,7 @@ return {
         ["efficiency-module-2"] = {
             {
                 type = "recipe-productivity",
-                values = {"advanced-circuit", 0.08},
+                values = {"advanced-circuit", 8},
                 level_scaling = 1.07,
             },
             {
@@ -632,7 +652,7 @@ return {
         ["efficiency-module-3"] = {
             {
                 type = "recipe-productivity",
-                values = {"processing-unit", 0.08},
+                values = {"processing-unit", 8},
                 level_scaling = 1.07,
             },
             {
@@ -644,7 +664,7 @@ return {
         ["hexa-efficiency-module"] = {
             {
                 type = "recipe-productivity",
-                values = {"quantum-processor", 0.08},
+                values = {"quantum-processor", 8},
                 level_scaling = 1.07,
             },
             {
@@ -684,7 +704,7 @@ return {
         ["rocket-silo"] = {
             {
                 type = "recipe-productivity",
-                values = {"rocket-part", 0.05},
+                values = {"rocket-part", 5},
                 level_scaling = 1.04,
             },
         },
@@ -750,6 +770,7 @@ return {
         ["bulk-inserter-capacity"] = true,
         ["combat-robot-count"] = true,
         ["robot-cargo-size"] = true,
+        ["recipe-productivity"] = true, -- Recipe productivity is rounded to two decimal places by the engine, so assume integers representing percentage values, and scale down when applying
     },
 
     is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.

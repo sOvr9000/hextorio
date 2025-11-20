@@ -1975,7 +1975,7 @@ function gui.update_catalog_inspect_frame(player)
             end
 
             if buff.type == "recipe-productivity" then
-                return {"", "[color=green]" .. lib.format_percentage(values[2], 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[2], 2, true, true) .. ")[.color]"}
+                return {"", "[color=green]" .. lib.format_percentage(values[2] * 0.01, 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[2] * 0.01, 2, true, true) .. ")[.color]"}
             end
 
             for i, v in pairs(values) do
