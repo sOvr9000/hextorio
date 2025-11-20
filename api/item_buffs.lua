@@ -533,7 +533,6 @@ function item_buffs._enhance_all_item_buffs_tick()
     local inv_coin = coin_tiers.get_coin_from_inventory(inv) -- Check each time because the player can modify the coins they have available to spend while this processes over time.
     local item_names = storage.item_buffs.enhance_all.item_names
     local enhanced_items = storage.item_buffs.enhance_all.enhanced_items
-    local total_cost = storage.item_buffs.enhance_all.total_cost
 
     -- Find the cheapest item buff
     local item_name
@@ -553,7 +552,7 @@ function item_buffs._enhance_all_item_buffs_tick()
 
     -- If found, the process should enhance it and continue on the next tick
     if item_name then
-        total_cost = coin_tiers.add(total_cost, cost)
+        storage.item_buffs.enhance_all.total_cost = coin_tiers.add(storage.item_buffs.enhance_all.total_cost, cost)
         enhanced_items[item_name] = (enhanced_items[item_name] or 0) + 1
         coin_tiers.remove_coin_from_inventory(inv, cost)
 
@@ -580,13 +579,13 @@ function item_buffs._enhance_all_item_buffs_tick()
             lib.color_localized_string({"hextorio.item-buffs-enhanced"}, "yellow", "heading-2"),
             str,
             "\n",
-            {"hextorio-gui.cost", coin_tiers.coin_to_text(total_cost)},
+            {"hextorio-gui.cost", coin_tiers.coin_to_text(storage.item_buffs.enhance_all.total_cost)},
         }
     else
         player.print {"hextorio.none-enhanced"}
     end
 
-    event_system.trigger("item-buffs-enhance-all-finished", player, total_cost, enhanced_items)
+    event_system.trigger("item-buffs-enhance-all-finished", player, storage.item_buffs.enhance_all.total_cost, enhanced_items)
 end
 
 
