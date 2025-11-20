@@ -324,10 +324,10 @@ end
 ---This is intended as a wrapper for `trades.random()` with added restrictions to prevent simple single-core trade loops from being generated.
 ---@param hex_core_state HexState
 ---@param volume number
----@param allow_interplanetary boolean|nil
+---@param is_interplanetary boolean|nil
 ---@param include_item string|nil
 ---@return Trade|nil
-function hex_grid.generate_random_trade(hex_core_state, volume, allow_interplanetary, include_item)
+function hex_grid.generate_random_trade(hex_core_state, volume, is_interplanetary, include_item)
     if not hex_core_state then
         lib.log_error("hex_grid.generate_random_trade: hex core state is nil")
         return
@@ -345,7 +345,7 @@ function hex_grid.generate_random_trade(hex_core_state, volume, allow_interplane
     local idx = #cur_trades + 1
 
     for _ = 1, 10 do
-        local trade = trades.random(hex_core_state.hex_core.surface.name, volume, allow_interplanetary, include_item)
+        local trade = trades.random(hex_core_state.hex_core.surface.name, volume, is_interplanetary, include_item)
         if trade then
             cur_trades[idx] = trade -- Overwrite previously generated trades if they failed.
             local loops = trade_loop_finder.find_simple_loops(cur_trades)
@@ -2878,11 +2878,7 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
     local added = false
     local rank = item_ranks.get_item_rank(item_name)
     if rank >= 3 then
-        local volume = item_values.get_item_value(surface_name, item_name)
-
-        -- This should not need to check for infinite single-core loops (by using hex_grid.generate_random_trade() instead) since that's so unlikely to happen with interplanetary trades that it almost certainly will never happen.
-        local trade = trades.random(surface_name, volume, true, item_name)
-
+        local trade = trades.new_coin_trade(surface_name, item_name)
         if trade then
             -- Avoid interfering with currently active trading lines by deactivating the new trade.
             trades.set_trade_active(trade, false)

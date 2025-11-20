@@ -16,6 +16,8 @@ Date: 19/11/25
   Changes:
     - Mod is now properly marked as a "Space Age Mod" in the mod browser.
     - Removed the irrelevant PvP text in the mod description (until it's actually implemented).
+  Balancing:
+    - Interplanetary trades are now always for directly buying with coins or selling for coins, adding value to finding them.
   Locale:
     - Removed the period after the "Trade Productivity" mod settings in the EN locale.
   Modding:

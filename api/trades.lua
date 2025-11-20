@@ -700,6 +700,19 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
     return input_item_names, output_item_names
 end
 
+---Create a new trade between a single item and a coin type.
+---@param surface_name string
+---@param item_name string
+---@param target_efficiency number|nil Defaults to 1.0
+---@return Trade
+function trades.new_coin_trade(surface_name, item_name, target_efficiency)
+    if target_efficiency == nil then target_efficiency = 1 end
+    if math.random() < lib.runtime_setting_value "sell-trade-chance" then
+        return trades.from_item_names(surface_name, {item_name}, {"hex-coin"}, {target_efficiency = target_efficiency})
+    end
+    return trades.from_item_names(surface_name, {"hex-coin"}, {item_name}, {target_efficiency = target_efficiency})
+end
+
 ---Generate a random trade on a given surface with a central value for input and output items.
 ---@param surface_name string
 ---@param volume number
