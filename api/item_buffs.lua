@@ -70,13 +70,22 @@ local buff_type_actions = {
     ["bullet-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("bullet", game.forces.player.get_ammo_damage_modifier("bullet") + value)
     end,
+    ["bullet-shooting-speed"] = function(value)
+        game.forces.player.set_gun_speed_modifier("bullet", game.forces.player.get_gun_speed_modifier("bullet") + value)
+    end,
     ["laser-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("laser", game.forces.player.get_ammo_damage_modifier("laser") + value)
+    end,
+    ["laser-shooting-speed"] = function(value)
+        game.forces.player.set_gun_speed_modifier("laser", game.forces.player.get_gun_speed_modifier("laser") + value)
     end,
     ["explosion-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("grenade", game.forces.player.get_ammo_damage_modifier("grenade") + value)
         game.forces.player.set_ammo_damage_modifier("landmine", game.forces.player.get_ammo_damage_modifier("landmine") + value)
         game.forces.player.set_ammo_damage_modifier("rocket", game.forces.player.get_ammo_damage_modifier("rocket") + value)
+    end,
+    ["rocket-shooting-speed"] = function(value)
+        game.forces.player.set_gun_speed_modifier("rocket", game.forces.player.get_gun_speed_modifier("rocket") + value)
     end,
     ["fire-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("flamethrower", game.forces.player.get_ammo_damage_modifier("flamethrower") + value)
@@ -84,6 +93,9 @@ local buff_type_actions = {
     ["electric-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("electric", game.forces.player.get_ammo_damage_modifier("electric") + value)
         game.forces.player.set_ammo_damage_modifier("tesla", game.forces.player.get_ammo_damage_modifier("tesla") + value)
+    end,
+    ["electric-shooting-speed"] = function(value)
+        game.forces.player.set_gun_speed_modifier("electric", game.forces.player.get_gun_speed_modifier("electric") + value)
     end,
     ["trade-productivity"] = function(value)
         storage.trades.base_productivity = storage.trades.base_productivity + value
