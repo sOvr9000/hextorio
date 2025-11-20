@@ -6,5 +6,7 @@
   "contact": "https://discord.gg/huJY7QK6UG",
   "factorio_version": "2.0",
   "description": "Adds dungeons, quests, an economy and trading system, the ability to level up items in the game, and an extra tier for many things such as belts, modules, combat robots, nauvis ores (endgame), and more.\n\nAlso divides the planets into hexagons, which contain resources, enemy bases, or profitable trades.\n(Try the PvP version of this mod!)\n\nGet rich by selling your production, buy hexagons, and plunder the powerful dungeons on every planet!",
-  "dependencies": ["base >= 2.0.69", "space-age >= 2.0.69", "!lignumis", "!bobwarfare", "!rso-mod"]
+  "dependencies": ["base >= 2.0.69", "space-age >= 2.0.69", "!lignumis", "!bobwarfare", "!rso-mod"],
+  "space_travel_required": true,
+  "quality_required": true
 }
