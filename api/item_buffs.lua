@@ -65,17 +65,23 @@ local buff_type_actions = {
     ["research-speed"] = function(value)
         game.forces.player.laboratory_speed_modifier = game.forces.player.laboratory_speed_modifier + value
     end,
-    ["physical-damage"] = function(value)
-        game.forces.player.set_ammo_damage_modifier("physical", game.forces.player.get_ammo_damage_modifier("physical") + value)
+    ["bullet-damage"] = function(value)
+        game.forces.player.set_ammo_damage_modifier("bullet", game.forces.player.get_ammo_damage_modifier("bullet") + value)
     end,
     ["laser-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("laser", game.forces.player.get_ammo_damage_modifier("laser") + value)
     end,
     ["explosion-damage"] = function(value)
-        game.forces.player.set_ammo_damage_modifier("explosion", game.forces.player.get_ammo_damage_modifier("explosion") + value)
+        game.forces.player.set_ammo_damage_modifier("grenade", game.forces.player.get_ammo_damage_modifier("grenade") + value)
+        game.forces.player.set_ammo_damage_modifier("landmine", game.forces.player.get_ammo_damage_modifier("landmine") + value)
+        game.forces.player.set_ammo_damage_modifier("rocket", game.forces.player.get_ammo_damage_modifier("rocket") + value)
     end,
     ["fire-damage"] = function(value)
-        game.forces.player.set_ammo_damage_modifier("fire", game.forces.player.get_ammo_damage_modifier("fire") + value)
+        game.forces.player.set_ammo_damage_modifier("flamethrower", game.forces.player.get_ammo_damage_modifier("flamethrower") + value)
+    end,
+    ["electric-damage"] = function(value)
+        game.forces.player.set_ammo_damage_modifier("electric", game.forces.player.get_ammo_damage_modifier("electric") + value)
+        game.forces.player.set_ammo_damage_modifier("tesla", game.forces.player.get_ammo_damage_modifier("tesla") + value)
     end,
     ["trade-productivity"] = function(value)
         storage.trades.base_productivity = storage.trades.base_productivity + value
@@ -100,7 +106,11 @@ local buff_type_actions = {
     end,
 
     ["recipe-productivity"] = function(recipe_name, value)
-        if not game.forces.player.recipes[recipe_name] then
+        if not recipe_name then
+            log("nil recipe")
+            return
+        end
+        if not prototypes.recipe[recipe_name] then
             log("unknown recipe: " .. recipe_name)
             return
         end

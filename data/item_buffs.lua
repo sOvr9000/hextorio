@@ -95,8 +95,8 @@ return {
         ["beacon"] = {
             {
                 type = "beacon-efficiency",
-                value = 0.05,
-                level_scaling = 1.03,
+                value = 0.15,
+                level_scaling = 1.035,
             },
         },
         ["fast-inserter"] = {
@@ -151,49 +151,49 @@ return {
         ["carbon-fiber"] = {
             {
                 type = "recipe-productivity",
-                value = {"carbon-fiber", 0.5},
+                values = {"carbon-fiber", 0.5},
                 level_scaling = 1.03,
             },
         },
         ["automation-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"automation-science-pack", 0.05},
+                values = {"automation-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["logistics-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"logistics-science-pack", 0.05},
+                values = {"logistics-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["military-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"military-science-pack", 0.05},
+                values = {"military-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["chemical-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"chemical-science-pack", 0.05},
+                values = {"chemical-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["production-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"production-science-pack", 0.05},
+                values = {"production-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["utility-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"utility-science-pack", 0.05},
+                values = {"utility-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
@@ -201,35 +201,35 @@ return {
         ["metallurgic-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"metallurgic-science-pack", 0.05},
+                values = {"metallurgic-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["electromagnetic-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"electromagnetic-science-pack", 0.05},
+                values = {"electromagnetic-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["agricultural-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"agricultural-science-pack", 0.05},
+                values = {"agricultural-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["cryogenic-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"cryogenic-science-pack", 0.05},
+                values = {"cryogenic-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
         ["promethium-science-pack"] = {
             {
                 type = "recipe-productivity",
-                value = {"promethium-science-pack", 0.05},
+                values = {"promethium-science-pack", 0.05},
                 level_scaling = 1.04,
             },
         },
@@ -452,28 +452,28 @@ return {
         },
         ["firearm-magazine"] = {
             {
-                type = "physical-damage",
+                type = "bullet-damage",
                 value = 0.04,
                 level_scaling = 1.1,
             },
         },
         ["piercing-rounds-magazine"] = {
             {
-                type = "physical-damage",
+                type = "bullet-damage",
                 value = 0.04,
                 level_scaling = 1.1,
             },
         },
         ["uranium-rounds-magazine"] = {
             {
-                type = "physical-damage",
+                type = "bullet-damage",
                 value = 0.04,
                 level_scaling = 1.1,
             },
         },
         ["magmatic-rounds-magazine"] = {
             {
-                type = "physical-damage",
+                type = "bullet-damage",
                 value = 0.08,
                 level_scaling = 1.1,
             },
@@ -684,7 +684,7 @@ return {
         ["rocket-silo"] = {
             {
                 type = "recipe-productivity",
-                value = {"rocket-part", 0.05},
+                values = {"rocket-part", 0.05},
                 level_scaling = 1.04,
             },
         },
