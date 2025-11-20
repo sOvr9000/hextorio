@@ -67,6 +67,9 @@ local buff_type_actions = {
     ["research-speed"] = function(value)
         game.forces.player.laboratory_speed_modifier = game.forces.player.laboratory_speed_modifier + value
     end,
+    ["braking-force"] = function(value)
+        game.forces.player.train_braking_force_bonus = game.forces.player.train_braking_force_bonus + value
+    end,
     ["bullet-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("bullet", game.forces.player.get_ammo_damage_modifier("bullet") + value)
     end,

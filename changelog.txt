@@ -24,6 +24,7 @@ Date: 20/11/25
     - Updated Factorio version dependency to prevent crash on pre-2.0.69 versions.
   Bugfixes:
     - Fixed all possible crashes that could be caused by using the wrong value types in commands.
+    - Fixed that stack inserters and biolabs had no item value, causing them to never show up in trades or the catalog.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.4
 Date: 15/11/25
