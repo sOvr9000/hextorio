@@ -159,42 +159,42 @@ return {
             {
                 type = "recipe-productivity",
                 values = {"automation-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["logistics-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"logistics-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["military-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"military-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["chemical-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"chemical-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["production-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"production-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["utility-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"utility-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         -- No way to level up space sci; it's untradable
@@ -202,35 +202,35 @@ return {
             {
                 type = "recipe-productivity",
                 values = {"metallurgic-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["electromagnetic-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"electromagnetic-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["agricultural-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"agricultural-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["cryogenic-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"cryogenic-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["promethium-science-pack"] = {
             {
                 type = "recipe-productivity",
                 values = {"promethium-science-pack", 5},
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["lab"] = {
