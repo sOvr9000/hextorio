@@ -1,8 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
-Date: 19/11/25
+Date: 20/11/25
   Major Features:
-    - Added item buffs unique to each item, unlocked and upgraded in the Catalog.
+    - Added item buffs to most items, unlocked and upgraded in the Catalog.
         Unlocking and enhancement difficulty is configurable with two new settings, "Item Buff Cost Scale" and "Item Buff Cost Base".
     - Added command /set-item-value so that you can get modded items to show up in random trades, the catalog, and be able to use them in /add-trade.
         Also added complementary commands: /import-item-values /export-item-values /remove-item-value /get-item-value
