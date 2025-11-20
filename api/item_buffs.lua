@@ -494,6 +494,10 @@ function item_buffs.fetch_settings()
 end
 
 function item_buffs.enhance_all_item_buffs(config)
+    if storage.item_buffs.enhance_all.processing then
+        return
+    end
+
     local player = config.player
 
     local inv = lib.get_player_inventory(player)
