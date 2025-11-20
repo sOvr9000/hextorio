@@ -102,10 +102,26 @@ function gui.register_events()
     event_system.register_callback("item-buffs-enhance-all-finished", function(player, total_cost, enhanced_items)
         gui.update_catalog_inspect_frame(player)
     end)
+
+    event_system.register_callback("post-set-item-value-command", function(player, params)
+        gui.reinitialize_everything()
+    end)
+    event_system.register_callback("post-import-item-values-command", function(player, params)
+        gui.reinitialize_everything()
+    end)
 end
 
+---Reinitialize the Hextorio GUIs for the given player, or all online players if no player is provided.
+---@param player LuaPlayer|nil
 function gui.reinitialize_everything(player)
     -- called during migration or for player joins
+
+    if not player then
+        for _, p in pairs(game.connected_players) do
+            gui.reinitialize_everything(p)
+        end
+        return
+    end
 
     local frame
 

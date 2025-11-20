@@ -1,4 +1,3 @@
-
 local lib = require "api.lib"
 local event_system = require "api.event_system"
 local space_platforms = require "api.space_platforms"
@@ -8,32 +7,234 @@ local coin_tiers = require "api.coin_tiers"
 
 
 local all_commands = {
-    {name = "hextorio-commands", usage = "/hextorio-commands"},
-    {name = "hextorio-debug", usage = "/hextorio-debug"},
-    {name = "claim", usage = "/claim [radius]", examples = {"/claim", "/claim 1"}},
-    {name = "force-claim", usage = "/force-claim [radius]", examples = {"/force-claim", "/force-claim 1"}},
-    {name = "rank-up", usage = "/rank-up <item-name>", examples = {"/rank-up iron-ore"}},
-    {name = "rank-up-all", usage = "/rank-up-all"},
-    {name = "discover-all", usage = "/discover-all"},
-    {name = "add-trade", usage = "/add-trade <inputs> <outputs>", examples = {"/add-trade stone coal", "/add-trade [stone iron-plate] uranium-ore", "/add-trade plastic-bar [copper-plate copper-ore]"}},
-    {name = "remove-trade", usage = "/remove-trade <index>", examples = {"/remove-trade 1"}},
-    {name = "complete-quest", usage = "/complete-quest <quest-name>", examples = {"/complete-quest ground-zero", "/complete-quest find-some-trades"}},
-    {name = "tp-to-ship", usage = "/tp-to-ship"},
-    {name = "chart", usage = "/chart <surface> [range]", examples = {"/chart vulcanus", "/chart nauvis 500"}},
-    {name = "spawn-ship", usage = "/spawn-ship"},
-    {name = "skip-flight", usage = "/skip-flight"},
-    {name = "hex-pool-size", usage = "/hex-pool-size [size]", examples = {"/hex-pool-size", "/hex-pool-size 100"}},
-    {name = "add-coins", usage = "/add-coins [amount]", examples = {"/add-coins", "/add-coins 100000"}},
-    {name = "summon", usage = "/summon <entity> [amount] [quality]", examples = {"/summon spitter-spawner", "/summon small-worm-turret 2", "/summon big-stomper-pentapod 5 hextreme"}},
-    {name = "tp-to-edge", usage = "/tp-to-edge"},
-    {name = "simple-trade-loops", usage = "/simple-trade-loops"},
+    {
+        name = "hextorio-commands",
+        usage = "/hextorio-commands",
+    },
+    {
+        name = "hextorio-debug",
+        usage = "/hextorio-debug",
+    },
+    {
+        name = "claim",
+        usage = "/claim [radius]",
+        params = {"number?"},
+        examples = {"/claim", "/claim 1"},
+    },
+    {
+        name = "force-claim",
+        usage = "/force-claim [radius]",
+        params = {"number?"},
+        examples = {"/force-claim", "/force-claim 1"},
+    },
+    {
+        name = "rank-up",
+        usage = "/rank-up <item-name>",
+        params = {"string"},
+        examples = {"/rank-up iron-ore", "/rank-up in-hand"},
+    },
+    {
+        name = "rank-up-all",
+        usage = "/rank-up-all",
+    },
+    {
+        name = "discover-all",
+        usage = "/discover-all",
+    },
+    {
+        name = "add-trade",
+        usage = "/add-trade <inputs> <outputs>",
+        params = {"any", "any"},
+        examples = {"/add-trade stone coal", "/add-trade [stone iron-plate] uranium-ore", "/add-trade plastic-bar [copper-plate copper-ore]"},
+    },
+    {
+        name = "remove-trade",
+        usage = "/remove-trade <index>",
+        params = {"number"},
+        examples = {"/remove-trade 1"},
+    },
+    {
+        name = "complete-quest",
+        usage = "/complete-quest <quest-name>",
+        params = {"string"},
+        examples = {"/complete-quest ground-zero", "/complete-quest find-some-trades"},
+    },
+    {
+        name = "tp-to-ship",
+        usage = "/tp-to-ship",
+    },
+    {
+        name = "chart",
+        usage = "/chart <surface> [range]",
+        params = {"string", "number?"},
+        examples = {"/chart vulcanus", "/chart nauvis 500"},
+    },
+    {
+        name = "spawn-ship",
+        usage = "/spawn-ship",
+    },
+    {
+        name = "skip-flight",
+        usage = "/skip-flight",
+    },
+    {
+        name = "hex-pool-size",
+        usage = "/hex-pool-size [size]",
+        params = {"number?"},
+        examples = {"/hex-pool-size", "/hex-pool-size 100"},
+    },
+    {
+        name = "add-coins",
+        usage = "/add-coins [amount]",
+        params = {"number?"},
+        examples = {"/add-coins", "/add-coins 100000"},
+    },
+    {
+        name = "summon",
+        usage = "/summon <entity> [amount] [quality]",
+        params = {"string", "number?", "string?"},
+        examples = {"/summon spitter-spawner", "/summon small-worm-turret 2", "/summon big-stomper-pentapod 5 hextreme"},
+    },
+    {
+        name = "tp-to-edge",
+        usage = "/tp-to-edge",
+    },
+    {
+        name = "simple-trade-loops",
+        usage = "/simple-trade-loops",
+    },
+    {
+        name = "export-item-values",
+        usage = "/export-item-values",
+    },
+    {
+        name = "import-item-values",
+        usage = "/import-item-values <string>",
+        params = {"string"},
+    },
+    {
+        name = "get-item-value",
+        usage = "/get-item-value <item_name> <planet> [quality]",
+        params = {"string", "string", "string?"},
+        examples = {"/get-item-value carbon-fiber gleba", "/get-item-value agricultural-science-pack nauvis", "/get-item-value long-handed-inserter aquilo rare", "/get-item-value [color=yellow]in-hand[.color]"},
+    },
+    {
+        name = "set-item-value",
+        usage = "/set-item-value <item_name> <value> [planet]",
+        params = {"string", "number", "string?"},
+        examples = {
+            "/set-item-value iron-plate 0.01\n    Sets the value of 1x [img=item.iron-plate] to 0.01x [img=item.hex-coin] on [img=space-location.nauvis].",
+            "\n/set-item-value holmium-plate 20000000 aquilo\n    Sets the value of 1x [img=item.holmium-plate] to 200x [img=item.gravity-coin] on [img=space-location.aquilo].",
+            "\n/set-item-value tin-plate 40\n    Sets the value of one tin-plate, if a mod adds an item by that name, to 40x [img=item.hex-coin] on [img=space-location.nauvis].",
+            "\n/set-item-value [color=yellow]in-hand[.color] 1000 [color=pink]here[.color]\n    Sets the value of the item in your hand to 1000x [img=item.hex-coin] on your character's current planet."
+        },
+    },
+    {
+        name = "remove-item-value",
+        usage = "/remove-item-value <item_name> [planet]",
+        params = {"string", "string?"},
+        examples = {
+            "/remove-item-value iron-plate\n\tRemoves the value of [img=item.iron-plate] from all planets, keeping it from showing up in trades anywhere.",
+            "\n/remove-item-value water-barrel nauvis\n\tRemoves the value of [img=item.water-barrel] from [planet=nauvis] only, allowing it to still show up in trades on [img=space-location.vulcanus][img=space-location.fulgora][img=space-location.gleba].",
+        },
+    },
 }
 
 local public_commands = sets.new {
     "hextorio-commands",
+    "get-item-value",
 }
 
 
+
+-- Type checking functions
+local function get_type(value)
+    if type(value) == "table" then
+        return "array"
+    elseif type(value) == "number" then
+        return "number"
+    else
+        return "string"
+    end
+end
+
+local function validate_type(value, expected_type)
+    local actual_type = get_type(value)
+
+    -- Handle optional parameters (marked with ?)
+    local is_optional = expected_type:sub(-1) == "?"
+    if is_optional then
+        expected_type = expected_type:sub(1, -2)
+    end
+
+    -- "any" accepts any type
+    if expected_type == "any" then
+        return true
+    end
+
+    return actual_type == expected_type
+end
+
+function convert_params(player, params)
+    for i = 1, #params do
+        local param = params[i]
+        local param_type = type(param)
+        if param_type == "table" then
+            convert_params(player, param)
+        elseif param_type == "string" then
+            if param == "in-hand" then
+                if not player.cursor_stack or not player.cursor_stack.valid_for_read then
+                    player.print {"hextorio.command-no-item-in-hand"}
+                else
+                    params[i] = player.cursor_stack.prototype.name
+                end
+            elseif param == "here" then
+                if not player.character then
+                    player.print {"hextorio.command-no-character-found"}
+                else
+                    params[i] = player.character.surface.name
+                end
+            end
+        end
+    end
+end
+
+function validate_params(player, command_name, params, expected_params)
+    -- Count required parameters
+    local required_count = 0
+    local total_count = #expected_params
+
+    for _, param_type in ipairs(expected_params) do
+        if not param_type:match("%?$") then
+            required_count = required_count + 1
+        end
+    end
+
+    -- Check minimum parameter count
+    if #params < required_count then
+        player.print({"hextorio.command-not-enough-params", required_count, #params})
+        return false
+    end
+
+    -- Check maximum parameter count
+    if #params > total_count then
+        player.print({"hextorio.command-too-many-params", total_count, #params})
+        return false
+    end
+
+    -- Validate each parameter type
+    for i, expected_type in ipairs(expected_params) do
+        if params[i] ~= nil then
+            if not validate_type(params[i], expected_type) then
+                local clean_type = expected_type:gsub("%?$", "")
+                player.print({"hextorio.command-wrong-type", i, clean_type, get_type(params[i])})
+                return false
+            end
+        end
+    end
+
+    return true
+end
 
 function on_command(player, command, params)
     if not public_commands[command] and not player.admin then
@@ -145,7 +346,7 @@ function on_command(player, command, params)
         end
     elseif command == "summon" then
         local entity_name = params[1]
-        local amount = tonumber(params[2]) or 1
+        local amount = params[2] or 1
         local quality = params[3] or "normal"
         for i = 1, amount do
             game.surfaces[1].create_entity {
@@ -161,12 +362,30 @@ function on_command(player, command, params)
 end
 
 function parse_command(command)
+    -- Fetch the player who called the command
+    local player = game.get_player(command.player_index)
+
     -- Parse parameters, handling arrays in square brackets
     local params = {}
 
     -- If there's no parameter, use empty params
     if not command.parameter or command.parameter == "" then
-        local player = game.get_player(command.player_index)
+        -- Find command definition for validation
+        local cmd_def = nil
+        for _, cmd in pairs(all_commands) do
+            if cmd.name == command.name then
+                cmd_def = cmd
+                break
+            end
+        end
+
+        -- Validate parameters
+        if cmd_def and cmd_def.params then
+            if not validate_params(player, command.name, params, cmd_def.params) then
+                return
+            end
+        end
+
         on_command(player, command.name, params)
         return
     end
@@ -218,8 +437,23 @@ function parse_command(command)
         end
     end
 
-    -- Fetch the player who called the command
-    local player = game.get_player(command.player_index)
+    -- Find command definition for validation
+    local cmd_def = nil
+    for _, cmd in pairs(all_commands) do
+        if cmd.name == command.name then
+            cmd_def = cmd
+            break
+        end
+    end
+
+    -- Validate parameters
+    if cmd_def and cmd_def.params then
+        if not validate_params(player, command.name, params, cmd_def.params) then
+            return
+        end
+    end
+
+    convert_params(player, params)
 
     -- Invoke the command function with the passed parameters
     on_command(player, command.name, params)

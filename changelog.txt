@@ -4,6 +4,9 @@ Date: 19/11/25
   Major Features:
     - Added item buffs unique to each item, unlocked and upgraded in the Catalog.
         Unlocking and enhancement difficulty is configurable with two new settings, "Item Buff Cost Scale" and "Item Buff Cost Base".
+    - Added command /set-item-value so that you can get modded items to show up in random trades, the catalog, and be able to use them in /add-trade.
+  Features:
+    - Added complementary commands: /import-item-values /export-item-values /remove-item-value /get-item-value
   Sounds:
     - Swapped vanilla title screen music with piano.  Can be disabled in the mod startup settings.
   Minor Features:
@@ -15,6 +18,8 @@ Date: 19/11/25
     - Removed the period after the "Trade Productivity" mod settings in the EN locale.
   Modding:
     - Updated Factorio version dependency to prevent crash on pre-2.0.69 versions.
+  Bugfixes:
+    - Fixed all possible crashes that could be caused by using the wrong value types in commands.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.4
 Date: 15/11/25
