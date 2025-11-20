@@ -1,6 +1,15 @@
 
 data:extend({
     {
+        type = "string-setting",
+        name = "hextorio-title-screen-music",
+        setting_type = "startup",
+        allowed_values = {"vanilla", "a-soul-one-billion-years-from-now"},
+        default_value = "a-soul-one-billion-years-from-now",
+        order = "a",
+    },
+
+    {
         type = "double-setting",
         setting_type = "startup",
         name = "hextorio-atomic-bomb-damage-multiplier",

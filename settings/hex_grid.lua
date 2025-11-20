@@ -235,6 +235,7 @@ data:extend({
         default_value = 48,
         minimum_value = 1,
         maximum_value = 100,
+        order = "aa",
     },
     {
         type = "int-setting",
@@ -243,6 +244,7 @@ data:extend({
         default_value = 30,
         minimum_value = 1,
         maximum_value = 100,
+        order = "ab",
     },
     {
         type = "int-setting",
@@ -251,6 +253,7 @@ data:extend({
         default_value = 30,
         minimum_value = 1,
         maximum_value = 100,
+        order = "ac",
     },
     {
         type = "int-setting",
@@ -259,6 +262,7 @@ data:extend({
         default_value = 36,
         minimum_value = 1,
         maximum_value = 100,
+        order = "ad",
     },
     {
         type = "int-setting",
@@ -267,6 +271,7 @@ data:extend({
         default_value = 24,
         minimum_value = 1,
         maximum_value = 100,
+        order = "ae",
     },
 
     {

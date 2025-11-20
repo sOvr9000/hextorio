@@ -4,10 +4,13 @@ Date: 19/11/25
   Major Features:
     - Added item buffs unique to each item, unlocked and upgraded in the Catalog.
         Unlocking and enhancement difficulty is configurable with two new settings, "Item Buff Cost Scale" and "Item Buff Cost Base".
+  Sounds:
+    - Swapped vanilla title screen music with piano.  Can be disabled in the mod startup settings.
   Minor Features:
     - Added two mod settings, "Default Trade Quality" and "Increment Trade Quality", to control how trade quality bounds are initialized or managed.
   Changes:
     - Mod is now properly marked as a "Space Age Mod" in the mod browser.
+    - Removed the irrelevant PvP text in the mod description (until it's actually implemented).
   Locale:
     - Removed the period after the "Trade Productivity" mod settings in the EN locale.
   Modding:
