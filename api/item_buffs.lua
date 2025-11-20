@@ -223,11 +223,16 @@ function item_buffs.apply_buff_modifiers(buff, level, removing)
                     storage.item_buffs.fractional_bonuses[buff.type] = t
                 end
 
-                local prev = t[i] or 0
-                t[i] = prev + v
+                local idx = i
+                if buff.type == "recipe-productivity" then
+                    idx = modifiers[1]
+                end
+
+                local prev = t[idx] or 0
+                t[idx] = prev + v
 
                 -- This is just sending the difference in rounded values to the buff application while keeping track of the combined fractional values.
-                modifiers[i] = item_buffs.rounded_buff_value(t[i]) - item_buffs.rounded_buff_value(prev)
+                modifiers[i] = item_buffs.rounded_buff_value(t[idx]) - item_buffs.rounded_buff_value(prev)
             end
         end
     end
