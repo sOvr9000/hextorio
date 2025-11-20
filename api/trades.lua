@@ -1056,14 +1056,14 @@ function trades.check_productivity(trade)
     end
 end
 
----Sample a random value for the central value of items in a trade on a given surface.
----@param surface_name string
----@param item_name string
----@return number
-function trades.get_random_volume_for_item(surface_name, item_name)
-    local volume = item_values.get_item_value(surface_name, item_name)
-    return volume * (3 + 7 * math.random())
-end
+-- ---Sample a random value for the central value of items in a trade on a given surface.
+-- ---@param surface_name string
+-- ---@param item_name string
+-- ---@return number
+-- function trades.get_random_volume_for_item(surface_name, item_name)
+--     local volume = item_values.get_item_value(surface_name, item_name)
+--     return volume * (3 + 7 * math.random())
+-- end
 
 ---Verify that the trade data structures are valid.
 function trades._check_tree_existence()
