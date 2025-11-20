@@ -104,6 +104,11 @@ local all_commands = {
         usage = "/simple-trade-loops",
     },
     {
+        name = "regenerate-trades",
+        usage = "/regenerate-trades",
+        requires_confirmation = true,
+    },
+    {
         name = "export-item-values",
         usage = "/export-item-values",
     },
@@ -237,15 +242,12 @@ function validate_params(player, command_name, params, expected_params)
 end
 
 function on_command(player, command, params)
-    if not public_commands[command] and not player.admin then
-        player.print {"hextorio.admin-command-only"}
-        return
-    end
-
     if command == "hextorio-commands" then
         local cmd_names = {}
         for _, cmd in pairs(all_commands) do
-            table.insert(cmd_names, "/" .. cmd.name)
+            if player.admin or public_commands[cmd.name] then
+                table.insert(cmd_names, "/" .. cmd.name)
+            end
         end
         player.print(table.concat(cmd_names, " "))
     elseif command == "hextorio-debug" then
@@ -362,8 +364,19 @@ function on_command(player, command, params)
 end
 
 function parse_command(command)
+    -- Verify storage integrity
+    if not storage.commands then
+        storage.commands = {}
+    end
+
     -- Fetch the player who called the command
     local player = game.get_player(command.player_index)
+    if not player then return end
+
+    if not public_commands[command.name] and not player.admin then
+        player.print {"hextorio.admin-command-only"}
+        return
+    end
 
     -- Parse parameters, handling arrays in square brackets
     local params = {}
@@ -380,13 +393,26 @@ function parse_command(command)
         end
 
         -- Validate parameters
-        if cmd_def and cmd_def.params then
+        if not cmd_def then return end
+        if cmd_def.params then
             if not validate_params(player, command.name, params, cmd_def.params) then
                 return
             end
         end
 
-        on_command(player, command.name, params)
+        local confirmed = true
+        if cmd_def.requires_confirmation then
+            confirmed = command.name == storage.commands.last_command
+        end
+
+        if confirmed then
+            convert_params(player, params)
+            on_command(player, command.name, params)
+        else
+            player.print(lib.color_localized_string({"hextorio.command-confirmation"}, "pink"))
+        end
+
+        storage.commands.last_command = command.name
         return
     end
 
@@ -447,16 +473,26 @@ function parse_command(command)
     end
 
     -- Validate parameters
-    if cmd_def and cmd_def.params then
+    if not cmd_def then return end
+    if cmd_def.params then
         if not validate_params(player, command.name, params, cmd_def.params) then
             return
         end
     end
 
-    convert_params(player, params)
+    local confirmed = true
+    if cmd_def.requires_confirmation then
+        confirmed = command.name == storage.commands.last_command
+    end
 
-    -- Invoke the command function with the passed parameters
-    on_command(player, command.name, params)
+    if confirmed then
+        convert_params(player, params)
+        on_command(player, command.name, params)
+    else
+        player.print(lib.color_localized_string({"hextorio.command-confirmation"}, "pink"))
+    end
+
+    storage.commands.last_command = command.name
 end
 
 

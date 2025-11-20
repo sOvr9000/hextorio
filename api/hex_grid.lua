@@ -78,6 +78,40 @@ function hex_grid.register_events()
         hex_grid.remove_trade_by_index(state, idx)
     end)
 
+    event_system.register_callback("command-regenerate-trades", function(player, params)
+        quests.set_progress_for_type("trades-found", 0)
+        storage.trades.recoverable = {}
+        storage.trades.discovered_items = {}
+        storage.trades.interplanetary_trade_locations = {}
+
+        for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+                if state.trades then
+                    for i = #state.trades, 1, -1 do
+                        local trade_id = state.trades[i]
+                        local trade = trades.get_trade_from_id(trade_id)
+                        if trade then
+                            trades.remove_trade_from_tree(trade, false)
+                        end
+
+                        hex_grid.remove_trade_by_index(state, i)
+                    end
+                end
+            end
+        end
+
+        local ip_trades_per_item = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
+        for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+            trades.generate_interplanetary_trade_locations(surface.name, ip_trades_per_item)
+
+            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+                if state.hex_core then
+                    hex_grid.add_initial_trades(state)
+                end
+            end
+        end
+    end)
+
     event_system.register_callback("command-hextorio-debug", function(player, params)
         hex_grid.claim_hexes_range(player.surface.name, {q = 0, r = 0}, 1, nil, true) -- claim by server
     end)
