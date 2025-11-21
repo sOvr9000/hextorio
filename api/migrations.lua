@@ -479,7 +479,10 @@ local process_migration = {
         storage.quests.quest_defs = data_quests.quest_defs
         quests.reinitialize_everything()
 
-        storage.item_values.minimal_values = {}
+        storage.item_values.values.gleba.biolab = 8652156.0021070931
+        storage.item_values.values.gleba["stack-inserter"] = 315429.67844327178
+        item_values.reset_storage()
+
         storage.item_buffs = data_item_buffs
     end,
 }
