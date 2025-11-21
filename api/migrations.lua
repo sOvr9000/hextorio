@@ -476,10 +476,11 @@ local process_migration = {
         end
     end,
     ["1.1.4"] = function()
-        storage.item_values.minimal_values = {}
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
 
+        storage.item_values.minimal_values = {}
         storage.item_buffs = data_item_buffs
-        item_buffs.init()
     end,
 }
 
