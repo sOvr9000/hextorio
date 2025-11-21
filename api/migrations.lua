@@ -75,6 +75,7 @@ local versions = {
     "1.1.3",
     "1.1.4",
     "1.2.0",
+    "1.2.1",
 }
 
 local version_stepping = {}
@@ -484,6 +485,8 @@ local process_migration = {
         item_values.reset_storage()
 
         storage.item_buffs = data_item_buffs
+    end,
+    ["1.2.0"] = function()
     end,
 }
 
