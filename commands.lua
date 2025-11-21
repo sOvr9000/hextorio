@@ -121,7 +121,7 @@ local all_commands = {
         name = "get-item-value",
         usage = "/get-item-value <item_name> <planet> [quality]",
         params = {"string", "string", "string?"},
-        examples = {"/get-item-value carbon-fiber gleba", "/get-item-value agricultural-science-pack nauvis", "/get-item-value long-handed-inserter aquilo rare", "/get-item-value [color=yellow]in-hand[.color]"},
+        examples = {"/get-item-value carbon-fiber gleba", "/get-item-value agricultural-science-pack nauvis", "/get-item-value long-handed-inserter aquilo rare", "/get-item-value [color=yellow]in-hand[.color] [color=pink]here[.color]"},
     },
     {
         name = "set-item-value",
