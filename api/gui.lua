@@ -1136,6 +1136,10 @@ function gui.update_hex_core(player)
     frame["sink-mode-confirmation"].visible = false
     frame["generator-mode-confirmation"].visible = false
 
+    local quality_unlocked = game.forces.player.is_quality_unlocked(prototypes.quality.uncommon)
+    frame["trades-header"]["quality-dropdown"].visible = quality_unlocked
+    frame["trades-header"]["info"].visible = quality_unlocked
+
     if state.claimed then
         frame["claim-flow"].visible = false
         local claimed_by_name = state.claimed_by or {"hextorio.server"}
