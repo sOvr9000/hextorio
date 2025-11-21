@@ -365,8 +365,14 @@ end
 ---@param trigger_event boolean|nil Whether to trigger the `item-buff-level-changed` event.  Defaults to `true` if not provided.
 function item_buffs.set_item_buff_level(item_name, level, trigger_event)
     local prev_level = storage.item_buffs.levels[item_name]
-    if prev_level == level then
+    if prev_level == level or level < 0 then
         return
+    end
+
+    local dec = 0
+    if prev_level == 0 then
+        dec = storage.item_buffs.level_bonus
+        level = level + dec
     end
 
     if trigger_event == nil then trigger_event = true end
@@ -396,7 +402,7 @@ function item_buffs.set_item_buff_level(item_name, level, trigger_event)
                 item_buffs.apply_buff_modifiers(buff, level, false)
             else
                 -- Apply a "level one" version of the increment from the previous level to the new level, skipping some calculations to achieve the same thing.
-                item_buffs.apply_buff_modifiers(item_buffs.get_incremental_buff(buff, level - 1), 1, false)
+                item_buffs.apply_buff_modifiers(item_buffs.get_incremental_buff(buff, level - 1 - dec), 1, false)
             end
         end
     end
