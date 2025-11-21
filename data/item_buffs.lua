@@ -548,6 +548,18 @@ return {
                 level_scaling = 1.05,
             },
         },
+        ["plague-rocket"] = {
+            {
+                type = "recipe-productivity",
+                values = {"bioflux", 5},
+                level_scaling = 1.1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"nutrients-from-bioflux", 5},
+                level_scaling = 1.1,
+            },
+        },
         ["laser-turret"] = {
             {
                 type = "laser-damage",
@@ -770,14 +782,14 @@ return {
         ["advanced-circuit"] = {
             {
                 type = "all-buffs-cost-reduced",
-                value = 0.02,
+                value = 0.03,
                 level_scaling = 1.1,
             },
         },
         ["processing-unit"] = {
             {
                 type = "all-buffs-cost-reduced",
-                value = 0.02,
+                value = 0.03,
                 level_scaling = 1.1,
             },
         },
@@ -800,6 +812,11 @@ return {
                 type = "all-buffs-level",
                 value = 1,
                 level_scaling = 1.12,
+            },
+            {
+                type = "all-buffs-cost-reduced",
+                value = 0.25,
+                level_scaling = 1.25,
             },
         },
         ["locomotive"] = {
@@ -830,28 +847,83 @@ return {
                 level_scaling = 1.1,
             },
         },
-        ["assembling-machine"] = {
+        ["assembling-machine-1"] = {
             {
                 type = "recipe-productivity",
                 values = {"iron-gear-wheel", 5},
-                level_scaling = 1.07,
+                level_scaling = 1.08,
             },
             {
                 type = "recipe-productivity",
-                values = {"casting-iron-gear-wheel", 5},
-                level_scaling = 1.07,
+                values = {"casting-iron-gear-wheel", 6},
+                level_scaling = 1.08,
+            },
+        },
+        ["assembling-machine-2"] = {
+            {
+                type = "recipe-productivity",
+                values = {"copper-cable", 5},
+                level_scaling = 1.09,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"casting-copper-cable", 6},
+                level_scaling = 1.09,
+            },
+        },
+        ["assembling-machine-3"] = {
+            {
+                type = "recipe-productivity",
+                values = {"engine-unit", 5},
+                level_scaling = 1.1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"electric-engine-unit", 5},
+                level_scaling = 1.1,
+            },
+        },
+        ["chemical-plant"] = {
+            {
+                type = "recipe-productivity",
+                values = {"lubricant", 7.5},
+                level_scaling = 1.1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"pump", 7.5},
+                level_scaling = 1.1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"storage-tank", 7.5},
+                level_scaling = 1.1,
+            },
+        },
+        ["oil-refinery"] = {
+            {
+                type = "recipe-productivity",
+                values = {"advanced-oil-processing", 10},
+                level_scaling = 1.1,
+            },
+        },
+        ["cryogenic-plant"] = {
+            {
+                type = "all-buffs-cost-reduced",
+                value = 0.1,
+                level_scaling = 1.1,
             },
         },
         ["foundry"] = {
             {
                 type = "recipe-productivity",
                 values = {"molten-copper", 5},
-                level_scaling = 1.07,
+                level_scaling = 1.1,
             },
             {
                 type = "recipe-productivity",
                 values = {"molten-iron", 5},
-                level_scaling = 1.07,
+                level_scaling = 1.1,
             },
         },
         ["electromagnetic-plant"] = {

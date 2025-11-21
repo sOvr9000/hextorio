@@ -32,6 +32,7 @@ Date: 21/11/25
     - Updated Factorio version dependency to prevent crash on pre-2.0.69 versions.
   Gui:
     - The trade quality preview dropdown now only shows up if you have a quality higher than normal unlocked, reducing visual clutter for new players.
+    - Changed the "Quest Rewards" indicator to "Bonuses" in productivity summation details.
   Bugfixes:
     - Fixed all possible crashes that could be caused by using the wrong value types in commands.
     - Fixed that stack inserters and biolabs had no item value, causing them to never show up in trades or the catalog.
