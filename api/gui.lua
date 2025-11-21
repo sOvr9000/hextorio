@@ -304,6 +304,7 @@ function gui.init_questbook(player)
     if player.gui.screen["questbook"] then return end
     local questbook = player.gui.screen.add {type = "frame", name = "questbook", direction = "vertical"}
     questbook.style.size = {width = 1200, height = 800}
+    questbook.visible = false
 
     gui.add_titlebar(questbook, {"hextorio-questbook.questbook-title"})
 
@@ -385,6 +386,7 @@ function gui.init_trade_overview(player)
     }
     frame.style.width = 900
     frame.style.height = 900
+    frame.visible = false
 
     gui.add_titlebar(frame, {"hex-core-gui.trade-overview"})
 
@@ -533,6 +535,7 @@ function gui.init_catalog(player)
     }
     frame.style.width = 1200
     frame.style.height = 800
+    frame.visible = false
 
     gui.add_titlebar(frame, {"hextorio-gui.catalog"})
 
@@ -2914,29 +2917,6 @@ function gui.on_hex_mode_confirmation_button_click(player, element)
     end
 end
 
--- function gui.on_unloader_filters_button_click(player, element)
---     element.parent.parent["unloader-filters-flow"].visible = true
---     element.enabled = false
--- end
-
--- function gui.on_unloader_filters_direction_click(player, element)
---     local hex_core = lib.get_player_opened_entity(player)
---     if not hex_core then return end
-
---     local dir = element.name
---     local entities = player.surface.find_entities_filtered{
---         name = "hex-core-loader",
---         area = {{hex_core.position.x - 2, hex_core.position.y - 2}, {hex_core.position.x + 2, hex_core.position.y + 2}},
---     }
---     for _, e in pairs(entities) do
---         if e.direction == defines.direction[dir] and e.loader_type == "output" then
---             gui.close_all(player)
---             player.opened = e
---             break
---         end
---     end
--- end
-
 function gui.on_clear_filters_button_click(player, element)
     local filter_frame = element.parent.parent.parent
     for _, planet_button in pairs(filter_frame["left"]["planet-flow"].children) do
@@ -3607,6 +3587,118 @@ end
 ---@return LuaPlayer|nil
 function gui.get_player_from_element(element)
     return game.get_player(element.player_index)
+end
+
+---Clear the opened stack of GUIs for a player.
+---@param player LuaPlayer
+function gui.clear_stack(player)
+    if not storage.gui then
+        storage.gui = {}
+    end
+    if not storage.gui.stack then
+        storage.gui.stack = {}
+    end
+    if not storage.gui.stack[player.index] then
+        storage.gui.stack[player.index] = {}
+    end
+    while next(storage.gui.stack[player.index]) do
+        gui.pop_stack(player)
+    end
+end
+
+---Add a GUI element to a player's opened stack.  If the element already exists in the stack, bring it to the front.
+---@param player LuaPlayer
+---@param element LuaGuiElement
+function gui.add_to_stack(player, element)
+    if not storage.gui then
+        storage.gui = {}
+    end
+    if not storage.gui.stack then
+        storage.gui.stack = {}
+    end
+    if not storage.gui.stack[player.index] then
+        storage.gui.stack[player.index] = {}
+    end
+
+    local stack = storage.gui.stack[player.index]
+    local index = gui.get_element_index_in_stack(player, element)
+
+    if index >= 1 then
+        table.remove(stack, index)
+    end
+    table.insert(stack, element)
+
+    element.visible = true
+    player.opened = element
+end
+
+---Get the opened stack of GUIs that a player has.
+---@param player LuaPlayer
+---@return LuaGuiElement[]
+function gui.get_stack(player)
+    if not storage.gui then
+        storage.gui = {}
+    end
+    if not storage.gui.stack then
+        storage.gui.stack = {}
+    end
+    if not storage.gui.stack[player.index] then
+        storage.gui.stack[player.index] = {}
+    end
+    return storage.gui.stack[player.index]
+end
+
+---Pop and return the last element off of the opened stack for a player, or the element at the given index.
+---@param player LuaPlayer
+---@param index int|nil
+---@return LuaGuiElement|nil
+function gui.pop_stack(player, index)
+    local stack = gui.get_stack(player)
+    if not next(stack) then return end
+
+    if not index then index = #stack end
+    if index > #stack then
+        lib.log_error("gui.pop_stack: index=" .. index .. " is out of bounds for stack of size=" .. #stack)
+        return
+    end
+
+    local elem = stack[index]
+    table.remove(stack, index)
+
+    if next(stack) then
+        if player.opened == elem then
+            player.opened = stack[index]
+        else
+            player.opened = stack[#stack]
+        end
+    else
+        player.opened = nil
+    end
+
+    elem.visible = false
+
+    return elem
+end
+
+---Return whether the given element is in a player's opened stack.
+---@param player LuaPlayer
+---@param element LuaGuiElement
+---@return boolean
+function gui.is_element_in_stack(player, element)
+    return gui.get_element_index_in_stack(player, element) >= 1
+end
+
+---Get the index of an element in a player's opened stack.  Return -1 if not found (conventional).
+---@param player LuaPlayer
+---@param element LuaGuiElement
+---@return int
+function gui.get_element_index_in_stack(player, element)
+    for i, elem in ipairs(gui.get_stack(player)) do
+        if elem == element then
+            return i
+        end
+    end
+    return -1
 end
 
 
