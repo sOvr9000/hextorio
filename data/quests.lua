@@ -414,6 +414,13 @@ return {
             prerequisites = {"biter-rammer", "visit-fulgora"},
         },
         {
+            name = "lazy-bastard",
+            conditions = {{type = "place-entity-on-planet", value = {"roboport", "fulgora"}, progress_requirement = 80}},
+            rewards = {{type = "unlock-feature", value = "hexports", notes = {"no-robot-slots"}}},
+            prerequisites = {"visit-fulgora"},
+            has_img = false,
+        },
+        {
             name = "electromagnetic-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "fulgora", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 10}}},

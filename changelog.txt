@@ -6,6 +6,7 @@ Date: 20/11/25
         Unlocking and enhancement difficulty is configurable with two new settings, "Item Buff Cost Scale" and "Item Buff Cost Base".
     - Added command /set-item-value so that you can get modded items to show up in random trades, the catalog, and be able to use them in /add-trade.
         Also added complementary commands: /import-item-values /export-item-values /remove-item-value /get-item-value
+    - Added Fulgora quest to unlock free roboports ("Hexports") built into hex cores that require no power.
   Features:
     - Added command /regenerate-trades so that you can regenerate the trades in your current hexes with newly loaded item values for mods.
         Don't forget about /add-trade and /remove-trade for maximum control of a new playthrough!

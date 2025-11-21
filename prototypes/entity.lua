@@ -1,3 +1,4 @@
+local lib = require "api.lib"
 
 local hex_core = { -- Direct copy of original game data.  Switched from table.deepcopy to avoid crashes with some mods that alter that significantly alter this data. (such as AAI containers)
   circuit_connector = {
@@ -405,6 +406,46 @@ sentient_spider.guns = {"sentient-spider-teslagun"}
 sentient_spider.equipment_grid = "sentient-spider-equipment-grid"
 sentient_spider.inventory_size = 120
 sentient_spider.minable.result = "sentient-spider"
+
+
+for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"} do
+    local hex_size = lib.startup_setting_value("hex-size-" .. surface_name)
+    ---@cast hex_size number
+
+    local hexport = table.deepcopy(data.raw["roboport"]["roboport"])
+    hexport.name = "hexport-" .. surface_name
+    hexport.charging_station_count = 6
+    hexport.max_logistic_slots = 0
+    hexport.robot_slots_count = 0
+    hexport.minable = nil
+    hexport.collision_box = nil
+    hexport.base_animation = nil
+    hexport.door_animation_down = nil
+    hexport.door_animation_up = nil
+    hexport.allow_copy_paste = false
+    hexport.hidden_in_factoriopedia = true
+    hexport.base_patch = nil
+    hexport.base = nil
+    hexport.selection_box = nil
+    hexport.selectable_in_game = false
+    hexport.selection_priority = 0
+    hexport.charging_station_count_affected_by_quality = false
+    hexport.charging_distance = 3
+    hexport.energy_usage = "0kJ"
+    hexport.energy_source = {
+        type = "void",
+        render_no_power_icon = false,
+        render_no_network_icon = false,
+        emissions_per_minute = {},
+    }
+    hexport.heating_energy = "0kJ"
+    hexport.construction_radius = math.floor(hex_size * 1.5)
+    hexport.logistics_radius = hex_size
+    hexport.radar_range = math.floor(hex_size / 32 + 0.5) + 1
+
+    data:extend({hexport})
+end
+
 
 
 ---@diagnostic disable-next-line: assign-type-mismatch

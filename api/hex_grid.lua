@@ -167,16 +167,28 @@ function hex_grid.register_events()
     end)
 
     event_system.register_callback("quest-reward-received", function(reward_type, value)
-        if reward_type == "unlock-feature" and value == "catalog" then
-            local all_trades = {}
-            for _, state in pairs(hex_grid.get_flattened_surface_hexes("nauvis")) do
-                if state.trades then
-                    for _, trade_id in pairs(state.trades) do
-                        table.insert(all_trades, trades.get_trade_from_id(trade_id))
+        if reward_type == "unlock-feature" then
+            if value == "catalog" then
+                local all_trades = {}
+                for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+                    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+                        if state.trades then
+                            for _, trade_id in pairs(state.trades) do
+                                table.insert(all_trades, trades.get_trade_from_id(trade_id))
+                            end
+                        end
+                    end
+                end
+                trades.discover_items_in_trades(all_trades)
+            elseif value == "hexports" then
+                for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+                    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+                        if state.claimed then
+                            hex_grid.spawn_hexport(state, true)
+                        end
                     end
                 end
             end
-            trades.discover_items_in_trades(all_trades)
         elseif reward_type == "claim-free-hexes" then
             hex_grid.add_free_hex_claims(value[1], value[2])
         elseif reward_type == "reduce-biters" then
@@ -1585,6 +1597,10 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
         storage.hex_grid.last_used_edge_fill_tile = fill_tile_name
     end
 
+    if quests.is_feature_unlocked "hexports" then
+        hex_grid.spawn_hexport(state)
+    end
+
     hex_grid.add_to_pool(state)
 
     -- Fil the edges between claimed hexes
@@ -1911,6 +1927,46 @@ function hex_grid.spawn_hex_core(surface, position)
     hex_grid.add_initial_trades(state)
 
     return hex_core
+end
+
+---Spawn a hexport at a hex core.
+---@param state HexState
+---@param replace_existing boolean|nil Whether to destroy the currently existing hexport first if there is one.  Defaults to true.
+function hex_grid.spawn_hexport(state, replace_existing)
+    if not state.hex_core then
+        lib.log_error("hex_grid.spawn_hexport: Tried to spawn hexport with no hex core")
+        return
+    end
+
+    if replace_existing == nil then replace_existing = true end
+
+    if state.hexport then
+        if replace_existing then
+            state.hexport.destroy()
+        else
+            lib.log_error("hex_grid.spawn_hexport: Hex core already has a hexport.")
+            return
+        end
+    end
+
+    local hexport = state.hex_core.surface.create_entity {
+        name = "hexport-" .. state.hex_core.surface.name,
+        position = state.hex_core.position,
+        force = "player",
+    }
+
+    hexport.destructible = false
+    hexport.minable = false
+
+    state.hexport = hexport
+end
+
+---Remove the hexport from a hex core.
+---@param state HexState
+function hex_grid.remove_hexport(state)
+    if not state.hexport then return end
+    state.hexport.destroy()
+    state.hexport = nil
 end
 
 function hex_grid.add_initial_trades(state)

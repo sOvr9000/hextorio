@@ -340,6 +340,13 @@ data:extend{
         width = 64,
         height = 64,
     },
+    {
+        type = "sprite",
+        name = "no-roboport",
+        filename = "__hextorio__/graphics/icons/no-roboport.png",
+        width = 64,
+        height = 64,
+    },
 }
 
 local data_quests = require "data.quests"

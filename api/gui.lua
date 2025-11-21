@@ -247,6 +247,9 @@ function gui.init_hex_core(player)
     local teleport = hex_control_flow.add {type = "sprite-button", name = "teleport", sprite = "virtual-signal/down-arrow"}
     teleport.tooltip = {"hex-core-gui.teleport-tooltip"}
 
+    local toggle_hexport = hex_control_flow.add {type = "sprite-button", name = "toggle-hexport", sprite = "item/roboport"}
+    toggle_hexport.tooltip = {"hex-core-gui.toggle-hexport-tooltip"}
+
     -- local unloader_filters = hex_control_flow.add {type = "sprite-button", name = "unloader-filters", sprite = "item/loader"}
     -- unloader_filters.tooltip = {"hex-core-gui.unloader-filters-tooltip"}
 
@@ -2636,6 +2639,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_core_finder_button_click(player, element)
     elseif element.name == "teleport" then
         gui.on_teleport_button_click(player, element)
+    elseif element.name == "toggle-hexport" then
+        gui.on_toggle_hexport_button_click(player, element)
     elseif element.name == "supercharge" then
         gui.on_supercharge_button_click(player, element)
     elseif element.name == "delete-core" then
@@ -3039,6 +3044,22 @@ function gui.on_teleport_button_click(player, element)
     if hex_core.surface.name ~= player.surface.name then return end
 
     lib.teleport_player(player, hex_core.position, hex_core.surface)
+end
+
+function gui.on_toggle_hexport_button_click(player, element)
+    local hex_core = lib.get_player_opened_entity(player)
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    if state.hexport then
+        hex_grid.remove_hexport(state)
+        element.sprite = "no-roboport"
+    else
+        hex_grid.spawn_hexport(state)
+        element.sprite = "item/roboport"
+    end
 end
 
 function gui.on_core_finder_button_click(player, element)
