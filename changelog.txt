@@ -10,10 +10,11 @@ Date: 21/11/25
   Features:
     - Added command /regenerate-trades so that you can regenerate the trades in your current hexes with newly loaded item values for mods.
         Don't forget about /add-trade and /remove-trade for maximum control of a new playthrough!
-  Sounds:
-    - Swapped vanilla title screen music with piano.  Can be disabled in the mod startup settings.
   Minor Features:
     - Added two mod settings, "Default Trade Quality" and "Increment Trade Quality", to control how trade quality bounds are initialized or managed.
+    - Added an early quest to inform new players of the mod that trade arrow tooltips give important information.
+  Sounds:
+    - Swapped vanilla title screen music with piano.  Can be disabled in the mod startup settings.
   Changes:
     - Mod is now properly marked as a "Space Age Mod" in the mod browser.
     - Removed the irrelevant PvP text in the mod description (until it's actually implemented).

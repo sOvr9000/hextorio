@@ -2512,6 +2512,8 @@ function gui.on_trade_arrow_click(player, element)
 
     local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
     game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
+
+    quests.set_progress_for_type("ping-trade", 1)
 end
 
 function gui.on_button_click(player, element)

@@ -79,6 +79,22 @@ return {
             notes = {"remote-view-to-claim"},
         },
         {
+            name = "check-this-out",
+            conditions = {{type = "ping-trade", progress_requirement = 1, show_progress_bar = false}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "electric-mining-drill", count = 3},
+                        {name = "pipe", count = 10},
+                    },
+                },
+            },
+            notes = {"click-trade-arrow-to-ping"},
+            prerequisites = {"ground-zero"},
+            has_img = false,
+        },
+        {
             name = "find-some-trades",
             conditions = {{type = "trades-found", progress_requirement = 40}},
             rewards = {{type = "unlock-feature", value = "trade-overview"}, {type = "claim-free-hexes", value = {"nauvis", 2}}},
@@ -107,7 +123,7 @@ return {
                 },
                 {type = "claim-free-hexes", value = {"nauvis", 3}},
             },
-            prerequisites = {"ground-zero"},
+            prerequisites = {"check-this-out"},
         },
         {
             name = "first-bronze-star",
@@ -135,7 +151,7 @@ return {
                     },
                 },
             },
-            prerequisites = {"first-bronze-star"},
+            prerequisites = {"first-bronze-star", "check-this-out"},
             has_img = false,
         },
         {
