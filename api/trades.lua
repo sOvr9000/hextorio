@@ -421,7 +421,7 @@ function trades.get_productivity_bonus_str(trade, quality)
 
     if storage.trades.base_productivity ~= nil and storage.trades.base_productivity ~= 0 then
         table.insert(str, 3, "\n")
-        table.insert(str, 4, lib.color_localized_string({"hextorio-gui.quest-reward"}, "white", "heading-2"))
+        table.insert(str, 4, {"", "(", lib.color_localized_string({"hextorio-gui.bonuses"}, "white"), ")"})
         table.insert(str, 5, " [color=green]" .. lib.format_percentage(storage.trades.base_productivity, 0, true, true) .. "[.color]")
     end
 
