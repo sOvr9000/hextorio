@@ -590,6 +590,44 @@ return {
                 level_scaling = 1.07,
             },
         },
+        ["quality-module"] = {
+            {
+                type = "recipe-productivity",
+                values = {"quality-module", 10},
+                level_scaling = 1.1,
+            },
+        },
+        ["quality-module-2"] = {
+            {
+                type = "recipe-productivity",
+                values = {"quality-module-2", 10},
+                level_scaling = 1.1,
+            },
+        },
+        ["quality-module-3"] = {
+            {
+                type = "recipe-productivity",
+                values = {"quality-module-3", 10},
+                level_scaling = 1.1,
+            },
+        },
+        ["hexa-quality-module"] = {
+            {
+                type = "recipe-productivity",
+                values = {"quality-module", 25},
+                level_scaling = 1.1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"quality-module-2", 25},
+                level_scaling = 1.1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"quality-module-3", 25},
+                level_scaling = 1.1,
+            },
+        },
         ["productivity-module"] = {
             {
                 type = "trade-productivity",
@@ -790,6 +828,44 @@ return {
                 type = "braking-force",
                 value = 0.1,
                 level_scaling = 1.1,
+            },
+        },
+        ["assembling-machine"] = {
+            {
+                type = "recipe-productivity",
+                values = {"iron-gear-wheel", 5},
+                level_scaling = 1.07,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"casting-iron-gear-wheel", 5},
+                level_scaling = 1.07,
+            },
+        },
+        ["foundry"] = {
+            {
+                type = "recipe-productivity",
+                values = {"molten-copper", 5},
+                level_scaling = 1.07,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"molten-iron", 5},
+                level_scaling = 1.07,
+            },
+        },
+        ["electromagnetic-plant"] = {
+            {
+                type = "all-buffs-level",
+                value = 1,
+                level_scaling = 1.12,
+            },
+        },
+        ["biochamber"] = {
+            {
+                type = "trade-productivity",
+                value = 0.05,
+                level_scaling = 1.03,
             },
         },
     },
