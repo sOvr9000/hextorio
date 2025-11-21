@@ -50,14 +50,50 @@ function hex_grid.register_events()
 
     event_system.register_callback("command-add-trade", function(player, params)
         local hex_core = player.selected
-        if not hex_core then return end
-        local state = hex_grid.get_hex_state_from_core(hex_core)
-        if not state then return end
-        local trade = trades.from_item_names(hex_core.surface.name, params[1], params[2])
-        if not trade then
-            player.print("Failed to generate trade with inputs = " .. serpent.line(params[1]) .. ", outputs = " .. serpent.line(params[2]))
+        if not hex_core then
+            player.print {"hextorio.command-mouse-over-hex-core"}
             return
         end
+
+        local state = hex_grid.get_hex_state_from_core(hex_core)
+        if not state then return end
+
+        local inputs = params[1]
+        if type(inputs) == "string" then
+            inputs = {inputs}
+        elseif type(inputs) ~= "table" then
+            player.print {"hextorio.command-invalid-item-name", inputs}
+            return
+        end
+
+        local outputs = params[1]
+        if type(outputs) == "string" then
+            outputs = {outputs}
+        elseif type(outputs) ~= "table" then
+            player.print {"hextorio.command-invalid-item-name", outputs}
+            return
+        end
+
+        for _, item_name in pairs(inputs) do
+            if type(item_name) ~= "string" or not prototypes.item[item_name] then
+                player.print {"hextorio.command-invalid-item-name", item_name}
+                return
+            end
+        end
+
+        for _, item_name in pairs(outputs) do
+            if type(item_name) ~= "string" or not prototypes.item[item_name] then
+                player.print {"hextorio.command-invalid-item-name", item_name}
+                return
+            end
+        end
+
+        local trade = trades.from_item_names(hex_core.surface.name, params[1], params[2])
+        if not trade then
+            player.print {"hextorio.command-trade-generation-failed"}
+            return
+        end
+
         hex_grid.add_trade(state, trade)
     end)
 
