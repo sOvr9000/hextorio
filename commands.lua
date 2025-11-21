@@ -185,23 +185,26 @@ function convert_params(player, params)
         local param = params[i]
         local param_type = type(param)
         if param_type == "table" then
-            convert_params(player, param)
+            if not convert_params(player, param) then
+                return false
+            end
         elseif param_type == "string" then
             if param == "in-hand" then
                 if not player.cursor_stack or not player.cursor_stack.valid_for_read then
                     player.print {"hextorio.command-no-item-in-hand"}
-                else
-                    params[i] = player.cursor_stack.prototype.name
+                    return false
                 end
+                params[i] = player.cursor_stack.prototype.name
             elseif param == "here" then
                 if not player.character then
                     player.print {"hextorio.command-no-character-found"}
-                else
-                    params[i] = player.character.surface.name
+                    return false
                 end
+                params[i] = player.character.surface.name
             end
         end
     end
+    return true
 end
 
 function validate_params(player, command_name, params, expected_params)
@@ -406,8 +409,9 @@ function parse_command(command)
         end
 
         if confirmed then
-            convert_params(player, params)
-            on_command(player, command.name, params)
+            if convert_params(player, params) then
+                on_command(player, command.name, params)
+            end
         else
             player.print(lib.color_localized_string({"hextorio.command-confirmation"}, "pink"))
         end
@@ -486,8 +490,9 @@ function parse_command(command)
     end
 
     if confirmed then
-        convert_params(player, params)
-        on_command(player, command.name, params)
+        if convert_params(player, params) then
+            on_command(player, command.name, params)
+        end
     else
         player.print(lib.color_localized_string({"hextorio.command-confirmation"}, "pink"))
     end
