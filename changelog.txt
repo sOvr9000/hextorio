@@ -10,6 +10,11 @@ Date: 21/11/25
   Features:
     - Added command /regenerate-trades so that you can regenerate the trades in your current hexes with newly loaded item values for mods.
         Don't forget about /add-trade and /remove-trade for maximum control of a new playthrough!
+    - Added command parameter aliases: in-hand, here
+        in-hand: This parameter takes the value of whatever item you're holding.
+        here: This parameter takes the value of whatever planet your character is currently on.
+        Useful for when setting values for modded items but you don't know what the hyphenated names are:
+        /set-item-value in-hand 100 here
   Minor Features:
     - Added two mod settings, "Default Trade Quality" and "Increment Trade Quality", to control how trade quality bounds are initialized or managed.
     - Added an early quest to inform new players of the mod that trade arrow tooltips give important information.
