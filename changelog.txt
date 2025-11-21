@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
-Date: 20/11/25
+Date: 21/11/25
   Major Features:
     - Added item buffs to most items, unlocked and upgraded in the Catalog.
         Unlocking and enhancement difficulty is configurable with two new settings, "Item Buff Cost Scale" and "Item Buff Cost Base".
@@ -19,6 +19,7 @@ Date: 20/11/25
     - Removed the irrelevant PvP text in the mod description (until it's actually implemented).
   Balancing:
     - Interplanetary trades are now always for directly buying with coins or selling for coins, adding value to finding them.
+    - Reworked item sampling for random trade generation.
   Locale:
     - Removed the period after the "Trade Productivity" mod settings in the EN locale.
   Modding:
