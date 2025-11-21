@@ -14,6 +14,10 @@ function item_values.register_events()
         local value = params[2]
         local surface_name = params[3] or "nauvis"
 
+        if item_name == "in-hand" then
+            return
+        end
+
         if lib.is_coin(item_name) then
             player.print {"hextorio.command-cannot-modify-coin-value"}
             return
