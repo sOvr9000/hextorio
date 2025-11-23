@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 21/11/25
+  Features:
+    - Hex cores now emit flying text when they make a trade.  Can be disabled in the mod's player settings.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 21/11/25

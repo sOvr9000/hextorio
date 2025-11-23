@@ -533,6 +533,15 @@ script.on_event(defines.events.on_surface_created, function (event)
     end
 end)
 
+script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
+    local setting = event.setting:sub(10)
+    if event.setting_type == "runtime-per-user" then
+        event_system.trigger("runtime-setting-changed-" .. setting, event.player_index)
+    else
+        event_system.trigger("runtime-setting-changed-" .. setting)
+    end
+end)
+
 script.on_configuration_changed(function(handler)
 
     local changes = handler.mod_changes.hextorio

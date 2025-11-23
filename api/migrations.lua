@@ -487,6 +487,7 @@ local process_migration = {
         storage.item_buffs = data_item_buffs
     end,
     ["1.2.0"] = function()
+        storage.hex_grid.show_trade_flying_text = {}
     end,
 }
 

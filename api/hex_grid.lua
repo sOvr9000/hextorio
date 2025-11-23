@@ -32,6 +32,13 @@ local hex_grid = {}
 
 
 function hex_grid.register_events()
+    event_system.register_callback("runtime-setting-changed-trade-flying-text", function(player_index)
+        local player = game.get_player(player_index)
+        if not player then return end
+
+        storage.hex_grid.show_trade_flying_text[player_index] = lib.player_setting_value(player, "trade-flying-text")
+    end)
+
     event_system.register_callback("item-rank-up", function(item_name)
         local rank = item_ranks.get_item_rank(item_name)
         if rank == 2 then
@@ -2824,6 +2831,74 @@ function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
         state.total_coins_consumed = coin_tiers.new()
     end
     state.total_coins_consumed = coin_tiers.add(state.total_coins_consumed, total_coins_removed)
+
+    hex_grid.process_flying_text(state, total_removed, total_inserted, total_coins_added, total_coins_removed)
+end
+
+function hex_grid.process_flying_text(state, total_removed, total_inserted, total_coins_added, total_coins_removed)
+    if game.tick < (state.next_flying_text or 0) then
+        return
+    end
+
+    if not next(total_inserted) and not next(total_removed) then
+        return
+    end
+
+    state.next_flying_text = game.tick + 20
+
+    local str = ""
+    local any_output = false
+
+    for quality, counts in pairs(total_removed) do
+        for item_name, count in pairs(counts) do
+            if count > 0 then
+                str = str .. "[item=" .. item_name .. ",quality=" .. quality .. "]"
+            end
+        end
+    end
+
+    for tier = 4, 1, -1 do
+        local c = total_coins_removed.values[tier]
+        if c > 0 then
+            str = str .. "[item=" .. lib.get_coin_name_of_tier(tier) .. "]"
+            break
+        end
+    end
+
+    str = str .. " [img=trade-arrow] "
+
+    for tier = 4, 1, -1 do
+        local c = total_coins_added.values[tier]
+        if c > 0 then
+            str = str .. "[item=" .. lib.get_coin_name_of_tier(tier) .. "]"
+            any_output = true
+            break
+        end
+    end
+
+    for quality, counts in pairs(total_inserted) do
+        for item_name, count in pairs(counts) do
+            if count > 0 then
+                str = str .. "[item=" .. item_name .. ",quality=" .. quality .. "]"
+                any_output = true
+            end
+        end
+    end
+
+    if not any_output then
+        str = {"", str, lib.color_localized_string({"hextorio.negative-productivity"}, "red", "heading-2")} ---@diagnostic disable-line
+    end
+
+    for _, player in pairs(game.connected_players) do
+        local show = storage.hex_grid.show_trade_flying_text[player.index]
+        if show == nil then
+            show = lib.player_setting_value(player, "trade-flying-text")
+            storage.hex_grid.show_trade_flying_text[player.index] = show
+        end
+        if show then
+            player.create_local_flying_text {text=str, position=state.hex_core.position, surface=state.hex_core.surface, speed=0.7, time_to_live=200}
+        end
+    end
 end
 
 function hex_grid.add_to_output_buffer(state, items)
