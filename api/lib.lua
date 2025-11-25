@@ -901,15 +901,26 @@ function lib.get_gps_str_from_hex_core(hex_core)
 end
 
 function lib.insert_endgame_armor(player)
-    player.get_inventory(5).clear()
-    player.get_inventory(5).clear() -- has to be done twice IF the player inventory is too full
+    local inv = player.get_inventory(5)
+
+    if not inv and player.character then
+        inv = player.character.get_inventory(5)
+    end
+
+    if not inv then
+        lib.log_error("lib.insert_endgame_armor: Could not find player's armor inventory")
+        return
+    end
+
+    inv.clear()
+    inv.clear() -- has to be done twice IF the player inventory is too full
 
     local q = lib.get_hextreme_or_next_highest_quality()
 
     player.insert{name = "construction-robot", quality=q, count = 340}
     player.insert{name="mech-armor", quality=q, count = 1}
 
-    local mech_armor = player.get_inventory(5)[1].grid
+    local mech_armor = inv[1].grid
     for _ = 1, 8 do
         mech_armor.put({name = "fusion-reactor-equipment", quality = q})
     end

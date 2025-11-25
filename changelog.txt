@@ -13,6 +13,7 @@ Date: 21/11/25
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
+    - Fixed crash on running the command /hextorio-debug when in remote view.
   Optimizations:
     - Optimized dungeon turret reloading.
   Translation:
