@@ -74,12 +74,18 @@ function trades.new(input_items, output_items, surface_name)
             name = input_item.name,
             count = input_item.count,
         })
+        if lib.is_coin(input_item.name) then
+            trade.has_coins_in_input = true
+        end
     end
     for _, output_item in pairs(output_items) do
         table.insert(trade.output_items, {
             name = output_item.name,
             count = output_item.count,
         })
+        if lib.is_coin(output_item.name) then
+            trade.has_coins_in_output = true
+        end
     end
     trades.check_productivity(trade)
     return trade
@@ -524,8 +530,8 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
         end
     end
 
-    local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
-    if not coin_tiers.is_zero(trade_coin) then
+    if trade.has_coins_in_input then
+        local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
         num_batches = math.min(math.floor(coin_tiers.divide_coins(input_coin, trade_coin)), num_batches)
     end
 
@@ -571,15 +577,19 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         end
     end
 
-    local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
-    local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
-    local remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
-    coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed)
-    flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
+    local remaining_coin
+    if trade.has_coins_in_input then
+        local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
+        local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
+        remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
+        coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed)
+        flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
+    else
+        remaining_coin = input_coin
+    end
 
     local total_inserted = {}
     local remaining_to_insert = {}
-    trade_coin = trades.get_output_coins_of_trade(trade, quality)
 
     local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches, quality)
     if total_output_batches > 0 then
@@ -599,9 +609,15 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         end
     end
 
-    local coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
-    coin_tiers.add_coin_to_inventory(inventory_output, coins_added)
-    flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
+    local coins_added
+    if trade.has_coins_in_output then
+        local trade_coin = trades.get_output_coins_of_trade(trade, quality)
+        coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
+        coin_tiers.add_coin_to_inventory(inventory_output, coins_added)
+        flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
+    else
+        coins_added = coin_tiers.new()
+    end
 
     event_system.trigger("trade-processed", trade, total_removed, total_inserted)
     return total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added

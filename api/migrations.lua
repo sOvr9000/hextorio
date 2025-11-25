@@ -15,6 +15,7 @@ local blueprints = require "api.blueprints"
 local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
 local spiders = require "api.spiders"
+local coin_tiers = require "api.coin_tiers"
 
 local data_item_ranks = require "data.item_ranks"
 local data_trade_overview = require "data.trade_overview"
@@ -507,6 +508,19 @@ local process_migration = {
                         state.is_dungeon = nil
                     end
                 end
+            end
+        end
+
+        -- Add flags to trades
+        for _, trade in pairs(storage.trades.tree.all_trades_lookup) do
+            local input_coins = trades.get_input_coins_of_trade(trade)
+            if not coin_tiers.is_zero(input_coins) then
+                trade.has_coins_in_input = true
+            end
+
+            local output_coins = trades.get_output_coins_of_trade(trade)
+            if not coin_tiers.is_zero(output_coins) then
+                trade.has_coins_in_output = true
             end
         end
     end,

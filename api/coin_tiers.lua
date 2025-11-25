@@ -68,43 +68,59 @@ end
 ---@param coin Coin
 ---@return Coin
 function coin_tiers.normalized(coin)
-    local new_coin = coin_tiers.copy(coin)
-    local tier_scaling = new_coin.tier_scaling
+    -- Cache frequently accessed fields as locals
+    local tier_scaling = coin.tier_scaling
+    local max_coin_tier = coin.max_coin_tier
+    local old_values = coin.values
+    local new_values = {}
+
+    -- Copy values directly (inline the copy operation)
+    for i = 1, max_coin_tier do
+        new_values[i] = old_values[i]
+    end
 
     -- Convert decimals to integers
-    for i = new_coin.max_coin_tier, 2, -1 do
-        if new_coin.values[i] ~= math.floor(new_coin.values[i]) then
-            if i > 1 then
-                new_coin.values[i - 1] = new_coin.values[i - 1] + new_coin.tier_scaling * (new_coin.values[i] - math.floor(new_coin.values[i]))
-                new_coin.values[i] = math.floor(new_coin.values[i])
-            end
+    for i = max_coin_tier, 2, -1 do
+        local val = new_values[i]
+        local floor_val = math.floor(val)
+        if val ~= floor_val then
+            -- Cache the fractional part calculation
+            local fractional = val - floor_val
+            new_values[i - 1] = new_values[i - 1] + tier_scaling * fractional
+            new_values[i] = floor_val
         end
     end
 
-    for i = 1, new_coin.max_coin_tier - 1 do
-        local v = new_coin.values[i]
+    -- Handle carrying and borrowing
+    for i = 1, max_coin_tier - 1 do
+        local v = new_values[i]
         if v < 0 then
             -- Handle borrowing from higher tiers for negative values
             local borrow = math.ceil(-v / tier_scaling)
-            new_coin.values[i + 1] = new_coin.values[i + 1] - borrow
-            new_coin.values[i] = v + tier_scaling * borrow
+            new_values[i + 1] = new_values[i + 1] - borrow
+            new_values[i] = v + tier_scaling * borrow
         elseif v >= tier_scaling then
             -- Handle carrying to higher tiers
-            local carry = math.floor(new_coin.values[i] / tier_scaling)
-            new_coin.values[i] = v % tier_scaling
-            new_coin.values[i + 1] = new_coin.values[i + 1] + carry
+            local carry = math.floor(v / tier_scaling)
+            new_values[i] = v % tier_scaling
+            new_values[i + 1] = new_values[i + 1] + carry
         end
     end
 
     -- If highest tier is negative, zero out everything
-    if new_coin.values[new_coin.max_coin_tier] < 0 then
-        lib.log_error("coin_tiers.normalized: Encountered negative coin value: " .. serpent.line(new_coin.values))
-        for i = 1, new_coin.max_coin_tier do
-            new_coin.values[i] = 0
+    if new_values[max_coin_tier] < 0 then
+        lib.log_error("coin_tiers.normalized: Encountered negative coin value: " .. serpent.line(new_values))
+        for i = 1, max_coin_tier do
+            new_values[i] = 0
         end
     end
 
-    return new_coin
+    -- Return new coin directly without calling coin_tiers.new()
+    return {
+        tier_scaling = tier_scaling,
+        max_coin_tier = max_coin_tier,
+        values = new_values
+    }
 end
 
 ---Add two coin objects, returning a new coin object.
@@ -117,12 +133,21 @@ function coin_tiers.add(coin1, coin2)
         lib.log_error("Cannot add coins with different configurations")
     end
 
-    local result = coin_tiers.new()
-    for i = 1, coin1.max_coin_tier do
-        result.values[i] = coin1.values[i] + coin2.values[i]
+    -- Cache locals and create result values directly
+    local max_coin_tier = coin1.max_coin_tier
+    local values1 = coin1.values
+    local values2 = coin2.values
+    local result_values = {}
+
+    for i = 1, max_coin_tier do
+        result_values[i] = values1[i] + values2[i]
     end
 
-    return coin_tiers.normalized(result)
+    return coin_tiers.normalized({
+        tier_scaling = coin1.tier_scaling,
+        max_coin_tier = max_coin_tier,
+        values = result_values
+    })
 end
 
 ---Subtract coin2 from coin1, returning a new coin object.
@@ -135,12 +160,21 @@ function coin_tiers.subtract(coin1, coin2)
         lib.log_error("Cannot subtract coins with different configurations")
     end
 
-    local result = coin_tiers.new()
-    for i = 1, coin1.max_coin_tier do
-        result.values[i] = coin1.values[i] - coin2.values[i]
+    -- Cache locals and create result values directly
+    local max_coin_tier = coin1.max_coin_tier
+    local values1 = coin1.values
+    local values2 = coin2.values
+    local result_values = {}
+
+    for i = 1, max_coin_tier do
+        result_values[i] = values1[i] - values2[i]
     end
 
-    return coin_tiers.normalized(result)
+    return coin_tiers.normalized({
+        tier_scaling = coin1.tier_scaling,
+        max_coin_tier = max_coin_tier,
+        values = result_values
+    })
 end
 
 ---Multiply a coin value by a scalar value, returning a new coin object.
@@ -148,11 +182,20 @@ end
 ---@param factor number
 ---@return Coin
 function coin_tiers.multiply(coin, factor)
-    local result = coin_tiers.new()
-    for i = 1, coin.max_coin_tier do
-        result.values[i] = coin.values[i] * factor
+    -- Cache locals and create result values directly
+    local max_coin_tier = coin.max_coin_tier
+    local values = coin.values
+    local result_values = {}
+
+    for i = 1, max_coin_tier do
+        result_values[i] = values[i] * factor
     end
-    return coin_tiers.normalized(result)
+
+    return coin_tiers.normalized({
+        tier_scaling = coin.tier_scaling,
+        max_coin_tier = max_coin_tier,
+        values = result_values
+    })
 end
 
 ---Divide a coin value by a scalar value, returning a new coin object.
@@ -164,23 +207,33 @@ function coin_tiers.divide(coin, divisor)
         lib.log_error("Cannot divide by zero")
     end
 
-    local result = coin_tiers.new()
+    -- Cache locals
+    local max_coin_tier = coin.max_coin_tier
+    local tier_scaling = coin.tier_scaling
+    local values = coin.values
+    local result_values = {}
     local remainder = 0
 
     -- Process from highest tier to lowest
-    for i = coin.max_coin_tier, 1, -1 do
+    for i = max_coin_tier, 1, -1 do
         -- Add remainder from higher tier
-        local current = coin.values[i] + remainder
+        local current = values[i] + remainder
 
         -- Divide current tier value
-        result.values[i] = math.floor(current / divisor)
+        result_values[i] = math.floor(current / divisor)
 
         -- Calculate remainder and convert to lower tier units
-        remainder = (current % divisor) * coin.tier_scaling
+        remainder = (current % divisor) * tier_scaling
     end
 
+    local result = {
+        tier_scaling = tier_scaling,
+        max_coin_tier = max_coin_tier,
+        values = result_values
+    }
+
     if coin_tiers.is_zero(result) and not coin_tiers.is_zero(coin) then
-        result.values[1] = 1
+        result_values[1] = 1
     end
 
     return result
@@ -304,22 +357,27 @@ end
 ---@param max_coin_tier int|nil
 ---@return Coin
 function coin_tiers.from_base_value(value, tier_scaling, max_coin_tier)
-    local coin = coin_tiers.new()
-    coin.tier_scaling = tier_scaling or 100000
-    coin.max_coin_tier = max_coin_tier or 4
-
+    -- Cache locals
+    local scaling = tier_scaling or 100000
+    local max_tier = max_coin_tier or 4
+    local values = {}
     local remaining = value
-    for i = 1, coin.max_coin_tier do
-        coin.values[i] = remaining % coin.tier_scaling
-        remaining = math.floor(remaining / coin.tier_scaling)
+
+    for i = 1, max_tier do
+        values[i] = remaining % scaling
+        remaining = math.floor(remaining / scaling)
     end
 
     -- If there's remaining value beyond the highest tier, add it to the highest tier
     if remaining > 0 then
-        coin.values[coin.max_coin_tier] = coin.values[coin.max_coin_tier] + remaining * coin.tier_scaling
+        values[max_tier] = values[max_tier] + remaining * scaling
     end
 
-    return coin
+    return {
+        tier_scaling = scaling,
+        max_coin_tier = max_tier,
+        values = values
+    }
 end
 
 ---Round a coin value to the next highest integral base value if it's not already integral, returning a new coin object.
@@ -327,8 +385,10 @@ end
 ---@return Coin
 function coin_tiers.ceil(coin)
     local norm = coin_tiers.normalized(coin)
-    if norm.values[1] ~= math.ceil(norm.values[1]) then
-        norm.values[1] = math.ceil(norm.values[1])
+    local val = norm.values[1]
+    local ceil_val = math.ceil(val)
+    if val ~= ceil_val then
+        norm.values[1] = ceil_val
     end
     return norm
 end
@@ -338,8 +398,10 @@ end
 ---@return Coin
 function coin_tiers.floor(coin)
     local norm = coin_tiers.normalized(coin)
-    if norm.values[1] ~= math.floor(norm.values[1]) then
-        norm.values[1] = math.floor(norm.values[1])
+    local val = norm.values[1]
+    local floor_val = math.floor(val)
+    if val ~= floor_val then
+        norm.values[1] = floor_val
     end
     return norm
 end
@@ -490,19 +552,46 @@ end
 ---@param shift int
 ---@return Coin
 function coin_tiers.shift_tier(coin, shift)
-    if shift == 0 then return coin_tiers.copy(coin) end
-    local new_coin = coin_tiers.new()
+    if shift == 0 then
+        -- Inline copy for shift == 0 case
+        local max_coin_tier = coin.max_coin_tier
+        local old_values = coin.values
+        local new_values = {}
+        for i = 1, max_coin_tier do
+            new_values[i] = old_values[i]
+        end
+        return {
+            tier_scaling = coin.tier_scaling,
+            max_coin_tier = max_coin_tier,
+            values = new_values
+        }
+    end
+
+    -- Cache locals
+    local max_coin_tier = coin.max_coin_tier
+    local tier_scaling = coin.tier_scaling
+    local old_values = coin.values
+    local new_values = {0, 0, 0, 0}  -- Initialize with zeros
+
     if shift > 0 then
-        for i = 2, new_coin.max_coin_tier do
-            new_coin.values[i] = coin.values[i - 1]
+        for i = 2, max_coin_tier do
+            new_values[i] = old_values[i - 1]
         end
-        new_coin.values[#new_coin.values] = new_coin.values[#new_coin.values] + coin.values[#coin.values] * coin.tier_scaling
-        return coin_tiers.shift_tier(new_coin, shift - 1)
+        new_values[max_coin_tier] = new_values[max_coin_tier] + old_values[max_coin_tier] * tier_scaling
+        return coin_tiers.shift_tier({
+            tier_scaling = tier_scaling,
+            max_coin_tier = max_coin_tier,
+            values = new_values
+        }, shift - 1)
     else
-        for i = 1, new_coin.max_coin_tier - 1 do
-            new_coin.values[i] = coin.values[i + 1]
+        for i = 1, max_coin_tier - 1 do
+            new_values[i] = old_values[i + 1]
         end
-        return coin_tiers.shift_tier(new_coin, shift + 1)
+        return coin_tiers.shift_tier({
+            tier_scaling = tier_scaling,
+            max_coin_tier = max_coin_tier,
+            values = new_values
+        }, shift + 1)
     end
 end
 
