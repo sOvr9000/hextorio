@@ -601,9 +601,15 @@ end
 function dungeons.try_reload_turrets(dungeon)
     if dungeon.last_turret_reload + TURRET_RELOAD_INTERVAL > game.tick then return end
     dungeon.last_turret_reload = game.tick
+
     local prot = dungeons.get_prototype_of_dungeon(dungeon)
     if not prot then return end
-    lib.reload_turrets(dungeon.turrets, prot.ammo)
+
+    dungeons._queue_turret_reload {
+        dungeon_id = dungeon.id,
+        turrets = dungeon.turrets,
+        ammo = prot.ammo,
+    }
 end
 
 ---Spawn the loot chests in a dungeon tile.
@@ -738,6 +744,54 @@ function dungeons.is_looted(dungeon)
         end
     end
     return true
+end
+
+---Request turrets to be reloaded over time.
+---@param params any
+function dungeons._queue_turret_reload(params)
+    if storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] then return end
+    storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] = true
+
+    -- log("reload starting for " .. params.dungeon_id)
+    params.progress = 0
+    table.insert(storage.dungeons.queued_reloads, params)
+end
+
+function dungeons._tick_turret_reload()
+    if not next(storage.dungeons.queued_reloads) then return end
+
+    -- local prof = game.create_profiler()
+
+    local queue_idx = game.tick % #storage.dungeons.queued_reloads + 1
+    local params = storage.dungeons.queued_reloads[queue_idx]
+
+    local turrets = {}
+    for i = 1, 20 do
+        local idx = params.progress + i
+        if idx > #params.turrets then
+            break
+        end
+        turrets[i] = params.turrets[idx]
+    end
+
+    params.progress = params.progress + #turrets
+
+    if next(turrets) then
+        lib.reload_turrets(turrets, params.ammo)
+        if params.progress < #params.turrets then
+            prof.stop()
+            -- log("tick:")
+            -- log(prof)
+            return
+        end
+    end
+
+    -- log("reload finished for " .. params.dungeon_id)
+    -- prof.stop()
+    -- log(prof)
+
+    storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] = nil
+    storage.dungeons.queued_reloads[queue_idx] = nil
 end
 
 

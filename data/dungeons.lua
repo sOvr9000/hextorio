@@ -1,5 +1,8 @@
 
 return {
+    queued_reloads = {},
+    queued_reload_dungeon_indices = {},
+
     defs = {
         -- Nauvis
         { -- Hard

@@ -488,6 +488,8 @@ local process_migration = {
     end,
     ["1.2.0"] = function()
         storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
+        storage.dungeons.queued_reloads = {}
+        storage.dungeons.queued_reload_dungeon_indices = {}
         storage.hex_grid.show_trade_flying_text = {}
 
         -- Fix dungeon claim bug

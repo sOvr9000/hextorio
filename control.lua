@@ -149,24 +149,6 @@ script.on_init(function()
     game.forces.enemy.custom_color = {0.6, 0.1, 0.6}
 end)
 
-script.on_event(defines.events.on_tick, function (event)
-    if storage.events.has_game_started and not storage.events.intro_finished then
-        if event.tick == storage.events.game_start_tick + 60 then
-            game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
-            if not lib.is_hextreme_enabled() then
-                game.print(lib.color_localized_string({"hextorio.hextreme-disabled"}, "pink", "heading-1"))
-            end
-            -- if not lib.startup_setting_value "pvp-mode" then
-            --     game.print(lib.color_localized_string({"hextorio.try-pvp"}, "orange", "heading-1"))
-            -- end
-            storage.events.intro_finished = true
-        end
-    end
-
-    item_buffs._enhance_all_item_buffs_tick()
-    gui._process_trades_scroll_panes()
-end)
-
 script.on_event(defines.events.on_chunk_generated, function(event)
     local surface = event.surface
     local chunk_position = event.position
@@ -222,8 +204,24 @@ script.on_nth_tick(10, function()
     hex_grid.process_hex_core_pool()
 end)
 
--- script.on_nth_tick(4, function()
--- end)
+script.on_event(defines.events.on_tick, function (event)
+    if storage.events.has_game_started and not storage.events.intro_finished then
+        if event.tick == storage.events.game_start_tick + 60 then
+            game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
+            if not lib.is_hextreme_enabled() then
+                game.print(lib.color_localized_string({"hextorio.hextreme-disabled"}, "pink", "heading-1"))
+            end
+            -- if not lib.startup_setting_value "pvp-mode" then
+            --     game.print(lib.color_localized_string({"hextorio.try-pvp"}, "orange", "heading-1"))
+            -- end
+            storage.events.intro_finished = true
+        end
+    end
+
+    dungeons._tick_turret_reload()
+    item_buffs._enhance_all_item_buffs_tick()
+    gui._process_trades_scroll_panes()
+end)
 
 script.on_event(defines.events.on_player_main_inventory_changed, function(event)
     local player = game.get_player(event.player_index)
