@@ -204,8 +204,8 @@ function axial.ring(center, radius)
 
     -- Start at a specific position on the ring
     local hex = {
-        q = center.q + adjacency_offsets[4].q * radius,
-        r = center.r + adjacency_offsets[4].r * radius
+        q = center.q + adjacency_offsets[6].q * radius,
+        r = center.r + adjacency_offsets[6].r * radius
     }
 
     -- Follow the ring by moving in each of the 6 directions
@@ -220,6 +220,10 @@ function axial.ring(center, radius)
             hex.q = hex.q + adjacency_offsets[dir].q
             hex.r = hex.r + adjacency_offsets[dir].r
         end
+    end
+
+    for _, result in pairs(results) do
+        log(axial.distance(result, center))
     end
 
     return results

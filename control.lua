@@ -196,9 +196,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 end)
 
 script.on_nth_tick(300, function()
-    for _, player in pairs(game.connected_players) do
-        event_system.trigger("dungeon-update", player)
-    end
+    event_system.trigger("dungeon-update")
 end)
 
 script.on_nth_tick(60, function()
