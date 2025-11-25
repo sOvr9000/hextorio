@@ -492,6 +492,13 @@ local process_migration = {
         storage.dungeons.queued_reload_dungeon_indices = {}
         storage.hex_grid.show_trade_flying_text = {}
 
+        storage.ammo_type_per_entity = {
+            ["dungeon-gun-turret"] = "bullet_type",
+            ["dungeon-flamethrower-turret"] = "flamethrower_type",
+            ["dungeon-rocket-turret"] = "rocket_type",
+            ["dungeon-railgun-turret"] = "railgun_type",
+        }
+
         -- Fix dungeon claim bug
         for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
             for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do

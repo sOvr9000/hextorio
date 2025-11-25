@@ -11,6 +11,8 @@ Date: 21/11/25
     - Lowered the default frequency of dungeon generation for each planet.  (Can be configured in the mod settings.)
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
+  Optimizations:
+    - Optimized dungeon turret reloading.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 21/11/25

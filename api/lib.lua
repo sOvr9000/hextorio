@@ -1649,27 +1649,35 @@ function lib.reload_turrets(entities, params)
         [params.railgun_type] = params.railgun_count or prototypes["item"][params.railgun_type].stack_size,
     }
     for _, e in pairs(entities) do
-        if e.valid then
-            local prot = e.prototype
-            local attack_params = prot.attack_parameters
-            if attack_params then
-                local ammo_categories = attack_params.ammo_categories
-                if ammo_categories then
-                    for _, ammo_category in pairs(ammo_categories) do
-                        if ammo_category == "flamethrower" then
-                            local fluid = params[ammo_category .. "_type"] --[[@as string|nil]]
-                            if fluid then
-                                e.insert_fluid {name = fluid, amount = stack_sizes[fluid]}
-                            end
-                        else
-                            local item = params[ammo_category .. "_type"] --[[@as string|nil]]
-                            if item then
-                                e.insert {name = item, count = stack_sizes[item]}
-                            end
-                        end
-                    end
-                end
-            end
+        lib.reload_entity(e, params, stack_sizes)
+    end
+end
+
+---Reload an entity (typically an ammo turret).
+---@param entity LuaEntity
+---@param params AmmoReloadParameters
+---@param stack_sizes {[string]: integer}
+function lib.reload_entity(entity, params, stack_sizes)
+    if not entity.valid then return end
+
+    local prot = entity.prototype
+    local attack_params = prot.attack_parameters
+    if not attack_params then return end
+
+    local ammo_categories = attack_params.ammo_categories
+    if not ammo_categories then return end
+
+    local ammo_type = storage.ammo_type_per_entity[entity.name]
+    if not ammo_type then return end
+
+    local ammo_name = params[ammo_type] --[[@as string|nil]]
+    if ammo_name then
+        if ammo_type == "flamethrower_type" then
+            entity.insert_fluid {name = ammo_name, amount = stack_sizes[ammo_name]}
+            return
+        else
+            entity.insert {name = ammo_name, count = stack_sizes[ammo_name]}
+            return
         end
     end
 end

@@ -84,6 +84,13 @@ script.on_init(function()
     storage.hex_island = data_hex_island
     storage.item_buffs = data_item_buffs
 
+    storage.ammo_type_per_entity = {
+        ["dungeon-gun-turret"] = "bullet_type",
+        ["dungeon-flamethrower-turret"] = "flamethrower_type",
+        ["dungeon-rocket-turret"] = "rocket_type",
+        ["dungeon-railgun-turret"] = "railgun_type",
+    }
+
     local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
     storage.hex_grid.mgs["nauvis"] = mgs_original
 
