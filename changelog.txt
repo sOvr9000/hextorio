@@ -3,6 +3,14 @@ Version: 1.2.1
 Date: 21/11/25
   Features:
     - Hex cores now emit flying text when they make a trade.  Can be disabled in the mod's player settings.
+  Balancing:
+    - Slightly increased the range of dungeon gun turrets.
+    - Slightly decreased the range of dungeon flamethrower and laser turrets.
+    - Decreased the damage of dungeon turrets.
+    - Increased the minimum distance that dungeons can be from the center hex by 1 hex tile.
+    - Lowered the default frequency of dungeon generation for each planet.  (Can be configured in the mod settings.)
+  Bugfixes:
+    - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them even.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 21/11/25

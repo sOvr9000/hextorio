@@ -67,8 +67,8 @@ local wall_physical_resistance_percentage_boost = 0.40
 local resistance_percentage_boost = 0.10
 local fire_resistance_percentage_boost = 0.5
 local explosion_resistance_percentage_boost = 0.75
-local range_boost = 1.4
-local damage_boost = 1.25
+local range_boost = 1.25
+local damage_boost = 1.0
 local railgun_damage_boost = 0.25 -- It one-shots you if not nerfed.
 
 local dungeon_laser_turret = table.deepcopy(data.raw["electric-turret"]["laser-turret"])
@@ -113,7 +113,7 @@ boost_max_health(dungeon_gun_turret, max_health_boost)
 boost_resistances(dungeon_gun_turret, {"physical"}, resistance_percentage_boost)
 boost_resistances(dungeon_gun_turret, {"fire"}, fire_resistance_percentage_boost)
 boost_resistances(dungeon_gun_turret, {"explosion"}, explosion_resistance_percentage_boost)
-boost_range(dungeon_gun_turret, range_boost)
+boost_range(dungeon_gun_turret, range_boost * 1.3)
 boost_damage(dungeon_gun_turret, damage_boost)
 dungeon_gun_turret.heating_energy = "0J"
 
@@ -124,7 +124,7 @@ boost_max_health(dungeon_flamethrower_turret, max_health_boost)
 boost_resistances(dungeon_flamethrower_turret, {"physical"}, resistance_percentage_boost)
 boost_resistances(dungeon_flamethrower_turret, {"fire"}, fire_resistance_percentage_boost)
 boost_resistances(dungeon_flamethrower_turret, {"explosion"}, explosion_resistance_percentage_boost)
-boost_range(dungeon_flamethrower_turret, range_boost)
+boost_range(dungeon_flamethrower_turret, range_boost * 0.9)
 boost_damage(dungeon_flamethrower_turret, damage_boost)
 dungeon_flamethrower_turret.heating_energy = "0J"
 
@@ -135,8 +135,8 @@ boost_max_health(dungeon_rocket_turret, max_health_boost)
 boost_resistances(dungeon_rocket_turret, {"physical", "electric"}, resistance_percentage_boost)
 boost_resistances(dungeon_rocket_turret, {"fire"}, fire_resistance_percentage_boost)
 boost_resistances(dungeon_rocket_turret, {"explosion"}, explosion_resistance_percentage_boost)
-boost_range(dungeon_rocket_turret, range_boost)
-boost_damage(dungeon_rocket_turret, damage_boost)
+boost_range(dungeon_rocket_turret, range_boost * 0.8)
+boost_damage(dungeon_rocket_turret, damage_boost * 0.5)
 dungeon_rocket_turret.heating_energy = "0J"
 
 local dungeon_artillery_turret = table.deepcopy(data.raw["artillery-turret"]["artillery-turret"])

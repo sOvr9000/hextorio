@@ -47,6 +47,13 @@ function dungeons.register_events()
         -- We don't want to see dungeons popping up out of nowhere on top of your factory if the newly generating dungeons are large enough to do so.
         hex_sets.add(used, hex_pos)
     end)
+
+    event_system.register_callback("runtime-setting-changed-dungeon-min-dist", function(setting)
+        if setting == "dungeon-min-dist" then
+            storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
+            log("updated " .. storage.dungeons.min_dist)
+        end
+    end)
 end
 
 function dungeons.init()
@@ -54,6 +61,7 @@ function dungeons.init()
     storage.dungeons.dungeons = {} --[=[@as Dungeon[]]=]
     storage.dungeons.dungeon_idx_by_position = {} --[[@as {[int]: IndexMap}]]
     storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
+    storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
 
     for _, def in pairs(storage.dungeons.defs) do
         local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.chests, def.amount_scaling, def.qualities, def.tile_type, def.ammo)
@@ -112,14 +120,12 @@ function dungeons.new(surface, prot)
     return dungeon
 end
 
----Get the dungeon that occupies a given hex position. If try_generate = true|nil, then generate one if it doesn't yet exist and can be generated. Return nil if a dungeon cannot be generated.
+---Get the dungeon that occupies a given hex position.
 ---@param surface_id int
 ---@param hex_pos HexPos
----@param try_generate boolean|nil
+---@param try_generate boolean|nil Defaults to false. If true, then generate one if it doesn't yet exist and can be generated. Return nil if a dungeon cannot be generated.
 ---@return Dungeon|nil
 function dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, try_generate)
-    if try_generate == nil then try_generate = true end
-
     local dungeon_idx = storage.dungeons.dungeon_idx_by_position[surface_id]
 
     -- Always create a mapping for an unseen surface.
@@ -142,6 +148,9 @@ function dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, try_generate)
     end
 
     if not try_generate then return end
+
+    local dist = axial.distance({q=0, r=0}, hex_pos)
+    if dist < storage.dungeons.min_dist then return end
 
     -- Otherwise, try to generate one.
     local surface = game.get_surface(surface_id)
@@ -436,6 +445,7 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount, max_dist
     if not surface then return {}, {} end
 
     -- local planet_size = lib.startup_setting_value("planet-size-" .. surface.name)
+    local min_dist = lib.runtime_setting_value "dungeon-min-dist"
 
     local used_hexes = storage.dungeons.used_hexes[surface_id] or {}
     local positions = {} --[[@as HexSet]]
@@ -459,7 +469,7 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount, max_dist
         local adj_hexes = axial.get_adjacent_hexes(cur)
         for _, adj in pairs(adj_hexes) do
             local dist = axial.distance(adj, {q=0, r=0})
-            if dist >= 3 and hex_island.is_land_hex(surface.name, adj) and axial.distance(adj, start_pos) <= max_dist then
+            if dist >= min_dist and hex_island.is_land_hex(surface.name, adj) and axial.distance(adj, start_pos) <= max_dist then
                 local is_visited = hex_sets.contains(visited, adj)
                 local is_used = hex_sets.contains(used_hexes, adj)
                 if not is_visited and not is_used then

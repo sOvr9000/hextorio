@@ -487,7 +487,19 @@ local process_migration = {
         storage.item_buffs = data_item_buffs
     end,
     ["1.2.0"] = function()
+        storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
         storage.hex_grid.show_trade_flying_text = {}
+
+        -- Fix dungeon claim bug
+        for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
+            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+                if state.is_dungeon then
+                    if not dungeons.get_dungeon_at_hex_pos(surface_id, state.hex_pos, false) then
+                        state.is_dungeon = nil
+                    end
+                end
+            end
+        end
     end,
 }
 
