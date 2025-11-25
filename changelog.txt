@@ -8,8 +8,9 @@ Date: 21/11/25
     - Slightly decreased the range of dungeon flamethrower and laser turrets.
     - Decreased the damage of dungeon turrets.
     - Increased the minimum distance that dungeons can be from the center hex by 1 hex tile.
-    - Lowered the default frequency of dungeon generation for each planet.  (Can be configured in the mod settings.)
-    - Made the default supercharging cost multiplier 5x cheaper.  (Can be configured in the mod settings.)
+    - Lowered the default mod settings for the frequencies of dungeons on each planet.
+    - Made the default mod setting for the cost multiplier of supercharging 5x cheaper.
+    - Slightly increased ore richness.
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
