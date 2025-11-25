@@ -500,6 +500,11 @@ local process_migration = {
             ["dungeon-railgun-turret"] = "railgun_type",
         }
 
+        if quests.is_complete "catalog-initiate" then
+            storage.trades.base_productivity = storage.trades.base_productivity - 0.05
+            hex_grid.update_all_trades()
+        end
+
         -- Fix dungeon claim bug
         for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
             for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do

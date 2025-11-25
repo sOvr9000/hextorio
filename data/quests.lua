@@ -157,7 +157,7 @@ return {
         {
             name = "catalog-initiate",
             conditions = {{type = "total-item-rank", progress_requirement = 20}},
-            rewards = {{type = "all-trades-productivity", value = 10}, {type = "claim-free-hexes", value = {"nauvis", 5}}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"nauvis", 5}}},
             prerequisites = {"first-bronze-star"},
         },
         {

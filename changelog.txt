@@ -11,6 +11,7 @@ Date: 21/11/25
     - Lowered the default mod settings for the frequencies of dungeons on each planet.
     - Made the default mod setting for the cost multiplier of supercharging 5x cheaper.
     - Slightly increased ore richness.
+    - Changed the quest reward of "Catalog Initiate" which gives +10% trade productivity to give +5% instead.
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
