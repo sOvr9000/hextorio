@@ -765,6 +765,8 @@ function dungeons._tick_turret_reload()
     local queue_idx = game.tick % #storage.dungeons.queued_reloads + 1
     local params = storage.dungeons.queued_reloads[queue_idx]
 
+
+
     local turrets = {}
     for i = 1, 20 do
         local idx = params.progress + i
@@ -791,7 +793,7 @@ function dungeons._tick_turret_reload()
     -- log(prof)
 
     storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] = nil
-    storage.dungeons.queued_reloads[queue_idx] = nil
+    table.remove(storage.dungeons.queued_reloads, queue_idx)
 end
 
 
