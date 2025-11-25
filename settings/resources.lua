@@ -408,7 +408,7 @@ data:extend({
         name = "hextorio-supercharge-cost-multiplier",
         setting_type = "runtime-global",
         minimum_value = 0,
-        default_value = 0.025,
+        default_value = 0.005,
         order = "pc",
     },
     {
