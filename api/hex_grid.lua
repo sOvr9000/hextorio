@@ -297,9 +297,30 @@ function hex_grid.register_events()
             end
         end
     end)
+
+    event_system.register_callback("runtime-setting-changed-base-trade-prod-nauvis", function()
+        hex_grid.update_all_trades "nauvis"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-base-trade-prod-vulcanus", function()
+        hex_grid.update_all_trades "vulcanus"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-base-trade-prod-fulgora", function()
+        hex_grid.update_all_trades "fulgora"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-base-trade-prod-gleba", function()
+        hex_grid.update_all_trades "gleba"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-base-trade-prod-aquilo", function()
+        hex_grid.update_all_trades "aquilo"
+    end)
 end
 
--- Get or create surface storage
+---Get or create surface storage
+---@param surface SurfaceIdentification
 function hex_grid.get_surface_hexes(surface)
     local surface_id = lib.get_surface_id(surface)
     if surface_id == -1 then
@@ -2964,16 +2985,24 @@ function hex_grid.try_unload_output_buffer(state)
     return empty
 end
 
-function hex_grid.update_all_trades()
-    for surface_name, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
-        for _, Q in pairs(surface_hexes) do
-            for _, state in pairs(Q) do
-                if state.trades then
-                    for _, trade_id in pairs(state.trades) do
-                        local trade = trades.get_trade_from_id(trade_id)
-                        if trade then
-                            trades.check_productivity(trade)
-                        end
+---Recalculate the productivities of all trades for a given surface.
+---@param surface SurfaceIdentification|nil If not provided, automatically call this function on all existing surfaces that Hextorio affects.
+function hex_grid.update_all_trades(surface)
+    if surface == nil then
+        for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
+            hex_grid.update_all_trades(surface_id)
+        end
+        return
+    end
+
+    local surface_hexes = hex_grid.get_surface_hexes(surface)
+    for _, Q in pairs(surface_hexes) do
+        for _, state in pairs(Q) do
+            if state.trades then
+                for _, trade_id in pairs(state.trades) do
+                    local trade = trades.get_trade_from_id(trade_id)
+                    if trade then
+                        trades.check_productivity(trade)
                     end
                 end
             end
