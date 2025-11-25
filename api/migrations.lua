@@ -494,7 +494,7 @@ local process_migration = {
         for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
             for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
                 if state.is_dungeon then
-                    if not dungeons.get_dungeon_at_hex_pos(surface_id, state.hex_pos, false) then
+                    if not dungeons.get_dungeon_at_hex_pos(surface_id, state.position, false) then
                         state.is_dungeon = nil
                     end
                 end
