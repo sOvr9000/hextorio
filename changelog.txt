@@ -12,6 +12,7 @@ Date: 21/11/25
     - Made the default supercharging cost multiplier 5x cheaper.  (Can be configured in the mod settings.)
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
+    - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
   Optimizations:
     - Optimized dungeon turret reloading.
   Translation:

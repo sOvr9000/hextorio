@@ -1155,6 +1155,12 @@ function gui.update_hex_core(player)
         frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation" and not lib.is_player_editor_like(player) and state.hex_core ~= nil and player.character ~= nil and player.character.surface.name == state.hex_core.surface.name
         frame["hex-control-flow"]["toggle-hexport"].visible = quests.is_feature_unlocked "hexports"
 
+        if state.hexport then
+            frame["hex-control-flow"]["toggle-hexport"].sprite = "item/roboport"
+        else
+            frame["hex-control-flow"]["toggle-hexport"].sprite = "no-roboport"
+        end
+
         frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging"
         if frame["hex-control-flow"]["supercharge"].visible then
             local cost = hex_grid.get_supercharge_cost(hex_core)
