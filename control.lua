@@ -205,7 +205,7 @@ script.on_nth_tick(60, function()
     -- The nil character issue is really hard to fix "correctly".  This is a surefire way to do it.
     if not storage.events.has_game_started or storage.events.stop_checking_nil_character then return end
     local all = true
-    for _, player in pairs(game.players) do
+    for _, player in pairs(game.connected_players) do
         if not player.character then
             player.create_character()
             all = false
