@@ -81,8 +81,8 @@ return {
         {
             name = "check-this-out",
             conditions = {
-                {type = "ping-trade", progress_requirement = 1, show_progress_bar = false},
-                {type = "create-trade-map-tag", progress_requirement = 1, show_progress_bar = false},
+                {type = "ping-trade", progress_requirement = 1, show_progress_bar = true},
+                {type = "create-trade-map-tag", progress_requirement = 1, show_progress_bar = true},
             },
             rewards = {
                 {

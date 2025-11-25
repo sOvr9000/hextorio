@@ -3151,6 +3151,8 @@ function gui.on_tag_button_click(player, element)
         text = trade_str,
         quality = state.hex_core.quality,
     })
+
+    quests.set_progress_for_type("create-trade-map-tag", 1)
 end
 
 function gui.on_claim_hex_button_click(player)
