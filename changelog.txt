@@ -12,6 +12,13 @@ Date: 21/11/25
     - Made the default mod setting for the cost multiplier of supercharging 5x cheaper.
     - Slightly increased ore richness.
     - Changed the quest reward of "Catalog Initiate" which gives +10% trade productivity to give +5% instead.
+    - Changed the default mod settings for planet-based trade productivity bonuses to start from 0% on Nauvis instead of -20%, with the intention to reduce confusion for new players of the mod.
+        The default settings are now:
+          Nauvis = 0%
+          Vulcanus = 5%
+          Fulgora = 10%
+          Gleba = 15%
+          Aquilo = 20%
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
