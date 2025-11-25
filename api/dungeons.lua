@@ -779,7 +779,7 @@ function dungeons._tick_turret_reload()
     if next(turrets) then
         lib.reload_turrets(turrets, params.ammo)
         if params.progress < #params.turrets then
-            prof.stop()
+            -- prof.stop()
             -- log("tick:")
             -- log(prof)
             return
