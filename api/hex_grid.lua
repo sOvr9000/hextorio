@@ -2846,7 +2846,7 @@ function hex_grid.process_flying_text(state, total_removed, total_inserted, tota
         return
     end
 
-    state.next_flying_text = game.tick + 20
+    state.next_flying_text = game.tick + 40
 
     local str = ""
     local any_output = false
