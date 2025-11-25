@@ -10,7 +10,7 @@ Date: 21/11/25
     - Increased the minimum distance that dungeons can be from the center hex by 1 hex tile.
     - Lowered the default frequency of dungeon generation for each planet.  (Can be configured in the mod settings.)
   Bugfixes:
-    - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them even.
+    - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 21/11/25
