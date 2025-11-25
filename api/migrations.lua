@@ -528,6 +528,8 @@ local process_migration = {
                 trade.has_coins_in_output = true
             end
         end
+
+        quests.unlock_feature "trade-configuration"
     end,
 }
 

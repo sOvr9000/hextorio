@@ -715,6 +715,11 @@ function quests.is_feature_unlocked(feature_name)
     return storage.quests.unlocked_features[feature_name] == true
 end
 
+function quests.unlock_feature(feature_name)
+    storage.quests.unlocked_features[feature_name] = true
+    event_system.trigger("quest-reward-received", "unlock-feature", feature_name)
+end
+
 -- Reveal a quest, making it visible in the questbook.
 function quests.reveal_quest(quest)
     if quest.revealed then return end

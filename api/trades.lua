@@ -1422,6 +1422,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
         end
     end
 
+    local total_batches = 0
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
         if trade and trade.active then
@@ -1430,6 +1431,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
                 if num_batches > 0 then
                     quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
+                    total_batches = total_batches + 1
 
                     local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin)
                     input_coin = remaining_coin
@@ -1459,8 +1461,8 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
     local total_coins_removed = coin_tiers.subtract(initial_input_coin, input_coin)
 
-    -- trades._postprocess_items_traded(surface_name, _total_removed, "give")
-    -- trades._postprocess_items_traded(surface_name, _total_inserted, "receive")
+    quests.increment_progress_for_type("make-trades", total_batches)
+
     return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
 end
 

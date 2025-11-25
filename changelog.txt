@@ -21,6 +21,7 @@ Date: 21/11/25
           Aquilo = 20%
   Changes:
     - The quest "Check This Out!" now requires an additional condition, requiring you to use the button that sets filters of a hex core's unloaders.
+    - Buttons underneath the trade don't show up until you complete the "Ground Zero" quest.
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.

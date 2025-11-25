@@ -74,7 +74,10 @@ return {
     quest_defs = {
         {
             name = "ground-zero",
-            conditions = {{type = "claimed-hexes", progress_requirement = 2}},
+            conditions = {
+                {type = "claimed-hexes", progress_requirement = 2},
+                {type = "make-trades", progress_requirement = 1, notes = {"trades-require-claim"}},
+            },
             rewards = {{type = "unlock-feature", value = "catalog"}},
             notes = {"remote-view-to-claim"},
         },
