@@ -28,6 +28,8 @@ Date: 21/11/25
     - Trade arrows display nonzero productivity without mousing over them.
     - Softened the white and cyan trade arrow sprites.
     - Removed the boxes around each trade, de-cluttering the hex core GUI and trade overview.
+    - Moved the trade arrow's tooltip to a more obvious location that's below the trade, having the sprite of a productivity module.
+    - Added button for pinging trades.
   Optimizations:
     - Optimized dungeon turret reloading.
   Translation:

@@ -80,7 +80,10 @@ return {
         },
         {
             name = "check-this-out",
-            conditions = {{type = "ping-trade", progress_requirement = 1, show_progress_bar = false}},
+            conditions = {
+                {type = "ping-trade", progress_requirement = 1, show_progress_bar = false},
+                {type = "create-trade-map-tag", progress_requirement = 1, show_progress_bar = false},
+            },
             rewards = {
                 {
                     type = "receive-items",
@@ -90,7 +93,6 @@ return {
                     },
                 },
             },
-            notes = {"click-trade-arrow-to-ping"},
             prerequisites = {"ground-zero"},
             has_img = false,
         },

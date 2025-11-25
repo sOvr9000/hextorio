@@ -793,7 +793,7 @@ function gui.give_item_tooltip(player, surface_name, element)
     }
 end
 
-function gui.give_trade_arrow_tooltip(element, trade, quality, quality_cost_mult)
+function gui.give_productivity_tooltip(element, trade, quality, quality_cost_mult)
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
 
@@ -809,11 +809,6 @@ function gui.give_trade_arrow_tooltip(element, trade, quality, quality_cost_mult
     if trades.has_any_productivity_modifiers(trade, quality) then
         table.insert(s, "\n\n")
         table.insert(s, trades.get_productivity_bonus_str(trade, quality))
-    end
-
-    if not gui.is_descendant_of(element, "trade-contents-flow") then
-        table.insert(s, "\n\n")
-        table.insert(s, lib.color_localized_string({"hextorio-gui.click-to-ping"}, "gray"))
     end
 
     element.tooltip = s
@@ -968,6 +963,25 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
             tag_button.tooltip = {"hex-core-gui.tag-button"}
         end
 
+        if params.show_ping_button then
+            local ping_button = trade_control_flow.add {
+                type = "sprite-button",
+                name = "ping-button",
+                sprite = "utility/shoot_cursor_red",
+            }
+            ping_button.tooltip = {"hextorio-gui.ping-in-chat"}
+        end
+
+        if params.show_productivity_info then
+            local prod_info = trade_control_flow.add {
+                type = "sprite-button",
+                name = "productivity-info",
+                sprite = "item/productivity-module-3",
+            }
+
+            gui.give_productivity_tooltip(prod_info, trade, quality_to_show, quality_cost_mult)
+        end
+
         if params.show_add_to_filters then
             local add_to_filters_button = trade_control_flow.add {
                 type = "sprite-button",
@@ -1040,10 +1054,9 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
     trade_arrow_sprite.style.width = size / 1.2
     trade_arrow_sprite.style.height = size / 1.2
     trade_arrow_sprite.style.top_margin = 2
-    gui.give_trade_arrow_tooltip(trade_arrow_sprite, trade, quality_to_show, quality_cost_mult)
 
     local prod = trades.get_productivity(trade, quality_to_show)
-    if params.show_productivity and prod ~= 0 then
+    if params.show_productivity_bar and prod ~= 0 then
         local prod_bar = trade_frame.add {
             type = "progressbar",
             name = "prod-bar",
@@ -1276,13 +1289,16 @@ function gui.update_hex_core(player)
     gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
         show_toggle_trade = state.claimed,
         show_tag_creator = true,
+        show_ping_button = true,
         show_add_to_filters = state.claimed,
         show_core_finder = false,
-        show_productivity = true,
+        show_productivity_bar = true,
         show_quality_bounds = show_quality_bounds,
         quality_to_show = quality_name,
+        show_productivity_info = true,
         expanded = true,
     })
+
     gui.update_hex_core_resources(player)
 end
 
@@ -1753,11 +1769,14 @@ function gui.update_trade_overview(player)
     gui.update_trades_scroll_pane(player, trade_table, trades_list, {
         show_toggle_trade = false,
         show_tag_creator = false,
+        show_ping_button = false,
         show_add_to_filters = false,
         show_core_finder = true,
-        show_productivity = false,
+        show_productivity_bar = false,
+        show_quality_bounds = false,
+        quality_to_show = "normal",
+        show_productivity_info = false,
         expanded = false,
-        show_quality_bounds = false
     })
 end
 
@@ -2503,8 +2522,6 @@ function gui.on_gui_click(event)
         gui.on_trade_overview_button_click(player)
     elseif event.element.name == "catalog-button" then
         gui.on_catalog_button_click(player)
-    elseif event.element.type == "sprite" then
-        gui.on_sprite_click(player, event.element)
     elseif event.element.type == "sprite-button" then
         gui.on_sprite_button_click(player, event.element)
     elseif event.element.type == "button" then
@@ -2514,17 +2531,11 @@ function gui.on_gui_click(event)
     end
 end
 
-function gui.on_sprite_click(player, element)
-    if element.name == "trade-arrow" then
-        gui.on_trade_arrow_click(player, element)
-    end
-end
-
-function gui.on_trade_arrow_click(player, element)
-    if gui.is_descendant_of(element, "trade-contents-flow") then
-        gui.swap_trade_overview_content_filters(player)
-        return
-    end
+function gui.on_ping_button_clicked(player, element)
+    -- if gui.is_descendant_of(element, "trade-contents-flow") then
+    --     gui.swap_trade_overview_content_filters(player)
+    --     return
+    -- end
 
     local trade, gps_str
     if gui.is_descendant_of(element, "trade-overview") then
@@ -2680,6 +2691,8 @@ function gui.on_sprite_button_click(player, element)
         gui.on_tag_button_click(player, element)
     elseif element.name:sub(1, 18) == "core-finder-button" then
         gui.on_core_finder_button_click(player, element)
+    elseif element.name == "ping-button" then
+        gui.on_ping_button_clicked(player, element)
     elseif element.name == "teleport" then
         gui.on_teleport_button_click(player, element)
     elseif element.name == "toggle-hexport" then
