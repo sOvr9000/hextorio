@@ -48,11 +48,8 @@ function dungeons.register_events()
         hex_sets.add(used, hex_pos)
     end)
 
-    event_system.register_callback("runtime-setting-changed-dungeon-min-dist", function(setting)
-        if setting == "dungeon-min-dist" then
-            storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
-            log("updated " .. storage.dungeons.min_dist)
-        end
+    event_system.register_callback("runtime-setting-changed-dungeon-min-dist", function()
+        storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
     end)
 end
 
