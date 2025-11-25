@@ -14,6 +14,8 @@ Date: 21/11/25
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
   Optimizations:
     - Optimized dungeon turret reloading.
+  Translation:
+    - Added Polish translations.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 21/11/25
