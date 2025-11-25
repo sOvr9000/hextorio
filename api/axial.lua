@@ -222,10 +222,6 @@ function axial.ring(center, radius)
         end
     end
 
-    for _, result in pairs(results) do
-        log(axial.distance(result, center))
-    end
-
     return results
 end
 
