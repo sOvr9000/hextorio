@@ -131,6 +131,7 @@ return {
                 },
                 {type = "claim-free-hexes", value = {"nauvis", 3}},
             },
+            notes = {"use-claim-tool"},
             prerequisites = {"check-this-out"},
         },
         {
