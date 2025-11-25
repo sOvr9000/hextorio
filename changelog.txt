@@ -24,6 +24,10 @@ Date: 21/11/25
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
     - Fixed crash on running the command /hextorio-debug when in remote view.
     - Fixed that updating the mod settings for planet-based trade productivity bonuses would not take effect without a restart.
+  Gui:
+    - Trade arrows display nonzero productivity without mousing over them.
+    - Softened the white and cyan trade arrow sprites.
+    - Removed the boxes around each trade, de-cluttering the hex core GUI and trade overview.
   Optimizations:
     - Optimized dungeon turret reloading.
   Translation:

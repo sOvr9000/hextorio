@@ -868,6 +868,16 @@ function gui._update_trades_scroll_pane_tick(process)
             lib.log_error("trade_number = " .. trade_number .. " is out of bounds for list of " .. #process.trades_list .. " trades")
             break
         end
+
+        if process.params.expanded and trade_number ~= 1 then
+            local line = process.trades_scroll_pane.add {
+                type = "line",
+                direction = "horizontal",
+            }
+            line.style.top_margin = 8 / 1.2
+            line.style.bottom_margin = 8 / 1.2
+        end
+
         gui.add_trade_elements(process.player, process.trades_scroll_pane, trade, trade_number, process.params)
     end
 
@@ -904,7 +914,7 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
             sprite = "utility/gps_map_icon",
         }
         -- core_finder_button.style.left_margin = 5
-        core_finder_button.style.top_margin = 10
+        -- core_finder_button.style.top_margin = 10
         core_finder_button.tooltip = {"hextorio-gui.core-finder-button"}
     end
 
@@ -913,7 +923,7 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
     local quality_cost_mult = quality_cost_multipliers[quality_to_show]
 
     local trade_frame = trade_flow.add {
-        type = "frame",
+        type = "flow",
         name = "frame",
         direction = "vertical",
     }
@@ -924,7 +934,7 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
     local trade_table = trade_frame.add {
         type = "table",
         name = "trade-table",
-        column_count = 7,
+        column_count = 8,
     }
 
     if params.expanded then
@@ -1046,6 +1056,23 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
         prod_bar.style.horizontally_squashable = true
         prod_bar.style.horizontally_stretchable = true
     end
+
+    local prod_str = "[font=count-font]" .. lib.format_percentage(prod, 1, true, true) .. "[.font]"
+    if prod < 0 then
+        prod_str = "[color=red]" .. prod_str .. "[.color]"
+    elseif prod > 0 then
+        prod_str = "[color=green]" .. prod_str .. "[.color]"
+    else
+        prod_str = ""
+    end
+
+    local prod_label = trade_table.add {
+        type = "label",
+        name = "productivity",
+        caption = prod_str,
+    }
+    prod_label.style.left_margin = -32 / 1.2
+    prod_label.style.top_margin = 24 / 1.2
 
     for i = 1, 3 do
         local j = 4 - i
