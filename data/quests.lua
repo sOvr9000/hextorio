@@ -78,7 +78,10 @@ return {
                 {type = "claimed-hexes", progress_requirement = 2},
                 {type = "make-trades", progress_requirement = 1, notes = {"trades-require-claim"}},
             },
-            rewards = {{type = "unlock-feature", value = "catalog"}},
+            rewards = {
+                {type = "unlock-feature", value = "catalog"},
+                {type = "unlock-feature", value = "trade-configuration"},
+            },
             notes = {"remote-view-to-claim"},
         },
         {
