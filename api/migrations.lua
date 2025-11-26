@@ -488,6 +488,9 @@ local process_migration = {
         storage.item_buffs = data_item_buffs
     end,
     ["1.2.0"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
+
         storage.cooldowns = {}
         storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
         storage.dungeons.queued_reloads = {}
