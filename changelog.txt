@@ -3,6 +3,7 @@ Version: 1.2.1
 Date: 21/11/25
   Features:
     - Hex cores now emit flying text when they make a trade.  Can be disabled in the mod's player settings.
+    - Hex cores now emit light, the color of which reacts to circuit signals.
   Minor Features:
     - Added "total belting distance", "sink / generator", and "dungeon" info to the output of /simple-trade-loops, as they are fast calculations.
   Balancing:

@@ -1988,6 +1988,7 @@ function hex_grid.spawn_hex_core(surface, position)
     end
 
     hex_grid.generate_loaders(state)
+    hex_grid.spawn_hexlight(state)
 
     state.trades = {}
     hex_grid.add_initial_trades(state)
@@ -2033,6 +2034,22 @@ function hex_grid.remove_hexport(state)
     if not state.hexport then return end
     state.hexport.destroy()
     state.hexport = nil
+end
+
+function hex_grid.spawn_hexlight(state)
+    if not state.hex_core or state.hexlight then return end
+
+    local hexlight = state.hex_core.surface.create_entity {
+        name = "hexlight-" .. state.hex_core.surface.name,
+        position = {state.hex_core.position.x - 0.5, state.hex_core.position.y - 0.5},
+        force = "player",
+    }
+
+    hexlight.destructible = false
+    hexlight.minable = false
+    hexlight.always_on = true
+
+    state.hexlight = hexlight
 end
 
 function hex_grid.add_initial_trades(state)
@@ -2625,7 +2642,9 @@ function hex_grid.process_hex_core_pool()
     local pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
     for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
+
         hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
+        hex_grid.process_hexlight(state)
     end
 end
 
@@ -2922,6 +2941,23 @@ function hex_grid.process_flying_text(state, total_removed, total_inserted, tota
             player.create_local_flying_text {text=str, position=state.hex_core.position, surface=state.hex_core.surface, speed=0.7, time_to_live=200}
         end
     end
+end
+
+function hex_grid.process_hexlight(state)
+    local hex_core = state.hex_core
+    if not state.hexlight or not hex_core then return end
+
+    -- TODO: Check if this really saves UPS.  Idea is to not check for (and add) six signal values if no red or green signals exist at all.
+    if not hex_core.get_circuit_network(defines.wire_connector_id.circuit_red) and not hex_core.get_circuit_network(defines.wire_connector_id.circuit_green) then
+        state.hexlight.color = {1, 1, 1}
+        return
+    end
+
+    local R = hex_core.get_signal({type = "virtual", name = "signal-red"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)
+    local G = hex_core.get_signal({type = "virtual", name = "signal-green"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)
+    local B = hex_core.get_signal({type = "virtual", name = "signal-blue"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)
+
+    state.hexlight.color = {R, G, B}
 end
 
 function hex_grid.add_to_output_buffer(state, items)

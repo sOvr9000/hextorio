@@ -443,10 +443,31 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexport.logistics_radius = hex_size
     hexport.radar_range = math.floor(hex_size / 32 + 0.5) + 1
 
-    data:extend({hexport})
+    local hexlight = table.deepcopy(data.raw["lamp"]["small-lamp"])
+    hexlight.name = "hexlight-" .. surface_name
+    hexlight.hidden_in_factoriopedia = true
+    hexlight.minable = nil
+    hexlight.collision_box = nil
+    hexlight.selection_box = nil
+    hexlight.selectable_in_game = false
+    hexlight.picture_off = nil
+    hexlight.picture_on = nil
+    hexlight.energy_source = {
+        type = "void",
+        render_no_power_icon = false,
+        render_no_network_icon = false,
+        emissions_per_minute = {},
+    }
+    hexlight.heating_energy = "0kJ"
+    hexlight.glow_color_intensity = 1.25
+    hexlight.glow_size = hex_size * 2.5
+    hexlight.light.size = hex_size * 2.5
+    hexlight.light_when_colored.size = hex_size * 2.5
+
+    data:extend({hexport, hexlight})
 end
 
 
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hex_core, hidden_loader, hexic_transport_belt, hexic_underground_belt, hexic_splitter, sentient_spider})
+data:extend({hex_core, hidden_loader, hexic_transport_belt, hexic_underground_belt, hexic_splitter, sentient_spider, hexlight})
