@@ -508,14 +508,16 @@ local process_migration = {
             storage.trades.base_productivity = storage.trades.base_productivity - 0.05
         end
 
-        -- Fix dungeon claim bug
         for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
             for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+                -- Fix dungeon claim bug
                 if state.is_dungeon then
                     if not dungeons.get_dungeon_at_hex_pos(surface_id, state.position, false) then
                         state.is_dungeon = nil
                     end
                 end
+                -- Add hexlights
+                hex_grid.spawn_hexlight(state)
             end
         end
 
