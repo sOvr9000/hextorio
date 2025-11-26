@@ -34,6 +34,11 @@ function trades.register_events()
         local all_trades = trades.get_all_trades(true)
         local loops = trade_loop_finder.find_simple_loops(all_trades)
 
+        if not next(loops) then
+            player.print {"hextorio.no-simple-trade-loops-found"}
+            return
+        end
+
         local s = ""
         for i, loop in ipairs(loops) do
             s = s .. "LOOP #" .. i .. "\n"
@@ -51,7 +56,14 @@ function trades.register_events()
             s = s .. "\n"
         end
 
-        helpers.write_file("simple_trade_loops.txt", s, false, player.index)
+        local file_name = "simple_trade_loops.txt"
+        helpers.write_file(file_name, s, false, player.index)
+
+        player.print {
+            "hextorio.simple-trade-loops-exported",
+            "Factorio/script-output/" .. file_name,
+            #loops,
+        }
     end)
 end
 
