@@ -50,6 +50,30 @@ local function on_delete_core_tool_used(player, entities)
     end
 end
 
+local function on_hexport_tool_used(player, entities, reverse)
+    if not quests.is_feature_unlocked "hexports" then
+        player.print {"hextorio.hexports-not-unlocked"}
+        return
+    end
+
+    for _, e in pairs(entities) do
+        if e.name == "hex-core" then
+            local state = hex_grid.get_hex_state_from_core(e)
+            if state and state.claimed then
+                if reverse then
+                    if state.hexport then
+                        hex_grid.remove_hexport(state)
+                    end
+                else
+                    if not state.hexport then
+                        hex_grid.spawn_hexport(state)
+                    end
+                end
+            end
+        end
+    end
+end
+
 script.on_event(defines.events.on_player_selected_area, function (event)
     local player = game.get_player(event.player_index)
     if not player then return end
@@ -58,5 +82,16 @@ script.on_event(defines.events.on_player_selected_area, function (event)
         on_claim_tool_used(player, event.entities)
     elseif event.item == "delete-core-tool" then
         on_delete_core_tool_used(player, event.entities)
+    elseif event.item == "hexport-tool" then
+        on_hexport_tool_used(player, event.entities, false)
+    end
+end)
+
+script.on_event(defines.events.on_player_reverse_selected_area, function (event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if event.item == "hexport-tool" then
+        on_hexport_tool_used(player, event.entities, true)
     end
 end)

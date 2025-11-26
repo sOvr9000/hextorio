@@ -45,6 +45,29 @@ local delete_core_tool = {
 }
 delete_core_tool.alt_select = delete_core_tool.select -- no intuitive alt selection behavior needed yet
 
+local hexport_tool = {
+    type = "selection-tool",
+    name = "hexport-tool",
+    icons = {
+        {
+            icon = "__hextorio__/graphics/icons/hexport-tool-x64.png",
+            icon_size = 64,
+        },
+    },
+
+    flags = {"only-in-cursor", "spawnable"},
+    stack_size = 1,
+    hidden = true,
+
+    select = {
+        border_color = {1, 0.5, 0},
+        mode = {"any-entity"},
+        cursor_box_type = "copy",
+        entity_filters = {"hex-core"},
+    },
+}
+hexport_tool.alt_select = hexport_tool.select -- no intuitive alt selection behavior needed yet
 
 
-data:extend({claim_tool, delete_core_tool})
+
+data:extend({claim_tool, delete_core_tool, hexport_tool})
