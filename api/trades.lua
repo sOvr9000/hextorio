@@ -492,7 +492,7 @@ function trades.get_productivity_bonus_str(trade, quality)
         s .. "[font=heading-2]= [color=" .. color .. "]" .. lib.format_percentage(prod, 0, true, true) .. "[.color][.font]",
     }
 
-    if storage.trades.base_productivity ~= nil and storage.trades.base_productivity ~= 0 then
+    if storage.trades.base_productivity ~= nil and math.abs(storage.trades.base_productivity) > 1e-12 then
         table.insert(str, 3, "\n")
         table.insert(str, 4, {"", "(", lib.color_localized_string({"hextorio-gui.bonuses"}, "white"), ")"})
         table.insert(str, 5, " [color=green]" .. lib.format_percentage(storage.trades.base_productivity, 0, true, true) .. "[.color]")
@@ -1021,6 +1021,9 @@ end
 ---@param trade Trade
 ---@param productivity number
 function trades.set_productivity(trade, productivity)
+    if math.abs(productivity) < 1e-12 then
+        productivity = 0
+    end
     trade.productivity = productivity
 end
 
@@ -1036,7 +1039,7 @@ end
 ---@param trade Trade
 ---@param amount number
 function trades.increment_productivity(trade, amount)
-    trade.productivity = (trade.productivity or 0) + amount
+    trades.set_productivity(trade, (trade.productivity or 0) + amount)
 end
 
 ---Get the trade's current progress toward filling the productivity bar.
@@ -1085,7 +1088,7 @@ end
 ---Get the current base productivity bonus for all trades.
 ---@param surface_name string
 ---@return number
-function trades.get_base_trade_productivity(surface_name)
+function trades.get_base_trade_productivity_on_surface(surface_name)
     local base_prod = storage.trades.base_productivity or 0 -- Upgrades from quests.
     local planet_prod = lib.runtime_setting_value("base-trade-prod-" .. surface_name) -- Planet-wide buff/debuff
     return base_prod + planet_prod
@@ -1114,19 +1117,22 @@ end
 ---Set the base productivity bonus for all trades.
 ---@param prod number
 function trades.set_base_trade_productivity(prod)
+    if math.abs(prod) < 1e-12 then
+        prod = 0
+    end
     storage.trades.base_productivity = prod
 end
 
 ---Increment the current base productivity bonus for all trades.
 ---@param amount number
 function trades.increment_base_trade_productivity(amount)
-    storage.trades.base_productivity = (storage.trades.base_productivity or 0) + amount
+    trades.set_base_trade_productivity((storage.trades.base_productivity or 0) + amount)
 end
 
 ---Recalculate the trade's productivity effect based on base productivity and its input and output item ranks.
 ---@param trade Trade
 function trades.check_productivity(trade)
-    trades.set_productivity(trade, trades.get_base_trade_productivity(trade.surface_name))
+    trades.set_productivity(trade, trades.get_base_trade_productivity_on_surface(trade.surface_name))
     for j, item in ipairs(trade.input_items) do
         if lib.is_catalog_item(item.name) then
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))

@@ -503,7 +503,6 @@ local process_migration = {
 
         if quests.is_complete "catalog-initiate" then
             storage.trades.base_productivity = storage.trades.base_productivity - 0.05
-            hex_grid.update_all_trades()
         end
 
         -- Fix dungeon claim bug
@@ -531,6 +530,7 @@ local process_migration = {
         end
 
         quests.unlock_feature "trade-configuration"
+        hex_grid.update_all_trades()
     end,
 }
 

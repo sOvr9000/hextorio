@@ -32,6 +32,7 @@ Date: 21/11/25
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
     - Fixed crash on running the command /hextorio-debug when in remote view.
     - Fixed that updating the mod settings for planet-based trade productivity bonuses would not take effect without a restart.
+    - Fixed floating point rounding errors around 0 for trade productivity.
   Gui:
     - Trade arrows display nonzero productivity without mousing over them.
     - Softened the white and cyan trade arrow sprites.
