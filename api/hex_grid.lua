@@ -3074,6 +3074,8 @@ function hex_grid.update_hexlight_default_colors(surface_name)
     local color = lib.runtime_setting_value("default-" .. surface_name .. "-hexlight-color")
     storage.hex_grid.default_hexlight_color[surface_name] = color
 
+    lib.log("Setting default hexlight color on " .. surface_name .. " to " .. serpent.line(color))
+
     if not game.get_surface(surface_name) then return end
 
     local surface_hexes = hex_grid.get_surface_hexes(surface_name)
