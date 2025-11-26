@@ -1030,15 +1030,25 @@ function lib.hsv_to_rgb(h, s, v)
     end
 end
 
+---Try to insert a single item stack into the player's inventory.  If not all items can fit, the remaining items are put on the ground at their position.
+---@param player LuaPlayer
+---@param item_stack ItemStackIdentification
+---@return boolean
 function lib.safe_insert(player, item_stack)
-    if player.can_insert(item_stack) then
-        player.insert(item_stack)
+    local inserted = player.insert(item_stack)
+    if inserted >= item_stack.count then
         return true
-    else
-        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. "]"}
-        player.surface.spill_item_stack{position=player.position, stack=item_stack}
-        return false
     end
+
+    if item_stack.quality then
+        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. ",quality=" .. item_stack.quality .. "]", inserted, item_stack.count}
+    else
+        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. "]", inserted, item_stack.count}
+    end
+
+    player.surface.spill_item_stack{position=player.position, stack={name = item_stack.name, count = item_stack.count - inserted, quality = item_stack.quality}}
+
+    return false
 end
 
 -- Check if two tables are equal.
