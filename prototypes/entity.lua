@@ -470,4 +470,4 @@ end
 
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({hex_core, hidden_loader, hexic_transport_belt, hexic_underground_belt, hexic_splitter, sentient_spider, hexlight})
+data:extend({hex_core, hidden_loader, hexic_transport_belt, hexic_underground_belt, hexic_splitter, sentient_spider})
