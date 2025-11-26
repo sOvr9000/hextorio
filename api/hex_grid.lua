@@ -930,9 +930,8 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, 3)
         if dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, false) then
             state.is_dungeon = true -- Gets set to nil when the dungeon gets looted.
+            hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation))
         end
-
-        hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation))
     end
 
     axial.clear_cache('overlapping-chunks', hex_pos, hex_grid_scale, hex_grid_rotation)
