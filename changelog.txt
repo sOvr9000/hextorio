@@ -31,6 +31,7 @@ Date: 21/11/25
     - Reformatted output from /simple-trade-loops.
     - Changed the default hex pool size from 1000 to 250, allowing for larger saves before noticing potential UPS drops from all the trading.
     - Changed the rocket capacities of all coins to their respective stack sizes.
+    - Dungeon hex cores now spawn immediately when the dungeon generates, giving them a glow.
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
