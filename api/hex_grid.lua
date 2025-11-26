@@ -337,6 +337,10 @@ function hex_grid.register_events()
     event_system.register_callback("runtime-setting-changed-default-aquilo-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "aquilo"
     end)
+
+    event_system.register_callback("runtime-setting-changed-dungeon-hexlight-color", function()
+        hex_grid.update_hexlight_default_colors()
+    end)
 end
 
 ---Get or create surface storage
@@ -923,12 +927,12 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     if is_dungeon then
-        hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation))
-
         hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, 3)
         if dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, false) then
             state.is_dungeon = true -- Gets set to nil when the dungeon gets looted.
         end
+
+        hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation))
     end
 
     axial.clear_cache('overlapping-chunks', hex_pos, hex_grid_scale, hex_grid_rotation)
@@ -2070,7 +2074,12 @@ function hex_grid.spawn_hexlight(state)
     hexlight.destructible = false
     hexlight.minable = false
     hexlight.always_on = true
-    hexlight.color = storage.hex_grid.default_hexlight_color[state.hex_core.surface.name]
+
+    if state.is_dungeon then
+        hexlight.color = storage.hex_grid.dungeon_hexlight_color
+    else
+        hexlight.color = storage.hex_grid.default_hexlight_color[state.hex_core.surface.name]
+    end
 
     state.hexlight = hexlight
 
@@ -2985,7 +2994,11 @@ function hex_grid.process_hexlight(state)
 
     -- TODO: Check if this really saves UPS.  Idea is to not check for (and add) six signal values if no red or green signals exist at all.
     if not hex_core.get_circuit_network(defines.wire_connector_id.circuit_red) and not hex_core.get_circuit_network(defines.wire_connector_id.circuit_green) then
-        state.hexlight.color = storage.hex_grid.default_hexlight_color[hex_core.surface.name]
+        if state.is_dungeon then
+            state.hexlight.color = storage.hex_grid.dungeon_hexlight_color
+        else
+            state.hexlight.color = storage.hex_grid.default_hexlight_color[hex_core.surface.name]
+        end
         state.hexlight2.color = state.hexlight.color
         return
     end
@@ -3063,6 +3076,7 @@ end
 ---@param surface_name string|nil If not provided, all surfaces are updated.
 function hex_grid.update_hexlight_default_colors(surface_name)
     if surface_name == nil then
+        storage.hex_grid.dungeon_hexlight_color = lib.runtime_setting_value "dungeon-hexlight-color"
         for _surface_name, _ in pairs(storage.item_values.values) do -- intended to iterate over ALL, not just the existing ones
             hex_grid.update_hexlight_default_colors(_surface_name)
         end
@@ -3076,6 +3090,8 @@ function hex_grid.update_hexlight_default_colors(surface_name)
     local color = lib.runtime_setting_value("default-" .. surface_name .. "-hexlight-color")
     storage.hex_grid.default_hexlight_color[surface_name] = color
 
+    local dungeon_color = storage.hex_grid.dungeon_hexlight_color
+
     lib.log("Setting default hexlight color on " .. surface_name .. " to " .. serpent.line(color))
 
     if not game.get_surface(surface_name) then return end
@@ -3084,8 +3100,13 @@ function hex_grid.update_hexlight_default_colors(surface_name)
     for _, Q in pairs(surface_hexes) do
         for _, state in pairs(Q) do
             if state.hexlight then
-                state.hexlight.color = color
-                state.hexlight2.color = color
+                if state.is_dungeon then
+                    state.hexlight.color = dungeon_color
+                    state.hexlight2.color = dungeon_color
+                else
+                    state.hexlight.color = color
+                    state.hexlight2.color = color
+                end
             end
         end
     end
