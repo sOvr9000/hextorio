@@ -403,47 +403,41 @@ function gui.init_trade_overview(player)
     local export_json_button = left_frame_buttons_flow.add {type = "button", name = "export-json", caption = {"hextorio-gui.export-json"}}
     export_json_button.tooltip = {"hextorio-gui.export-json-tooltip"}
 
+    local processing_flow = left_frame_buttons_flow.add {type = "flow", name = "processing-flow", direction = "horizontal"}
+    local processing_label = processing_flow.add {type = "label", name = "label", caption = {"hextorio-gui.processing-finished"}}
+    processing_label.style.top_margin = 2
+    local processing_progress_bar = processing_flow.add {type = "progressbar", name = "progressbar", value = 0}
+    processing_progress_bar.style.top_margin = 6
+    processing_progress_bar.visible = false
+    gui.auto_width(processing_progress_bar)
+
     local planet_flow = left_frame.add {type = "flow", name = "planet-flow", direction = "horizontal"}
+
     left_frame.add {type = "line", direction = "horizontal"}
+
     local trade_contents_flow = left_frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
     local trade_contents_label = trade_contents_flow.add {type = "label", name = "label", caption = {"hextorio-gui.trade-contents"}}
-    local trade_contents_frame = trade_contents_flow.add {type = "frame", name = "frame", direction = "horizontal"}
-    left_frame.add {type = "line", direction = "horizontal"}
-    local processing_flow = left_frame.add {type = "flow", name = "processing-flow", direction = "horizontal"}
-    local processing_label = processing_flow.add {type = "label", name = "label", caption = {"hextorio-gui.processing-finished"}}
-    local processing_progress_bar = processing_flow.add {type = "progressbar", name = "progressbar", value = 0}
+    local trade_contents_frame = trade_contents_flow.add {type = "flow", name = "frame", direction = "horizontal"}
 
     local show_only_claimed_flow = right_frame.add {type = "flow", name = "show-only-claimed", direction = "horizontal"}
     local toggle_show_only_claimed = show_only_claimed_flow.add {type = "checkbox", name = "checkbox", state = false}
     toggle_show_only_claimed.style.top_margin = 3
     local toggle_show_only_claimed_label = show_only_claimed_flow.add {type = "label", name = "label", caption = {"hextorio-gui.show-only-claimed"}}
 
-    local exact_inputs_match_flow = right_frame.add {type = "flow", name = "exact-inputs-match", direction = "horizontal"}
-    local toggle_exact_inputs_match = exact_inputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
-    toggle_exact_inputs_match.tooltip = {"hextorio-gui.exact-inputs-match-tooltip"}
-    toggle_exact_inputs_match.style.top_margin = 3
-    local toggle_exact_inputs_match_label = exact_inputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact-inputs-match"}}
-    toggle_exact_inputs_match_label.tooltip = {"hextorio-gui.exact-inputs-match-tooltip"}
-    local exact_outputs_match_flow = right_frame.add {type = "flow", name = "exact-outputs-match", direction = "horizontal"}
-    local toggle_exact_outputs_match = exact_outputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
-    toggle_exact_outputs_match.style.top_margin = 3
-    toggle_exact_outputs_match.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
-    local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact-outputs-match"}}
-    toggle_exact_outputs_match_label.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
+    local show_only_interplanetary_flow = right_frame.add {type = "flow", name = "show-only-interplanetary", direction = "horizontal"}
+    local toggle_show_only_interplanetary = show_only_interplanetary_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_show_only_interplanetary.style.top_margin = 3
+    local toggle_show_only_interplanetary_label = show_only_interplanetary_flow.add {type = "label", name = "label", caption = {"hextorio-gui.show-only-interplanetary"}}
 
-    local max_input_items_flow = right_frame.add {type = "flow", name = "max-inputs-flow", direction = "horizontal"}
-    local max_input_items_slider = max_input_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
-    max_input_items_slider.style.width = 80
-    local max_input_items_label = max_input_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-inputs", 3}}
-    max_input_items_label.style.top_margin = -4
-    gui.auto_width(max_input_items_label)
+    local exclude_dungeons_flow = right_frame.add {type = "flow", name = "exclude-dungeons", direction = "horizontal"}
+    local toggle_exclude_dungeons = exclude_dungeons_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_exclude_dungeons.style.top_margin = 3
+    local toggle_exclude_dungeons_label = exclude_dungeons_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exclude-dungeons"}}
 
-    local max_output_items_flow = right_frame.add {type = "flow", name = "max-outputs-flow", direction = "horizontal"}
-    local max_output_items_slider = max_output_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
-    max_output_items_slider.style.width = 80
-    local max_output_items_label = max_output_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-outputs", 3}}
-    max_output_items_label.style.top_margin = -4
-    gui.auto_width(max_output_items_label)
+    local exclude_sinks_generators_flow = right_frame.add {type = "flow", name = "exclude-sinks-generators", direction = "horizontal"}
+    local toggle_exclude_sinks_generators = exclude_sinks_generators_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_exclude_sinks_generators.style.top_margin = 3
+    local toggle_exclude_sinks_generators_label = exclude_sinks_generators_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exclude-sinks-generators"}}
 
     right_frame.add {type = "line", direction = "horizontal"}
 
@@ -464,16 +458,47 @@ function gui.init_trade_overview(player)
     }
 
     trade_contents_label.style.font = "heading-2"
-    processing_progress_bar.visible = false
-    gui.auto_width(processing_progress_bar)
+
+
+
+    local trade_inputs_flow = trade_contents_frame.add {
+        type = "flow",
+        name = "inputs",
+        direction = "vertical",
+    }
+    trade_inputs_flow.style.maximal_width = 170 / 1.2
+    local choose_elems_flow = trade_inputs_flow.add {
+        type = "flow",
+        name = "choose-elems",
+        direction = "horizontal",
+    }
+
+    local exact_inputs_match_flow = trade_inputs_flow.add {type = "flow", name = "exact-inputs-match", direction = "horizontal"}
+    gui.auto_width(
+        exact_inputs_match_flow.add {type = "empty-widget", name = "empty-1"}
+    )
+    local toggle_exact_inputs_match = exact_inputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_exact_inputs_match.style.top_margin = 3
+    local toggle_exact_inputs_match_label = exact_inputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact"}}
+    gui.auto_width(
+        exact_inputs_match_flow.add {type = "empty-widget", name = "empty-2"}
+    )
+
+    local max_input_items_flow = trade_inputs_flow.add {type = "flow", name = "max-inputs-flow", direction = "horizontal"}
+    local max_input_items_slider = max_input_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+    max_input_items_slider.style.width = 80
+    local max_input_items_label = max_input_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
+    max_input_items_label.style.top_margin = -4
 
     for i = 1, 3 do
-        local input_item = trade_contents_frame.add {
+        local input_item = choose_elems_flow.add {
             type = "choose-elem-button",
             elem_type = "item",
             name = "input-item-" .. i,
         }
     end
+
+
 
     local trade_arrow = trade_contents_frame.add {
         type = "sprite",
@@ -481,25 +506,51 @@ function gui.init_trade_overview(player)
         sprite = "trade-arrow",
     }
     trade_arrow.style.top_margin = 4
-    trade_arrow.tooltip = {"hextorio-gui.click-to-swap-sides"}
     trade_arrow.style.width = 30 / 1.2
     trade_arrow.style.height = 30 / 1.2
 
+
+
+    local trade_outputs_flow = trade_contents_frame.add {
+        type = "flow",
+        name = "outputs",
+        direction = "vertical",
+    }
+    trade_outputs_flow.style.maximal_width = 170 / 1.2
+    trade_outputs_flow.style.left_margin = 18
+    choose_elems_flow = trade_outputs_flow.add {
+        type = "flow",
+        name = "choose-elems",
+        direction = "horizontal",
+    }
+
+    local exact_outputs_match_flow = trade_outputs_flow.add {type = "flow", name = "exact-outputs-match", direction = "horizontal"}
+    gui.auto_width(
+        exact_outputs_match_flow.add {type = "empty-widget", name = "empty-1"}
+    )
+    local toggle_exact_outputs_match = exact_outputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
+    toggle_exact_outputs_match.style.top_margin = 3
+    local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact"}}
+    toggle_exact_outputs_match_label.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
+    gui.auto_width(
+        exact_outputs_match_flow.add {type = "empty-widget", name = "empty-2"}
+    )
+
+    local max_output_items_flow = trade_outputs_flow.add {type = "flow", name = "max-outputs-flow", direction = "horizontal"}
+    local max_output_items_slider = max_output_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+    max_output_items_slider.style.width = 80
+    local max_output_items_label = max_output_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
+    max_output_items_label.style.top_margin = -4
+
     for i = 1, 3 do
-        local output_item = trade_contents_frame.add {
+        local output_item = choose_elems_flow.add {
             type = "choose-elem-button",
             elem_type = "item",
             name = "output-item-" .. (4 - i), -- 4 - i to be more consistent with how trades are shown in general
         }
-        if i == 1 then
-            output_item.style.left_margin = 12
-        end
     end
 
-    -- local surface_list_frame = frame.add {type = "frame", name = "surface-list-frame", direction = "vertical"}
-    -- local surface_list = surface_list_frame.add {type = "list-box", name = "list-box", items = storage.trades.trade_overview_surface_list, selected_index = 1}
-    -- surface_list_frame.style.natural_width = 100
-    -- surface_list_frame.style.vertically_stretchable = true
+
 
     local trade_table_frame = frame.add {type = "frame", name = "trade-table-frame", direction = "vertical"}
     gui.auto_width_height(trade_table_frame)
@@ -1142,7 +1193,7 @@ function gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, 
         for_trade_overview = gui.is_descendant_of(trades_scroll_pane, "trade-overview"),
     }
     if process.for_trade_overview then
-        process.processing_flow = process.trades_scroll_pane.parent.parent.parent["filter-frame"]["left"]["processing-flow"]
+        process.processing_flow = process.trades_scroll_pane.parent.parent.parent["filter-frame"]["left"]["buttons-flow"]["processing-flow"]
     else
         process.immediate = true
     end
@@ -1563,8 +1614,8 @@ function gui.update_trade_overview(player)
         filter_frame["left"]["planet-flow"][surface_name].enabled = game.get_surface(surface_name) ~= nil
     end
 
-    filter_frame["right"]["max-inputs-flow"]["label"].caption = {"hextorio-gui.max-inputs", filter_frame["right"]["max-inputs-flow"]["slider"].slider_value}
-    filter_frame["right"]["max-outputs-flow"]["label"].caption = {"hextorio-gui.max-outputs", filter_frame["right"]["max-outputs-flow"]["slider"].slider_value}
+    filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["label"].caption = {"hextorio-gui.max", filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value}
+    filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["label"].caption = {"hextorio-gui.max", filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value}
 
     gui.update_player_trade_overview_filters(player)
     local filter = gui.get_player_trade_overview_filter(player)
@@ -2883,12 +2934,12 @@ function gui.set_trade_overview_item_filters(player, input_items, output_items)
     local trade_contents_frame = frame["filter-frame"]["left"]["trade-contents-flow"]["frame"]
 
     for i = 1, 3 do
-        local button = trade_contents_frame["input-item-" .. i]
+        local button = trade_contents_frame["inputs"]["choose-elems"]["input-item-" .. i]
         button.elem_value = input_items[i]
     end
 
     for i = 1, 3 do
-        local button = trade_contents_frame["output-item-" .. i]
+        local button = trade_contents_frame["outputs"]["choose-elems"]["output-item-" .. i]
         button.elem_value = output_items[i]
     end
 
@@ -2967,19 +3018,18 @@ function gui.on_clear_filters_button_click(player, element)
     end
 
     for i = 1, 3 do
-        filter_frame["left"]["trade-contents-flow"]["frame"]["input-item-" .. i].elem_value = nil
+        filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["choose-elems"]["input-item-" .. i].elem_value = nil
     end
 
     for i = 1, 3 do
-        filter_frame["left"]["trade-contents-flow"]["frame"]["output-item-" .. i].elem_value = nil
+        filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["choose-elems"]["output-item-" .. i].elem_value = nil
     end
 
     filter_frame["right"]["show-only-claimed"]["checkbox"].state = false
-    filter_frame["right"]["exact-inputs-match"]["checkbox"].state = false
-    filter_frame["right"]["exact-outputs-match"]["checkbox"].state = false
-    filter_frame["right"]["max-inputs-flow"]["slider"].slider_value = filter_frame["right"]["max-inputs-flow"]["slider"].get_slider_maximum()
-    filter_frame["right"]["max-outputs-flow"]["slider"].slider_value = filter_frame["right"]["max-outputs-flow"]["slider"].get_slider_maximum()
-    -- filter_frame["right"]["max-trades-flow"]["dropdown"].selected_index = #filter_frame["right"]["max-trades-flow"]["dropdown"].items
+    filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["exact-inputs-match"]["checkbox"].state = false
+    filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["exact-outputs-match"]["checkbox"].state = false
+    filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value = filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].get_slider_maximum()
+    filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value = filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].get_slider_maximum()
 
     gui.on_trade_overview_filter_changed(player)
 end
@@ -3420,7 +3470,7 @@ function gui.update_player_trade_overview_filters(player)
 
     filter.input_items = {}
     for i = 1, 3 do
-        local input_item = trade_contents_frame["input-item-" .. i]
+        local input_item = trade_contents_frame["inputs"]["choose-elems"]["input-item-" .. i]
         if input_item.elem_value then
             local item_name = input_item.elem_value
             table.insert(filter.input_items, item_name)
@@ -3432,7 +3482,7 @@ function gui.update_player_trade_overview_filters(player)
 
     filter.output_items = {}
     for i = 1, 3 do
-        local output_item = trade_contents_frame["output-item-" .. i]
+        local output_item = trade_contents_frame["outputs"]["choose-elems"]["output-item-" .. i]
         if output_item.elem_value then
             local item_name = output_item.elem_value
             table.insert(filter.output_items, item_name)
@@ -3443,8 +3493,8 @@ function gui.update_player_trade_overview_filters(player)
     end
 
     filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
-    filter.exact_inputs_match = filter_frame["right"]["exact-inputs-match"]["checkbox"].state
-    filter.exact_outputs_match = filter_frame["right"]["exact-outputs-match"]["checkbox"].state
+    filter.exact_inputs_match = filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["exact-inputs-match"]["checkbox"].state
+    filter.exact_outputs_match = filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["exact-outputs-match"]["checkbox"].state
 
     if filter.exact_inputs_match then
         filter.input_items_lookup = sets.new(filter.input_items)
@@ -3456,11 +3506,11 @@ function gui.update_player_trade_overview_filters(player)
     filter.num_item_bounds = {
         inputs = {
             min = 1,
-            max = filter_frame["right"]["max-inputs-flow"]["slider"].slider_value,
+            max = filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value,
         },
         outputs = {
             min = 1,
-            max = filter_frame["right"]["max-outputs-flow"]["slider"].slider_value,
+            max = filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value,
         },
     }
 
