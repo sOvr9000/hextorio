@@ -1054,6 +1054,7 @@ function gui.add_trade_elements(player, element, trade, trade_number, params)
     trade_arrow_sprite.style.width = size / 1.2
     trade_arrow_sprite.style.height = size / 1.2
     trade_arrow_sprite.style.top_margin = 2
+    trade_arrow_sprite.style.left_margin = 4
 
     local prod = trades.get_productivity(trade, quality_to_show)
     if params.show_productivity_bar and prod ~= 0 then
