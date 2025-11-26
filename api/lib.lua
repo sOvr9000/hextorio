@@ -109,14 +109,24 @@ function lib.vector_multiply(a, b)
     return {x=(a.x or a[1]) * b, y=(a.y or a[2]) * b}
 end
 
----Get the squared Euclidean distance between two positions.
+---Get the square of the L2 (a.k.a. Euclidean) distance between two positions.
 ---@param pos1 MapPosition
 ---@param pos2 MapPosition
 ---@return number
 function lib.square_distance(pos1, pos2)
-    local dx = pos1.x - pos2.x
-    local dy = pos1.y - pos2.y
+    local dx = (pos1.x or pos1[1]) - (pos2.x or pos2[1])
+    local dy = (pos1.y or pos1[2]) - (pos2.y or pos2[2])
     return dx * dx + dy * dy
+end
+
+---Get the L1 (a.k.a. Manhattan) distance between the two positions.
+---@param pos1 MapPosition
+---@param pos2 MapPosition
+---@return number
+function lib.manhattan_distance(pos1, pos2)
+    local dx = (pos1.x or pos1[1]) - (pos2.x or pos2[1])
+    local dy = (pos1.y or pos1[2]) - (pos2.y or pos2[2])
+    return math.abs(dx) + math.abs(dy)
 end
 
 ---@param surface LuaSurface|SurfaceIdentification|int|string
@@ -1734,6 +1744,43 @@ end
 -- function lib.entity_required_tiles(prot)
 
 -- end
+
+---Return whether the given player's cooldown under the category `cooldown_name` is ready for retriggering.
+---@param player_index int
+---@param cooldown_name string
+---@return boolean
+function lib.is_player_cooldown_ready(player_index, cooldown_name)
+    local cooldowns = storage.cooldowns[player_index]
+    if not cooldowns or cooldowns[cooldown_name] == nil then
+        return true
+    end
+    return game.tick >= cooldowns[cooldown_name]
+end
+
+---Return the given player's remaining cooldown under the category `cooldown_name`.
+---@param player_index int
+---@param cooldown_name string
+---@return int
+function lib.get_player_cooldown_remaining(player_index, cooldown_name)
+    local cooldowns = storage.cooldowns[player_index]
+    if not cooldowns or cooldowns[cooldown_name] == nil then
+        return 0
+    end
+    return cooldowns[cooldown_name] - game.tick
+end
+
+---Trigger the given player's cooldown under the category `cooldown_name`.
+---@param player_index int
+---@param cooldown_name string
+---@param cooldown_time int
+function lib.trigger_player_cooldown(player_index, cooldown_name, cooldown_time)
+    local cooldowns = storage.cooldowns[player_index]
+    if not cooldowns then
+        cooldowns = {}
+        storage.cooldowns[player_index] = cooldowns
+    end
+    cooldowns[cooldown_name] = game.tick + cooldown_time
+end
 
 
 

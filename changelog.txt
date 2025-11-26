@@ -3,6 +3,8 @@ Version: 1.2.1
 Date: 21/11/25
   Features:
     - Hex cores now emit flying text when they make a trade.  Can be disabled in the mod's player settings.
+  Minor Features:
+    - Added "total belting distance", "sink / generator", and "dungeon" info to the output of /simple-trade-loops, as they are fast calculations.
   Balancing:
     - Slightly increased the range of dungeon gun turrets.
     - Slightly decreased the range of dungeon flamethrower and laser turrets.
@@ -21,6 +23,9 @@ Date: 21/11/25
           Aquilo = 20%
   Changes:
     - Added extra conditions and info to the first few quests to improve NPE (new player experience).
+    - Made the /simple-trade-loops command public.
+    - Added cooldowns to some public commands to reduce the risk of griefing by overloading the server.
+    - Reformatted output from /simple-trade-loops.
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.

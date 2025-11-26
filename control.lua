@@ -67,6 +67,7 @@ end
 
 script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
+    storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
 
     storage.constants = data_constants
     storage.events = data_events

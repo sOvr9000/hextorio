@@ -31,6 +31,16 @@ function trades.register_events()
     end)
 
     event_system.register_callback("command-simple-trade-loops", function(player, params)
+        if not lib.is_player_cooldown_ready(player.index, "command-simple-trade-loops") then
+            player.print {
+                "hextorio.operation-on-cooldown",
+                math.ceil(lib.get_player_cooldown_remaining(player.index, "command-simple-trade-loops") / 60),
+            }
+            return
+        end
+
+        lib.trigger_player_cooldown(player.index, "command-simple-trade-loops", 30 * 60) -- 30 seconds
+
         local all_trades = trades.get_all_trades(true)
         local loops = trade_loop_finder.find_simple_loops(all_trades)
 
@@ -42,18 +52,63 @@ function trades.register_events()
         local s = ""
         for i, loop in ipairs(loops) do
             s = s .. "LOOP #" .. i .. "\n"
+
+            local complete_loop = lib.table_extend(loop, {loop[1]})
+
+            local total_dist = 0
+            local cur_pos = nil
+            local uses_sink_or_generator = false
+            local is_dungeon = false
+            for j, idx in ipairs(complete_loop) do
+                if j > 1 then
+                    s = s .. " -> "
+                end
+
+                local trade = all_trades[idx]
+                if trade and trade.hex_core_state.hex_core and trade.hex_core_state.hex_core.valid then
+                    s = s .. trade.input_items[1].name
+                    if trade.hex_core_state.mode == "sink" or trade.hex_core_state.mode == "generator" then
+                        uses_sink_or_generator = true
+                    end
+                    if trade.hex_core_state.is_dungeon then
+                        is_dungeon = true
+                    end
+
+                    local pos = trade.hex_core_state.hex_core.position
+
+                    if cur_pos == nil then
+                        cur_pos = pos
+                    else
+                        total_dist = total_dist + lib.manhattan_distance(pos, cur_pos)
+                    end
+
+                    cur_pos = pos
+                else
+                    s = s .. "(DELETED TRADE TO BE RECOVERED)"
+                    total_dist = math.huge
+                end
+            end
+
+            total_dist = total_dist - 4 * #complete_loop -- Subtract 4 for each connection because the hex cores are 5x5
+
+            s = s .. "\nGPS strings: "
             for _, idx in pairs(loop) do
                 local trade = all_trades[idx]
                 if trade then
-                    local trade_str = lib.tostring_trade(trade)
-                    s = s .. trade_str
-                    s = s .. "\n"
-                    local gps = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
-                    s = s .. gps
-                    s = s .. "\n\n"
+                    s = s .. lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
                 end
             end
-            s = s .. "\n"
+
+            s = s .. "\nsink / generator: " .. tostring(uses_sink_or_generator)
+            s = s .. "\ndungeon: " .. tostring(is_dungeon)
+
+            if total_dist == math.huge then
+                s = s .. "\ntotal belting distance: ???"
+            else
+                s = s .. "\ntotal belting distance: " .. total_dist
+            end
+
+            s = s .. "\n\n"
         end
 
         local file_name = "simple_trade_loops.txt"
