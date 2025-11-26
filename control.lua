@@ -137,6 +137,7 @@ script.on_init(function()
 
     item_values.init()
     quests.init()
+    trades.init()
     blueprints.init()
     loot_tables.init()
     dungeons.init()

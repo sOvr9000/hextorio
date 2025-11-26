@@ -16,8 +16,6 @@ return {
         nauvis = {
             {{"electronic-circuit", "stone-brick"}, {"hex-coin"}},
             {{"copper-cable", "boiler"}, {"wood", "raw-fish"}},
-            {{"iron-plate", "copper-ore", "hex-coin"}, {"stone", "coal"}},
-            {{"low-density-structure"}, {"hex-coin"}},
             {{"atomic-bomb"}, {"hex-coin"}},
         },
         vulcanus = {
@@ -42,6 +40,15 @@ return {
             {{"cryogenic-science-pack", "quantum-processor"}, {"hex-coin"}},
         },
     },
+
+    surrounding_trades = {
+        nauvis = {
+            {{"low-density-structure"}, {"hex-coin"}},
+            {{"iron-plate", "copper-ore", "hex-coin"}, {"stone", "coal"}},
+        },
+    },
+
+    guaranteed_trades = {},
 
     discovered_items = {},
     trade_volume_base = {},

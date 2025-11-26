@@ -2108,28 +2108,39 @@ function hex_grid.add_initial_trades(state)
         local planet_size = lib.startup_setting_value("planet-size-" .. state.hex_core.surface.name)
         local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. state.hex_core.surface.name)
 
-        local items_sorted_by_value = item_values.get_items_sorted_by_value(state.hex_core.surface.name, true, false)
-        local max_item_value = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[#items_sorted_by_value])
-
-        -- These two parameters are for scaling volume by distance
-        local base = hex_grid.get_trade_volume_base(state.hex_core.surface.name)
-        local exponent = (max_item_value * 0.5 / base) ^ (1 / planet_size)
-
-        local dist_factor = dist / planet_size
-
-        for _ = 1, trades_per_hex do
-            local r = math.random()
-            local random_volume_by_dist = math.min(max_item_value * 0.5, base * (exponent ^ (r * r * dist)))
-
-            -- This is a random volume chosen from a uniform distribution of all item values on the surface, resulting in each item having equal chance of being chosen as the central value.
-            local random_volume_uniform = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[math.random(1, #items_sorted_by_value)])
-
-            -- Exponentially interpolate towards pure random as distance increases.
-            local random_volume = math.exp(math.log(random_volume_by_dist) * (1 - dist_factor) + math.log(random_volume_uniform) * dist_factor)
-
-            local trade = hex_grid.generate_random_trade(state, random_volume)
-            if trade then
+        local guaranteed_trades = lib.get_at_multi_index(storage.trades.guaranteed_trades, state.hex_core.surface.name, state.position.q, state.position.r)
+        if guaranteed_trades then
+            for _, trade in pairs(guaranteed_trades) do
                 hex_grid.add_trade(state, trade)
+                trades_per_hex = trades_per_hex - 1
+            end
+            lib.remove_at_multi_index(storage.trades.guaranteed_trades, state.hex_core.surface.name, state.position.q, state.position.r) -- Erase it so that multiple copies of the same trade don't exist in storage (bad for save times)
+        end
+
+        if trades_per_hex >= 1 then
+            local items_sorted_by_value = item_values.get_items_sorted_by_value(state.hex_core.surface.name, true, false)
+            local max_item_value = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[#items_sorted_by_value])
+
+            -- These two parameters are for scaling volume by distance
+            local base = hex_grid.get_trade_volume_base(state.hex_core.surface.name)
+            local exponent = (max_item_value * 0.5 / base) ^ (1 / planet_size)
+
+            local dist_factor = dist / planet_size
+
+            for _ = 1, trades_per_hex do
+                local r = math.random()
+                local random_volume_by_dist = math.min(max_item_value * 0.5, base * (exponent ^ (r * r * dist)))
+
+                -- This is a random volume chosen from a uniform distribution of all item values on the surface, resulting in each item having equal chance of being chosen as the central value.
+                local random_volume_uniform = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[math.random(1, #items_sorted_by_value)])
+
+                -- Exponentially interpolate towards pure random as distance increases.
+                local random_volume = math.exp(math.log(random_volume_by_dist) * (1 - dist_factor) + math.log(random_volume_uniform) * dist_factor)
+
+                local trade = hex_grid.generate_random_trade(state, random_volume)
+                if trade then
+                    hex_grid.add_trade(state, trade)
+                end
             end
         end
     end

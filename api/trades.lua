@@ -122,6 +122,41 @@ function trades.register_events()
     end)
 end
 
+function trades.init()
+    for surface_name, surrounding_trades in pairs(storage.trades.surrounding_trades) do
+        local ring = axial.ring({q=0, r=0}, 1)
+        for _, trade_items in pairs(surrounding_trades) do
+            local trade = trades.from_item_names(surface_name, table.unpack(trade_items))
+            trades.add_guaranteed_trade(trade, ring[math.random(1, #ring)])
+        end
+    end
+end
+
+---Set a hex position to be guaranteed to contain a specific trade.
+---@param trade Trade
+---@param hex_pos HexPos
+function trades.add_guaranteed_trade(trade, hex_pos)
+    local surface_guaranteed_trades = storage.trades.guaranteed_trades[trade.surface_name]
+    if not surface_guaranteed_trades then
+        surface_guaranteed_trades = {}
+        storage.trades.guaranteed_trades[trade.surface_name] = surface_guaranteed_trades
+    end
+
+    local Q = surface_guaranteed_trades[hex_pos.q]
+    if not Q then
+        Q = {}
+        surface_guaranteed_trades[hex_pos.q] = Q
+    end
+
+    local guaranteed_trades = Q[hex_pos.r]
+    if not guaranteed_trades then
+        guaranteed_trades = {}
+        Q[hex_pos.r] = guaranteed_trades
+    end
+
+    table.insert(guaranteed_trades, trade)
+end
+
 ---Create a new trade object.
 ---@param input_items TradeItem[]
 ---@param output_items TradeItem[]

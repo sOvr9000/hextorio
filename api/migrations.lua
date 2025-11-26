@@ -495,6 +495,8 @@ local process_migration = {
         storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
         storage.dungeons.queued_reloads = {}
         storage.dungeons.queued_reload_dungeon_indices = {}
+        storage.trades.surrounding_trades = data_trades.surrounding_trades
+        storage.trades.guaranteed_trades = {}
         storage.hex_grid.show_trade_flying_text = {}
         hex_grid.update_hexlight_default_colors()
 

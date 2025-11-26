@@ -38,6 +38,7 @@ Date: 21/11/25
     - Changed the rocket capacities of all coins to their respective stack sizes.
     - Dungeon hex cores now spawn immediately when the dungeon generates, giving them a glow.
     - The quest "Biter Rammer" now also gives 50 magmatic round magazines as a reward.
+    - Moved some of the starting trades on Nauvis to adjacent hexes.
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
