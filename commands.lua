@@ -148,6 +148,7 @@ local all_commands = {
 local public_commands = sets.new {
     "hextorio-commands",
     "get-item-value",
+    "simple-trade-loops",
 }
 
 
