@@ -498,6 +498,12 @@ local process_migration = {
         storage.hex_grid.show_trade_flying_text = {}
         hex_grid.update_hexlight_default_colors()
 
+        storage.item_ranks.productivity_requirements = {
+            [2] = 0.3, -- Bronze -> Silver
+            [3] = 0.7, -- Silver -> Gold
+            [4] = 1.2 -- Gold -> Red
+        }
+
         storage.ammo_type_per_entity = {
             ["dungeon-gun-turret"] = "bullet_type",
             ["dungeon-flamethrower-turret"] = "flamethrower_type",
