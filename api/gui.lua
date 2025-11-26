@@ -2182,6 +2182,7 @@ function gui.update_catalog_inspect_frame(player)
 
         local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
 
+        local needs_prod = true
         if rank_obj.rank == 1 then
             if trades.get_total_bought(selection.item_name) > 0 then
                 table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
@@ -2193,16 +2194,11 @@ function gui.update_catalog_inspect_frame(player)
             else
                 table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
             end
-        elseif rank_obj.rank == 2 then
-            table.insert(rank_up_localized_str, "+10") -- TODO: make these numbers a setting or auto-calculated based on intention of challenge
-            table.insert(rank_up_localized_str, "green")
-            table.insert(rank_up_localized_str, "heading-2")
-        elseif rank_obj.rank == 3 then
-            table.insert(rank_up_localized_str, "+70")
-            table.insert(rank_up_localized_str, "green")
-            table.insert(rank_up_localized_str, "heading-2")
-        elseif rank_obj.rank == 4 then
-            table.insert(rank_up_localized_str, "+110")
+            needs_prod = false
+        end
+
+        if needs_prod then
+            table.insert(rank_up_localized_str, lib.format_percentage(storage.item_ranks.productivity_requirements[rank_obj.rank], 0, false, true))
             table.insert(rank_up_localized_str, "green")
             table.insert(rank_up_localized_str, "heading-2")
         end

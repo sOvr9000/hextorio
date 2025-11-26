@@ -24,6 +24,11 @@ Date: 21/11/25
           Fulgora = 10%
           Gleba = 15%
           Aquilo = 20%
+    - Revised item rank up requirements:
+        Bronze - unchanged (buy and sell item once)
+        Silver - buy this item using a trade with at least +30% productivity
+        Gold - unchanged (electrocute an enemy unit near a trade involving this item with +70% productivity)
+        Red - sell this item using a trade with at least +120% productivity
   Changes:
     - Added extra conditions and info to the first few quests to improve NPE (new player experience).
     - Made the /simple-trade-loops command public.

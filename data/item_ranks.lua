@@ -4,9 +4,9 @@ return {
 
     rank_up_requirements = {1, 1, 1, 1},
     productivity_requirements = {
-        [2] = 0.1, -- Bronze -> Silver
+        [2] = 0.3, -- Bronze -> Silver
         [3] = 0.7, -- Silver -> Gold
-        [4] = 1.1 -- Gold -> Red
+        [4] = 1.2 -- Gold -> Red
     },
 
     rank_colors = {
