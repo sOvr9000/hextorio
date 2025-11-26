@@ -2041,7 +2041,7 @@ function hex_grid.spawn_hexlight(state)
 
     local hexlight = state.hex_core.surface.create_entity {
         name = "hexlight-" .. state.hex_core.surface.name,
-        position = {state.hex_core.position.x - 0.5, state.hex_core.position.y - 0.5},
+        position = {state.hex_core.position.x + 1.5, state.hex_core.position.y + 1.5},
         force = "player",
     }
 
@@ -2050,6 +2050,18 @@ function hex_grid.spawn_hexlight(state)
     hexlight.always_on = true
 
     state.hexlight = hexlight
+
+    local hexlight2 = state.hex_core.surface.create_entity {
+        name = "hexlight-" .. state.hex_core.surface.name,
+        position = {state.hex_core.position.x - 2.5, state.hex_core.position.y - 2.5},
+        force = "player",
+    }
+
+    hexlight2.destructible = false
+    hexlight2.minable = false
+    hexlight2.always_on = true
+
+    state.hexlight2 = hexlight2
 end
 
 function hex_grid.add_initial_trades(state)
@@ -2950,14 +2962,16 @@ function hex_grid.process_hexlight(state)
     -- TODO: Check if this really saves UPS.  Idea is to not check for (and add) six signal values if no red or green signals exist at all.
     if not hex_core.get_circuit_network(defines.wire_connector_id.circuit_red) and not hex_core.get_circuit_network(defines.wire_connector_id.circuit_green) then
         state.hexlight.color = {1, 1, 1}
+        state.hexlight2.color = {1, 1, 1}
         return
     end
 
-    local R = hex_core.get_signal({type = "virtual", name = "signal-red"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)
-    local G = hex_core.get_signal({type = "virtual", name = "signal-green"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)
-    local B = hex_core.get_signal({type = "virtual", name = "signal-blue"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)
+    local R = math.min(255, math.max(0, hex_core.get_signal({type = "virtual", name = "signal-red"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)))
+    local G = math.min(255, math.max(0, hex_core.get_signal({type = "virtual", name = "signal-green"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)))
+    local B = math.min(255, math.max(0, hex_core.get_signal({type = "virtual", name = "signal-blue"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)))
 
     state.hexlight.color = {R, G, B}
+    state.hexlight2.color = {R, G, B}
 end
 
 function hex_grid.add_to_output_buffer(state, items)

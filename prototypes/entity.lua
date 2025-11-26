@@ -459,10 +459,12 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
         emissions_per_minute = {},
     }
     hexlight.heating_energy = "0kJ"
-    hexlight.glow_color_intensity = 1.25
-    hexlight.glow_size = hex_size * 2.5
-    hexlight.light.size = hex_size * 2.5
-    hexlight.light_when_colored.size = hex_size * 2.5
+    hexlight.glow_color_intensity = 0.625
+
+    local r = hex_size * 2.5
+    hexlight.glow_size = r
+    hexlight.light.size = r
+    hexlight.light_when_colored.size = r
 
     data:extend({hexport, hexlight})
 end
