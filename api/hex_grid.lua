@@ -317,6 +317,26 @@ function hex_grid.register_events()
     event_system.register_callback("runtime-setting-changed-base-trade-prod-aquilo", function()
         hex_grid.update_all_trades "aquilo"
     end)
+
+    event_system.register_callback("runtime-setting-changed-default-nauvis-hexlight-color", function()
+        hex_grid.update_hexlight_default_colors "nauvis"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-default-vulcanus-hexlight-color", function()
+        hex_grid.update_hexlight_default_colors "vulcanus"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-default-fulgora-hexlight-color", function()
+        hex_grid.update_hexlight_default_colors "fulgora"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-default-gleba-hexlight-color", function()
+        hex_grid.update_hexlight_default_colors "gleba"
+    end)
+
+    event_system.register_callback("runtime-setting-changed-default-aquilo-hexlight-color", function()
+        hex_grid.update_hexlight_default_colors "aquilo"
+    end)
 end
 
 ---Get or create surface storage
@@ -2048,6 +2068,7 @@ function hex_grid.spawn_hexlight(state)
     hexlight.destructible = false
     hexlight.minable = false
     hexlight.always_on = true
+    hexlight.color = storage.hex_grid.default_hexlight_color[state.hex_core.surface.name]
 
     state.hexlight = hexlight
 
@@ -2060,6 +2081,7 @@ function hex_grid.spawn_hexlight(state)
     hexlight2.destructible = false
     hexlight2.minable = false
     hexlight2.always_on = true
+    hexlight2.color = hexlight.color
 
     state.hexlight2 = hexlight2
 end
@@ -2961,8 +2983,8 @@ function hex_grid.process_hexlight(state)
 
     -- TODO: Check if this really saves UPS.  Idea is to not check for (and add) six signal values if no red or green signals exist at all.
     if not hex_core.get_circuit_network(defines.wire_connector_id.circuit_red) and not hex_core.get_circuit_network(defines.wire_connector_id.circuit_green) then
-        state.hexlight.color = {1, 1, 1}
-        state.hexlight2.color = {1, 1, 1}
+        state.hexlight.color = storage.hex_grid.default_hexlight_color[hex_core.surface.name]
+        state.hexlight2.color = state.hexlight.color
         return
     end
 
@@ -3033,6 +3055,36 @@ function hex_grid.try_unload_output_buffer(state)
     end
 
     return empty
+end
+
+---Re-fetch settings and force-set all hexlight colors on the given surface.
+---@param surface_name string|nil If not provided, all surfaces are updated.
+function hex_grid.update_hexlight_default_colors(surface_name)
+    if surface_name == nil then
+        for _surface_name, _ in pairs(storage.item_values.values) do -- intended to iterate over ALL, not just the existing ones
+            hex_grid.update_hexlight_default_colors(_surface_name)
+        end
+        return
+    end
+
+    if not storage.hex_grid.default_hexlight_color then
+        storage.hex_grid.default_hexlight_color = {}
+    end
+
+    local color = lib.runtime_setting_value("default-" .. surface_name .. "-hexlight-color")
+    storage.hex_grid.default_hexlight_color[surface_name] = color
+
+    if not game.get_surface(surface_name) then return end
+
+    local surface_hexes = hex_grid.get_surface_hexes(surface_name)
+    for _, Q in pairs(surface_hexes) do
+        for _, state in pairs(Q) do
+            if state.hexlight then
+                state.hexlight.color = color
+                state.hexlight2.color = color
+            end
+        end
+    end
 end
 
 ---Recalculate the productivities of all trades for a given surface.

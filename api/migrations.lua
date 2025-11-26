@@ -496,6 +496,7 @@ local process_migration = {
         storage.dungeons.queued_reloads = {}
         storage.dungeons.queued_reload_dungeon_indices = {}
         storage.hex_grid.show_trade_flying_text = {}
+        hex_grid.update_hexlight_default_colors()
 
         storage.ammo_type_per_entity = {
             ["dungeon-gun-turret"] = "bullet_type",

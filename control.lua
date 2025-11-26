@@ -85,6 +85,8 @@ script.on_init(function()
     storage.hex_island = data_hex_island
     storage.item_buffs = data_item_buffs
 
+    hex_grid.update_hexlight_default_colors()
+
     storage.ammo_type_per_entity = {
         ["dungeon-gun-turret"] = "bullet_type",
         ["dungeon-flamethrower-turret"] = "flamethrower_type",

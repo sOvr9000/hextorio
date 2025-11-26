@@ -26,6 +26,41 @@ local tile_names_for_hexes = {
 
 data:extend({
     {
+        type = "color-setting",
+        name = "hextorio-default-nauvis-hexlight-color",
+        setting_type = "runtime-global",
+        default_value = {255, 255, 255},
+        order="-aa",
+    },
+    {
+        type = "color-setting",
+        name = "hextorio-default-vulcanus-hexlight-color",
+        setting_type = "runtime-global",
+        default_value = {255, 255, 255},
+        order="-ab",
+    },
+    {
+        type = "color-setting",
+        name = "hextorio-default-fulgora-hexlight-color",
+        setting_type = "runtime-global",
+        default_value = {255, 255, 255},
+        order="-ac",
+    },
+    {
+        type = "color-setting",
+        name = "hextorio-default-gleba-hexlight-color",
+        setting_type = "runtime-global",
+        default_value = {255, 255, 255},
+        order="-ad",
+    },
+    {
+        type = "color-setting",
+        name = "hextorio-default-aquilo-hexlight-color",
+        setting_type = "runtime-global",
+        default_value = {255, 255, 255},
+        order="-ae",
+    },
+    {
         type = "double-setting",
         name = "hextorio-vault-chance",
         setting_type = "runtime-global",
