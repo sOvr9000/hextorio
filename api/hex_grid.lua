@@ -223,14 +223,14 @@ function hex_grid.register_events()
                     end
                 end
                 trades.discover_items_in_trades(all_trades)
-            elseif value == "hexports" then
-                for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
-                    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
-                        if state.claimed then
-                            hex_grid.spawn_hexport(state, true)
-                        end
-                    end
-                end
+            -- elseif value == "hexports" then
+            --     for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+            --         for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+            --             if state.claimed then
+            --                 hex_grid.spawn_hexport(state, true)
+            --             end
+            --         end
+            --     end
             end
         elseif reward_type == "claim-free-hexes" then
             hex_grid.add_free_hex_claims(value[1], value[2])
