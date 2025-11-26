@@ -3237,7 +3237,7 @@ function gui.on_item_buff_button_click(player, element)
     local inv_coin = coin_tiers.get_coin_from_inventory(inv)
 
     if coin_tiers.gt(cost, inv_coin) then
-        game.print({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(cost), coin_tiers.coin_to_text(inv_coin)})
+        player.print({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(cost), coin_tiers.coin_to_text(inv_coin)})
         return
     end
 
