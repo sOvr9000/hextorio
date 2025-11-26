@@ -934,7 +934,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     event_system.trigger("hex-generated", surface_id, hex_pos)
 
     if is_dungeon then
-        hex_grid.spawn_hex_core(surface, hex_pos)
+        hex_grid.spawn_hex_core(surface, axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation))
     end
 end
 
