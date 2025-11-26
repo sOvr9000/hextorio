@@ -8,6 +8,7 @@ hex_coin.stack_size = 99999
 hex_coin.auto_recycle = false
 hex_coin.subgroup = "other"
 hex_coin.hidden = false
+hex_coin.weight = 1000000 / hex_coin.stack_size
 
 local gravity_coin = table.deepcopy(hex_coin)
 gravity_coin.name = "gravity-coin"
@@ -16,6 +17,7 @@ gravity_coin.order = "yb"
 gravity_coin.auto_recycle = false
 gravity_coin.subgroup = "other"
 gravity_coin.hidden = false
+gravity_coin.weight = 1000000 / gravity_coin.stack_size
 
 local meteor_coin = table.deepcopy(hex_coin)
 meteor_coin.name = "meteor-coin"
@@ -24,6 +26,7 @@ meteor_coin.order = "yc"
 meteor_coin.auto_recycle = false
 meteor_coin.subgroup = "other"
 meteor_coin.hidden = false
+meteor_coin.weight = 1000000 / meteor_coin.stack_size
 
 local hexaprism_coin = table.deepcopy(hex_coin)
 hexaprism_coin.name = "hexaprism-coin"
@@ -33,6 +36,7 @@ hexaprism_coin.stack_size = 100000
 hexaprism_coin.auto_recycle = false
 hexaprism_coin.subgroup = "other"
 hexaprism_coin.hidden = false
+hexaprism_coin.weight = 1000000 / hexaprism_coin.stack_size
 
 
 -- BELTS
