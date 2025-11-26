@@ -50,6 +50,7 @@ Date: 21/11/25
     - Fixed floating point rounding errors around 0 for trade productivity.
     - Fixed that item-giving quests would not drop a remainder of a stack if the inventory is nearly full instead of only dropping entire stacks that wouldn't fit.
     - Fixed that hexports were off-center from the hex core.
+    - Fixed that hexports were showing vulnerability to lightning strikes on Fulgora.
   Gui:
     - Trade arrows display nonzero productivity without mousing over them.
     - Softened the white and cyan trade arrow sprites.

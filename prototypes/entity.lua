@@ -431,6 +431,12 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexport.selection_priority = 0
     hexport.charging_station_count_affected_by_quality = false
     hexport.charging_distance = 3
+    hexport.resistances = {
+      {
+        type = "electric",
+        percent = 100,
+      },
+    }
     hexport.energy_usage = "0kJ"
     hexport.energy_source = {
         type = "void",
@@ -452,6 +458,12 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexlight.selectable_in_game = false
     hexlight.picture_off = nil
     hexlight.picture_on = nil
+    hexlight.resistances = {
+      {
+        type = "electric",
+        percent = 100,
+      },
+    }
     hexlight.energy_source = {
         type = "void",
         render_no_power_icon = false,
