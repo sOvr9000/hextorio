@@ -22,7 +22,7 @@ return {
         "wetland-blue-slime",
     },
 
-    pool_size = 1000,
+    pool_size = 250,
     chunk_generation_range_per_player = 7,
     show_trade_flying_text = {},
 }
