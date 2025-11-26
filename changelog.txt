@@ -6,6 +6,7 @@ Date: 21/11/25
   Minor Features:
     - Added "total belting distance", "sink / generator", and "dungeon" info to the output of /simple-trade-loops, as they are fast calculations.
   Balancing:
+    - Made the stack inserter item buff require one less upgrade to have another effect on top of the initial unlock.
     - Slightly increased the range of dungeon gun turrets.
     - Slightly decreased the range of dungeon flamethrower and laser turrets.
     - Decreased the damage of dungeon turrets.

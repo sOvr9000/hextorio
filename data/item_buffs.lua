@@ -117,7 +117,7 @@ return {
             {
                 type = "belt-stack-size",
                 value = 1,
-                level_scaling = 1.04,
+                level_scaling = 1.05,
             },
         },
         ["yumako"] = {
