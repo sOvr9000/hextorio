@@ -37,6 +37,7 @@ Date: 21/11/25
     - Changed the default hex pool size from 1000 to 250, allowing for larger saves before noticing potential UPS drops from all the trading.
     - Changed the rocket capacities of all coins to their respective stack sizes.
     - Dungeon hex cores now spawn immediately when the dungeon generates, giving them a glow.
+    - The quest "Biter Rammer" now also gives 50 magmatic round magazines as a reward.
   Bugfixes:
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.

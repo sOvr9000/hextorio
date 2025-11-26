@@ -112,7 +112,16 @@ return {
         {
             name = "biter-rammer",
             conditions = {{type = "biter-ramming", show_progress_bar = false}},
-            rewards = {{type = "reduce-biters", value = 25}, {type = "claim-free-hexes", value = {"nauvis", 2}}},
+            rewards = {
+                {type = "reduce-biters", value = 25},
+                {type = "claim-free-hexes", value = {"nauvis", 2}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "magmatic-rounds-magazine", count = 50},
+                    },
+                },
+            },
             prerequisites = {"ground-zero"},
         },
         {
