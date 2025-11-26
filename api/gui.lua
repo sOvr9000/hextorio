@@ -1667,17 +1667,27 @@ function gui.update_trade_overview(player)
 
     local function filter_trade(trade)
         if trade.hex_core_state then
-            if not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then
+            local state = trade.hex_core_state
+            if not state.hex_core or not state.hex_core.valid then
                 return true
             end
+            if filter.show_claimed_only and not state.claimed then
+                return true
+            end
+            if filter.exclude_dungeons and state.is_dungeon then
+                return true
+            end
+            if filter.exclude_sinks_generators and (state.mode == "sink" or state.mode == "generator") then
+                return true
+            end
+        end
+        if filter.show_interplanetary_only and not trades.is_interplanetary_trade(trade) then
+            return true
         end
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
                 return true
             end
-        end
-        if filter.show_claimed_only and trade.hex_core_state and not trade.hex_core_state.claimed then
-            return true
         end
         if filter.exact_inputs_match then
             for _, input in pairs(trade.input_items) do
@@ -2634,7 +2644,7 @@ function gui.on_debug_complete_quest_button_click(player, element)
 end
 
 function gui.on_checkbox_click(player, element)
-    if element.parent.name == "show-only-claimed" or element.parent.name == "exact-inputs-match" or element.parent.name == "exact-outputs-match" then
+    if gui.is_descendant_of(element, "trade-overview") then
         gui.on_trade_overview_filter_changed(player)
     end
 end
@@ -3026,6 +3036,9 @@ function gui.on_clear_filters_button_click(player, element)
     end
 
     filter_frame["right"]["show-only-claimed"]["checkbox"].state = false
+    filter_frame["right"]["show-only-interplanetary"]["checkbox"].state = false
+    filter_frame["right"]["exclude-dungeons"]["checkbox"].state = false
+    filter_frame["right"]["exclude-sinks-generators"]["checkbox"].state = false
     filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["exact-inputs-match"]["checkbox"].state = false
     filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["exact-outputs-match"]["checkbox"].state = false
     filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value = filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].get_slider_maximum()
@@ -3492,9 +3505,12 @@ function gui.update_player_trade_overview_filters(player)
         filter.output_items = nil
     end
 
-    filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
     filter.exact_inputs_match = filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["exact-inputs-match"]["checkbox"].state
     filter.exact_outputs_match = filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["exact-outputs-match"]["checkbox"].state
+    filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
+    filter.show_interplanetary_only = filter_frame["right"]["show-only-interplanetary"]["checkbox"].state
+    filter.exclude_dungeons = filter_frame["right"]["exclude-dungeons"]["checkbox"].state
+    filter.exclude_sinks_generators = filter_frame["right"]["exclude-sinks-generators"]["checkbox"].state
 
     if filter.exact_inputs_match then
         filter.input_items_lookup = sets.new(filter.input_items)
