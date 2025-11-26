@@ -525,6 +525,10 @@ local process_migration = {
                         state.is_dungeon = nil
                     end
                 end
+                -- Re-center hexports
+                if state.hexport then
+                    hex_grid.spawn_hexport(state) -- Replaces existing
+                end
                 -- Add hexlights
                 hex_grid.spawn_hexlight(state)
             end

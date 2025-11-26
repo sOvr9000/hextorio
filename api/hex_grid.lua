@@ -2066,7 +2066,7 @@ function hex_grid.spawn_hexlight(state)
 
     local hexlight = state.hex_core.surface.create_entity {
         name = "hexlight-" .. state.hex_core.surface.name,
-        position = {state.hex_core.position.x + 1.5, state.hex_core.position.y + 1.5},
+        position = {state.hex_core.position.x + 2, state.hex_core.position.y + 2},
         force = "player",
     }
 
@@ -2084,7 +2084,7 @@ function hex_grid.spawn_hexlight(state)
 
     local hexlight2 = state.hex_core.surface.create_entity {
         name = "hexlight-" .. state.hex_core.surface.name,
-        position = {state.hex_core.position.x - 2.5, state.hex_core.position.y - 2.5},
+        position = {state.hex_core.position.x - 2, state.hex_core.position.y - 2},
         force = "player",
     }
 

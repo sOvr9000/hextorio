@@ -418,7 +418,7 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexport.max_logistic_slots = 0
     hexport.robot_slots_count = 0
     hexport.minable = nil
-    hexport.collision_box = nil
+    hexport.collision_box = {{-0.5, -0.5}, {0.5, 0.5}}
     hexport.base_animation = nil
     hexport.door_animation_down = nil
     hexport.door_animation_up = nil
@@ -447,7 +447,7 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexlight.name = "hexlight-" .. surface_name
     hexlight.hidden_in_factoriopedia = true
     hexlight.minable = nil
-    hexlight.collision_box = nil
+    hexlight.collision_box = {{-0.5, -0.5}, {0.5, 0.5}}
     hexlight.selection_box = nil
     hexlight.selectable_in_game = false
     hexlight.picture_off = nil
