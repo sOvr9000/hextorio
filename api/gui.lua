@@ -241,7 +241,7 @@ function gui.init_hex_core(player)
     local claimed_by = hex_core_gui.add {type = "label", name = "claimed-by", caption = {"hex-core-gui.claimed-by"}}
     claimed_by.style.font = "heading-2"
 
-    local hex_control_flow = hex_core_gui.add {type = "flow", name = "hex-control-flow", direction = "horizontal"}
+    local hex_control_flow = hex_core_gui.add {type = "table", name = "hex-control-flow", column_count = 5}
     hex_control_flow.visible = false
 
     local teleport = hex_control_flow.add {type = "sprite-button", name = "teleport", sprite = "virtual-signal/down-arrow"}

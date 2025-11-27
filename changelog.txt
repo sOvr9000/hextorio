@@ -67,6 +67,7 @@ Date: 27/11/25
     - Added button for pinging trades.
     - Improved trade overview layout.
     - Some trade overview filters that become irrelevant under certain conditions are now grayed out, e.g. "max output trades" slider grays out when "exact outputs match" is enabled.
+    - Made the hex core buttons wrap around instead of leaving the background GUI.
   Optimizations:
     - Optimized dungeon turret reloading.
     - Optimized ahead-of-time chunk generation around players.
