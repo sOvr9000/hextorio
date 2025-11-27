@@ -1,11 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
-Date: 21/11/25
+Date: 27/11/25
   Features:
     - Hex cores now emit flying text when they make a trade.  Can be disabled in the mod's player settings.
     - Hex cores now emit light, the color of which reacts to circuit signals.
         Default colors adjustable in mod settings!
-    - Added Hexport selection tool, allowing for mass enabling or disabling of hexports.
+    - Added "Enable Hexports" selection tool, allowing for large-scale enabling or disabling of hexports.
     - Added filters in trade overview for filtering out non-interplanetary trades, trades in dungeon hexes, and trades that are either in "sink" or "generator" hex cores.
   Minor Features:
     - Added "total belting distance", "sink / generator", and "dungeon" info to the output of /simple-trade-loops, as they are fast calculations.
@@ -63,6 +63,7 @@ Date: 21/11/25
     - Moved the trade arrow's tooltip to a more obvious location that's below the trade, having the sprite of a productivity module.
     - Added button for pinging trades.
     - Improved trade overview layout.
+    - Some trade overview filters that become irrelevant under certain conditions are now grayed out, e.g. "max output trades" slider grays out when "exact outputs match" is enabled.
   Optimizations:
     - Optimized dungeon turret reloading.
     - Optimized ahead-of-time chunk generation around players.
