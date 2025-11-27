@@ -73,11 +73,21 @@ function hex_grid.register_events()
             return
         end
 
-        local outputs = params[1]
+        if #inputs > 3 or #inputs == 0 then
+            player.print {"hextorio.command-invalid-list-size", 1, 1, 3, #inputs}
+            return
+        end
+
+        local outputs = params[2]
         if type(outputs) == "string" then
             outputs = {outputs}
         elseif type(outputs) ~= "table" then
             player.print {"hextorio.command-invalid-item-name", outputs}
+            return
+        end
+
+        if #outputs > 3 or #outputs == 0 then
+            player.print {"hextorio.command-invalid-list-size", 2, 1, 3, #outputs}
             return
         end
 

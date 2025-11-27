@@ -49,6 +49,7 @@ Date: 27/11/25
     - Fixed that dungeons invisibly occupied some hexes just outside of themselves, preventing you from claiming them.
     - Fixed that hex cores did not correctly show whether the hexports were currently enabled.
     - Fixed crash on running the command /hextorio-debug when in remote view.
+    - Fixed various crashes with incorrect command use.
     - Fixed that updating the mod settings for planet-based trade productivity bonuses would not take effect without a restart.
     - Fixed floating point rounding errors around 0 for trade productivity.
     - Fixed that item-giving quests would not drop a remainder of a stack if the inventory is nearly full instead of only dropping entire stacks that wouldn't fit.
@@ -56,6 +57,7 @@ Date: 27/11/25
     - Fixed that hexports were showing vulnerability to lightning strikes on Fulgora.
     - Fixed crash caused by other mods removing or restructuring title screen music.
     - Fixed that concrete was covering too much area over hexes, where it was being placed over water around the perimeter of the land.
+    - Fixed that /regenerate-trades and /remove-trade did not fully remove trades.
   Gui:
     - Trade arrows display nonzero productivity without mousing over them.
     - Softened the white and cyan trade arrow sprites.
