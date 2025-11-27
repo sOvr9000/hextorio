@@ -539,7 +539,6 @@ function gui.init_trade_overview(player)
     local toggle_exact_outputs_match = exact_outputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
     toggle_exact_outputs_match.style.top_margin = 3
     local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact"}}
-    toggle_exact_outputs_match_label.tooltip = {"hextorio-gui.exact-outputs-match-tooltip"}
     gui.auto_width(
         exact_outputs_match_flow.add {type = "empty-widget", name = "empty-2"}
     )
