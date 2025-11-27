@@ -3,6 +3,8 @@ Version: 1.3.0
 Date: 27/11/25
   Major Features:
     - Spidertrons can now deliver items between hex cores or other inventories.
+    - The Sentient Spider is now equipped with six electromagnetic penetrators.
+    - Added the electromagnetic penetrator handheld weapon.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25
