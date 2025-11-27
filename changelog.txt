@@ -58,6 +58,7 @@ Date: 27/11/25
     - Fixed crash caused by other mods removing or restructuring title screen music.
     - Fixed that concrete was covering too much area over hexes, where it was being placed over water around the perimeter of the land.
     - Fixed that /regenerate-trades and /remove-trade did not fully remove trades.
+    - Fixed that sink and generator mode would leave the original trades in a recoverable state for the gold star item rank bonus effect.
   Gui:
     - Trade arrows display nonzero productivity without mousing over them.
     - Softened the white and cyan trade arrow sprites.

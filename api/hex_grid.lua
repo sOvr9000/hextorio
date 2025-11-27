@@ -128,7 +128,7 @@ function hex_grid.register_events()
         if not trade then return end
 
         player.print("Removed trade: " .. lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade)))
-        hex_grid.remove_trade_by_index(state, idx)
+        hex_grid.remove_trade_by_index(state, idx, false)
     end)
 
     event_system.register_callback("command-regenerate-trades", function(player, params)
@@ -142,12 +142,11 @@ function hex_grid.register_events()
                 if state.trades then
                     for i = #state.trades, 1, -1 do
                         local trade_id = state.trades[i]
-                        local trade = trades.get_trade_from_id(trade_id)
-                        if trade then
-                            trades.remove_trade_from_tree(trade, false)
-                        end
-
-                        hex_grid.remove_trade_by_index(state, i)
+                        -- local trade = trades.get_trade_from_id(trade_id)
+                        -- if trade then
+                        --     trades.remove_trade_from_tree(trade, false)
+                        -- end
+                        hex_grid.remove_trade_by_index(state, i, false)
                     end
                 end
             end
@@ -502,7 +501,8 @@ function hex_grid.add_trade(hex_core_state, trade)
     quests.increment_progress_for_type("trades-found")
 end
 
-function hex_grid.remove_trade_by_index(hex_core_state, idx)
+function hex_grid.remove_trade_by_index(hex_core_state, idx, recoverable)
+    if recoverable == nil then recoverable = true end
     if not hex_core_state then
         lib.log_error("hex_grid.remove_trade_by_index: nil hex core state")
         return
@@ -518,7 +518,7 @@ function hex_grid.remove_trade_by_index(hex_core_state, idx)
     local trade = trades.get_trade_from_id(trade_id)
     if not trade then return end
 
-    trades.remove_trade_from_tree(trade)
+    trades.remove_trade_from_tree(trade, recoverable)
 end
 
 ---Add items to a hex core's unloader filters, only filling in some or all of the remaining empty filters.
@@ -627,7 +627,7 @@ function hex_grid.switch_hex_core_mode(state, mode)
                     sets.add(all_outputs, output.name)
                 end
             end
-            hex_grid.remove_trade_by_index(state, i)
+            hex_grid.remove_trade_by_index(state, i, false)
         end
         for item_name, _ in pairs(all_outputs) do
             local trade = trades.from_item_names(state.hex_core.surface.name, {"hex-coin"}, {item_name}, {target_efficiency = 0.1})
@@ -643,7 +643,7 @@ function hex_grid.switch_hex_core_mode(state, mode)
                     sets.add(all_inputs, input.name)
                 end
             end
-            hex_grid.remove_trade_by_index(state, i)
+            hex_grid.remove_trade_by_index(state, i, false)
         end
         for item_name, _ in pairs(all_inputs) do
             local trade = trades.from_item_names(state.hex_core.surface.name, {item_name}, {"hex-coin"}, {target_efficiency = 0.1})
@@ -2201,7 +2201,7 @@ function hex_grid.delete_hex_core(hex_core)
     for _, trade_id in pairs(state.trades) do
         local trade = trades.get_trade_from_id(trade_id)
         if trade then
-            trades.remove_trade_from_tree(trade)
+            trades.remove_trade_from_tree(trade, true)
             hex_grid.try_recover_trade(trade, nil, false)
         end
     end
