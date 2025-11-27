@@ -1616,11 +1616,19 @@ function gui.update_trade_overview(player)
         filter_frame["left"]["planet-flow"][surface_name].enabled = game.get_surface(surface_name) ~= nil
     end
 
-    filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["label"].caption = {"hextorio-gui.max", filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value}
-    filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["label"].caption = {"hextorio-gui.max", filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value}
-
     gui.update_player_trade_overview_filters(player)
     local filter = gui.get_player_trade_overview_filter(player)
+
+    if filter.exact_inputs_match and filter.input_items and #filter.input_items > 0 then
+        filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value = #filter.input_items
+    end
+
+    if filter.exact_outputs_match and filter.output_items and #filter.output_items > 0 then
+        filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value = #filter.output_items
+    end
+
+    filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["label"].caption = {"hextorio-gui.max", filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value}
+    filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["label"].caption = {"hextorio-gui.max", filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value}
 
     filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].enabled = not filter.exact_inputs_match
     filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].enabled = not filter.exact_outputs_match
@@ -3522,13 +3530,6 @@ function gui.update_player_trade_overview_filters(player)
     filter.exclude_dungeons = filter_frame["right"]["exclude-dungeons"]["checkbox"].state
     filter.exclude_sinks_generators = filter_frame["right"]["exclude-sinks-generators"]["checkbox"].state
 
-    if filter.exact_inputs_match then
-        filter.input_items_lookup = sets.new(filter.input_items)
-    end
-    if filter.exact_outputs_match then
-        filter.output_items_lookup = sets.new(filter.output_items)
-    end
-
     filter.num_item_bounds = {
         inputs = {
             min = 1,
@@ -3539,6 +3540,19 @@ function gui.update_player_trade_overview_filters(player)
             max = filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value,
         },
     }
+
+    if filter.exact_inputs_match then
+        filter.input_items_lookup = sets.new(filter.input_items)
+        if filter.input_items then
+            filter.num_item_bounds.inputs.max = #filter.input_items
+        end
+    end
+    if filter.exact_outputs_match then
+        filter.output_items_lookup = sets.new(filter.output_items)
+        if filter.output_items then
+            filter.num_item_bounds.outputs.max = #filter.output_items
+        end
+    end
 
     -- Sorting stuff
     filter.sorting = {}
@@ -3560,8 +3574,6 @@ function gui.update_player_trade_overview_filters(player)
         end
     end
     filter.max_trades = max_trades
-
-    -- TODO: min/max num inputs/outputs
 end
 
 function gui.swap_trade_overview_content_filters(player)
