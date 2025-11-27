@@ -1622,6 +1622,14 @@ function gui.update_trade_overview(player)
     gui.update_player_trade_overview_filters(player)
     local filter = gui.get_player_trade_overview_filter(player)
 
+    filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].enabled = not filter.exact_inputs_match
+    filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].enabled = not filter.exact_outputs_match
+    filter_frame["right"]["exclude-dungeons"]["checkbox"].enabled = not filter.show_claimed_only
+
+    if filter.show_claimed_only then
+        filter_frame["right"]["exclude-dungeons"]["checkbox"].state = true
+    end
+
     local function intersection(trades_lookup1, trades_lookup2)
         local result = {}
         for trade_id, _ in pairs(trades_lookup1) do
