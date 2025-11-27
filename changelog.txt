@@ -18,6 +18,7 @@ Date: 21/11/25
     - Lowered the default mod settings for the frequencies of dungeons on each planet.
     - Made the default mod setting for the cost multiplier of supercharging 5x cheaper.
     - Slightly increased ore richness.
+    - Slightly increased default mod setting for Fulgora hex size so that using trains is a little more feasible.
     - Changed the quest reward of "Catalog Initiate" which gives +10% trade productivity to give +5% instead.
     - Changed the default mod settings for planet-based trade productivity bonuses to start from 0% on Nauvis instead of -20%, with the intention to reduce confusion for new players of the mod.
         The default settings are now:

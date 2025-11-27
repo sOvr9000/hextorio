@@ -169,7 +169,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-hex-size-fulgora",
         setting_type = "startup",
-        default_value = 31,
+        default_value = 33,
         minimum_value = 8,
         maximum_value = 60,
         order = "zcb",
