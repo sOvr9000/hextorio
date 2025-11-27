@@ -71,9 +71,22 @@ function terrain.set_hex_tiles(surface, hex_pos, tile_type, overwrite_water)
         return
     end
 
-    local positions = axial.get_hex_tile_positions(hex_pos, transformation.scale, transformation.rotation, transformation.stroke_width)
+    -- Get all tiles in the hex (with no exclusion)
+    local all_positions = axial.get_hex_tile_positions(hex_pos, transformation.scale, transformation.rotation, 0)
 
-    terrain.set_tiles(surface, positions, tile_type, storage.hex_grid.gleba_ignore_tiles)
+    -- Get the border tiles (same calculation used when placing water)
+    -- hex_size_decrement = 0 means border is placed around the full-size hex
+    local border_tiles = axial.get_hex_border_tiles(hex_pos, transformation.scale, transformation.rotation, transformation.stroke_width, 0, false)
+
+    -- Subtract border tiles from all positions to get the land interior
+    local land_positions = {}
+    for _, pos in pairs(all_positions) do
+        if not (border_tiles[pos.x] and border_tiles[pos.x][pos.y]) then
+            table.insert(land_positions, pos)
+        end
+    end
+
+    terrain.set_tiles(surface, land_positions, tile_type, storage.hex_grid.gleba_ignore_tiles)
 end
 
 -- Generate tiles along the border of a hex
