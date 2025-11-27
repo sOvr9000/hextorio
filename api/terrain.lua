@@ -240,7 +240,7 @@ function terrain.fill_edges_between_hexes(surface, hex_pos1, hex_pos2, tile_type
     local threshold = center_dist_squared * threshold_multiplier
 
     if surface.name == "fulgora" then
-        threshold = threshold * 0.78
+        threshold = threshold * 0.79
     end
 
     -- Get border tiles for both hexes
