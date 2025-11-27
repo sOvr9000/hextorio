@@ -31,7 +31,7 @@ local all_commands = {
         name = "rank-up",
         usage = "/rank-up <item-name>",
         params = {"string"},
-        examples = {"/rank-up iron-ore", "/rank-up in-hand"},
+        examples = {"/rank-up iron-ore", "/rank-up [color=yellow]in-hand[.color]"},
     },
     {
         name = "rank-up-all",
@@ -45,7 +45,7 @@ local all_commands = {
         name = "add-trade",
         usage = "/add-trade <inputs> <outputs>",
         params = {"any", "any"},
-        examples = {"/add-trade stone coal", "/add-trade [stone iron-plate] uranium-ore", "/add-trade plastic-bar [copper-plate copper-ore]"},
+        examples = {"/add-trade stone coal", "/add-trade [stone iron-plate] uranium-ore", "/add-trade plastic-bar [copper-plate copper-ore]", "/add-trade [color=yellow]in-hand[.color] hex-coin"},
     },
     {
         name = "remove-trade",
@@ -67,7 +67,7 @@ local all_commands = {
         name = "chart",
         usage = "/chart <surface> [range]",
         params = {"string", "number?"},
-        examples = {"/chart vulcanus", "/chart nauvis 500"},
+        examples = {"/chart vulcanus", "/chart nauvis 500", "/chart [color=pink]here[.color]"},
     },
     {
         name = "spawn-ship",
@@ -326,8 +326,14 @@ function on_command(player, command, params)
     elseif command == "tp-to-ship" then
         player.teleport({x = 0, y = 0}, "platform-1")
     elseif command == "chart" then
+        local surface_name = params[1]
+        if not game.get_surface(surface_name) then
+            player.print {"hextorio.command-invalid-surface"}
+            return
+        end
+
         local range = params[2] or 300
-        player.force.chart(params[1], {{-range, -range}, {range, range}})
+        player.force.chart(surface_name, {{-range, -range}, {range, range}})
     elseif command == "spawn-ship" then
         local sp = space_platforms.new "nauvis"
         if sp then
@@ -348,7 +354,7 @@ function on_command(player, command, params)
     elseif command == "add-coins" then
         local inv = lib.get_player_inventory(player)
         if inv then
-            coin_tiers.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1] or 1000000000000000))
+            coin_tiers.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1] or 100000000000000000000))
         end
     elseif command == "summon" then
         local entity_name = params[1]
