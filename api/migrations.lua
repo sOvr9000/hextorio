@@ -77,6 +77,7 @@ local versions = {
     "1.1.4",
     "1.2.0",
     "1.2.1",
+    "1.3.0",
 }
 
 local version_stepping = {}
@@ -549,6 +550,8 @@ local process_migration = {
 
         quests.unlock_feature "trade-configuration"
         hex_grid.update_all_trades()
+    end,
+    ["1.2.1"] = function()
     end,
 }
 
