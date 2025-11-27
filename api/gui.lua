@@ -419,6 +419,24 @@ function gui.init_trade_overview(player)
     local trade_contents_label = trade_contents_flow.add {type = "label", name = "label", caption = {"hextorio-gui.trade-contents"}}
     local trade_contents_frame = trade_contents_flow.add {type = "flow", name = "frame", direction = "horizontal"}
 
+    local max_trades_flow = right_frame.add {type = "flow", name = "max-trades-flow", direction = "horizontal"}
+    local max_trades_label = max_trades_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-trades"}}
+    max_trades_label.style.top_margin = 3
+    local max_trades_dropdown = max_trades_flow.add {type = "drop-down", name = "dropdown", selected_index = 4, items = {{"", 10}, {"", 25}, {"", 100}, {"hextorio-gui.all"}}}
+
+    local sort_method_flow = right_frame.add {type = "flow", name = "sort-method", direction = "horizontal"}
+    local sort_method_label = sort_method_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sort-method"}}
+    local sort_method_dropdown = sort_method_flow.add {type = "drop-down", name = "dropdown", selected_index = 1, items = {{"trade-sort-method.distance-from-spawn"}, {"trade-sort-method.distance-from-character"}, {"trade-sort-method.total-item-value"}, {"trade-sort-method.num-inputs"}, {"trade-sort-method.num-outputs"}, {"trade-sort-method.productivity"}}}
+
+    local sort_direction = right_frame.add {
+        type = "switch",
+        name = "sort-direction",
+        left_label_caption = {"hextorio-gui.ascending"},
+        right_label_caption = {"hextorio-gui.descending"},
+    }
+
+    right_frame.add {type = "line", direction = "horizontal"}
+
     local show_only_claimed_flow = right_frame.add {type = "flow", name = "show-only-claimed", direction = "horizontal"}
     local toggle_show_only_claimed = show_only_claimed_flow.add {type = "checkbox", name = "checkbox", state = false}
     toggle_show_only_claimed.style.top_margin = 3
@@ -439,24 +457,6 @@ function gui.init_trade_overview(player)
     toggle_exclude_sinks_generators.style.top_margin = 3
     local toggle_exclude_sinks_generators_label = exclude_sinks_generators_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exclude-sinks-generators"}}
 
-    right_frame.add {type = "line", direction = "horizontal"}
-
-    local max_trades_flow = right_frame.add {type = "flow", name = "max-trades-flow", direction = "horizontal"}
-    local max_trades_label = max_trades_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-trades"}}
-    max_trades_label.style.top_margin = 3
-    local max_trades_dropdown = max_trades_flow.add {type = "drop-down", name = "dropdown", selected_index = 4, items = {{"", 10}, {"", 25}, {"", 100}, {"hextorio-gui.all"}}}
-
-    local sort_method_flow = right_frame.add {type = "flow", name = "sort-method", direction = "horizontal"}
-    local sort_method_label = sort_method_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sort-method"}}
-    local sort_method_dropdown = sort_method_flow.add {type = "drop-down", name = "dropdown", selected_index = 1, items = {{"trade-sort-method.distance-from-spawn"}, {"trade-sort-method.distance-from-character"}, {"trade-sort-method.total-item-value"}, {"trade-sort-method.num-inputs"}, {"trade-sort-method.num-outputs"}, {"trade-sort-method.productivity"}}}
-
-    local sort_direction = right_frame.add {
-        type = "switch",
-        name = "sort-direction",
-        left_label_caption = {"hextorio-gui.ascending"},
-        right_label_caption = {"hextorio-gui.descending"},
-    }
-
     trade_contents_label.style.font = "heading-2"
 
 
@@ -473,22 +473,23 @@ function gui.init_trade_overview(player)
         direction = "horizontal",
     }
 
+    local max_input_items_flow = trade_inputs_flow.add {type = "flow", name = "max-inputs-flow", direction = "horizontal"}
+    local max_input_items_slider = max_input_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+    max_input_items_slider.style.width = 80
+    max_input_items_slider.style.top_margin = 4
+    local max_input_items_label = max_input_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
+
     local exact_inputs_match_flow = trade_inputs_flow.add {type = "flow", name = "exact-inputs-match", direction = "horizontal"}
     gui.auto_width(
         exact_inputs_match_flow.add {type = "empty-widget", name = "empty-1"}
     )
+    exact_inputs_match_flow.style.top_margin = -5
     local toggle_exact_inputs_match = exact_inputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
     toggle_exact_inputs_match.style.top_margin = 3
     local toggle_exact_inputs_match_label = exact_inputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact"}}
     gui.auto_width(
         exact_inputs_match_flow.add {type = "empty-widget", name = "empty-2"}
     )
-
-    local max_input_items_flow = trade_inputs_flow.add {type = "flow", name = "max-inputs-flow", direction = "horizontal"}
-    local max_input_items_slider = max_input_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
-    max_input_items_slider.style.width = 80
-    local max_input_items_label = max_input_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
-    max_input_items_label.style.top_margin = -4
 
     for i = 1, 3 do
         local input_item = choose_elems_flow.add {
@@ -524,10 +525,17 @@ function gui.init_trade_overview(player)
         direction = "horizontal",
     }
 
+    local max_output_items_flow = trade_outputs_flow.add {type = "flow", name = "max-outputs-flow", direction = "horizontal"}
+    local max_output_items_slider = max_output_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+    max_output_items_slider.style.width = 80
+    max_output_items_slider.style.top_margin = 4
+    local max_output_items_label = max_output_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
+
     local exact_outputs_match_flow = trade_outputs_flow.add {type = "flow", name = "exact-outputs-match", direction = "horizontal"}
     gui.auto_width(
         exact_outputs_match_flow.add {type = "empty-widget", name = "empty-1"}
     )
+    exact_outputs_match_flow.style.top_margin = -5
     local toggle_exact_outputs_match = exact_outputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
     toggle_exact_outputs_match.style.top_margin = 3
     local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact"}}
@@ -535,12 +543,6 @@ function gui.init_trade_overview(player)
     gui.auto_width(
         exact_outputs_match_flow.add {type = "empty-widget", name = "empty-2"}
     )
-
-    local max_output_items_flow = trade_outputs_flow.add {type = "flow", name = "max-outputs-flow", direction = "horizontal"}
-    local max_output_items_slider = max_output_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
-    max_output_items_slider.style.width = 80
-    local max_output_items_label = max_output_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
-    max_output_items_label.style.top_margin = -4
 
     for i = 1, 3 do
         local output_item = choose_elems_flow.add {
