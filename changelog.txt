@@ -7,6 +7,7 @@ Date: 27/11/25
     - Added a full-featured trade loop finder as a quest reward from Gleba.
   Changes:
     - The Sentient Spider is now equipped with six electromagnetic penetrators instead of one (buffed) teslagun.
+    - Clicking an item in a trade while a hex core is open now opens the trade overview instead of the catalog.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25

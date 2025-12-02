@@ -1,12 +1,11 @@
 
 require "util" -- For table.deepcopy()
-local item_buffs = require("api.item_buffs")
 
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
 local coin_tiers = require "api.coin_tiers"
 local gui = require "api.gui"
-local events = require "api.events"
+local initialization = require "api.initialization"
 local sets = require "api.sets"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
@@ -14,6 +13,7 @@ local event_system= require "api.event_system"
 local migrations = require "api.migrations"
 local trades = require "api.trades"
 local item_ranks = require "api.item_ranks"
+local item_buffs = require "api.item_buffs"
 local quests = require "api.quests"
 local blueprints = require "api.blueprints"
 local space_platforms = require "api.space_platforms"
@@ -26,7 +26,7 @@ item_values.register_events()
 hex_grid.register_events()
 trades.register_events()
 item_ranks.register_events()
-gui.register_events()
+gui.register_hextorio_events()
 quests.register_events()
 dungeons.register_events()
 spiders.register_events()
@@ -34,12 +34,13 @@ hex_island.register_events()
 space_platforms.register_events()
 
 require "commands"
+require "bind_gui_events"
 require "handle_keybinds"
 require "handle_selections"
 require "handle_coin_splitting"
 
 local data_constants = require "data.constants"
-local data_events = require "data.events"
+local data_initialization = require "data.initialization"
 local data_item_values = require "data.item_values"
 local data_hex_grid = require "data.hex_grid"
 local data_coin_tiers = require "data.coin_tiers"
@@ -58,9 +59,9 @@ local data_item_buffs = require "data.item_buffs"
 
 local function attempt_initialization()
     if #game.players == 0 then return end
-    if not storage.events.is_temp_surface_ready then return end
-    if storage.events.is_nauvis_generating then return end
-    events.on_nauvis_generating()
+    if not storage.initialization.is_temp_surface_ready then return end
+    if storage.initialization.is_nauvis_generating then return end
+    initialization.on_nauvis_generating()
 end
 
 
@@ -70,7 +71,7 @@ script.on_init(function()
     storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
 
     storage.constants = data_constants
-    storage.events = data_events
+    storage.initialization = data_initialization
     storage.item_values = data_item_values
     storage.hex_grid = data_hex_grid
     storage.coin_tiers = data_coin_tiers
@@ -166,7 +167,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 
     if surface.name == "hextorio-temp" then
         if chunk_position.x == 0 and chunk_position.y == 0 then
-            storage.events.is_temp_surface_ready = true
+            storage.initialization.is_temp_surface_ready = true
             attempt_initialization()
             return
         end
@@ -174,8 +175,8 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 
     if surface.name == "nauvis" then
         if chunk_position.x == 0 and chunk_position.y == 0 then
-            if storage.events.is_nauvis_generating then
-                events.on_nauvis_generated()
+            if storage.initialization.is_nauvis_generating then
+                initialization.on_nauvis_generated()
                 return
             end
         end
@@ -183,7 +184,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 
     if lib.is_space_platform(surface.name) then return end
     if surface.name == "hextorio-temp" then return end
-    if storage.events.is_nauvis_generating then return end
+    if storage.initialization.is_nauvis_generating then return end
 
     hex_grid.on_chunk_generated(surface.name, chunk_position)
 end)
@@ -194,7 +195,7 @@ end)
 
 script.on_nth_tick(60, function()
     -- The nil character issue is really hard to fix "correctly".  This is a surefire way to do it.
-    if not storage.events.has_game_started or storage.events.stop_checking_nil_character then return end
+    if not storage.initialization.has_game_started or storage.initialization.stop_checking_nil_character then return end
     local all = true
     for _, player in pairs(game.connected_players) do
         if not player.character then
@@ -203,7 +204,7 @@ script.on_nth_tick(60, function()
         end
     end
     if all then
-        storage.events.stop_checking_nil_character = true
+        storage.initialization.stop_checking_nil_character = true
     end
 end)
 
@@ -216,8 +217,8 @@ script.on_nth_tick(10, function()
 end)
 
 script.on_event(defines.events.on_tick, function (event)
-    if storage.events.has_game_started and not storage.events.intro_finished then
-        if event.tick == storage.events.game_start_tick + 60 then
+    if storage.initialization.has_game_started and not storage.initialization.intro_finished then
+        if event.tick == storage.initialization.game_start_tick + 60 then
             game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
             if not lib.is_hextreme_enabled() then
                 game.print(lib.color_localized_string({"hextorio.hextreme-disabled"}, "pink", "heading-1"))
@@ -225,13 +226,13 @@ script.on_event(defines.events.on_tick, function (event)
             -- if not lib.startup_setting_value "pvp-mode" then
             --     game.print(lib.color_localized_string({"hextorio.try-pvp"}, "orange", "heading-1"))
             -- end
-            storage.events.intro_finished = true
+            storage.initialization.intro_finished = true
         end
     end
 
     dungeons._tick_turret_reload()
     item_buffs._enhance_all_item_buffs_tick()
-    gui._process_trades_scroll_panes()
+    gui.trades._process_trades_scroll_panes()
 end)
 
 script.on_event(defines.events.on_player_main_inventory_changed, function(event)
@@ -273,7 +274,7 @@ end)
 script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
-    -- lib.in_spawn(player)
+
     attempt_initialization()
 end)
 
@@ -345,45 +346,6 @@ script.on_event(defines.events.on_player_used_capsule, function (event)
     if not player then return end
 
     quests.increment_progress_for_type("use-capsule", 1, event.item.name)
-end)
-
-script.on_event(defines.events.on_gui_opened, function (event)
-    local player = game.get_player(event.player_index)
-    if not player then return end
-
-    if event.entity then
-        if event.entity.name == "hex-core" then
-            gui.show_hex_core(player)
-        end
-    end
-end)
-
-script.on_event(defines.events.on_gui_click, function (event)
-    gui.on_gui_click(event)
-end)
-
-script.on_event(defines.events.on_gui_closed, function (event)
-    gui.on_gui_closed(event)
-end)
-
-script.on_event(defines.events.on_gui_confirmed, function (event)
-    gui.on_gui_confirmed(event)
-end)
-
-script.on_event(defines.events.on_gui_elem_changed, function (event)
-    gui.on_gui_elem_changed(event)
-end)
-
-script.on_event(defines.events.on_gui_value_changed, function (event)
-    gui.on_gui_value_changed(event)
-end)
-
-script.on_event(defines.events.on_gui_selection_state_changed, function (event)
-    gui.on_gui_item_selected(event)
-end)
-
-script.on_event(defines.events.on_gui_switch_state_changed, function (event)
-    gui.on_gui_switch_state_changed(event)
 end)
 
 script.on_event(defines.events.on_entity_settings_pasted, function (event)
@@ -551,14 +513,8 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
 end)
 
 script.on_configuration_changed(function(handler)
-
     local changes = handler.mod_changes.hextorio
     if changes and changes.old_version ~= changes.new_version then
         migrations.on_mod_updated(changes.old_version, changes.new_version)
-    end
-
-    for _, player in pairs(game.players) do
-        player.gui.relative.clear()
-        gui.init_hex_core(player)
     end
 end)

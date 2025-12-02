@@ -1,4 +1,6 @@
 
+---@alias GuiEventName "on-closed"|"on-clicked"|"on-switch-changed"|"on-selection-changed"|"on-elem-selected"|"on-slider-changed"
+
 ---@alias HexPos {q: int, r: int}
 ---@alias HexPosMap {[int]: {[int]: any}}
 ---@alias AxialDirection 1|2|3|4|5|6

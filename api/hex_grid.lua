@@ -1921,7 +1921,7 @@ function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_gri
 
     -- Try to initialize each overlapping hex if not already generated
     for _, hex_pos in pairs(overlapping_hexes) do
-        if storage.events.has_game_started or storage.events.is_nauvis_generating then
+        if storage.initialization.has_game_started or storage.initialization.is_nauvis_generating then
             -- Only initialize if possible
             if hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation) then
                 hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
