@@ -426,6 +426,9 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexport.hidden_in_factoriopedia = true
     hexport.base_patch = nil
     hexport.base = nil
+    hexport.map_color = hex_core.map_color
+    hexport.enemy_map_color = hex_core.map_color
+    hexport.friendly_map_color = hex_core.map_color
     hexport.selection_box = nil
     hexport.selectable_in_game = false
     hexport.selection_priority = 0
@@ -458,6 +461,9 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexlight.selectable_in_game = false
     hexlight.picture_off = nil
     hexlight.picture_on = nil
+    hexlight.map_color = hex_core.map_color
+    hexlight.enemy_map_color = hex_core.map_color
+    hexlight.friendly_map_color = hex_core.map_color
     hexlight.resistances = {
       {
         type = "electric",
