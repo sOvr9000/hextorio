@@ -605,6 +605,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
 
         local quality_dropdown = gui.create_quality_dropdown(left_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality))
         gui.auto_width(quality_dropdown)
+        gui_events.register(quality_dropdown, "on-selection-changed", function() catalog_gui.on_quantum_bazaar_changed(player, quality_dropdown) end)
 
         local coin_tier = coin_tier_gui.create_coin_tier(left_flow, "coin-tier")
         local buy_one_coin
