@@ -453,7 +453,7 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexlight.name = "hexlight-" .. surface_name
     hexlight.hidden_in_factoriopedia = true
     hexlight.minable = nil
-    hexlight.collision_box = {{-0.5, -0.5}, {0.5, 0.5}}
+    hexlight.collision_box = {{-0.25, -0.25}, {0.25, 0.25}}
     hexlight.selection_box = nil
     hexlight.selectable_in_game = false
     hexlight.picture_off = nil
