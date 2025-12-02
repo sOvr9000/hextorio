@@ -17,7 +17,7 @@ local trades = {}
 
 
 function trades.register_events()
-    event_system.register_callback("command-discover-all", function(player, params)
+    local function discover_all(player, params, trigger_post)
         local items_list = {}
         for surface_name, vals in pairs(storage.item_values.values) do
             for item_name, _ in pairs(vals) do
@@ -26,9 +26,17 @@ function trades.register_events()
                 end
             end
         end
+
         trades.discover_items(items_list)
-        event_system.trigger("post-discover-all-command", player, params)
-    end)
+
+        if trigger_post then
+            event_system.trigger("post-discover-all-command", player, params)
+        end
+    end
+
+    -- Automatically discover all items when ranking up all items.
+    event_system.register_callback("command-discover-all", function(player, params) discover_all(player, params, true) end)
+    event_system.register_callback("command-rank-up-all", function(player, params) discover_all(player, params, false) end)
 
     event_system.register_callback("command-simple-trade-loops", function(player, params)
         if not lib.is_player_cooldown_ready(player.index, "command-simple-trade-loops") then
