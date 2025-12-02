@@ -212,10 +212,6 @@ script.on_nth_tick(20, function()
     hex_grid.process_claim_queue()
 end)
 
-script.on_nth_tick(10, function()
-    hex_grid.process_hex_core_pool()
-end)
-
 script.on_event(defines.events.on_tick, function (event)
     if storage.initialization.has_game_started and not storage.initialization.intro_finished then
         if event.tick == storage.initialization.game_start_tick + 60 then
@@ -230,6 +226,7 @@ script.on_event(defines.events.on_tick, function (event)
         end
     end
 
+    hex_grid.process_hex_core_pool()
     dungeons._tick_turret_reload()
     item_buffs._enhance_all_item_buffs_tick()
     gui.trades._process_trades_scroll_panes()

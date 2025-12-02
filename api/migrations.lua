@@ -555,6 +555,8 @@ local process_migration = {
         storage.initialization = storage.events
         storage.events = nil
 
+        storage.hex_grid.pool_size = math.ceil(storage.hex_grid.pool_size / 10)
+
         for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
             for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
                 -- Fix hexlight/hexport bug

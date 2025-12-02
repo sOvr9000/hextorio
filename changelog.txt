@@ -20,6 +20,8 @@ Date: 27/11/25
     - Fixed hexlights and hexports remaining after hex core deletion.
     - Fixed hexlights causing collision clipping at the corners of hex cores.
     - Fixed missing localization for inserter capacity in the item buffs.
+  Optimizations:
+    - Decreased batch sizes and processing intervals.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25
