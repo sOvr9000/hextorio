@@ -552,6 +552,22 @@ local process_migration = {
         hex_grid.update_all_trades()
     end,
     ["1.2.1"] = function()
+        storage.initialization = storage.events
+        storage.events = nil
+
+        for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
+            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+                -- Fix hexlight/hexport bug
+                if not state.hex_core then
+                    if state.hexlight or state.hexlight2 then
+                        hex_grid.remove_hexlight(state)
+                    end
+                    if state.hexport then
+                        hex_grid.remove_hexport(state)
+                    end
+                end
+            end
+        end
     end,
 }
 
