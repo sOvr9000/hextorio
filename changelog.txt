@@ -15,6 +15,7 @@ Date: 27/11/25
   Bugfixes:
     - Fixed crash when viewing red star ranked items if your character is missing (in editor mode, god mode, etc.).
     - Fixed crash when trying to sell the item stack in your hand at the Quantum Bazaar when nothing is held.
+    - Fixed hexlights remaining after hex core deletion.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25

@@ -2106,6 +2106,17 @@ function hex_grid.spawn_hexlight(state)
     state.hexlight2 = hexlight2
 end
 
+function hex_grid.remove_hexlight(state)
+    if state.hexlight then
+        state.hexlight.destroy()
+        state.hexlight = nil
+    end
+    if state.hexlight2 then
+        state.hexlight2.destroy()
+        state.hexlight2 = nil
+    end
+end
+
 function hex_grid.add_initial_trades(state)
     local dist = axial.distance(state.position, {q=0, r=0})
     local is_starting_hex = dist == 0
@@ -2210,6 +2221,8 @@ function hex_grid.delete_hex_core(hex_core)
     state.input_loaders = nil
     state.output_loaders = nil
     state.deleted = true
+
+    hex_grid.remove_hexlight(state)
 
     return true
 end
