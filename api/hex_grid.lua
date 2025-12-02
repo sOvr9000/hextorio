@@ -498,7 +498,9 @@ function hex_grid.add_trade(hex_core_state, trade)
         trades.discover_items_in_trades {trade}
     end
 
-    quests.increment_progress_for_type("trades-found")
+    if not hex_core_state.is_dungeon then
+        quests.increment_progress_for_type("trades-found")
+    end
 end
 
 function hex_grid.remove_trade_by_index(hex_core_state, idx, recoverable)

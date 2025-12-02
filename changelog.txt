@@ -10,6 +10,7 @@ Date: 27/11/25
   Changes:
     - The Sentient Spider is now equipped with six electromagnetic penetrators instead of one (buffed) teslagun.
     - Clicking an item in a trade while a hex core is open now opens the trade overview instead of the catalog.
+    - Dungeon hexes no longer contribute to the total trades found, preventing from quickly completing the "Find Some Trades" quest.
   Gui:
     - Horizontally centered the "Bonuses" text in the catalog.
   Bugfixes:
