@@ -607,11 +607,18 @@ function catalog_gui.update_catalog_inspect_frame(player)
         gui.auto_width(quality_dropdown)
 
         local coin_tier = coin_tier_gui.create_coin_tier(left_flow, "coin-tier")
-        local buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+        local buy_one_coin
+        local sell_inv_coin
+        if player.character then
+            buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+            sell_inv_coin = inventories.get_total_coin_value(player.character.surface.name, lib.get_player_inventory(player), 5)
+        else
+            buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+            sell_inv_coin = inventories.get_total_coin_value("nauvis", lib.get_player_inventory(player), 5)
+        end
 
         local stack_size = lib.get_stack_size(selection.item_name)
         local buy_stack_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, stack_size))
-        local sell_inv_coin = inventories.get_total_coin_value(player.character.surface.name, lib.get_player_inventory(player), 5)
 
         buy_one_coin = coin_tiers.ceil(buy_one_coin)
         coin_tier_gui.update_coin_tier(coin_tier, buy_one_coin)
