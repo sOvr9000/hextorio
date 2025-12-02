@@ -2222,6 +2222,7 @@ function hex_grid.delete_hex_core(hex_core)
     state.output_loaders = nil
     state.deleted = true
 
+    hex_grid.remove_hexport(state)
     hex_grid.remove_hexlight(state)
 
     return true
