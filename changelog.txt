@@ -10,6 +10,7 @@ Date: 27/11/25
     - Clicking an item in a trade while a hex core is open now opens the trade overview instead of the catalog.
   Bugfixes:
     - Fixed crash when viewing red star ranked items if your character is missing (in editor mode, god mode, etc.).
+    - Fixed crash when trying to sell the item stack in your hand at the Quantum Bazaar when nothing is held.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25

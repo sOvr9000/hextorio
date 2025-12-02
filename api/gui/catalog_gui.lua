@@ -633,6 +633,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
             "\n",
             {"quantum-bazaar.sell-in-hand-info"},
         }
+        gui_events.register(sell_in_hand, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, sell_in_hand) end)
 
         local sell_inventory = right_flow.add {
             type = "sprite-button",
@@ -644,6 +645,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
             "\n",
             {"quantum-bazaar.sell-inventory-info", coin_tiers.coin_to_text(sell_inv_coin)},
         }
+        gui_events.register(sell_inventory, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, sell_inventory) end)
 
         local buy_one = right_flow.add {
             type = "sprite-button",
@@ -653,6 +655,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
         buy_one.tooltip = {"",
             lib.color_localized_string({"quantum-bazaar.buy-one", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", coin_tiers.coin_to_text(buy_one_coin)}, "cyan"),
         }
+        gui_events.register(buy_one, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_one) end)
 
         local buy_stack = right_flow.add {
             type = "sprite-button",
@@ -662,6 +665,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
         buy_stack.tooltip = {"",
             lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", stack_size, coin_tiers.coin_to_text(buy_stack_coin)}, "purple"),
         }
+        gui_events.register(buy_stack, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_stack) end)
 
         local elem_filter_items = sets.new()
         for _, surface in pairs(game.surfaces) do
@@ -686,6 +690,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
             elem_filters = elem_filters,
             item = selection.item_name,
         }
+        gui_events.register(selected_item_qb, "on-elem-selected", function() catalog_gui.on_quantum_bazaar_changed(player, selected_item_qb) end)
     end
 end
 
@@ -804,55 +809,61 @@ function catalog_gui.on_quantum_bazaar_changed(player, element)
     catalog_gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
-function catalog_gui.on_quantum_bazaar_button_clicked(player, element)
-    if element.name == "sell-in-hand" then
-        local item_stack = player.cursor_stack
-        if not item_stack then
-            player.print(lib.color_localized_string({"hextorio.no-item-in-hand"}, "red"))
-            return
-        end
+function catalog_gui.on_quantum_bazaar_buy_item_clicked(player, element)
+    local inv = player.get_main_inventory()
+    if not inv then return end
 
-        if item_ranks.get_item_rank(item_stack.name) < 5 then
-            player.print(lib.color_localized_string({"hextorio.item-rank-too-low"}, "red"))
-            return
-        end
-
-        local inv = player.get_main_inventory()
-        if not inv then return end
-
-        local item_value = item_values.get_item_value(player.character.surface.name, item_stack.name, true, item_stack.quality.name) * item_stack.count
-        local received_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin")))
-
-        coin_tiers.add_coin_to_inventory(inv, received_coin)
-        item_stack.clear()
-    elseif element.name == "sell-inventory" then
-        local inv = player.get_main_inventory()
-        if not inv then return end
-
-        local received_coin = coin_tiers.ceil(inventories.get_total_coin_value(player.character.surface.name, inv, 5))
-        inventories.remove_items_of_rank(inv, 5)
-        coin_tiers.add_coin_to_inventory(inv, received_coin)
-    elseif element.name == "buy-one" or element.name == "buy-stack" then
-        local inv = player.get_main_inventory()
-        if not inv then return end
-
-        local selection = catalog_gui.get_catalog_selection(player)
-        local count = 1
-        if element.name == "buy-stack" then
-            count = lib.get_stack_size(selection.item_name)
-        end
-
-        local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
-        local coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
-        local inv_coin = coin_tiers.get_coin_from_inventory(inv)
-        if coin_tiers.gt(coin, inv_coin) then
-            player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
-            return
-        end
-
-        coin_tiers.remove_coin_from_inventory(inv, coin)
-        lib.safe_insert(player, {name = selection.item_name, count = count, quality = selection.bazaar_quality})
+    local selection = catalog_gui.get_catalog_selection(player)
+    local count = 1
+    if element.name == "buy-stack" then
+        count = lib.get_stack_size(selection.item_name)
     end
+
+    local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
+    local coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    if coin_tiers.gt(coin, inv_coin) then
+        player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
+        return
+    end
+
+    coin_tiers.remove_coin_from_inventory(inv, coin)
+    lib.safe_insert(player, {name = selection.item_name, count = count, quality = selection.bazaar_quality})
+
+    catalog_gui.update_catalog_inspect_frame(player)
+end
+
+function catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, element)
+    local inv = player.get_main_inventory()
+    if not inv then return end
+
+    local received_coin = coin_tiers.ceil(inventories.get_total_coin_value(player.character.surface.name, inv, 5))
+    inventories.remove_items_of_rank(inv, 5)
+    coin_tiers.add_coin_to_inventory(inv, received_coin)
+
+    catalog_gui.update_catalog_inspect_frame(player)
+end
+
+function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, element)
+    local item_stack = player.cursor_stack
+    if not item_stack or not item_stack.valid_for_read then
+        player.print(lib.color_localized_string({"hextorio.no-item-in-hand"}, "red"))
+        return
+    end
+
+    if item_ranks.get_item_rank(item_stack.name) < 5 then
+        player.print(lib.color_localized_string({"hextorio.item-rank-too-low"}, "red"))
+        return
+    end
+
+    local inv = player.get_main_inventory()
+    if not inv then return end
+
+    local item_value = item_values.get_item_value(player.character.surface.name, item_stack.name, true, item_stack.quality.name) * item_stack.count
+    local received_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin")))
+
+    coin_tiers.add_coin_to_inventory(inv, received_coin)
+    item_stack.clear()
 
     catalog_gui.update_catalog_inspect_frame(player)
 end
