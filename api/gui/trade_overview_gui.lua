@@ -307,7 +307,7 @@ function trade_overview_gui.build_trade_table_frame(frame)
     trade_table_frame.style.natural_width = 700
 
     local trade_table = scroll_pane.add {type = "table", name = "table", column_count = 2}
-    trade_table.style.horizontal_spacing = 109 / 1.2
+    trade_table.style.horizontal_spacing = 28 / 1.2
 end
 
 function trade_overview_gui.update_trade_overview(player)
@@ -547,7 +547,7 @@ function trade_overview_gui.update_trade_overview(player)
     trades_gui.update_trades_scroll_pane(player, trade_table, trades_list, {
         show_toggle_trade = false,
         show_tag_creator = false,
-        show_ping_button = false,
+        show_ping_button = true,
         show_add_to_filters = false,
         show_core_finder = true,
         show_productivity_bar = false,
@@ -555,6 +555,7 @@ function trade_overview_gui.update_trade_overview(player)
         quality_to_show = "normal",
         show_productivity_info = false,
         expanded = false,
+        is_configuration_unlocked = quests.is_feature_unlocked "trade-configuration",
     })
 end
 

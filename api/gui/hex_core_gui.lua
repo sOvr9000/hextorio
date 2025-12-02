@@ -312,7 +312,8 @@ function hex_core_gui.update_hex_core(player)
         show_quality_bounds = show_quality_bounds,
         quality_to_show = quality_name,
         show_productivity_info = true,
-        expanded = quests.is_feature_unlocked "trade-configuration",
+        expanded = true,
+        is_configuration_unlocked = quests.is_feature_unlocked "trade-configuration",
     })
 
     hex_core_gui.update_hex_core_resources(player)

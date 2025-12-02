@@ -92,6 +92,25 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         direction = "horizontal",
     }
 
+    local function create_ping_button(element)
+        local ping_button = element.add {
+            type = "sprite-button",
+            name = "ping-button",
+            sprite = "utility/shoot_cursor_red",
+        }
+        ping_button.tooltip = {"hextorio-gui.ping-in-chat"}
+
+        gui_events.register(ping_button, "on-clicked", function()
+            if not trade.hex_core_state or not trade.hex_core_state.hex_core then return end
+
+            local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
+            local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
+
+            game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
+            quests.set_progress_for_type("ping-trade", 1)
+        end)
+    end
+
     if params.show_core_finder then
         local core_finder_button = trade_flow.add {
             type = "sprite-button",
@@ -100,6 +119,10 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         }
         core_finder_button.tooltip = {"hextorio-gui.core-finder-button"}
         gui_events.register(core_finder_button, "on-clicked", function() trades_gui.on_core_finder_button_click(player, core_finder_button, trade_number) end)
+    end
+
+    if not params.expanded and params.show_ping_button then
+        create_ping_button(trade_flow)
     end
 
     local quality_to_show = params.quality_to_show or "normal"
@@ -111,7 +134,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         name = "frame",
         direction = "vertical",
     }
-    trade_frame.style.left_margin = 10
+    -- trade_frame.style.left_margin = 10
     trade_frame.style.natural_height = (size + 20) / 1.2 - 5
     trade_frame.style.width = 381 / 1.2
 
@@ -121,7 +144,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         column_count = 8,
     }
 
-    if params.expanded then
+    if params.expanded and params.is_configuration_unlocked then
         local trade_control_flow = trade_frame.add {
             type = "flow",
             name = "trade-control-flow",
@@ -155,21 +178,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         end
 
         if params.show_ping_button then
-            local ping_button = trade_control_flow.add {
-                type = "sprite-button",
-                name = "ping-button",
-                sprite = "utility/shoot_cursor_red",
-            }
-            ping_button.tooltip = {"hextorio-gui.ping-in-chat"}
-            gui_events.register(ping_button, "on-clicked", function()
-                if not trade.hex_core_state or not trade.hex_core_state.hex_core then return end
-
-                local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
-                local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
-
-                game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
-                quests.set_progress_for_type("ping-trade", 1)
-            end)
+            create_ping_button(trade_control_flow)
         end
 
         if params.show_productivity_info then
