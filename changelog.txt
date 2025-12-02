@@ -19,6 +19,7 @@ Date: 27/11/25
     - Fixed crash when trying to sell the item stack in your hand at the Quantum Bazaar when nothing is held.
     - Fixed hexlights and hexports remaining after hex core deletion.
     - Fixed hexlights causing collision clipping at the corners of hex cores.
+    - Fixed missing localization for inserter capacity in the item buffs.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25
