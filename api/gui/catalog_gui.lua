@@ -274,7 +274,16 @@ function catalog_gui.update_catalog_inspect_frame(player)
     -- TODO (IMPORTANT): UNREGISTER CALLBACKS FROM BEFORE
     inspect_frame.clear()
 
-    local rank_flow = inspect_frame.add {
+    catalog_gui.build_header(player, rank_obj, inspect_frame)
+    catalog_gui.build_item_buffs(player, rank_obj, inspect_frame)
+    catalog_gui.build_rank_bonuses(player, rank_obj, inspect_frame)
+    catalog_gui.build_quantum_bazaar(player, rank_obj, inspect_frame)
+end
+
+function catalog_gui.build_header(player, rank_obj, frame)
+    local selection = catalog_gui.get_catalog_selection(player)
+
+    local rank_flow = frame.add {
         type = "flow",
         name = "rank-flow",
         direction = "horizontal",
@@ -306,9 +315,9 @@ function catalog_gui.update_catalog_inspect_frame(player)
     }
     rank_label3.style.left_margin = 73 / 1.2
 
-    inspect_frame.add {type = "line", direction = "horizontal"}
+    frame.add {type = "line", direction = "horizontal"}
 
-    local control_flow = inspect_frame.add {
+    local control_flow = frame.add {
         type = "flow",
         name = "control-flow",
         direction = "horizontal",
@@ -355,133 +364,139 @@ function catalog_gui.update_catalog_inspect_frame(player)
     }
     gui_events.register(selected_item_view, "on-elem-selected", function() catalog_gui.on_catalog_search_item_selected(player, selected_item_view) end)
 
-    inspect_frame.add {type = "line", direction = "horizontal"}
+    frame.add {type = "line", direction = "horizontal"}
+end
 
-    local bonuses_label = inspect_frame.add {
+function catalog_gui.build_item_buffs(player, rank_obj, frame)
+    local selection = catalog_gui.get_catalog_selection(player)
+    local buffs = item_buffs.get_buffs(selection.item_name)
+
+    local bonuses_label = frame.add {
         type = "label",
         name = "bonuses-label",
         caption = {"hextorio-gui.bonuses"},
     }
     bonuses_label.style.font = "heading-2"
 
-    local buffs = item_buffs.get_buffs(selection.item_name)
-    if show_buffs and rank_obj.rank >= 2 and next(buffs) then
-        item_buffs.fetch_settings()
+    if not quests.is_feature_unlocked "item-buffs" or rank_obj.rank < 2 or not next(buffs) then return end
+    item_buffs.fetch_settings()
 
-        local item_buff_flow = inspect_frame.add {
-            type = "flow",
-            name = "item-buff-flow",
-            direction = "horizontal",
-        }
+    local item_buff_flow = frame.add {
+        type = "flow",
+        name = "item-buff-flow",
+        direction = "horizontal",
+    }
 
-        local is_buff_unlocked = item_buffs.is_unlocked(selection.item_name)
-        local item_buff_level = item_buffs.get_item_buff_level(selection.item_name)
-        local cost = item_buffs.get_item_buff_cost(selection.item_name)
+    local is_buff_unlocked = item_buffs.is_unlocked(selection.item_name)
+    local item_buff_level = item_buffs.get_item_buff_level(selection.item_name)
+    local cost = item_buffs.get_item_buff_cost(selection.item_name)
 
-        local buff_button_type = "item-buff-unlock"
-        local buff_button_sprite = buff_button_type
-        if is_buff_unlocked then
-            buff_button_type = "item-buff-enhance"
-            buff_button_sprite = "utility/side_menu_bonus_icon"
-        end
-
-        local buff_button = item_buff_flow.add {
-            type = "sprite-button",
-            name = buff_button_type,
-            sprite = buff_button_sprite,
-        }
-        -- buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip", coin_tiers.coin_to_text(cost)}
-        buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
-        gui_events.register(buff_button, "on-clicked", function() catalog_gui.on_item_buff_button_click(player, buff_button) end)
-
-        local coin_tier_flow = coin_tier_gui.create_coin_tier(item_buff_flow, "cost")
-        coin_tier_gui.update_coin_tier(coin_tier_flow, cost)
-
-        local buff_table = inspect_frame.add {
-            type = "table",
-            name = "buff-table",
-            column_count = 2,
-        }
-
-        local function format_buff_values(buff)
-            local values = item_buffs.get_scaled_buff_values(buff, item_buff_level)
-            local incremental_buff = item_buffs.get_incremental_buff(buff, item_buff_level)
-
-            if not values then
-                lib.log_error("gui.update_catalog_inspect_frame.format_buff_values: Failed to format buff values for " .. selection.item_name)
-                return {"", ""}
-            end
-
-            if #values == 1 then
-                if storage.item_buffs.show_as_linear[buff.type] then
-                    return {"", "[color=green]+" .. (math.floor(values[1] * 10 + 0.5) * 0.1) .. "[.color] [color=gray](+" .. (math.floor((incremental_buff.value or incremental_buff.values[1]) * 100 + 0.5) * 0.01) .. ")[.color]"}
-                end
-                return {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.value or incremental_buff.values[1], 2, true, true) .. ")[.color]"}
-            end
-
-            if buff.type == "recipe-productivity" then
-                return {"", "[color=green]" .. lib.format_percentage(values[2] * 0.01, 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[2] * 0.01, 2, true, true) .. ")[.color]"}
-            end
-
-            for i, v in pairs(values) do
-                if type(v) == "number" then
-                    ---@diagnostic disable-next-line: assign-type-mismatch
-                    values[i] = "[color=green]" .. v .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[i], 2, true, true) .. ")[.color]"
-                end
-            end
-
-            return {"item-buff-name." .. buff.type, table.unpack(values)}
-        end
-
-        for i, buff in ipairs(buffs) do
-            if buff.value or buff.type == "recipe-productivity" then
-                local label_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray", "heading-2")
-                local value_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
-
-                if is_buff_unlocked then
-                    if buff.type == "recipe-productivity" then
-                        label_caption = lib.color_localized_string({"item-buff-name." .. buff.type, "[recipe=" .. buff.values[1] .. "]"}, "white", "heading-2")
-                    else
-                        label_caption = lib.color_localized_string({"item-buff-name." .. buff.type}, "white", "heading-2")
-                    end
-                    if storage.item_buffs.has_description[buff.type] then
-                        table.insert(label_caption, 2, "[img=virtual-signal.signal-info] ")
-                    end
-                    value_caption = format_buff_values(buff)
-                end
-
-                local buff_label = buff_table.add {
-                    type = "label",
-                    name = "buff-label-" .. i,
-                    caption = label_caption,
-                }
-                local buff_value = buff_table.add {
-                    type = "label",
-                    name = "buff-value-" .. i,
-                    caption = value_caption,
-                }
-
-                if is_buff_unlocked and storage.item_buffs.has_description[buff.type] then
-                    buff_label.tooltip = {"item-buff-description." .. buff.type}
-                end
-            elseif buff.values then
-                local caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
-
-                if is_buff_unlocked then
-                    caption = format_buff_values(buff)
-                end
-
-                local buff_label = inspect_frame.add {
-                    type = "label",
-                    name = "buff-label-" .. i,
-                    caption = caption,
-                }
-            end
-        end
+    local buff_button_type = "item-buff-unlock"
+    local buff_button_sprite = buff_button_type
+    if is_buff_unlocked then
+        buff_button_type = "item-buff-enhance"
+        buff_button_sprite = "utility/side_menu_bonus_icon"
     end
 
+    local buff_button = item_buff_flow.add {
+        type = "sprite-button",
+        name = buff_button_type,
+        sprite = buff_button_sprite,
+    }
+    buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
+    gui_events.register(buff_button, "on-clicked", function() catalog_gui.on_item_buff_button_click(player, buff_button) end)
+
+    local coin_tier_flow = coin_tier_gui.create_coin_tier(item_buff_flow, "cost")
+    coin_tier_gui.update_coin_tier(coin_tier_flow, cost)
+
+    local buff_table = frame.add {
+        type = "table",
+        name = "buff-table",
+        column_count = 2,
+    }
+
+    local function format_buff_values(buff)
+        local values = item_buffs.get_scaled_buff_values(buff, item_buff_level)
+        local incremental_buff = item_buffs.get_incremental_buff(buff, item_buff_level)
+
+        if not values then
+            lib.log_error("gui.update_catalog_inspect_frame.format_buff_values: Failed to format buff values for " .. selection.item_name)
+            return {"", ""}
+        end
+
+        if #values == 1 then
+            if storage.item_buffs.show_as_linear[buff.type] then
+                return {"", "[color=green]+" .. (math.floor(values[1] * 10 + 0.5) * 0.1) .. "[.color] [color=gray](+" .. (math.floor((incremental_buff.value or incremental_buff.values[1]) * 100 + 0.5) * 0.01) .. ")[.color]"}
+            end
+            return {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.value or incremental_buff.values[1], 2, true, true) .. ")[.color]"}
+        end
+
+        if buff.type == "recipe-productivity" then
+            return {"", "[color=green]" .. lib.format_percentage(values[2] * 0.01, 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[2] * 0.01, 2, true, true) .. ")[.color]"}
+        end
+
+        for i, v in pairs(values) do
+            if type(v) == "number" then
+                ---@diagnostic disable-next-line: assign-type-mismatch
+                values[i] = "[color=green]" .. v .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[i], 2, true, true) .. ")[.color]"
+            end
+        end
+
+        return {"item-buff-name." .. buff.type, table.unpack(values)}
+    end
+
+    for i, buff in ipairs(buffs) do
+        if buff.value or buff.type == "recipe-productivity" then
+            local label_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray", "heading-2")
+            local value_caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
+
+            if is_buff_unlocked then
+                if buff.type == "recipe-productivity" then
+                    label_caption = lib.color_localized_string({"item-buff-name." .. buff.type, "[recipe=" .. buff.values[1] .. "]"}, "white", "heading-2")
+                else
+                    label_caption = lib.color_localized_string({"item-buff-name." .. buff.type}, "white", "heading-2")
+                end
+                if storage.item_buffs.has_description[buff.type] then
+                    table.insert(label_caption, 2, "[img=virtual-signal.signal-info] ")
+                end
+                value_caption = format_buff_values(buff)
+            end
+
+            local buff_label = buff_table.add {
+                type = "label",
+                name = "buff-label-" .. i,
+                caption = label_caption,
+            }
+            local buff_value = buff_table.add {
+                type = "label",
+                name = "buff-value-" .. i,
+                caption = value_caption,
+            }
+
+            if is_buff_unlocked and storage.item_buffs.has_description[buff.type] then
+                buff_label.tooltip = {"item-buff-description." .. buff.type}
+            end
+        elseif buff.values then
+            local caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")
+
+            if is_buff_unlocked then
+                caption = format_buff_values(buff)
+            end
+
+            local buff_label = frame.add {
+                type = "label",
+                name = "buff-label-" .. i,
+                caption = caption,
+            }
+        end
+    end
+end
+
+function catalog_gui.build_rank_bonuses(player, rank_obj, frame)
+    local selection = catalog_gui.get_catalog_selection(player)
+
     if rank_obj.rank > 1 then
-        local bonus_productivity = inspect_frame.add {
+        local bonus_productivity = frame.add {
             type = "label",
             name = "bonus-productivity",
             caption = {"", lib.color_localized_string({"hextorio-gui.main-bonus"}, "blue", "heading-2"), "\n", {"hextorio-gui.rank-bonus-trade-productivity", math.floor(100 * item_ranks.get_rank_bonus_effect(rank_obj.rank)), "green", "heading-2"}},
@@ -489,7 +504,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
         bonus_productivity.style.single_line = false
         gui.auto_width_height(bonus_productivity)
     else
-        local none_label = inspect_frame.add {
+        local none_label = frame.add {
             type = "label",
             name = "none",
             caption = {"hextorio-gui.rank-bonus-none"},
@@ -501,7 +516,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
     for i = 2, rank_obj.rank do
         local color_text = table.concat(storage.item_ranks.rank_colors[i], ",")
         local color_rich_text = "[color=" .. color_text .. "]"
-        local rank_bonus_unique_heading = inspect_frame.add {
+        local rank_bonus_unique_heading = frame.add {
             type = "label",
             name = "rank-bonus-unique-heading-" .. i,
             caption = lib.color_localized_string({"", "[img=" .. storage.item_ranks.rank_star_sprites[i] .. "] ", {"hextorio-gui.unique-bonus"}}, color_rich_text, "heading-2"),
@@ -525,7 +540,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
             caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i}}
         end
 
-        local rank_bonus_unique = inspect_frame.add {
+        local rank_bonus_unique = frame.add {
             type = "label",
             name = "rank-bonus-unique-" .. i,
             caption = caption,
@@ -536,7 +551,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
     end
 
     if rank_obj.rank < 5 then
-        inspect_frame.add {type = "line", direction = "horizontal"}
+        frame.add {type = "line", direction = "horizontal"}
 
         local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
 
@@ -561,7 +576,7 @@ function catalog_gui.update_catalog_inspect_frame(player)
             table.insert(rank_up_localized_str, "heading-2")
         end
 
-        local rank_up_instructions = inspect_frame.add {
+        local rank_up_instructions = frame.add {
             type = "label",
             name = "rank-up-instructions",
             caption = {"", lib.get_rank_img_str(rank_obj.rank + 1) .. "\n", rank_up_localized_str},
@@ -571,128 +586,130 @@ function catalog_gui.update_catalog_inspect_frame(player)
     end
 
     if rank_obj.rank == 1 then
-        gui.add_info(inspect_frame, {"hextorio-gui.buying-info"}, "info-buying")
-        gui.add_info(inspect_frame, {"hextorio-gui.selling-info"}, "info-selling")
-    -- elseif rank_obj.rank == 2 or rank_obj.rank == 3 then
-    --     gui.add_info(inspect_frame, {"hextorio-gui.higher-qualities-count"}, "info-qualities")
+        gui.add_info(frame, {"hextorio-gui.buying-info"}, "info-buying")
+        gui.add_info(frame, {"hextorio-gui.selling-info"}, "info-selling")
+    end
+end
+
+function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
+    if rank_obj.rank < 5 then return end
+
+    local selection = catalog_gui.get_catalog_selection(player)
+
+    frame.add {type = "line", direction = "horizontal"}
+    local quantum_bazaar_header = frame.add {
+        type = "label",
+        name = "quantum-bazaar-header",
+        caption = lib.color_localized_string({"hextorio-gui.quantum-bazaar"}, "[color=180,255,0]", "heading-1"),
+    }
+    local quantum_bazaar = frame.add {
+        type = "flow",
+        name = "quantum-bazaar",
+        direction = "horizontal",
+    }
+    local left_flow = quantum_bazaar.add {
+        type = "flow",
+        name = "left",
+        direction = "vertical",
+    }
+
+    quantum_bazaar.add {type = "line", direction = "vertical"}
+
+    local right_flow = quantum_bazaar.add {
+        type = "table",
+        name = "right",
+        column_count = 2,
+    }
+
+    local quality_dropdown = gui.create_quality_dropdown(left_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality))
+    gui.auto_width(quality_dropdown)
+    gui_events.register(quality_dropdown, "on-selection-changed", function() catalog_gui.on_quantum_bazaar_changed(player, quality_dropdown) end)
+
+    local coin_tier = coin_tier_gui.create_coin_tier(left_flow, "coin-tier")
+    local buy_one_coin
+    local sell_inv_coin
+    if player.character then
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+        sell_inv_coin = inventories.get_total_coin_value(player.character.surface.name, lib.get_player_inventory(player), 5)
+    else
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+        sell_inv_coin = inventories.get_total_coin_value("nauvis", lib.get_player_inventory(player), 5)
     end
 
-    if rank_obj.rank == 5 then
-        inspect_frame.add {type = "line", direction = "horizontal"}
-        local quantum_bazaar_header = inspect_frame.add {
-            type = "label",
-            name = "quantum-bazaar-header",
-            caption = lib.color_localized_string({"hextorio-gui.quantum-bazaar"}, "[color=180,255,0]", "heading-1"),
-        }
-        local quantum_bazaar = inspect_frame.add {
-            type = "flow",
-            name = "quantum-bazaar",
-            direction = "horizontal",
-        }
-        local left_flow = quantum_bazaar.add {
-            type = "flow",
-            name = "left",
-            direction = "vertical",
-        }
+    local stack_size = lib.get_stack_size(selection.item_name)
+    local buy_stack_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, stack_size))
 
-        quantum_bazaar.add {type = "line", direction = "vertical"}
+    buy_one_coin = coin_tiers.ceil(buy_one_coin)
+    coin_tier_gui.update_coin_tier(coin_tier, buy_one_coin)
 
-        local right_flow = quantum_bazaar.add {
-            type = "table",
-            name = "right",
-            column_count = 2,
-        }
+    local sell_in_hand = right_flow.add {
+        type = "sprite-button",
+        name = "sell-in-hand",
+        sprite = "hand",
+    }
+    sell_in_hand.tooltip = {"",
+        lib.color_localized_string({"quantum-bazaar.sell-in-hand-header"}, "green", "heading-2"),
+        "\n",
+        {"quantum-bazaar.sell-in-hand-info"},
+    }
+    gui_events.register(sell_in_hand, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, sell_in_hand) end)
 
-        local quality_dropdown = gui.create_quality_dropdown(left_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality))
-        gui.auto_width(quality_dropdown)
-        gui_events.register(quality_dropdown, "on-selection-changed", function() catalog_gui.on_quantum_bazaar_changed(player, quality_dropdown) end)
+    local sell_inventory = right_flow.add {
+        type = "sprite-button",
+        name = "sell-inventory",
+        sprite = "backpack",
+    }
+    sell_inventory.tooltip = {"",
+        lib.color_localized_string({"quantum-bazaar.sell-inventory-header"}, "yellow", "heading-2"),
+        "\n",
+        {"quantum-bazaar.sell-inventory-info", coin_tiers.coin_to_text(sell_inv_coin)},
+    }
+    gui_events.register(sell_inventory, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, sell_inventory) end)
 
-        local coin_tier = coin_tier_gui.create_coin_tier(left_flow, "coin-tier")
-        local buy_one_coin
-        local sell_inv_coin
-        if player.character then
-            buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
-            sell_inv_coin = inventories.get_total_coin_value(player.character.surface.name, lib.get_player_inventory(player), 5)
-        else
-            buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
-            sell_inv_coin = inventories.get_total_coin_value("nauvis", lib.get_player_inventory(player), 5)
-        end
+    local buy_one = right_flow.add {
+        type = "sprite-button",
+        name = "buy-one",
+        sprite = "stack-one",
+    }
+    buy_one.tooltip = {"",
+        lib.color_localized_string({"quantum-bazaar.buy-one", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", coin_tiers.coin_to_text(buy_one_coin)}, "cyan"),
+    }
+    gui_events.register(buy_one, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_one) end)
 
-        local stack_size = lib.get_stack_size(selection.item_name)
-        local buy_stack_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, stack_size))
+    local buy_stack = right_flow.add {
+        type = "sprite-button",
+        name = "buy-stack",
+        sprite = "stack-full",
+    }
+    buy_stack.tooltip = {"",
+        lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", stack_size, coin_tiers.coin_to_text(buy_stack_coin)}, "purple"),
+    }
+    gui_events.register(buy_stack, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_stack) end)
 
-        buy_one_coin = coin_tiers.ceil(buy_one_coin)
-        coin_tier_gui.update_coin_tier(coin_tier, buy_one_coin)
-
-        local sell_in_hand = right_flow.add {
-            type = "sprite-button",
-            name = "sell-in-hand",
-            sprite = "hand",
-        }
-        sell_in_hand.tooltip = {"",
-            lib.color_localized_string({"quantum-bazaar.sell-in-hand-header"}, "green", "heading-2"),
-            "\n",
-            {"quantum-bazaar.sell-in-hand-info"},
-        }
-        gui_events.register(sell_in_hand, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, sell_in_hand) end)
-
-        local sell_inventory = right_flow.add {
-            type = "sprite-button",
-            name = "sell-inventory",
-            sprite = "backpack",
-        }
-        sell_inventory.tooltip = {"",
-            lib.color_localized_string({"quantum-bazaar.sell-inventory-header"}, "yellow", "heading-2"),
-            "\n",
-            {"quantum-bazaar.sell-inventory-info", coin_tiers.coin_to_text(sell_inv_coin)},
-        }
-        gui_events.register(sell_inventory, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, sell_inventory) end)
-
-        local buy_one = right_flow.add {
-            type = "sprite-button",
-            name = "buy-one",
-            sprite = "stack-one",
-        }
-        buy_one.tooltip = {"",
-            lib.color_localized_string({"quantum-bazaar.buy-one", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", coin_tiers.coin_to_text(buy_one_coin)}, "cyan"),
-        }
-        gui_events.register(buy_one, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_one) end)
-
-        local buy_stack = right_flow.add {
-            type = "sprite-button",
-            name = "buy-stack",
-            sprite = "stack-full",
-        }
-        buy_stack.tooltip = {"",
-            lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", stack_size, coin_tiers.coin_to_text(buy_stack_coin)}, "purple"),
-        }
-        gui_events.register(buy_stack, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_stack) end)
-
-        local elem_filter_items = sets.new()
-        for _, surface in pairs(game.surfaces) do
-            if not lib.is_space_platform(surface.name) then
-                local values = item_values.get_expanded_item_values_for_surface(surface.name)
-                for name, _ in pairs(values) do
-                    if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then
-                        sets.add(elem_filter_items, name)
-                    end
+    local elem_filter_items = sets.new()
+    for _, surface in pairs(game.surfaces) do
+        if not lib.is_space_platform(surface.name) then
+            local values = item_values.get_expanded_item_values_for_surface(surface.name)
+            for name, _ in pairs(values) do
+                if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then
+                    sets.add(elem_filter_items, name)
                 end
             end
         end
-        local elem_filters = {}
-        for name, _ in pairs(elem_filter_items) do
-            table.insert(elem_filters, {filter = "name", name = name})
-        end
-
-        local selected_item_qb = right_flow.add {
-            type = "choose-elem-button",
-            name = "selected-item-qb",
-            elem_type = "item",
-            elem_filters = elem_filters,
-            item = selection.item_name,
-        }
-        gui_events.register(selected_item_qb, "on-elem-selected", function() catalog_gui.on_quantum_bazaar_changed(player, selected_item_qb) end)
     end
+    local elem_filters = {}
+    for name, _ in pairs(elem_filter_items) do
+        table.insert(elem_filters, {filter = "name", name = name})
+    end
+
+    local selected_item_qb = right_flow.add {
+        type = "choose-elem-button",
+        name = "selected-item-qb",
+        elem_type = "item",
+        elem_filters = elem_filters,
+        item = selection.item_name,
+    }
+    gui_events.register(selected_item_qb, "on-elem-selected", function() catalog_gui.on_quantum_bazaar_changed(player, selected_item_qb) end)
 end
 
 function catalog_gui.show_catalog(player)
