@@ -167,6 +167,34 @@ function core_gui.auto_width_height(element)
     core_gui.auto_height(element)
 end
 
+---Create a new LuaGuiElement using the given `add_params`, automatically center is horizontally, and return the individual element that's centered inside the automatically generated flow element.
+---@param element LuaGuiElement The parent element under which to create the flow that's used to center the element.
+---@param add_params {[string]: any, type: string} Parameters passed to the LuaGuiElement.add() function which creates the centered element.
+---@return LuaGuiElement
+function core_gui.auto_center_horizontally(element, add_params)
+    local name = add_params.name or add_params.type
+
+    local flow = element.add {
+        type = "flow",
+        name = name .. "-centered",
+        direction = "horizontal",
+    }
+
+    core_gui.auto_width(flow.add {
+        type = "empty-widget",
+        name = "empty-left",
+    })
+
+    local centered_element = flow.add(add_params)
+
+    core_gui.auto_width(flow.add {
+        type = "empty-widget",
+        name = "empty-right",
+    })
+
+    return centered_element
+end
+
 function core_gui.add_titlebar(frame, caption)
     local titlebar = frame.add{type = "flow"}
     titlebar.drag_target = frame

@@ -371,12 +371,12 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
     local selection = catalog_gui.get_catalog_selection(player)
     local buffs = item_buffs.get_buffs(selection.item_name)
 
-    local bonuses_label = frame.add {
+    local bonuses_label = gui.auto_center_horizontally(frame, {
         type = "label",
         name = "bonuses-label",
         caption = {"hextorio-gui.bonuses"},
-    }
-    bonuses_label.style.font = "heading-2"
+    })
+    bonuses_label.style.font = "heading-1"
 
     if not quests.is_feature_unlocked "item-buffs" or rank_obj.rank < 2 or not next(buffs) then return end
     item_buffs.fetch_settings()
@@ -597,11 +597,11 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
     local selection = catalog_gui.get_catalog_selection(player)
 
     frame.add {type = "line", direction = "horizontal"}
-    local quantum_bazaar_header = frame.add {
+    local quantum_bazaar_header = gui.auto_center_horizontally(frame, {
         type = "label",
         name = "quantum-bazaar-header",
         caption = lib.color_localized_string({"hextorio-gui.quantum-bazaar"}, "[color=180,255,0]", "heading-1"),
-    }
+    })
     local quantum_bazaar = frame.add {
         type = "flow",
         name = "quantum-bazaar",
