@@ -618,7 +618,7 @@ function hex_core_gui.on_confirmation_button_click(player, element)
         coin_tiers.remove_coin_from_inventory(inv, coin)
 
         hex_grid.delete_hex_core(hex_core)
-        core_gui.hide_all_frames(player)
+        hex_core_gui.hide_hex_core(player)
     end
 end
 
