@@ -38,6 +38,7 @@ electromagnetic_penetrator_cell.stack_size = 1
 electromagnetic_penetrator_cell.icon = "__space-age__/graphics/icons/tesla-ammo.png"
 electromagnetic_penetrator_cell.ammo_type.target_type = "entity"
 electromagnetic_penetrator_cell.ammo_type.action.range = 65
+electromagnetic_penetrator_cell.ammo_type.action.width = 2
 electromagnetic_penetrator_cell.ammo_type.action.action_delivery.target_effects = {
     {
         type = "damage",
@@ -50,9 +51,25 @@ electromagnetic_penetrator_cell.ammo_type.action.action_delivery.target_effects 
             action_delivery = {
                 type = "chain",
                 chain = "chain-electromagnetic-penetrator-chain",
+                destroy_with_source_or_target = false,
             },
         },
     },
+    -- {
+    --     type = "nested-result",
+    --     action = {
+    --         type = "direct",
+    --         action_delivery = {
+    --             type = "beam",
+    --             beam = "chain-electromagnetic-penetrator-beam-start",
+    --             destroy_with_source_or_target = false,
+    --             add_to_shooter = false,
+    --             duration = 20,
+    --             max_length = 65,
+    --             source_offset = {0, -1.31439},
+    --         },
+    --     },
+    -- },
 }
 
 

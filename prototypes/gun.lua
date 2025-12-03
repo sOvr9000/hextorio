@@ -13,15 +13,19 @@ electromagnetic_penetrator.attack_parameters = {
     projectile_creation_distance = 1.125,
 }
 
-local sentient_spider_emp = table.deepcopy(electromagnetic_penetrator)
-sentient_spider_emp.name = "sentient-spider-emp"
-sentient_spider_emp.order = nil
-sentient_spider_emp.subgroup = nil
-sentient_spider_emp.attack_parameters.projectile_creation_distance = 2.5
+for i = 1, 6 do
+    local sentient_spider_emp = table.deepcopy(electromagnetic_penetrator)
+    sentient_spider_emp.name = "sentient-spider-emp-" .. i
+    sentient_spider_emp.order = nil
+    sentient_spider_emp.subgroup = nil
+    sentient_spider_emp.localised_name = "item-name.sentient-spider-emp"
+    sentient_spider_emp.attack_parameters.projectile_orientation_offset = (i - 2.5) / 6
+    sentient_spider_emp.attack_parameters.projectile_creation_distance = 0.5
+    data:extend({sentient_spider_emp})
+end
 
 
 
 data:extend({
     electromagnetic_penetrator,
-    sentient_spider_emp,
 })

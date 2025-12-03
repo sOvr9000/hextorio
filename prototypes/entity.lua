@@ -402,7 +402,7 @@ data.raw["splitter"]["turbo-splitter"].next_upgrade = "hexic-splitter"
 
 local sentient_spider = table.deepcopy(data.raw["spider-vehicle"]["spidertron"])
 sentient_spider.name = "sentient-spider"
-sentient_spider.guns = {"sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp"}
+sentient_spider.guns = {"sentient-spider-emp-1", "sentient-spider-emp-2", "sentient-spider-emp-3", "sentient-spider-emp-4", "sentient-spider-emp-5", "sentient-spider-emp-6"}
 sentient_spider.equipment_grid = "sentient-spider-equipment-grid"
 sentient_spider.inventory_size = 120
 sentient_spider.minable.result = "sentient-spider"
