@@ -28,12 +28,44 @@ table.insert(transport_belt_capacity_3.effects, {
     modifier = 4,
 })
 
-local sentient_spider = table.deepcopy(data.raw["technology"]["spidertron"])
-sentient_spider.name = "sentient-spider"
-sentient_spider.prerequisites = {"spidertron", "promethium-science-pack"}
-sentient_spider.unit = {
+local electromagnetic_penetrator = table.deepcopy(data.raw["technology"]["railgun"])
+electromagnetic_penetrator.name = "electromagnetic-penetrator"
+electromagnetic_penetrator.prerequisites = {"railgun", "tesla-weapons", "promethium-science-pack"}
+electromagnetic_penetrator.unit = {
     count = 5000,
     time = 60,
+    ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"military-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"promethium-science-pack", 1},
+    },
+}
+electromagnetic_penetrator.effects = {
+    {
+        type = "unlock-recipe",
+        recipe = "electromagnetic-penetrator",
+    },
+    {
+        type = "unlock-recipe",
+        recipe = "electromagnetic-penetrator-cell",
+    }
+}
+
+local sentient_spider = table.deepcopy(data.raw["technology"]["spidertron"])
+sentient_spider.name = "sentient-spider"
+sentient_spider.prerequisites = {"spidertron", "electromagnetic-penetrator"}
+sentient_spider.unit = {
+    count = 6666,
+    time = 66,
     ingredients = {
         {"automation-science-pack", 1},
         {"logistic-science-pack", 1},
@@ -57,7 +89,7 @@ sentient_spider.effects = {
 }
 
 ---@diagnostic disable-next-line: assign-type-mismatch
-data:extend({transport_belt_capacity_3, sentient_spider})
+data:extend({transport_belt_capacity_3, electromagnetic_penetrator, sentient_spider})
 
 
 if lib.data.is_hextreme_enabled() then
@@ -420,4 +452,17 @@ data:extend({
             },
         },
     },
+})
+
+-- Add electromagnetic penetrator ammo category to the buffs from electric weapons damage tech
+table.insert(data.raw["technology"]["electric-weapons-damage-3"].effects, {
+    type = "ammo-damage",
+    ammo_category = "electromagnetic-penetrator",
+    modifier = 0.2,
+})
+
+table.insert(data.raw["technology"]["electric-weapons-damage-4"].effects, {
+    type = "ammo-damage",
+    ammo_category = "electromagnetic-penetrator",
+    modifier = 0.1,
 })

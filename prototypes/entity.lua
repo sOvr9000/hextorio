@@ -402,10 +402,16 @@ data.raw["splitter"]["turbo-splitter"].next_upgrade = "hexic-splitter"
 
 local sentient_spider = table.deepcopy(data.raw["spider-vehicle"]["spidertron"])
 sentient_spider.name = "sentient-spider"
-sentient_spider.guns = {"sentient-spider-teslagun"}
+sentient_spider.guns = {"sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp", "sentient-spider-emp"}
 sentient_spider.equipment_grid = "sentient-spider-equipment-grid"
 sentient_spider.inventory_size = 120
 sentient_spider.minable.result = "sentient-spider"
+sentient_spider.max_health = 10000
+sentient_spider.chain_shooting_cooldown_modifier = 3 / 20
+-- sentient_spider.healing_per_tick = 2.4 -- This appears to be bugged, doesn't affect the entity
+sentient_spider.chunk_exploration_radius = 4
+table.insert(sentient_spider.resistances, {type = "electric-hv", percent = 100})
+table.insert(sentient_spider.resistances, {type = "electric", percent = 100})
 
 
 for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"} do

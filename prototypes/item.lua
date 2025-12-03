@@ -138,9 +138,6 @@ crystalline_fuel.fuel_value = "6GJ"
 crystalline_fuel.fuel_acceleration_multiplier = 3
 crystalline_fuel.fuel_top_speed_multiplier = 1.36
 
-local sentient_spider_teslagun = table.deepcopy(data.raw["gun"]["teslagun"])
-sentient_spider_teslagun.name = "sentient-spider-teslagun"
-
 -- Dungeons
 local dungeon_chest = table.deepcopy(data.raw["item"]["steel-chest"])
 dungeon_chest.name = "dungeon-chest"
@@ -163,6 +160,5 @@ data:extend({
     sentient_spider,
     hexaprism,
     crystalline_fuel,
-    sentient_spider_teslagun,
     dungeon_chest,
 })

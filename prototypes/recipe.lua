@@ -152,7 +152,7 @@ local sentient_spider_recipe = {
         {type = "item", name = "fusion-generator", amount = 2},
         {type = "item", name = "quantum-processor", amount = 50},
         {type = "item", name = "spidertron", amount = 1},
-        {type = "item", name = "teslagun", amount = 4},
+        {type = "item", name = "electromagnetic-penetrator", amount = 6},
         {type = "item", name = "raw-fish", amount = 100},
         {type = "item", name = "hexaprism", amount = 10},
         {type = "fluid", name = "fluoroketone-cold", amount = 1000},
@@ -281,6 +281,44 @@ local casting_firearm_magazine = {
     },
 }
 
+local electromagnetic_penetrator = {
+    type = "recipe",
+    name = "electromagnetic-penetrator",
+    category = "cryogenics",
+    energy_required = 20,
+    enabled = false,
+    ingredients = {
+        {type = "item", name = "railgun", amount = 1},
+        {type = "item", name = "teslagun", amount = 1},
+        {type = "item", name = "hexaprism", amount = 8},
+        {type = "item", name = "quantum-processor", amount = 25},
+        {type = "fluid", name = "fluoroketone-cold", amount = 400},
+    },
+    results = {
+        {type = "item", name = "electromagnetic-penetrator", amount = 1},
+        {type = "fluid", name = "fluoroketone-hot", amount = 200, temperature = 180},
+    },
+    icon = "__space-age__/graphics/icons/railgun.png",
+}
+
+local electromagnetic_penetrator_cell = {
+    type = "recipe",
+    name = "electromagnetic-penetrator-cell",
+    category = "cryogenics",
+    energy_required = 50,
+    enabled = false,
+    ingredients = {
+        {type = "item", name = "railgun-ammo", amount = 1},
+        {type = "item", name = "tesla-ammo", amount = 10},
+        {type = "item", name = "hexaprism", amount = 4},
+    },
+    results = {
+        {type = "item", name = "electromagnetic-penetrator-cell", amount = 1},
+    },
+}
+
+
+
 ---@diagnostic disable: assign-type-mismatch
 data:extend({
     hexic_transport_belt,
@@ -289,6 +327,8 @@ data:extend({
     -- disintegrator_capsule,
     -- detonator_capsule,
     demolisher_capsule,
+    electromagnetic_penetrator,
+    electromagnetic_penetrator_cell,
     sentient_spider_recipe,
     energized_thruster_fuel,
     energized_thruster_oxidizer,

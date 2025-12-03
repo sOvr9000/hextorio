@@ -29,4 +29,32 @@ table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_ef
     entity_name = "magmatic-flame",
 })
 
-data:extend({plague_rocket, magmatic_rounds_magazine})
+local electromagnetic_penetrator_cell = table.deepcopy(data.raw["ammo"]["railgun-ammo"])
+electromagnetic_penetrator_cell.name = "electromagnetic-penetrator-cell"
+electromagnetic_penetrator_cell.order = "e[railgun-ammo]-b[electromagnetic-penetrator-cell]"
+electromagnetic_penetrator_cell.ammo_category = "electromagnetic-penetrator"
+electromagnetic_penetrator_cell.weight = 100000
+electromagnetic_penetrator_cell.stack_size = 1
+electromagnetic_penetrator_cell.icon = "__space-age__/graphics/icons/tesla-ammo.png"
+electromagnetic_penetrator_cell.ammo_type.target_type = "entity"
+electromagnetic_penetrator_cell.ammo_type.action.range = 65
+electromagnetic_penetrator_cell.ammo_type.action.action_delivery.target_effects = {
+    {
+        type = "damage",
+        damage = {type = "electric-hv", amount = 1000},
+    },
+    {
+        type = "nested-result",
+        action = {
+            type = "direct",
+            action_delivery = {
+                type = "chain",
+                chain = "chain-electromagnetic-penetrator-chain",
+            },
+        },
+    },
+}
+
+
+
+data:extend({plague_rocket, magmatic_rounds_magazine, electromagnetic_penetrator_cell})
