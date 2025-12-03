@@ -412,6 +412,7 @@ sentient_spider.chain_shooting_cooldown_modifier = 3 / 20
 sentient_spider.chunk_exploration_radius = 4
 table.insert(sentient_spider.resistances, {type = "electric-hv", percent = 100})
 table.insert(sentient_spider.resistances, {type = "electric", percent = 100})
+table.insert(sentient_spider.resistances, {type = "physical", percent = 100})
 
 
 for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"} do
