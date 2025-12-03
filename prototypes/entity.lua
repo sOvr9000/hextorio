@@ -414,6 +414,20 @@ table.insert(sentient_spider.resistances, {type = "electric-hv", percent = 100})
 table.insert(sentient_spider.resistances, {type = "electric", percent = 100})
 table.insert(sentient_spider.resistances, {type = "physical", percent = 100})
 
+local sentient_spider_legs = {}
+for i = 1, 8 do
+    local leg = table.deepcopy(data.raw["spider-leg"]["spidertron-leg-" .. i])
+    leg.name = "sentient-spider-leg-" .. i
+    table.insert(leg.resistances, {type = "electric-hv", percent = 100})
+    table.insert(leg.resistances, {type = "electric", percent = 100})
+    table.insert(leg.resistances, {type = "physical", percent = 100})
+
+    table.insert(sentient_spider_legs, leg)
+
+    sentient_spider.spider_engine.legs[i].leg = leg.name
+end
+data:extend(sentient_spider_legs)
+
 
 for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"} do
     local hex_size = lib.startup_setting_value("hex-size-" .. surface_name)
