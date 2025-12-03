@@ -298,6 +298,7 @@ local electromagnetic_penetrator = {
         {type = "item", name = "electromagnetic-penetrator", amount = 1},
         {type = "fluid", name = "fluoroketone-hot", amount = 200, temperature = 180},
     },
+    main_product = "electromagnetic-penetrator",
     icon = "__space-age__/graphics/icons/railgun.png",
 }
 

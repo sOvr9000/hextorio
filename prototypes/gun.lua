@@ -1,7 +1,7 @@
 
 local electromagnetic_penetrator = table.deepcopy(data.raw["gun"]["railgun"])
 electromagnetic_penetrator.name = "electromagnetic-penetrator"
-electromagnetic_penetrator.weight = 200000
+electromagnetic_penetrator.weight = 1000000
 electromagnetic_penetrator.order = "a[basic-clips]-i[electromagnetic-penetrator]"
 electromagnetic_penetrator.attack_parameters = {
     type = "projectile",
@@ -18,9 +18,10 @@ for i = 1, 6 do
     sentient_spider_emp.name = "sentient-spider-emp-" .. i
     sentient_spider_emp.order = nil
     sentient_spider_emp.subgroup = nil
-    sentient_spider_emp.localised_name = "item-name.sentient-spider-emp"
+    sentient_spider_emp.localised_name = {"item-name.sentient-spider-emp"}
     sentient_spider_emp.attack_parameters.projectile_orientation_offset = (i - 2.5) / 6
     sentient_spider_emp.attack_parameters.projectile_creation_distance = 0.5
+    sentient_spider_emp.hidden_in_factoriopedia = true
     data:extend({sentient_spider_emp})
 end
 
