@@ -137,6 +137,7 @@ script.on_init(function()
     temp.request_to_generate_chunks({0, 0}, 0)
 
     item_values.init()
+    item_ranks.init()
     quests.init()
     trades.init()
     blueprints.init()

@@ -35,6 +35,14 @@ function item_ranks.register_events()
     end)
 end
 
+function item_ranks.init()
+    storage.item_ranks.productivity_requirements = {
+        [2] = lib.runtime_setting_value "rank-2-prod-requirement",
+        [3] = lib.runtime_setting_value "rank-3-prod-requirement",
+        [4] = lib.runtime_setting_value "rank-4-prod-requirement",
+    }
+end
+
 ---Initialize a rank object for an item, failing if the item cannot have a rank.
 ---@param item_name string
 ---@return ItemRank|nil

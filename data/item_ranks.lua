@@ -4,9 +4,10 @@ return {
 
     rank_up_requirements = {1, 1, 1, 1},
     productivity_requirements = {
-        [2] = 0.3, -- Bronze -> Silver
-        [3] = 0.7, -- Silver -> Gold
-        [4] = 1.2 -- Gold -> Red
+        -- Override with mod settings on start.
+        -- [2] = 0.3, -- Bronze -> Silver
+        -- [3] = 0.7, -- Silver -> Gold
+        -- [4] = 1.2 -- Gold -> Red
     },
 
     rank_colors = {
