@@ -39,10 +39,7 @@ function trades_gui._update_trades_scroll_pane_tick(process)
         end
     end
 
-    local batch_size = 150
-    if game.is_multiplayer() then
-        batch_size = 100 -- slow down for slow connections like my own
-    end
+    local batch_size = 20
     if process.immediate then
         batch_size = #process.trades_list
     end
