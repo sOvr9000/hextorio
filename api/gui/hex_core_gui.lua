@@ -136,11 +136,11 @@ function hex_core_gui.init_hex_core(player)
 
     local sink_mode_confirmation = frame.add {type = "sprite-button", name = "sink-mode-confirmation", sprite = "check-mark-green"}
     sink_mode_confirmation.tooltip = {"hex-core-gui.sink-mode-confirmation-tooltip"}
-    gui_events.register(sink_mode_confirmation, "on-clicked", function() hex_core_gui.on_confirmation_button_click(player, sink_mode_confirmation) end)
+    gui_events.register(sink_mode_confirmation, "on-clicked", function() hex_core_gui.on_hex_mode_confirmation_button_click(player, sink_mode_confirmation) end)
 
     local generator_mode_confirmation = frame.add {type = "sprite-button", name = "generator-mode-confirmation", sprite = "check-mark-green"}
     generator_mode_confirmation.tooltip = {"hex-core-gui.generator-mode-confirmation-tooltip"}
-    gui_events.register(generator_mode_confirmation, "on-clicked", function() hex_core_gui.on_confirmation_button_click(player, generator_mode_confirmation) end)
+    gui_events.register(generator_mode_confirmation, "on-clicked", function() hex_core_gui.on_hex_mode_confirmation_button_click(player, generator_mode_confirmation) end)
 
     local stats = hex_control_flow.add {type = "sprite-button", name = "stats", sprite = "utility/side_menu_production_icon"}
 
