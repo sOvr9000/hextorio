@@ -24,6 +24,15 @@ function item_ranks.register_events()
     event_system.register_callback("quests-reinitialized", function()
         quests.set_progress_for_type("total-item-rank", item_ranks.get_total_item_rank())
     end)
+    event_system.register_callback("runtime-setting-changed-rank-2-prod-requirement", function()
+        storage.item_ranks.productivity_requirements[2] = lib.runtime_setting_value "rank-2-prod-requirement"
+    end)
+    event_system.register_callback("runtime-setting-changed-rank-3-prod-requirement", function()
+        storage.item_ranks.productivity_requirements[3] = lib.runtime_setting_value "rank-3-prod-requirement"
+    end)
+    event_system.register_callback("runtime-setting-changed-rank-4-prod-requirement", function()
+        storage.item_ranks.productivity_requirements[4] = lib.runtime_setting_value "rank-4-prod-requirement"
+    end)
 end
 
 ---Initialize a rank object for an item, failing if the item cannot have a rank.

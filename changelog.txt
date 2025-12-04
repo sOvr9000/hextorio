@@ -7,6 +7,7 @@ Date: 5/12/25
     - Added a full-featured trade loop finder as a quest reward from Gleba.
   Minor Features:
     - Added the "ping in chat" button for trades in the trade overview.
+    - Added mod settings for tweaking trade productivity requirements for ranking up items.
   Changes:
     - The Sentient Spider is now equipped with six electromagnetic penetrators instead of one (buffed) teslagun.
     - Changed Sentient Spider recipe to reflect its new abilities.
