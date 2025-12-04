@@ -60,11 +60,11 @@ function gui_stack.add(player, element)
     end
     table.insert(stack, element)
 
-    log("added " .. element.name .. " to stack for " .. player.name)
-    log("current opened stack:")
-    for _, e in pairs(stack) do
-        log(e.name)
-    end
+    -- log("added " .. element.name .. " to stack for " .. player.name)
+    -- log("current opened stack:")
+    -- for _, e in pairs(stack) do
+    --     log(e.name)
+    -- end
 
     element.visible = true
     player.opened = element
@@ -96,11 +96,11 @@ function gui_stack.pop(player, index)
 
     elem.visible = false
 
-    log("removed " .. elem.name .. " to stack for " .. player.name)
-    log("current opened stack:")
-    for _, e in pairs(stack) do
-        log(e.name)
-    end
+    -- log("removed " .. elem.name .. " to stack for " .. player.name)
+    -- log("current opened stack:")
+    -- for _, e in pairs(stack) do
+    --     log(e.name)
+    -- end
 
     return elem
 end
@@ -130,9 +130,9 @@ end
 ---@param player LuaPlayer
 ---@param element LuaGuiElement
 function gui_stack.handle_gui_closed(player, element)
-    if gui_stack.contains(player, element) then
-        gui_stack.pop(player, gui_stack.index_of(player, element))
-    end
+    -- if gui_stack.contains(player, element) then
+    --     gui_stack.pop(player, gui_stack.index_of(player, element))
+    -- end
 end
 
 
