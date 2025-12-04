@@ -576,6 +576,15 @@ local process_migration = {
                 end
             end
         end
+
+        for _, trade in pairs(trades.get_all_trades(true)) do
+            local surface_trades = storage.trades.tree.by_surface[trade.surface_name]
+            if not surface_trades then
+                surface_trades = {}
+                storage.trades.tree.by_surface[trade.surface_name] = surface_trades
+            end
+            surface_trades[trade.id] = true
+        end
     end,
 }
 

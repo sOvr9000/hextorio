@@ -34,9 +34,10 @@ Date: 5/12/25
         This was fixed by including the concrete recycling recipe as well as other common recycling recipes in the item value solver.
         As a result, the extra iron obtained from concrete and electronic circuits has shifted the relative item values drastically.
   Optimizations:
-    - Decreased batch sizes and processing intervals, smoothing gameplay on large saves.
-    - Decreased number of layout updates in the trade overview for the same number of trades listed.
-    - Optimized filtering methods in trade overview.
+    - Decreased batch sizes and processing intervals, reducing frame stutters on large saves.
+    - Decreased number of UI layout updates in the trade overview for the same number of trades listed. O(n^2) -> less O(n^2), but substantial improvement.
+    - Optimized "exact" filtering in trade overview. Small improvement.
+    - Optimized planet filtering in trade overview, leading to the biggest performance gains. ~2x speedup in the average case.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25

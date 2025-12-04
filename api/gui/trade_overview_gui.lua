@@ -352,21 +352,11 @@ function trade_overview_gui.update_trade_overview(player)
         filter_frame["right"]["exclude-dungeons"]["checkbox"].state = true
     end
 
-    local function intersection(trades_lookup1, trades_lookup2)
-        local result = {}
-        for trade_id, _ in pairs(trades_lookup1) do
-            if trades_lookup2[trade_id] then
-                result[trade_id] = true
-            end
-        end
-        return result
-    end
-
     local trades_set
     if filter.input_items then
         for _, item in pairs(filter.input_items) do
             if trades_set then
-                trades_set = intersection(trades_set, trades.get_trades_by_input(item))
+                trades_set = sets.intersection(trades_set, trades.get_trades_by_input(item))
             else
                 trades_set = trades.get_trades_by_input(item)
             end
@@ -375,20 +365,35 @@ function trade_overview_gui.update_trade_overview(player)
     if filter.output_items then
         for _, item in pairs(filter.output_items) do
             if trades_set then
-                trades_set = intersection(trades_set, trades.get_trades_by_output(item))
+                trades_set = sets.intersection(trades_set, trades.get_trades_by_output(item))
             else
                 trades_set = trades.get_trades_by_output(item)
             end
         end
     end
 
-    -- At this point, trades_set is either nil or a lookup table that maps trade ids to boolean (true) values.
-    if trades_set then
-        -- Convert to lookup table mapping trade ids to trade objects.
-        trades_set = trades.convert_boolean_lookup_to_trades_lookup(trades_set)
-    else
-        trades_set = lib.shallow_copy(trades.get_trades_lookup())
+    if not trades_set then
+        if filter.planets then
+            for surface_name, allow in pairs(filter.planets) do
+                if allow then
+                    if trades_set then
+                        trades_set = sets.union(trades_set, trades.get_trades_by_surface(surface_name))
+                    else
+                        trades_set = trades.get_trades_by_surface(surface_name)
+                    end
+                end
+            end
+        end
     end
+
+    if not trades_set then
+        trades_set = sets.new()
+    end
+
+    -- At this point, trades_set is either nil or a lookup table that maps trade ids to boolean (true) values.
+    -- Convert to lookup table mapping trade ids to trade objects.
+    ---@diagnostic disable-next-line: param-type-mismatch
+    trades_set = trades.convert_boolean_lookup_to_trades_lookup(trades_set)
 
     local function filter_trade(trade)
         if trade.hex_core_state then

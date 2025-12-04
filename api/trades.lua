@@ -1208,6 +1208,9 @@ function trades._check_tree_existence()
     if not storage.trades.tree.by_output then
         storage.trades.tree.by_output = {}
     end
+    if not storage.trades.tree.by_surface then
+        storage.trades.tree.by_surface = {}
+    end
     if not storage.trades.tree.all_trades_lookup then
         storage.trades.tree.all_trades_lookup = {}
     end
@@ -1232,6 +1235,14 @@ function trades.add_trade_to_tree(trade)
         end
         storage.trades.tree.by_output[output.name][trade.id] = true
     end
+
+    local surface_trades = storage.trades.tree.by_surface[trade.surface_name]
+    if not surface_trades then
+        surface_trades = {}
+        storage.trades.tree.by_surface[trade.surface_name] = surface_trades
+    end
+    surface_trades[trade.id] = true
+
     storage.trades.tree.all_trades_lookup[trade.id] = trade
 end
 
@@ -1251,6 +1262,12 @@ function trades.remove_trade_from_tree(trade, recoverable)
             storage.trades.tree.by_output[output.name][trade.id] = nil
         end
     end
+
+    local surface_trades = storage.trades.tree.by_surface[trade.surface_name]
+    if surface_trades then
+        surface_trades[trade.id] = nil
+    end
+
     if recoverable then
         storage.trades.recoverable[trade.id] = true
     else
@@ -1289,6 +1306,14 @@ function trades.get_trades_by_output(item_name)
     end
     trades._check_tree_existence()
     return storage.trades.tree.by_output[item_name] or {}
+end
+
+---Return a lookup table, mapping trade ids to boolean (true) values, of all trades on the given surface.
+---@param surface_name string
+---@return {[int]: boolean}
+function trades.get_trades_by_surface(surface_name)
+    trades._check_tree_existence()
+    return storage.trades.tree.by_surface[surface_name] or {}
 end
 
 ---Return a lookup table, mapping trade ids to trade objects, of all trades in the current game.
