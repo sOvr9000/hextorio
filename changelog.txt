@@ -12,6 +12,7 @@ Date: 27/11/25
     - Clicking an item in a trade while a hex core is open now opens the trade overview instead of the catalog.
     - Dungeon hexes no longer contribute to the total trades found, preventing from quickly completing the "Find Some Trades" quest.
     - Removed the map colors of hexlights and hexports.
+    - The item selector for trade contents in the trade overview now only show items that can be found in trades.
   Gui:
     - Horizontally centered the "Bonuses" text in the catalog.
   Bugfixes:

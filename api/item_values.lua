@@ -3,6 +3,7 @@ local lib = require "api.lib"
 local item_ranks = require "api.item_ranks"
 local event_system = require "api.event_system"
 local coin_tiers   = require "api.coin_tiers"
+local sets         = require "api.sets"
 
 local item_values = {}
 
@@ -461,6 +462,25 @@ function item_values.get_items_near_value(surface_name, center_value, max_ratio,
     return item_names
 end
 
+---Return a list of all items have a defined value on any surface, including coins.
+function item_values.get_all_items_with_value()
+    if storage.item_values.all_items_with_value then
+        return storage.item_values.all_items_with_value
+    end
+
+    local all_item_names = {}
+    for surface_name, values in pairs(storage.item_values.values) do
+        for item_name, _ in pairs(values) do
+            all_item_names[item_name] = true
+        end
+    end
+
+    local item_names = sets.to_array(all_item_names)
+    storage.item_values.all_items_with_value = item_names
+
+    return item_names
+end
+
 function item_values.is_item_for_surface(item_name, surface_name)
     if not surface_name then
         return true
@@ -478,6 +498,7 @@ function item_values.reset_storage()
     storage.item_values.expanded_values = {}
     storage.item_values.interplanetary_values = {}
     storage.item_values.minimal_values = {}
+    storage.item_values.all_items_with_value = nil
 end
 
 

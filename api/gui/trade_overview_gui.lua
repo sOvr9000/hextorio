@@ -142,6 +142,9 @@ function trade_overview_gui.build_left_filter_frame(frame)
 
     left_frame.add {type = "line", direction = "horizontal"}
 
+    local item_names_with_value = item_values.get_all_items_with_value()
+    local elem_filters = {{filter = "name", name = item_names_with_value}}
+
     local trade_contents_flow = left_frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
     local trade_contents_label = trade_contents_flow.add {type = "label", name = "label", caption = {"hextorio-gui.trade-contents"}}
     local trade_contents_frame = trade_contents_flow.add {type = "flow", name = "frame", direction = "horizontal"}
@@ -185,6 +188,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
             elem_type = "item",
             name = "input-item-" .. i,
         }
+        input_item.elem_filters = elem_filters
         gui_events.register(input_item, "on-elem-selected", function() trade_overview_gui.update_trade_overview(player) end)
     end
 
@@ -240,6 +244,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
             elem_type = "item",
             name = "output-item-" .. (4 - i), -- 4 - i to be more consistent with how trades are shown in general
         }
+        output_item.elem_filters = elem_filters
         gui_events.register(output_item, "on-elem-selected", function() trade_overview_gui.update_trade_overview(player) end)
     end
 end
