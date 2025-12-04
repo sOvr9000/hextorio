@@ -79,10 +79,7 @@ function gui_stack.pop(player, index)
     if not next(stack) then return end
 
     if not index then index = #stack end
-    if index > #stack then
-        lib.log_error("core_gui.pop_stack: index=" .. index .. " is out of bounds for stack of size=" .. #stack)
-        return
-    end
+    if index <= 0 or index > #stack then return end
 
     local elem = stack[index]
     table.remove(stack, index)
