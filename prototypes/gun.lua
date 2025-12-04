@@ -3,6 +3,7 @@ local electromagnetic_penetrator = table.deepcopy(data.raw["gun"]["railgun"])
 electromagnetic_penetrator.name = "electromagnetic-penetrator"
 electromagnetic_penetrator.weight = 1000000
 electromagnetic_penetrator.order = "a[basic-clips]-i[electromagnetic-penetrator]"
+electromagnetic_penetrator.icon = "__hextorio__/graphics/icons/electromagnetic-penetrator.png"
 electromagnetic_penetrator.attack_parameters = {
     type = "projectile",
     ammo_category = "electromagnetic-penetrator",

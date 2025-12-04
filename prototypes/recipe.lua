@@ -299,7 +299,7 @@ local electromagnetic_penetrator = {
         {type = "fluid", name = "fluoroketone-hot", amount = 200, temperature = 180},
     },
     main_product = "electromagnetic-penetrator",
-    icon = "__space-age__/graphics/icons/railgun.png",
+    icon = "__hextorio__/graphics/icons/electromagnetic-penetrator.png",
 }
 
 local electromagnetic_penetrator_cell = {
@@ -316,6 +316,7 @@ local electromagnetic_penetrator_cell = {
     results = {
         {type = "item", name = "electromagnetic-penetrator-cell", amount = 1},
     },
+    icon = "__hextorio__/graphics/icons/electromagnetic-penetrator-cell.png",
 }
 
 
