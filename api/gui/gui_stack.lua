@@ -67,7 +67,7 @@ function gui_stack.add(player, element)
     -- end
 
     element.visible = true
-    player.opened = element
+    player.opened = element --  THIS IS TRIGGERING ON_CLOSED EVENTS, a workaround that's not yet implemented is crucial for the "gui stack" to work
 end
 
 ---Pop and return the last element off of the opened stack for a player, or the element at the given index.
