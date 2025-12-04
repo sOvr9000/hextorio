@@ -5,10 +5,12 @@ emp_beam_bounce.graphics_set.ground.body.tint = {0.75, 0.05, 0.05}
 emp_beam_bounce.graphics_set.ground.head.tint = {0.75, 0.05, 0.05}
 emp_beam_bounce.graphics_set.ground.tail.tint = {0.75, 0.05, 0.05}
 emp_beam_bounce.action.action_delivery.target_effects = {
-    type = "damage",
-    damage = {
-        type = "electric-hv",
-        amount = 300,
+    {
+        type = "damage",
+        damage = {
+            type = "electric-hv",
+            amount = 300,
+        },
     },
 }
 

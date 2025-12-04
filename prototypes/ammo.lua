@@ -41,10 +41,6 @@ electromagnetic_penetrator_cell.ammo_type.action.range = 65
 electromagnetic_penetrator_cell.ammo_type.action.width = 2
 electromagnetic_penetrator_cell.ammo_type.action.action_delivery.target_effects = {
     {
-        type = "damage",
-        damage = {type = "electric-hv", amount = 1000},
-    },
-    {
         type = "nested-result",
         action = {
             type = "direct",
@@ -54,6 +50,10 @@ electromagnetic_penetrator_cell.ammo_type.action.action_delivery.target_effects 
                 destroy_with_source_or_target = false,
             },
         },
+    },
+    {
+        type = "damage",
+        damage = {type = "electric-hv", amount = 1000},
     },
     -- {
     --     type = "nested-result",
