@@ -15,6 +15,7 @@ Date: 27/11/25
     - Dungeon hexes no longer contribute to the total trades found, preventing from quickly completing the "Find Some Trades" quest.
     - Removed the map colors of hexlights and hexports.
     - The item selector for trade contents in the trade overview now only show items that can be found in trades.
+    - Made the tooltips for the sink and generator buttons more concise.
   Gui:
     - Horizontally centered the "Bonuses" text in the catalog.
   Bugfixes:
