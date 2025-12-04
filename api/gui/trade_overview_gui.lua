@@ -136,7 +136,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
             }
             gui_events.register(surface_sprite, "on-clicked", function()
                 surface_sprite.toggled = not surface_sprite.toggled
-                gui.update_trade_overview(player)
+                trade_overview_gui.update_trade_overview(player)
             end)
         end
     end
