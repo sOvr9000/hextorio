@@ -39,9 +39,31 @@ function trades_gui._update_trades_scroll_pane_tick(process)
         end
     end
 
-    local batch_size = 20
+    local params = process.params
+
+    local batch_size = 24
     if process.immediate then
         batch_size = #process.trades_list
+    end
+
+    local group_flow
+    if params.batched then
+        if params.table_batch_def then
+            group_flow = process.trades_scroll_pane.add {
+                type = "table",
+                name = process.batch_idx,
+                column_count = params.table_batch_def.column_count or 2,
+            }
+            group_flow.style.horizontal_spacing = params.table_batch_def.horizontal_spacing or (28 / 1.2)
+        else
+            group_flow = process.trades_scroll_pane.add {
+                type = "flow",
+                name = process.batch_idx,
+                direction = "vertical",
+            }
+        end
+    else
+        group_flow = process.trades_scroll_pane
     end
 
     for trade_number = process.batch_idx, math.min(#process.trades_list, process.batch_idx + batch_size - 1) do
@@ -60,7 +82,7 @@ function trades_gui._update_trades_scroll_pane_tick(process)
             line.style.bottom_margin = 8 / 1.2
         end
 
-        trades_gui.add_trade_elements(process.player, process.trades_scroll_pane, trade, trade_number, process.params)
+        trades_gui.add_trade_elements(process.player, group_flow, trade, trade_number, process.params)
     end
 
     if process.for_trade_overview then

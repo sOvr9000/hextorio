@@ -313,8 +313,7 @@ function trade_overview_gui.build_trade_table_frame(frame)
     trade_table_frame.style.vertically_squashable = true
     trade_table_frame.style.natural_width = 700
 
-    local trade_table = scroll_pane.add {type = "table", name = "table", column_count = 2}
-    trade_table.style.horizontal_spacing = 28 / 1.2
+    local trade_table = scroll_pane.add {type = "flow", name = "table", direction = "vertical"}
 end
 
 function trade_overview_gui.update_trade_overview(player)
@@ -561,6 +560,12 @@ function trade_overview_gui.update_trade_overview(player)
         show_productivity_info = false,
         expanded = false,
         is_configuration_unlocked = quests.is_feature_unlocked "trade-configuration",
+
+        batched = true,
+        table_batch_def = {
+            column_count = 2,
+            horizontal_spacing = 28 / 1.2,
+        },
     })
 end
 
