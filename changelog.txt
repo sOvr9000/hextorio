@@ -35,6 +35,7 @@ Date: 5/12/25
         As a result, the extra iron obtained from concrete and electronic circuits has shifted the relative item values drastically.
   Optimizations:
     - Decreased batch sizes and processing intervals, smoothing gameplay on large saves.
+    - Decreased number of layout updates in the trade overview for the same number of trades listed.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25
