@@ -88,6 +88,7 @@ function trade_overview_gui.init_trade_overview(player)
     frame.style.width = 900
     frame.style.height = 900
     frame.visible = false
+    gui_events.register(frame, "on-closed", function() trade_overview_gui.hide_trade_overview(player) end)
 
     gui.add_titlebar(frame, {"hex-core-gui.trade-overview"})
 

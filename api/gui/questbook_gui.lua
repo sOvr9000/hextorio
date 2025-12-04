@@ -61,6 +61,7 @@ function questbook_gui.init_questbook(player)
     local questbook = player.gui.screen.add {type = "frame", name = "questbook", direction = "vertical"}
     questbook.style.size = {width = 1200, height = 800}
     questbook.visible = false
+    gui_events.register(questbook, "on-closed", function() questbook_gui.hide_questbook(player) end)
 
     gui.add_titlebar(questbook, {"hextorio-questbook.questbook-title"})
 

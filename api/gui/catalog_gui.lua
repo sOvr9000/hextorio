@@ -108,6 +108,7 @@ function catalog_gui.init_catalog(player)
     frame.style.width = 1200
     frame.style.height = 800
     frame.visible = false
+    gui_events.register(frame, "on-closed", function() catalog_gui.hide_catalog(player) end)
 
     gui.add_titlebar(frame, {"hextorio-gui.catalog"})
 
