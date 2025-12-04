@@ -332,7 +332,7 @@ return {
         },
         {
             name = "catalog-completionist",
-            conditions = {{type = "items-at-rank", value = 5, progress_requirement = 288}},
+            conditions = {{type = "items-at-rank", value = 5, progress_requirement = 290}},
             rewards = {
                 {type = "all-trades-productivity", value = 100},
                 {

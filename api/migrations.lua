@@ -552,6 +552,9 @@ local process_migration = {
         hex_grid.update_all_trades()
     end,
     ["1.2.1"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
+
         item_values.reset_storage()
         storage.item_values.values = data_item_values.values
 
