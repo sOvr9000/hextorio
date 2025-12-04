@@ -267,6 +267,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
     trade_arrow_sprite.style.height = size / 1.2
     trade_arrow_sprite.style.top_margin = 2
     trade_arrow_sprite.style.left_margin = 4
+    trade_arrow_sprite.style.stretch_image_to_widget_size = true
 
     local prod = trades.get_productivity(trade, quality_to_show)
     if params.show_productivity_bar and prod ~= 0 then

@@ -57,6 +57,7 @@ end
 
 function questbook_gui.init_questbook(player)
     if player.gui.screen["questbook"] then return end
+
     local questbook = player.gui.screen.add {type = "frame", name = "questbook", direction = "vertical"}
     questbook.style.size = {width = 1200, height = 800}
     questbook.visible = false
@@ -98,9 +99,10 @@ function questbook_gui.init_questbook(player)
 
     local quest_info_main = quest_info_frame.add {type = "flow", name = "main", direction = "vertical"}
     local quest_info_img_frame = quest_info_frame.add {type = "frame", name = "img-frame"}
-    local quest_info_img = quest_info_img_frame.add {type = "sprite", name = "img", sprite = "missing-quest-img"}
+    local quest_info_img = quest_info_img_frame.add {type = "sprite", name = "img", sprite = "missing-quest-img", resize_to_sprite = true}
     quest_info_img.style.width = 256 / 1.2
     quest_info_img.style.height = 256 / 1.2
+    quest_info_img.style.stretch_image_to_widget_size = true
 
     local quest_title = quest_info_main.add {type = "label", name = "title", caption = "[Quest Title]"}
     quest_title.style.font = "heading-1"
@@ -121,7 +123,6 @@ function questbook_gui.init_questbook(player)
 
     local quest_conditions_header = quest_conditions_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.conditions"}}
     quest_conditions_header.style.font = "heading-1"
-    -- quest_conditions_frame.add {type = "line", direction = "horizontal"}
 
     local quest_conditions_scroll_pane = quest_conditions_frame.add {type = "scroll-pane", name = "scroll-pane"}
     gui.auto_width_height(quest_conditions_scroll_pane)
@@ -130,7 +131,6 @@ function questbook_gui.init_questbook(player)
 
     local quest_rewards_header = quest_rewards_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.rewards"}}
     quest_rewards_header.style.font = "heading-1"
-    -- quest_rewards_frame.add {type = "line", direction = "horizontal"}
 
     local quest_rewards_scroll_pane = quest_rewards_frame.add {type = "scroll-pane", name = "scroll-pane"}
     gui.auto_width_height(quest_rewards_scroll_pane)

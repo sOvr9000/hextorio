@@ -194,6 +194,9 @@ function catalog_gui.init_catalog(player)
                     name = "rank-stars",
                     sprite = "rank-" .. rank,
                 }
+                rank_stars.style.height = 20
+                rank_stars.style.width = 50
+                rank_stars.style.stretch_image_to_widget_size = true
 
                 gui.give_item_tooltip(player, surface_name, sprite_button)
             end

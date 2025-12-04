@@ -202,6 +202,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
     trade_arrow.style.top_margin = 4
     trade_arrow.style.width = 30 / 1.2
     trade_arrow.style.height = 30 / 1.2
+    trade_arrow.style.stretch_image_to_widget_size = true
 
 
 
