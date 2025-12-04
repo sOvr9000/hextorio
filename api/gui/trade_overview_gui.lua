@@ -414,20 +414,6 @@ function trade_overview_gui.update_trade_overview(player)
                 return true
             end
         end
-        if filter.exact_inputs_match then
-            for _, input in pairs(trade.input_items) do
-                if not filter.input_items_lookup[input.name] then
-                    return true
-                end
-            end
-        end
-        if filter.exact_outputs_match then
-            for _, output in pairs(trade.output_items) do
-                if not filter.output_items_lookup[output.name] then
-                    return true
-                end
-            end
-        end
         if filter.num_item_bounds then
             local input_bounds = filter.num_item_bounds.inputs
             if input_bounds then
