@@ -39,6 +39,7 @@ electromagnetic_penetrator_cell.icon = "__hextorio__/graphics/icons/electromagne
 electromagnetic_penetrator_cell.ammo_type.target_type = "entity"
 electromagnetic_penetrator_cell.ammo_type.action.range = 65
 electromagnetic_penetrator_cell.ammo_type.action.width = 2
+electromagnetic_penetrator_cell.ammo_type.action.force = "enemy"
 electromagnetic_penetrator_cell.ammo_type.action.action_delivery.target_effects = {
     {
         type = "nested-result",
