@@ -72,7 +72,15 @@ function core_gui.give_item_tooltip(player, surface_name, element)
 
     local hex_coin_value = item_values.get_item_value(surface_name, "hex-coin")
     local item_count = element.number or 1
-    local value = item_values.get_item_value(surface_name, item_name)
+
+    local value, location_rich_text
+    if lib.is_space_platform(surface_name) then
+        value = item_values.get_minimal_item_value(item_name)
+        location_rich_text = "[img=space-location.solar-system-edge]"
+    else
+        value = item_values.get_item_value(surface_name, item_name)
+        location_rich_text = "[img=planet-" .. surface_name .. "]"
+    end
     local scaled_value = value / hex_coin_value * lib.get_quality_value_scale(quality)
 
     local rank_str = {""}
@@ -92,11 +100,11 @@ function core_gui.give_item_tooltip(player, surface_name, element)
         prototypes[rich_type][item_name].localised_name,
         "\n-=-=-=-=-=-=-=-=-\n",
         rank_str,
-        "[img=planet-" .. surface_name .. "] [font=heading-2][color=green]",
+        location_rich_text .. " [font=heading-2][color=green]",
         {"hextorio-gui.item-value"},
         "[.color][.font]\n" .. item_img_rich_text .. "x1 = ",
         coin_tiers.base_coin_value_to_text(scaled_value, false, 4),
-        "\n\n[img=planet-" .. surface_name .. "] [font=heading-2][color=yellow]",
+        "\n\n" .. location_rich_text .. " [font=heading-2][color=yellow]",
         {"hextorio-gui.stack-value-total"},
         "[.color][.font]\n" .. item_img_rich_text .. "x" .. item_count .. " = ",
         coin_tiers.base_coin_value_to_text(item_count * scaled_value, false, nil)
