@@ -1076,13 +1076,17 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
             local x = center.x + math.cos(angle) * radius
             local y = center.y + math.sin(angle) * radius
-            local entity = surface.create_entity{
-                name = resource,
-                position = {x, y},
-                amount = amount * (0.8 + 0.2 * math.random()),
-            }
-            if entity and entity.valid then
-                state.resources[resource] = (state.resources[resource] or 0) + entity.amount
+
+            local pos = {x, y}
+            if lib.is_tile_buildable_on(surface, pos) then
+                local entity = surface.create_entity{
+                    name = resource,
+                    position = pos,
+                    amount = amount * (0.8 + 0.2 * math.random()),
+                }
+                if entity and entity.valid then
+                    state.resources[resource] = (state.resources[resource] or 0) + entity.amount
+                end
             end
         end
     else
@@ -1147,47 +1151,49 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         end
 
         for _, tile in pairs(ore_positions) do
-            local resource, amount
-            if is_hexaprism then
-                resource = "hexaprism"
-                amount = 1
-            else
-                if is_mixed then
-                    resource = weighted_choice.choice(resource_wc)
-                    if not resource then
-                        lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
-                        return
-                    end
+            if lib.is_tile_buildable_on(surface, tile) then
+                local resource, amount
+                if is_hexaprism then
+                    resource = "hexaprism"
+                    amount = 1
                 else
-                    local angle
-                    if ore_generation_mode == "single-hex" then
-                        angle = (math.atan2(tile.y - offset_hex_center.y, tile.x - offset_hex_center.x)) % (2 * math.pi)
+                    if is_mixed then
+                        resource = weighted_choice.choice(resource_wc)
+                        if not resource then
+                            lib.log_error("hex_grid.generate_hex_resources: weighed choice has zero weights")
+                            return
+                        end
                     else
-                        angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
+                        local angle
+                        if ore_generation_mode == "single-hex" then
+                            angle = (math.atan2(tile.y - offset_hex_center.y, tile.x - offset_hex_center.x)) % (2 * math.pi)
+                        else
+                            angle = (math.atan2(tile.y - hex_pos_rect.y, tile.x - hex_pos_rect.x) + rotation) % (2 * math.pi)
+                        end
+                        resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
                     end
-                    resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
-                end
-                local amount_mean
-                if surface.name == "vulcanus" then
-                    if resource == "coal" then
-                        amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
-                    elseif resource == "tungsten-ore" then
-                        amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
+                    local amount_mean
+                    if surface.name == "vulcanus" then
+                        if resource == "coal" then
+                            amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
+                        elseif resource == "tungsten-ore" then
+                            amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
+                        else
+                            amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
+                        end
+                    elseif surface.name == "gleba" then
+                        amount_mean = scaled_richness * mgs.autoplace_controls.gleba_stone.richness
                     else
                         amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
                     end
-                elseif surface.name == "gleba" then
-                    amount_mean = scaled_richness * mgs.autoplace_controls.gleba_stone.richness
-                else
-                    amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
+                    amount = math.floor(amount_mean * (0.8 + 0.4 * math.random()))
                 end
-                amount = math.floor(amount_mean * (0.8 + 0.4 * math.random()))
-            end
-            if amount > 0 then
-                local entity = surface.create_entity {name = resource, position = tile, amount = amount}
-                if entity and entity.valid then
-                    state.resources[resource] = (state.resources[resource] or 0) + amount
-                    table.insert(state.ore_entities, entity)
+                if amount > 0 then
+                    local entity = surface.create_entity {name = resource, position = tile, amount = amount}
+                    if entity and entity.valid then
+                        state.resources[resource] = (state.resources[resource] or 0) + amount
+                        table.insert(state.ore_entities, entity)
+                    end
                 end
             end
         end

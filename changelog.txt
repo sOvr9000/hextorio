@@ -21,6 +21,7 @@ Date: 27/11/25
     - Fixed hexlights and hexports remaining after hex core deletion.
     - Fixed hexlights causing collision clipping at the corners of hex cores.
     - Fixed missing localization for inserter capacity in the item buffs.
+    - Fixed resource patches floating over marsh tiles on Gleba.
     - Added the missing value for iron ore on Fulgora.
         This was fixed by including the concrete recycling recipe as well as other common recycling recipes in the item value solver.
         As a result, the extra iron obtained from concrete and electronic circuits has shifted the relative item values drastically.

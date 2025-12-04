@@ -91,6 +91,33 @@ local immune_to_hex_core_clearing = sets.new {
     "small-demolisher-tail-x0_32",
 }
 
+non_buildable_on_tile_lookup = sets.union(non_land_tile_name_lookup, sets.new {
+    "deepwater",
+    "deepwater-green",
+    "water",
+    "water-green",
+    "water-mud",
+    "water-shallow",
+    "water-wube",
+    "lava",
+    "lava-hot",
+    "wetland-yumako",
+    "wetland-jellynut",
+    "wetland-dead-skin",
+    "wetland-light-dead-skin",
+    "wetland-green-slime",
+    "wetland-light-green-slime",
+    "wetland-red-tentacle",
+    "wetland-pink-tentacle",
+    "wetland-blue-slime",
+    "gleba-deep-lake",
+    "oil-ocean-shallow",
+    "oil-ocean-deep",
+    "ammoniacal-ocean",
+    "ammoniacal-ocean-2",
+    "brash-ice",
+})
+
 
 
 function lib.position_to_string(x, y)
@@ -535,6 +562,15 @@ function lib.is_land_tile(surface, tile_position)
     local tile = surface.get_tile(tile_position)
     if not tile or not tile.valid then return false end
     return not non_land_tile_name_lookup[tile.name]
+end
+
+---Return whether entities can generally be built on the tile at the given position.
+---@param surface LuaSurface
+---@param tile_position MapPosition
+function lib.is_tile_buildable_on(surface, tile_position)
+    local tile = surface.get_tile(tile_position.x or tile_position[1], tile_position.y or tile_position[2])
+    if not tile or not tile.valid then return false end
+    return not non_buildable_on_tile_lookup[tile.name]
 end
 
 function lib.is_hazard_tile(surface, tile_position)
