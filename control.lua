@@ -66,6 +66,11 @@ end
 
 
 
+local reinit_guis = true
+-- script.on_load(function()
+--     reinit_guis = true
+-- end)
+
 script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
     storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
@@ -214,6 +219,13 @@ script.on_nth_tick(20, function()
 end)
 
 script.on_event(defines.events.on_tick, function (event)
+    if reinit_guis then
+        -- There's likely a better way to handle this.
+        lib.log("Reinitializing GUIs for all players.")
+        gui.reinitialize_everything()
+        reinit_guis = false
+    end
+
     if storage.initialization.has_game_started and not storage.initialization.intro_finished then
         if event.tick == storage.initialization.game_start_tick + 60 then
             game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
