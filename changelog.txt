@@ -42,6 +42,7 @@ Date: 6/12/25
     - Optimized trade overview planet filtering. ~2x speedup.
     - Optimized trade processing output buffering. Fixes root cause of largest stutters.
     - Optimized trade processing coin calculations. Small improvement.
+    - Optimized hex core pool management (implemented load balancing). Substantial improvement on some saves.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25

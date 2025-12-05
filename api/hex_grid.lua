@@ -2935,6 +2935,176 @@ function hex_grid.get_hex_state_from_pool_params(params)
     return hex_grid.get_hex_state(params.surface_id, params.hex_pos)
 end
 
+function hex_grid.count_active_hexes(pool)
+    local total = 0
+
+    for _, params in pairs(pool) do
+        local state = hex_grid.get_hex_state_from_pool_params(params)
+        if state.is_active then
+            total = total + 1
+        end
+    end
+
+    return total
+end
+
+function hex_grid.has_active_hexes_fewer_than(pool, limit)
+    local total = 0
+
+    for _, params in pairs(pool) do
+        local state = hex_grid.get_hex_state_from_pool_params(params)
+        if state.is_active then
+            total = total + 1
+            if total >= limit then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+---Set whether a hex core state is active in the pool processing.  Return whether the change in activity caused a swapping in pool indices.
+---@param state HexState
+---@param flag boolean
+---@return boolean
+function hex_grid._set_state_active(state, flag)
+    if not state.hex_core then return false end
+
+    local prev = state.is_active
+    if flag ~= prev then
+        state.is_active = flag
+    end
+
+    if flag == prev then return false end
+    if not flag then return false end
+
+    -- This hex just became active.
+    -- Swap to another pool, if possible.
+    -- Find the pool with the fewest active hexes.
+    -- If that pool has at least two fewer active hexes than this current one,
+    -- swap places with an inactive hex.
+
+    -- log("Load balancing step start")
+    -- local prof = game.create_profiler()
+    -- local prof2 = game.create_profiler()
+
+    local this_pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
+    local this_index_in_pool = hex_grid.get_index_in_pool(this_pool, state.hex_core.surface.index, state.position)
+    if this_index_in_pool == -1 then
+        lib.log_error("hex_grid._set_state_active: parameters not found in pool for load balancing")
+        return false
+    end
+
+    for i, params in ipairs(this_pool) do
+        local other = hex_grid.get_hex_state_from_pool_params(params)
+        if not other.is_active then
+            -- Bubble down all active hex cores over time, towards the front of the pool for fastest processing in the loop below.
+            hex_grid.swap_params_in_pool(storage.hex_grid.cur_pool_idx, this_index_in_pool, storage.hex_grid.cur_pool_idx, i)
+            this_index_in_pool = i
+            break
+        end
+    end
+
+    local num_active_here = hex_grid.count_active_hexes(this_pool)
+    local active_threshold = num_active_here - 2
+
+    -- log({"", "Part 1 completed: ", prof2})
+    -- prof2.restart()
+
+    local min_pool_idx, min_active, target_index_in_pool
+    for pool_idx, pool in pairs(storage.hex_grid.pool) do
+        if pool_idx ~= storage.hex_grid.cur_pool_idx then
+            local num_active_there = 0
+
+            if not min_pool_idx then
+                target_index_in_pool = nil
+            end
+
+            for i, params in ipairs(pool) do
+                local other = hex_grid.get_hex_state_from_pool_params(params)
+                if other.is_active then
+                    num_active_there = num_active_there + 1
+                    if num_active_there > active_threshold then
+                        break
+                    end
+                else
+                    if not target_index_in_pool then
+                        target_index_in_pool = i
+                    end
+                end
+            end
+
+            if num_active_there <= active_threshold then
+                if not min_pool_idx or num_active_there < min_active then
+                    min_pool_idx = pool_idx
+                    min_active = num_active_there
+                end
+            end
+
+            if target_index_in_pool and num_active_there == 0 then
+                break
+            end
+        end
+    end
+
+    -- log({"", "Part 2 completed: ", prof2}) -- TODO: This step takes around 5 - 10 ms sometimes.  Can be optimized by managing active hex count rather than repeatedly counting and iterating over all hexes.  Overall, this load balancing results in reduced load per frame.
+    -- log({"", "Load balancing step completed: ", prof})
+
+    if min_pool_idx and target_index_in_pool then
+        hex_grid.swap_params_in_pool(storage.hex_grid.cur_pool_idx, this_index_in_pool, min_pool_idx, target_index_in_pool)
+        return true
+    end
+
+    return false
+end
+
+---Return whether a hex core state is active in the pool processing.
+---@param state HexState
+---@return boolean
+function hex_grid._get_state_active(state)
+    return state.is_active == true
+end
+
+function hex_grid.swap_params_in_pool(pool_idx1, index_in_pool1, pool_idx2, index_in_pool2)
+    -- log("Swapping: " .. serpent.line({pool_idx1 = pool_idx1, index_in_pool1 = index_in_pool1, pool_idx2 = pool_idx2, index_in_pool2 = index_in_pool2}))
+    storage.hex_grid.pool[pool_idx1][index_in_pool1], storage.hex_grid.pool[pool_idx2][index_in_pool2] = storage.hex_grid.pool[pool_idx2][index_in_pool2], storage.hex_grid.pool[pool_idx1][index_in_pool1]
+    -- log("New pool active hexes: " .. hex_grid.count_active_hexes(storage.hex_grid.pool[pool_idx1]) .. ", " .. hex_grid.count_active_hexes(storage.hex_grid.pool[pool_idx2]))
+end
+
+function hex_grid.get_index_in_pool(pool, surface_id, hex_pos)
+    for i, params in ipairs(pool) do
+        if params.surface_id == surface_id and params.hex_pos.q == hex_pos.q and params.hex_pos.r == hex_pos.r then
+            return i
+        end
+    end
+    return -1
+end
+
+-- function hex_grid.recalculate_pool_load_balancing()
+--     local resolved
+--     repeat
+--         resolved = true
+--         for _, pool in pairs(storage.hex_grid.pool) do
+--             for _, params in pairs(pool) do
+--                 local state = hex_grid.get_hex_state_from_pool_params(params)
+--                 local prev_active = state.is_active
+--                 state.is_active = false -- Trigger recalculation
+--                 if prev_active then
+--                     if hex_grid._set_state_active(state, true) then
+--                         resolved = false
+--                     end
+--                 end
+--             end
+--         end
+--     until resolved
+
+--     log("Pool active hexes:")
+--     for pool_idx, pool in pairs(storage.hex_grid.pool) do
+--         log(pool_idx .. ": " .. hex_grid.count_active_hexes(pool))
+--     end
+-- end
+
 function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
     if not state.trades then return end
     if not state.hex_core then return end
@@ -2945,7 +3115,12 @@ function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
 
     -- Check if trades can occur
     local total_items = inventory_input.get_item_count()
-    if total_items == 0 then return end
+    if total_items == 0 then
+        hex_grid._set_state_active(state, false)
+        return
+    end
+
+    hex_grid._set_state_active(state, true)
 
     local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
     hex_grid.add_to_output_buffer(state, remaining_to_insert)
