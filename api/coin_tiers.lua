@@ -123,6 +123,19 @@ function coin_tiers.normalized(coin)
     }
 end
 
+---Add coin values to an accumulator without normalization (for performance).
+---Saves processing time when adding many coins together.
+---Instead of using calling `coin_tiers.add()` many times, call this function instead and normalize at the end.
+---@param accumulator number[] -- Array of 4 numbers (modified in-place)
+---@param coin Coin
+function coin_tiers.accumulate(accumulator, coin)
+    local values = coin.values
+    accumulator[1] = accumulator[1] + values[1]
+    accumulator[2] = accumulator[2] + values[2]
+    accumulator[3] = accumulator[3] + values[3]
+    accumulator[4] = accumulator[4] + values[4]
+end
+
 ---Add two coin objects, returning a new coin object.
 ---@param coin1 Coin
 ---@param coin2 Coin

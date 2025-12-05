@@ -1548,7 +1548,8 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     local _total_removed = {}
     local _total_inserted = {}
     local _remaining_to_insert = {}
-    local total_coins_added = coin_tiers.new()
+    -- Use raw array for accumulation to avoid repeated normalization (performance optimization)
+    local total_coins_added_values = {0, 0, 0, 0}
 
     local function handle_item_in_trade(trade_id, quality, item_name, amount, trade_side)
         local rank = item_ranks.get_item_rank(item_name)
@@ -1576,7 +1577,9 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
                     local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin)
                     input_coin = remaining_coin
-                    total_coins_added = coin_tiers.add(total_coins_added, coins_added)
+
+                    -- Accumulate without normalization for performance
+                    coin_tiers.accumulate(total_coins_added_values, coins_added)
 
                     if not _total_removed[quality] then _total_removed[quality] = {} end
                     for item_name, amount in pairs(total_removed[quality] or {}) do
@@ -1603,6 +1606,13 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     local total_coins_removed = coin_tiers.subtract(initial_input_coin, input_coin)
 
     quests.increment_progress_for_type("make-trades", total_batches)
+
+    -- Only NOW does it normalize, skipping all unnecessary normalizations mid-processing.
+    local total_coins_added = coin_tiers.normalized({
+        tier_scaling = 100000,
+        max_coin_tier = 4,
+        values = total_coins_added_values
+    })
 
     return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
 end

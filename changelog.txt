@@ -38,6 +38,7 @@ Date: 5/12/25
     - Decreased number of UI layout updates in the trade overview for the same number of trades listed. O(n^2) -> less O(n^2), but substantial improvement.
     - Optimized "exact" filtering in trade overview. Small improvement.
     - Optimized planet filtering in trade overview, leading to the biggest performance gains. ~2x speedup in the average case.
+    - Optimized trade processing.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25
