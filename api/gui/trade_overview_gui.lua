@@ -201,8 +201,8 @@ function trade_overview_gui.build_left_filter_frame(frame)
         sprite = "trade-arrow",
     }
     trade_arrow.style.top_margin = 4
-    trade_arrow.style.width = 30 / 1.2
-    trade_arrow.style.height = 30 / 1.2
+    trade_arrow.style.width = 40 / 1.2
+    trade_arrow.style.height = 40 / 1.2
     trade_arrow.style.stretch_image_to_widget_size = true
 
 
@@ -213,7 +213,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
         direction = "vertical",
     }
     trade_outputs_flow.style.maximal_width = 170 / 1.2
-    trade_outputs_flow.style.left_margin = 18
+    trade_outputs_flow.style.left_margin = 14
     choose_elems_flow = trade_outputs_flow.add {
         type = "flow",
         name = "choose-elems",
