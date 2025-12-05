@@ -30,6 +30,7 @@ table.insert(transport_belt_capacity_3.effects, {
 
 local electromagnetic_penetrator = table.deepcopy(data.raw["technology"]["railgun"])
 electromagnetic_penetrator.name = "electromagnetic-penetrator"
+electromagnetic_penetrator.icon = "__hextorio__/graphics/technology/electromagnetic-penetrator.png"
 electromagnetic_penetrator.prerequisites = {"railgun", "tesla-weapons", "promethium-science-pack"}
 electromagnetic_penetrator.unit = {
     count = 5000,
