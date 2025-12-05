@@ -561,7 +561,7 @@ local process_migration = {
         storage.initialization = storage.events
         storage.events = nil
 
-        storage.hex_grid.pool_size = math.ceil(storage.hex_grid.pool_size / 10)
+        hex_grid.set_pool_size(storage.hex_grid.pool_size / 5)
 
         for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
             for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
