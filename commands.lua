@@ -315,6 +315,62 @@ function on_command(player, command, params)
         player.cheat_mode = true
         player.clear_recipe_notifications()
 
+        -- Spawn Sentient Spider
+        local character = player.character
+        if character then
+            local spider = player.surface.create_entity {
+                name = "sentient-spider",
+                position = character.position,
+                surface = character.surface,
+                quality = "hextreme",
+                force = "player",
+            }
+            if spider then
+                player.set_driving(true)
+                spider.vehicle_automatic_targeting_parameters = {auto_target_with_gunner = true, auto_target_without_gunner = true}
+                local main_inv = spider.get_inventory(defines.inventory.spider_trunk)
+                if main_inv then
+                    main_inv.insert {name = "construction-robot", quality = "hextreme", count = 680}
+                    main_inv.insert {name = "repair-pack", quality = "hextreme", count = 100}
+                    main_inv.insert {name = "hex-coin", count = 99999}
+                    main_inv.insert {name = "gravity-coin", count = 99999}
+                    main_inv.insert {name = "meteor-coin", count = 99999}
+                    main_inv.insert {name = "hexaprism-coin", count = 100000}
+                end
+                local ammo_inv = spider.get_inventory(defines.inventory.spider_ammo)
+                if ammo_inv then
+                    ammo_inv.insert {name = "electromagnetic-penetrator-cell", quality = "hextreme", count = 6}
+                end
+                local grid = spider.grid
+                if grid then
+                    for _ = 1, 4 do
+                        grid.put({name = "fusion-reactor-equipment", quality = "hextreme"})
+                    end
+                    for _ = 1, 8 do
+                        grid.put({name = "battery-mk3-equipment", quality = "hextreme"})
+                    end
+                    for _ = 1, 4 do
+                        grid.put({name = "fusion-reactor-equipment", quality = "hextreme"})
+                    end
+                    for _ = 1, 4 do
+                        grid.put({name = "personal-laser-defense-equipment", quality = "hextreme"})
+                    end
+                    for _ = 1, 6 do
+                        grid.put({name = "exoskeleton-equipment", quality = "hextreme"})
+                    end
+                    for _ = 1, 8 do
+                        grid.put({name = "personal-roboport-mk2-equipment", quality = "hextreme"})
+                    end
+                    for _ = 1, 31 do
+                        grid.put({name = "energy-shield-mk2-equipment", quality = "hextreme"})
+                    end
+                    for _ = 1, 12 do
+                        grid.put({name = "toolbelt-equipment", quality = "hextreme"})
+                    end
+                end
+            end
+        end
+
         -- Spawn midgame spaceship
         local sp = space_platforms.new "nauvis"
         if sp then
