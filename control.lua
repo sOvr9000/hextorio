@@ -66,10 +66,10 @@ end
 
 
 
-local reinit_guis = true
--- script.on_load(function()
---     reinit_guis = true
--- end)
+local reinit_guis = false
+script.on_load(function()
+    reinit_guis = true
+end)
 
 script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
