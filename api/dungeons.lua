@@ -632,7 +632,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
     local dist = axial.distance(hex_pos, {q = 0, r = 0}) - 2
     dist = math.max(0, dist) -- Shouldn't need this, but it's here just in case.
 
-    local loot_value = prot.loot_value * (1 + dist * 0.0625)
+    local loot_value = prot.loot_value * (1 + dist * 0.0625) * lib.runtime_setting_value("dungeon-loot-scale-" .. dungeon.surface.name)
     local expected_num_samples = prot.rolls
     local min_item_value = loot_value / (10 * expected_num_samples * (prot.amount_scaling or 1))
     local max_item_value = math.huge -- No upper limit. Allow for very rare but valuable loot.

@@ -8,6 +8,7 @@ Date: 6/12/25
   Minor Features:
     - Added the "ping in chat" button for trades in the trade overview.
     - Added mod settings for tweaking trade productivity requirements for ranking up items.
+    - Added mod settings for scaling dungeon chest loot value.
   Changes:
     - The Sentient Spider is now equipped with six electromagnetic penetrators instead of one (buffed) teslagun.
     - Changed Sentient Spider recipe to reflect its new abilities.
