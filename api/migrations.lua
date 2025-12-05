@@ -78,6 +78,7 @@ local versions = {
     "1.2.0",
     "1.2.1",
     "1.3.0",
+    "1.3.1",
 }
 
 local version_stepping = {}
@@ -585,6 +586,8 @@ local process_migration = {
             end
             surface_trades[trade.id] = true
         end
+    end,
+    ["1.3.0"] = function()
     end,
 }
 
