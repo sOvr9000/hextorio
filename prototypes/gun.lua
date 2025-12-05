@@ -23,6 +23,7 @@ for i = 1, 6 do
     sentient_spider_emp.attack_parameters.projectile_orientation_offset = (i - 2.5) / 6
     sentient_spider_emp.attack_parameters.projectile_creation_distance = 0.5
     sentient_spider_emp.hidden_in_factoriopedia = true
+    sentient_spider_emp.hidden = true
     data:extend({sentient_spider_emp})
 end
 
