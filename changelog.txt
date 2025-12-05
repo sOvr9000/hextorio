@@ -20,6 +20,7 @@ Date: 6/12/25
     - Made the tooltips for the sink and generator buttons more concise.
     - Due to game engine performance issues on saves with thousands of trades showing in the trade overview, the maximum is now 250 total trades to be shown.
         This does not affect filtering or which trades are searched; it only keeps you from lagging the game with more UI elements than you could ever need.
+    - Increased Sentient Spider equipment grid size from 12x10 to 12x12.
   Gui:
     - Horizontally centered the "Bonuses" text in the catalog.
   Bugfixes:
