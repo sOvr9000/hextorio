@@ -143,7 +143,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
 
     left_frame.add {type = "line", direction = "horizontal"}
 
-    local item_names_with_value = item_values.get_all_items_with_value()
+    local item_names_with_value = item_values.get_all_items_with_value(true)
     local elem_filters = {{filter = "name", name = item_names_with_value}}
 
     local trade_contents_flow = left_frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}

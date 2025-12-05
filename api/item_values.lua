@@ -463,9 +463,16 @@ function item_values.get_items_near_value(surface_name, center_value, max_ratio,
 end
 
 ---Return a list of all items have a defined value on any surface, including coins.
-function item_values.get_all_items_with_value()
-    if storage.item_values.all_items_with_value then
-        return storage.item_values.all_items_with_value
+---@param include_coins boolean Whether to include coin names.
+function item_values.get_all_items_with_value(include_coins)
+    if include_coins then
+        if storage.item_values.all_items_with_value_include_coins then
+            return storage.item_values.all_items_with_value_include_coins
+        end
+    else
+        if storage.item_values.all_items_with_value then
+            return storage.item_values.all_items_with_value
+        end
     end
 
     local all_item_names = {}
@@ -475,8 +482,19 @@ function item_values.get_all_items_with_value()
         end
     end
 
+    if include_coins then
+        all_item_names = sets.union(all_item_names, sets.new {lib.get_coin_name_of_tier(1), lib.get_coin_name_of_tier(2), lib.get_coin_name_of_tier(3), lib.get_coin_name_of_tier(4)})
+    else
+        all_item_names = sets.difference(all_item_names, sets.new {lib.get_coin_name_of_tier(1), lib.get_coin_name_of_tier(2), lib.get_coin_name_of_tier(3), lib.get_coin_name_of_tier(4)})
+    end
+
     local item_names = sets.to_array(all_item_names)
-    storage.item_values.all_items_with_value = item_names
+
+    if include_coins then
+        storage.item_values.all_items_with_value_include_coins = item_names
+    else
+        storage.item_values.all_items_with_value = item_names
+    end
 
     return item_names
 end
