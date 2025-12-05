@@ -2723,6 +2723,8 @@ function hex_grid.process_hex_core_pool()
         return
     end
 
+    -- log("Starting: Pool index: " .. storage.hex_grid.cur_pool_idx)
+    -- local prof = game.create_profiler()
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
 
     storage.hex_grid.cur_pool_idx = (storage.hex_grid.cur_pool_idx or 0) % #storage.hex_grid.pool + 1
@@ -2733,6 +2735,10 @@ function hex_grid.process_hex_core_pool()
         hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
         hex_grid.process_hexlight(state)
     end
+    -- prof.stop()
+
+    -- log("Finished: Pool size: " .. #pool .. " | Total elapsed:")
+    -- log({"", prof})
 end
 
 function hex_grid.setup_pool()
@@ -2937,6 +2943,10 @@ function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
     local inventory_output = state.hex_core_output_inventory
     if not inventory_output then return end
 
+    -- Check if trades can occur
+    local total_items = inventory_input.get_item_count()
+    if total_items == 0 then return end
+
     local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
     hex_grid.add_to_output_buffer(state, remaining_to_insert)
     hex_grid.try_unload_output_buffer(state)
@@ -3100,7 +3110,7 @@ function hex_grid.try_unload_output_buffer(state)
     for quality, counts in pairs(state.output_buffer) do
         for item_name, count in pairs(counts) do
             -- "AND" with prev value of empty because it needs to stay false if it ever becomes false
-            local inserted = inventory_output.insert {name = item_name, count = math.min(1000000000, count), quality = quality}
+            local inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
             local remaining = state.output_buffer[quality][item_name] - inserted
             empty = empty and remaining == 0
             if remaining > 0 then

@@ -33,12 +33,15 @@ Date: 6/12/25
     - Added the missing value for iron ore on Fulgora.
         This was fixed by including the concrete recycling recipe as well as other common recycling recipes in the item value solver.
         As a result, the extra iron obtained from concrete and electronic circuits has shifted the relative item values drastically.
+    - Fixed that the total produced/consume items statistics in hex cores was incrementing more than it should (this was related to the frame stutters).
+    - Fixed that flying text was emitting more often than it should (same issue as above).
   Optimizations:
-    - Decreased batch sizes and processing intervals, reducing frame stutters on large saves.
+    - Decreased batch sizes and processing intervals, reducing the risk of frame stutters on large saves.
     - Decreased number of UI layout updates in the trade overview for the same number of trades listed. O(n^2) -> less O(n^2), but substantial improvement.
-    - Optimized "exact" filtering in trade overview. Small improvement.
-    - Optimized planet filtering in trade overview, leading to the biggest performance gains. ~2x speedup in the average case.
-    - Optimized trade processing.
+    - Optimized trade overview "exact" filtering. Small improvement.
+    - Optimized trade overview planet filtering. ~2x speedup.
+    - Optimized trade processing output buffering. Fixes root cause of largest stutters.
+    - Optimized trade processing coin calculations. Small improvement.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.1
 Date: 27/11/25

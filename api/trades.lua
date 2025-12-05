@@ -1536,10 +1536,6 @@ end
 ---@param max_items_per_output int|nil
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, table, table
 function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
-    -- Check if trades can occur
-    local total_items = input_inv.get_item_count()
-    if total_items == 0 then return {}, {}, {}, coin_tiers.new(), coin_tiers.new() end
-
     quality_cost_multipliers = quality_cost_multipliers or {}
 
     local input_coin, all_items_lookup = trades.get_coins_and_items_of_inventory(input_inv)
