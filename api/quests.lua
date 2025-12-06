@@ -27,6 +27,52 @@ define_progress_recalculator("items-at-rank", function(condition_value)
     return total
 end)
 
+define_progress_recalculator("total-item-rank", function(condition_value)
+    local total = 0
+    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if lib.is_catalog_item(item_name) then -- Shouldn't be necessary to check this, but it's here just in case it prevents a bug/exploit.
+            total = total + rank_obj.rank - 1
+        end
+    end
+    return total
+end)
+
+define_progress_recalculator("claimed-hexes-on", function(condition_value)
+    local surface_name = condition_value
+    ---@cast surface_name string
+
+    local surface = game.get_surface(surface_name)
+    if not surface then return 0 end
+
+    local surface_hexes = storage.hex_grid.surface_hexes[surface_name]
+    if not surface_hexes then return 0 end
+
+    local total = 0
+    for _, Q in pairs(surface_hexes) do
+        for _, state in pairs(Q) do
+            if state.claimed then
+                total = total + 1
+            end
+        end
+    end
+
+    return total
+end)
+
+define_progress_recalculator("claimed-hexes", function(condition_value)
+    local total = 0
+    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
+        for _, Q in pairs(hexes) do
+            for _, state in pairs(Q) do
+                if state.claimed then
+                    total = total + 1
+                end
+            end
+        end
+    end
+    return total
+end)
+
 
 
 function quests.register_events()
