@@ -554,6 +554,7 @@ local process_migration = {
     end,
     ["1.2.1"] = function()
         storage.quests.quest_defs = data_quests.quest_defs
+        storage.item_buffs.item_buffs = data_item_buffs.item_buffs
         quests.reinitialize_everything()
 
         item_values.reset_storage()
