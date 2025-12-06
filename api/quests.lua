@@ -44,7 +44,7 @@ define_progress_recalculator("claimed-hexes-on", function(condition_value)
     local surface = game.get_surface(surface_name)
     if not surface then return 0 end
 
-    local surface_hexes = storage.hex_grid.surface_hexes[surface_name]
+    local surface_hexes = storage.hex_grid.surface_hexes[surface.index]
     if not surface_hexes then return 0 end
 
     local total = 0
