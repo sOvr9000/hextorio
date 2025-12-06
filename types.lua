@@ -40,9 +40,18 @@
 ---@alias LootItemWithCount {loot_item: LootItem, count: int}
 ---@alias LootTable {wc: WeightedChoice, loot: LootItem[]}
 
----@alias QuestReward {type: string, value: string|number|table}
+---@alias SingleQuestConditionValue string|number
+---@alias SingleQuestRewardValue string|number|ItemStackIdentification
+---@alias QuestConditionValue SingleQuestConditionValue|SingleQuestConditionValue[]
+---@alias QuestRewardValue SingleQuestRewardValue|SingleQuestRewardValue[]
+---@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"
+---@alias QuestConditionTypeValuePair {[1]: QuestConditionType, [2]: QuestConditionValue}
+---@alias QuestCondition {type: QuestConditionType, value: QuestConditionValue, value_is_table: boolean, progress_requirement: int, progress: int, show_progress_bar: boolean, notes: string[]|nil}
+---@alias QuestRewardType "unlock-feature"|"receive-items"|"claim-free-hexes"|"reduce-biters"|"all-trades-productivity"|"receive-spaceship"
+---@alias QuestReward {type: QuestRewardType, value: QuestRewardValue|nil, notes: string[]|nil}
 ---@alias QuestIdentification Quest|int|string
----@alias Quest table
+---@alias Quest {id: int, name: string, conditions: QuestCondition[], rewards: QuestReward[], notes: string[]|nil, unlocks: string[]|nil, prerequisites: string[]|nil, has_img: boolean|nil, order: int, revealed: boolean|nil, complete: boolean|nil}
+---@alias FeatureName "trade-overview"|"catalog"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"hex-core-deletion"|"generator-mode"|"sink-mode"
 
 ---@alias SpiderClientAIMode "build"|"hunt"|"claim"|"trade"
 ---@alias SpiderClientAI {current_mode: SpiderClientAIMode}

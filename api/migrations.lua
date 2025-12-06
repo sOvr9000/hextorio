@@ -589,6 +589,7 @@ local process_migration = {
         end
     end,
     ["1.3.0"] = function()
+        quests.recalculate_all_condition_progress()
     end,
 }
 
