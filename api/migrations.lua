@@ -78,6 +78,7 @@ local versions = {
     "1.2.0",
     "1.2.1",
     "1.3.0",
+    "1.3.1",
     "1.4.0",
 }
 
@@ -590,6 +591,8 @@ local process_migration = {
     end,
     ["1.3.0"] = function()
         quests.recalculate_all_condition_progress()
+    end,
+    ["1.3.1"] = function()
     end,
 }
 
