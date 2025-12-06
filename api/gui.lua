@@ -1,7 +1,6 @@
 
 local gui = {
-    events = require "api.gui.gui_events",
-
+    core_gui = require "api.gui.core_gui",
     questbook = require "api.gui.questbook_gui",
     trade_overview = require "api.gui.trade_overview_gui",
     catalog = require "api.gui.catalog_gui",
@@ -12,7 +11,7 @@ local gui = {
 
 
 
-function gui.register_hextorio_events()
+function gui.register_events()
     -- These are events from Hextorio gameplay, not those triggered by the player interacting with GUI elements.
     for _, v in pairs(gui) do
         if type(v) == "table" and v.register_events then

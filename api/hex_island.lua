@@ -10,7 +10,7 @@ local hex_island = {}
 
 
 function hex_island.register_events()
-    event_system.register_callback("surface-created", hex_island.process_surface_creation)
+    event_system.register("surface-created", hex_island.process_surface_creation)
 end
 
 function hex_island.process_surface_creation(surface)

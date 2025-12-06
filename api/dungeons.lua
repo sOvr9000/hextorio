@@ -18,7 +18,7 @@ local dungeons = {}
 
 
 function dungeons.register_events()
-    event_system.register_callback("dungeon-update", function()
+    event_system.register("dungeon-update", function()
         local player = game.connected_players[(game.tick / 300) % #game.connected_players + 1]
         if lib.is_space_platform(player.surface.name) then return end
 
@@ -32,13 +32,13 @@ function dungeons.register_events()
         end
     end)
 
-    event_system.register_callback("entity-picked-up", function(entity)
+    event_system.register("entity-picked-up", function(entity)
         if entity.name == "dungeon-chest" then
             dungeons.on_dungeon_chest_picked_up(entity)
         end
     end)
 
-    event_system.register_callback("hex-generated", function(surface_id, hex_pos)
+    event_system.register("hex-generated", function(surface_id, hex_pos)
         local used = storage.dungeons.used_hexes[surface_id]
         if not used then
             used = {}
@@ -50,7 +50,7 @@ function dungeons.register_events()
         hex_sets.add(used, hex_pos)
     end)
 
-    event_system.register_callback("runtime-setting-changed-dungeon-min-dist", function()
+    event_system.register("runtime-setting-changed-dungeon-min-dist", function()
         storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
     end)
 end

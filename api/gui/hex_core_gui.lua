@@ -10,14 +10,25 @@ local event_system = require "api.event_system"
 local quests = require "api.quests"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
 local trades_gui = require "api.gui.trades_gui"
-local gui_events    = require "api.gui.gui_events"
 
 local hex_core_gui = {}
 
 
 
 function hex_core_gui.register_events()
-    event_system.register_callback("trade-processed", function(trade)
+    event_system.register_gui("gui-clicked", "claim-hex", hex_core_gui.on_claim_hex_button_click)
+    event_system.register_gui("gui-clicked", "teleport", hex_core_gui.on_teleport_button_click)
+    event_system.register_gui("gui-clicked", "toggle-hexport", hex_core_gui.on_toggle_hexport_button_click)
+    event_system.register_gui("gui-clicked", "supercharge", hex_core_gui.on_supercharge_button_click)
+    event_system.register_gui("gui-clicked", "hex-mode", hex_core_gui.on_hex_mode_button_click)
+    event_system.register_gui("gui-clicked", "hex-mode-confirmation", hex_core_gui.on_hex_mode_confirmation_button_click)
+    event_system.register_gui("gui-clicked", "delete-core", hex_core_gui.on_delete_core_button_click)
+    event_system.register_gui("gui-clicked", "upgrade-quality", hex_core_gui.on_upgrade_quality_button_click)
+    event_system.register_gui("gui-clicked", "convert-resources", hex_core_gui.on_convert_resources_button_click)
+    event_system.register_gui("gui-clicked", "confirmation-button", hex_core_gui.on_confirmation_button_click)
+    event_system.register_gui("gui-selection-changed", "update-hex-core", hex_core_gui.update_hex_core)
+
+    event_system.register("trade-processed", function(trade)
         if not trade.hex_core_state or not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then return end
         for _, player in pairs(game.connected_players) do
             if player.opened == trade.hex_core_state.hex_core then
@@ -26,7 +37,7 @@ function hex_core_gui.register_events()
         end
     end)
 
-    event_system.register_callback("hex-claimed", function(surface, state)
+    event_system.register("hex-claimed", function(surface, state)
         local hex_core = state.hex_core
         if not hex_core or not hex_core.valid then return end
         for _, player in pairs(game.connected_players) do
@@ -36,31 +47,31 @@ function hex_core_gui.register_events()
         end
     end)
 
-    event_system.register_callback("player-opened-entity", function(player, entity)
+    event_system.register("player-opened-entity", function(player, entity)
         if entity.valid and entity.name == "hex-core" then
             hex_core_gui.show_hex_core(player)
         end
     end)
 
-    event_system.register_callback("player-closed-entity", function(player, entity)
+    event_system.register("player-closed-entity", function(player, entity)
         if entity.valid and entity.name == "hex-core" then
             hex_core_gui.hide_hex_core(player)
         end
     end)
 
-    event_system.register_callback("trade-toggle-button-clicked", function(player, element)
+    event_system.register("trade-toggle-button-clicked", function(player, element)
         hex_core_gui.on_toggle_trade_button_click(player, element)
     end)
 
-    event_system.register_callback("trade-tag-button-clicked", function(player, element)
+    event_system.register("trade-tag-button-clicked", function(player, element)
         hex_core_gui.on_tag_button_click(player, element)
     end)
 
-    event_system.register_callback("trade-add-to-filters-button-clicked", function(player, element)
+    event_system.register("trade-add-to-filters-button-clicked", function(player, element)
         hex_core_gui.on_add_to_filters_button_click(player, element)
     end)
 
-    event_system.register_callback("trade-quality-bounds-selected", function(player, element, trade_number)
+    event_system.register("trade-quality-bounds-selected", function(player, element, trade_number)
         hex_core_gui.on_quality_bound_selected(player, element, trade_number)
     end)
 end
@@ -88,8 +99,6 @@ function hex_core_gui.init_hex_core(player)
     }
     local frame = player.gui.relative.add {type = "frame", name = "hex-core", direction = "vertical", anchor = anchor}
     frame.caption = {"hex-core-gui.title"}
-    -- gui.add_titlebar(hex_core_gui, {"hex-core-gui.title"})
-    -- hex_core_gui.style.size = {width = 444, height = 625}
     frame.style.width = 380
     frame.style.natural_height = 625
     frame.style.vertically_stretchable = true
@@ -105,9 +114,14 @@ function hex_core_gui.init_hex_core(player)
     local claim_flow = frame.add {type = "flow", name = "claim-flow", direction = "vertical"}
     local free_hexes_remaining = claim_flow.add {type = "label", name = "free-hexes-remaining"}
     local claim_price = coin_tier_gui.create_coin_tier(claim_flow, "claim-price")
-    local claim_hex = claim_flow.add {type = "button", name = "claim-hex", caption = {"hex-core-gui.claim-hex"}, style = "confirm_button"}
+    local claim_hex = claim_flow.add {
+        type = "button",
+        name = "claim-hex",
+        caption = {"hex-core-gui.claim-hex"},
+        style = "confirm_button",
+        tags = {handlers = {["gui-clicked"] = "claim-hex"}},
+    }
     claim_hex.tooltip = {"hex-core-gui.claim-hex-tooltip"}
-    gui_events.register(claim_hex, "on-clicked", function() hex_core_gui.on_claim_hex_button_click(player) end)
 
     local claimed_by = frame.add {type = "label", name = "claimed-by", caption = {"hex-core-gui.claimed-by"}}
     claimed_by.style.font = "heading-2"
@@ -115,52 +129,96 @@ function hex_core_gui.init_hex_core(player)
     local hex_control_flow = frame.add {type = "table", name = "hex-control-flow", column_count = 5}
     hex_control_flow.visible = false
 
-    local teleport = hex_control_flow.add {type = "sprite-button", name = "teleport", sprite = "virtual-signal/down-arrow"}
+    local teleport = hex_control_flow.add {
+        type = "sprite-button",
+        name = "teleport",
+        sprite = "virtual-signal/down-arrow",
+        tags = {handlers = {["gui-clicked"] = "teleport"}},
+    }
     teleport.tooltip = {"hex-core-gui.teleport-tooltip"}
-    gui_events.register(teleport, "on-clicked", function() hex_core_gui.on_teleport_button_click(player, teleport) end)
 
-    local toggle_hexport = hex_control_flow.add {type = "sprite-button", name = "toggle-hexport", sprite = "item/roboport"}
+    local toggle_hexport = hex_control_flow.add {
+        type = "sprite-button",
+        name = "toggle-hexport",
+        sprite = "item/roboport",
+        tags = {handlers = {["gui-clicked"] = "toggle-hexport"}},
+    }
     toggle_hexport.tooltip = {"hex-core-gui.toggle-hexport-tooltip"}
-    gui_events.register(toggle_hexport, "on-clicked", function() hex_core_gui.on_toggle_hexport_button_click(player, toggle_hexport) end)
 
-    local supercharge = hex_control_flow.add {type = "sprite-button", name = "supercharge", sprite = "item/electric-mining-drill"}
-    gui_events.register(supercharge, "on-clicked", function() hex_core_gui.on_supercharge_button_click(player, supercharge) end)
+    local supercharge = hex_control_flow.add {
+        type = "sprite-button",
+        name = "supercharge",
+        sprite = "item/electric-mining-drill",
+        tags = {handlers = {["gui-clicked"] = "supercharge"}},
+    }
 
-    local sink_mode = hex_control_flow.add {type = "sprite-button", name = "sink-mode", sprite = "virtual-signal/signal-input"}
+    local sink_mode = hex_control_flow.add {
+        type = "sprite-button",
+        name = "sink-mode",
+        sprite = "virtual-signal/signal-input",
+        tags = {handlers = {["gui-clicked"] = "hex-mode"}},
+    }
     sink_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.sink-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.sink-mode-tooltip-body"}}
-    gui_events.register(sink_mode, "on-clicked", function() hex_core_gui.on_hex_mode_button_click(player, sink_mode) end)
 
-    local generator_mode = hex_control_flow.add {type = "sprite-button", name = "generator-mode", sprite = "virtual-signal/signal-output"}
+    local generator_mode = hex_control_flow.add {
+        type = "sprite-button",
+        name = "generator-mode",
+        sprite = "virtual-signal/signal-output",
+        tags = {handlers = {["gui-clicked"] = "hex-mode"}},
+    }
     generator_mode.tooltip = {"", lib.color_localized_string({"hex-core-gui.generator-mode-tooltip-header"}, "red", "heading-2"), "\n", {"hex-core-gui.generator-mode-tooltip-body"}}
-    gui_events.register(generator_mode, "on-clicked", function() hex_core_gui.on_hex_mode_button_click(player, generator_mode) end)
 
-    local sink_mode_confirmation = frame.add {type = "sprite-button", name = "sink-mode-confirmation", sprite = "check-mark-green"}
+    local sink_mode_confirmation = frame.add {
+        type = "sprite-button",
+        name = "sink-mode-confirmation",
+        sprite = "check-mark-green",
+        tags = {handlers = {["gui-clicked"] = "hex-mode-confirmation"}},
+    }
     sink_mode_confirmation.tooltip = {"hex-core-gui.sink-mode-confirmation-tooltip"}
-    gui_events.register(sink_mode_confirmation, "on-clicked", function() hex_core_gui.on_hex_mode_confirmation_button_click(player, sink_mode_confirmation) end)
 
-    local generator_mode_confirmation = frame.add {type = "sprite-button", name = "generator-mode-confirmation", sprite = "check-mark-green"}
+    local generator_mode_confirmation = frame.add {
+        type = "sprite-button",
+        name = "generator-mode-confirmation",
+        sprite = "check-mark-green",
+        tags = {handlers = {["gui-clicked"] = "hex-mode-confirmation"}},
+    }
     generator_mode_confirmation.tooltip = {"hex-core-gui.generator-mode-confirmation-tooltip"}
-    gui_events.register(generator_mode_confirmation, "on-clicked", function() hex_core_gui.on_hex_mode_confirmation_button_click(player, generator_mode_confirmation) end)
 
     local stats = hex_control_flow.add {type = "sprite-button", name = "stats", sprite = "utility/side_menu_production_icon"}
 
-    local delete_core = hex_control_flow.add {type = "sprite-button", name = "delete-core", sprite = "utility/empty_trash_slot"}
-    gui_events.register(delete_core, "on-clicked", function() hex_core_gui.on_delete_core_button_click(player, delete_core) end)
+    local delete_core = hex_control_flow.add {
+        type = "sprite-button",
+        name = "delete-core",
+        sprite = "utility/empty_trash_slot",
+        tags = {handlers = {["gui-clicked"] = "delete-core"}},
+    }
 
-    local upgrade_quality = hex_control_flow.add {type = "sprite-button", name = "upgrade-quality", sprite = "quality/uncommon"}
-    gui_events.register(upgrade_quality, "on-clicked", function() hex_core_gui.on_upgrade_quality_button_click(player, upgrade_quality) end)
+    local upgrade_quality = hex_control_flow.add {
+        type = "sprite-button",
+        name = "upgrade-quality",
+        sprite = "quality/uncommon",
+        tags = {handlers = {["gui-clicked"] = "upgrade-quality"}},
+    }
 
-    local convert_resources = hex_control_flow.add {type = "sprite-button", name = "convert-resources", sprite = "virtual-signal.signal-recycle"}
+    local convert_resources = hex_control_flow.add {
+        type = "sprite-button",
+        name = "convert-resources",
+        sprite = "virtual-signal.signal-recycle",
+        tags = {handlers = {["gui-clicked"] = "convert-resources"}},
+    }
     convert_resources.tooltip = {"", lib.color_localized_string({"hex-core-gui.convert-resources-tooltip-header"}, "blue", "heading-2"), "\n", {"hex-core-gui.convert-resources-tooltip-body"}}
-    gui_events.register(convert_resources, "on-clicked", function() hex_core_gui.on_convert_resources_button_click(player, convert_resources) end)
 
     local delete_core_confirmation = frame.add {type = "flow", name = "delete-core-confirmation", direction = "horizontal"}
     delete_core_confirmation.visible = false
 
-    local delete_core_confirmation_button = delete_core_confirmation.add {type = "sprite-button", name = "confirmation-button", sprite = "utility/empty_trash_slot"}
+    local delete_core_confirmation_button = delete_core_confirmation.add {
+        type = "sprite-button",
+        name = "confirmation-button",
+        sprite = "utility/empty_trash_slot",
+        tags = {handlers = {["gui-clicked"] = "confirmation-button"}},
+    }
     local delete_core_confirmation_label = delete_core_confirmation.add {type = "label", name = "confirmation-label", caption = lib.color_localized_string({"hex-core-gui.delete-core-confirmation"}, "red")}
     delete_core_confirmation_label.style.font = "heading-1"
-    gui_events.register(delete_core_confirmation_button, "on-clicked", function() hex_core_gui.on_confirmation_button_click(player, delete_core_confirmation_button) end)
 
     frame.add {type = "line", direction = "horizontal"}
 
@@ -172,7 +230,7 @@ function hex_core_gui.init_hex_core(player)
     local quality_dropdown_info = trades_header_flow.add {type = "label", name = "info", caption = "[img=virtual-signal.signal-info]"}
     quality_dropdown_info.tooltip = {"hex-core-gui.quality-dropdown-info"}
     quality_dropdown_info.style.top_margin = 4
-    gui_events.register(quality_dropdown, "on-selection-changed", function(value) hex_core_gui.update_hex_core(player) end)
+    quality_dropdown.tags = {handlers = {["gui-selection-changed"] = "update-hex-core"}}
 
     local trades_scroll_pane = frame.add {type = "scroll-pane", name = "trades", direction = "vertical"}
     core_gui.auto_width_height(trades_scroll_pane)
@@ -379,10 +437,6 @@ end
 
 function hex_core_gui.show_hex_core(player)
     local frame = player.gui.relative["hex-core"]
-    -- if not frame then
-    --     hex_core_gui.init_hex_core(player)
-    --     frame = player.gui.relative["hex-core"]
-    -- end
     frame.visible = true
     hex_core_gui.update_hex_core(player)
 end

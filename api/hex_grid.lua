@@ -32,14 +32,14 @@ local hex_grid = {}
 
 
 function hex_grid.register_events()
-    event_system.register_callback("runtime-setting-changed-trade-flying-text", function(player_index)
+    event_system.register("runtime-setting-changed-trade-flying-text", function(player_index)
         local player = game.get_player(player_index)
         if not player then return end
 
         storage.hex_grid.show_trade_flying_text[player_index] = lib.player_setting_value(player, "trade-flying-text")
     end)
 
-    event_system.register_callback("item-rank-up", function(item_name)
+    event_system.register("item-rank-up", function(item_name)
         local rank = item_ranks.get_item_rank(item_name)
         if rank == 2 then
             hex_grid.apply_extra_trades_bonus_retro(item_name)
@@ -55,7 +55,7 @@ function hex_grid.register_events()
         hex_grid.update_all_trades()
     end)
 
-    event_system.register_callback("command-add-trade", function(player, params)
+    event_system.register("command-add-trade", function(player, params)
         local hex_core = player.selected
         if not hex_core then
             player.print {"hextorio.command-mouse-over-hex-core"}
@@ -114,7 +114,7 @@ function hex_grid.register_events()
         hex_grid.add_trade(state, trade)
     end)
 
-    event_system.register_callback("command-remove-trade", function(player, params)
+    event_system.register("command-remove-trade", function(player, params)
         local hex_core = player.selected
         if not hex_core then return end
         local state = hex_grid.get_hex_state_from_core(hex_core)
@@ -131,7 +131,7 @@ function hex_grid.register_events()
         hex_grid.remove_trade_by_index(state, idx, false)
     end)
 
-    event_system.register_callback("command-regenerate-trades", function(player, params)
+    event_system.register("command-regenerate-trades", function(player, params)
         quests.set_progress_for_type("trades-found", 0)
         storage.trades.recoverable = {}
         storage.trades.discovered_items = {}
@@ -164,11 +164,11 @@ function hex_grid.register_events()
         end
     end)
 
-    event_system.register_callback("command-hextorio-debug", function(player, params)
+    event_system.register("command-hextorio-debug", function(player, params)
         hex_grid.claim_hexes_range(player.surface.name, {q = 0, r = 0}, 1, nil, true) -- claim by server
     end)
 
-    event_system.register_callback("command-claim", function(player, params)
+    event_system.register("command-claim", function(player, params)
         if params[1] then
             if params[1] > 2 then
                 player.print("The claim range is too large!")
@@ -185,7 +185,7 @@ function hex_grid.register_events()
         hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, false) -- claim by server
     end)
 
-    event_system.register_callback("command-force-claim", function(player, params)
+    event_system.register("command-force-claim", function(player, params)
         if params[1] then
             if params[1] > 2 then
                 player.print("The claim range is too large!")
@@ -202,7 +202,7 @@ function hex_grid.register_events()
         hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, true) -- claim by server
     end)
 
-    event_system.register_callback("command-hex-pool-size", function(player, params)
+    event_system.register("command-hex-pool-size", function(player, params)
         if not params[1] then
             player.print({"hextorio.current-hex-pool-size", hex_grid.get_pool_size()})
             return
@@ -210,7 +210,7 @@ function hex_grid.register_events()
         hex_grid.set_pool_size(params[1])
     end)
 
-    event_system.register_callback("command-tp-to-edge", function(player, params)
+    event_system.register("command-tp-to-edge", function(player, params)
         local planet_size = lib.startup_setting_value("planet-size-" .. player.surface.name)
         local edge_pos = {q = planet_size, r = 0}
         local transformation = terrain.get_surface_transformation(player.surface)
@@ -218,7 +218,7 @@ function hex_grid.register_events()
         player.teleport(center)
     end)
 
-    event_system.register_callback("quest-reward-received", function(reward_type, value)
+    event_system.register("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" then
             if value == "catalog" then
                 local all_trades = {}
@@ -251,7 +251,7 @@ function hex_grid.register_events()
         end
     end)
 
-    event_system.register_callback("quests-reinitialized", function(reward_type, value)
+    event_system.register("quests-reinitialized", function(reward_type, value)
         -- Recalculate all trade finds
         local trades_found = 0
         local claimed_hexes = 0
@@ -269,11 +269,11 @@ function hex_grid.register_events()
         quests.set_progress_for_type("claimed-hexes", claimed_hexes)
     end)
 
-    event_system.register_callback("interplanetary-trade-generated", function(surface_name, item_name, hex_pos)
+    event_system.register("interplanetary-trade-generated", function(surface_name, item_name, hex_pos)
         hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
     end)
 
-    event_system.register_callback("dungeon-looted", function(dungeon)
+    event_system.register("dungeon-looted", function(dungeon)
         for _, tile in pairs(dungeon.maze.tiles) do
             local hex_pos = tile.pos
             local state = hex_grid.get_hex_state(dungeon.surface.index, hex_pos)
@@ -285,7 +285,7 @@ function hex_grid.register_events()
         end
     end)
 
-    event_system.register_callback("enemy-died-to-damage-type", function(entity, damage_type, cause)
+    event_system.register("enemy-died-to-damage-type", function(entity, damage_type, cause)
         if damage_type == "electric" then
             local transformation = terrain.get_surface_transformation(entity.surface)
             local hex_pos = axial.get_hex_containing(entity.position, transformation.scale, transformation.rotation)
@@ -307,47 +307,47 @@ function hex_grid.register_events()
         end
     end)
 
-    event_system.register_callback("runtime-setting-changed-base-trade-prod-nauvis", function()
+    event_system.register("runtime-setting-changed-base-trade-prod-nauvis", function()
         hex_grid.update_all_trades "nauvis"
     end)
 
-    event_system.register_callback("runtime-setting-changed-base-trade-prod-vulcanus", function()
+    event_system.register("runtime-setting-changed-base-trade-prod-vulcanus", function()
         hex_grid.update_all_trades "vulcanus"
     end)
 
-    event_system.register_callback("runtime-setting-changed-base-trade-prod-fulgora", function()
+    event_system.register("runtime-setting-changed-base-trade-prod-fulgora", function()
         hex_grid.update_all_trades "fulgora"
     end)
 
-    event_system.register_callback("runtime-setting-changed-base-trade-prod-gleba", function()
+    event_system.register("runtime-setting-changed-base-trade-prod-gleba", function()
         hex_grid.update_all_trades "gleba"
     end)
 
-    event_system.register_callback("runtime-setting-changed-base-trade-prod-aquilo", function()
+    event_system.register("runtime-setting-changed-base-trade-prod-aquilo", function()
         hex_grid.update_all_trades "aquilo"
     end)
 
-    event_system.register_callback("runtime-setting-changed-default-nauvis-hexlight-color", function()
+    event_system.register("runtime-setting-changed-default-nauvis-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "nauvis"
     end)
 
-    event_system.register_callback("runtime-setting-changed-default-vulcanus-hexlight-color", function()
+    event_system.register("runtime-setting-changed-default-vulcanus-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "vulcanus"
     end)
 
-    event_system.register_callback("runtime-setting-changed-default-fulgora-hexlight-color", function()
+    event_system.register("runtime-setting-changed-default-fulgora-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "fulgora"
     end)
 
-    event_system.register_callback("runtime-setting-changed-default-gleba-hexlight-color", function()
+    event_system.register("runtime-setting-changed-default-gleba-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "gleba"
     end)
 
-    event_system.register_callback("runtime-setting-changed-default-aquilo-hexlight-color", function()
+    event_system.register("runtime-setting-changed-default-aquilo-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "aquilo"
     end)
 
-    event_system.register_callback("runtime-setting-changed-dungeon-hexlight-color", function()
+    event_system.register("runtime-setting-changed-dungeon-hexlight-color", function()
         hex_grid.update_hexlight_default_colors()
     end)
 end
