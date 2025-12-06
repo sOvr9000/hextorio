@@ -815,7 +815,7 @@ end
 ---Set the progress of all quest conditions of a certain type.
 ---@param condition_type QuestConditionType
 ---@param amount int
----@param condition_value QuestConditionValue
+---@param condition_value QuestConditionValue|nil
 function quests.set_progress_for_type(condition_type, amount, condition_value)
     for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
         if not quests.is_complete(quest) then

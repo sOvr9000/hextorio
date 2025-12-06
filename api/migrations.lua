@@ -183,6 +183,7 @@ local process_migration = {
 
         quests.init()
 
+        ---@diagnostic disable-next-line: param-type-mismatch
         quests.reveal_quest(quests.get_quest_from_name "ground-zero")
     end,
     ["0.2.0"] = function()
@@ -477,6 +478,7 @@ local process_migration = {
         item_ranks.recalculate_items_at_rank_quests()
 
         if complete then
+            ---@diagnostic disable-next-line: param-type-mismatch
             quests._mark_complete(quests.get_quest "first-red-star") -- the new name for the old "Catalog Professional" quest
         end
     end,
