@@ -12,7 +12,7 @@ local quests = {}
 
 
 function quests.register_events()
-    event_system.register_callback("command-complete-quest", function(player, params)
+    event_system.register("command-complete-quest", function(player, params)
         local quest = quests.get_quest_from_name(params[1])
         if quest then
             quests.complete_quest(quest)
@@ -21,7 +21,7 @@ function quests.register_events()
         end
     end)
 
-    event_system.register_callback("command-hextorio-debug", function(player, params)
+    event_system.register("command-hextorio-debug", function(player, params)
         local quest = quests.get_quest_from_name "find-some-trades"
         if quest then
             quests.complete_quest(quest)
@@ -30,29 +30,29 @@ function quests.register_events()
         end
     end)
 
-    event_system.register_callback("spawner-rammed", function(spawner, vehicle)
+    event_system.register("spawner-rammed", function(spawner, vehicle)
         quests.increment_progress_for_type "biter-ramming"
     end)
 
-    event_system.register_callback("enemy-died-to-damage-type", function(entity, damage_type_name, cause)
+    event_system.register("enemy-died-to-damage-type", function(entity, damage_type_name, cause)
         quests.increment_progress_for_type("kill-with-damage-type", 1, damage_type_name)
     end)
 
-    event_system.register_callback("player-built-entity", function(player, entity)
+    event_system.register("player-built-entity", function(player, entity)
         quests.increment_progress_for_type("place-entity", 1, entity.name)
         quests.increment_progress_for_type("place-entity-on-planet", 1, {entity.name, entity.surface.name})
     end)
 
-    event_system.register_callback("player-mined-entity", function(player, entity)
+    event_system.register("player-mined-entity", function(player, entity)
         quests.increment_progress_for_type("mine-entity", 1, entity.name)
     end)
 
-    event_system.register_callback("entity-picked-up", function(entity)
+    event_system.register("entity-picked-up", function(entity)
         quests.increment_progress_for_type("place-entity", -1, entity.name)
         quests.increment_progress_for_type("place-entity-on-planet", -1, {entity.name, entity.surface.name})
     end)
 
-    event_system.register_callback("dungeon-looted", function(dungeon)
+    event_system.register("dungeon-looted", function(dungeon)
         quests.increment_progress_for_type("loot-dungeons-on", 1, dungeon.surface.name)
 
         local passed = true
@@ -67,7 +67,7 @@ function quests.register_events()
         end
     end)
 
-    event_system.register_callback("surface-created", function(surface)
+    event_system.register("surface-created", function(surface)
         quests.set_progress_for_type("visit-planet", 1, surface.name)
     end)
 end

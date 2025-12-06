@@ -10,27 +10,27 @@ local item_ranks = {}
 
 
 function item_ranks.register_events()
-    event_system.register_callback("command-rank-up", function(player, params)
+    event_system.register("command-rank-up", function(player, params)
         if item_ranks.rank_up(params[1]) then
             event_system.trigger("post-rank-up-command", player, params)
         end
     end)
-    event_system.register_callback("command-rank-up-all", function(player, params)
+    event_system.register("command-rank-up-all", function(player, params)
         for item_name, _ in pairs(storage.item_ranks.item_ranks) do
             item_ranks.rank_up(item_name)
         end
         event_system.trigger("post-rank-up-all-command", player, params)
     end)
-    event_system.register_callback("quests-reinitialized", function()
+    event_system.register("quests-reinitialized", function()
         quests.set_progress_for_type("total-item-rank", item_ranks.get_total_item_rank())
     end)
-    event_system.register_callback("runtime-setting-changed-rank-2-prod-requirement", function()
+    event_system.register("runtime-setting-changed-rank-2-prod-requirement", function()
         storage.item_ranks.productivity_requirements[2] = lib.runtime_setting_value "rank-2-prod-requirement"
     end)
-    event_system.register_callback("runtime-setting-changed-rank-3-prod-requirement", function()
+    event_system.register("runtime-setting-changed-rank-3-prod-requirement", function()
         storage.item_ranks.productivity_requirements[3] = lib.runtime_setting_value "rank-3-prod-requirement"
     end)
-    event_system.register_callback("runtime-setting-changed-rank-4-prod-requirement", function()
+    event_system.register("runtime-setting-changed-rank-4-prod-requirement", function()
         storage.item_ranks.productivity_requirements[4] = lib.runtime_setting_value "rank-4-prod-requirement"
     end)
 end

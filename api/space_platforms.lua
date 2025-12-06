@@ -7,7 +7,7 @@ local space_platforms = {}
 
 
 function space_platforms.register_events()
-    event_system.register_callback("quest-reward-received", function(reward_type, reward_value)
+    event_system.register("quest-reward-received", function(reward_type, reward_value)
         if reward_type == "receive-spaceship" then
             local sp = space_platforms.new "nauvis"
             if sp then

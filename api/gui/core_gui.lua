@@ -4,11 +4,27 @@ local trades = require "api.trades"
 local coin_tiers = require "api.coin_tiers"
 local item_ranks = require "api.item_ranks"
 local item_values = require "api.item_values"
-local gui_events  = require "api.gui.gui_events"
+local event_system  = require "api.event_system"
 
 local core_gui = {}
 
 
+
+function core_gui.register_events()
+    event_system.register_gui("gui-clicked", "close-button", function(player, elem)
+        local frame = elem.parent.parent
+        if not frame then return end
+        event_system.trigger_gui("gui-closed", frame.name, player, frame)
+    end)
+end
+
+---Parse an object as a LuaGuiElement.  If obj is a LuaGuiElement, then it is returned unchanged.  If not, then nil is returned.
+---@param obj any
+---@return LuaGuiElement|nil
+function core_gui.convert_object_to_gui_element(obj)
+    if not obj or type(obj) ~= "userdata" or obj.object_name ~= "LuaGuiElement" then return end
+    return obj
+end
 
 ---Return whether the given player has the given frame open. Safely handles situations (and returns false) when the player's currently opened object is not a GUI.
 ---@param player LuaPlayer
@@ -234,11 +250,7 @@ function core_gui.add_titlebar(frame, caption)
         clicked_sprite = "utility/close_black",
         tooltip = {"gui.close-instruction"},
     }
-
-    gui_events.register(close_button, "on-clicked", function()
-        local player = core_gui.get_player_from_element(frame)
-        gui_events.trigger(player, frame, "on-closed")
-    end)
+    close_button.tags = {handlers = {["gui-clicked"] = "close-button"}}
 end
 
 function core_gui.add_info(element, info_id, name)

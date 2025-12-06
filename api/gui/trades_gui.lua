@@ -3,7 +3,6 @@ local lib = require "api.lib"
 local gui = require "api.gui.core_gui"
 local trades = require "api.trades"
 local coin_tiers = require "api.coin_tiers"
-local gui_events = require "api.gui.gui_events"
 local event_system = require "api.event_system"
 local quests = require "api.quests"
 local hex_grid = require "api.hex_grid"
@@ -11,6 +10,17 @@ local hex_grid = require "api.hex_grid"
 local trades_gui = {}
 
 
+
+function trades_gui.register_events()
+    log("registering for trades gui")
+    event_system.register_gui("gui-clicked", "ping-button", trades_gui.on_ping_button_clicked)
+    event_system.register_gui("gui-clicked", "core-finder", trades_gui.on_core_finder_button_click)
+    event_system.register_gui("gui-clicked", "toggle-trade", trades_gui.on_toggle_trade_button_clicked)
+    event_system.register_gui("gui-clicked", "tag-button", trades_gui.on_trade_tag_button_clicked)
+    event_system.register_gui("gui-clicked", "add-to-filters", trades_gui.on_trade_add_to_filters_button_clicked)
+    event_system.register_gui("gui-clicked", "trade-item", trades_gui.on_trade_item_clicked)
+    event_system.register_gui("gui-elem-changed", "trade-quality-bounds", trades_gui.on_trade_quality_bounds_selected)
+end
 
 function trades_gui._process_trades_scroll_panes()
     if not storage.gui then
@@ -111,23 +121,14 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         direction = "horizontal",
     }
 
-    local function create_ping_button(element)
-        local ping_button = element.add {
+    local function create_ping_button(e)
+        local ping_button = e.add {
             type = "sprite-button",
             name = "ping-button",
             sprite = "utility/shoot_cursor_red",
+            tags = {handlers = {["gui-clicked"] = "ping-button"}, trade_number = trade_number},
         }
         ping_button.tooltip = {"hextorio-gui.ping-in-chat"}
-
-        gui_events.register(ping_button, "on-clicked", function()
-            if not trade.hex_core_state or not trade.hex_core_state.hex_core then return end
-
-            local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
-            local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
-
-            game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
-            quests.set_progress_for_type("ping-trade", 1)
-        end)
     end
 
     if params.show_core_finder then
@@ -135,9 +136,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             type = "sprite-button",
             name = "core-finder-button-" .. trade_number,
             sprite = "utility/gps_map_icon",
+            tags = {handlers = {["gui-clicked"] = "core-finder"}, trade_number = trade_number},
         }
         core_finder_button.tooltip = {"hextorio-gui.core-finder-button"}
-        gui_events.register(core_finder_button, "on-clicked", function() trades_gui.on_core_finder_button_click(player, core_finder_button, trade_number) end)
     end
 
     if not params.expanded and params.show_ping_button then
@@ -153,7 +154,6 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         name = "frame",
         direction = "vertical",
     }
-    -- trade_frame.style.left_margin = 10
     trade_frame.style.natural_height = (size + 20) / 1.2 - 5
     trade_frame.style.width = 381 / 1.2
 
@@ -181,9 +181,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 type = "sprite-button",
                 name = "toggle-trade-" .. trade_number,
                 sprite = sprite,
+                tags = {handlers = {["gui-clicked"] = "toggle-trade"}},
             }
             toggle_trade_button.tooltip = {"hex-core-gui.trade-checkbox-tooltip"}
-            gui_events.register(toggle_trade_button, "on-clicked", function() event_system.trigger("trade-toggle-button-clicked", player, toggle_trade_button) end)
         end
 
         if params.show_tag_creator then
@@ -191,9 +191,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 type = "sprite-button",
                 name = "tag-button-" .. trade_number,
                 sprite = "utility/show_tags_in_map_view",
+                tooltip = {"hex-core-gui.tag-button"},
+                tags = {handlers = {["gui-clicked"] = "tag-button"}},
             }
-            tag_button.tooltip = {"hex-core-gui.tag-button"}
-            gui_events.register(tag_button, "on-clicked", function() event_system.trigger("trade-tag-button-clicked", player, tag_button) end)
         end
 
         if params.show_ping_button then
@@ -214,9 +214,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 type = "sprite-button",
                 name = "add-to-filters-" .. trade_number,
                 sprite = "item/loader",
+                tags = {handlers = {["gui-clicked"] = "add-to-filters"}},
             }
             add_to_filters_button.tooltip = {"hex-core-gui.add-to-filters-tooltip"}
-            gui_events.register(add_to_filters_button, "on-clicked", function() event_system.trigger("trade-add-to-filters-button-clicked", player, add_to_filters_button) end)
         end
 
         if params.show_quality_bounds then
@@ -226,18 +226,18 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 name = "min-quality-" .. trade_number,
                 elem_type = "signal",
                 signal = {type = "quality", name = allowed_qualities[#allowed_qualities]},
+                tags = {handlers = {["gui-elem-changed"] = "trade-quality-bounds"}, trade_number = trade_number},
             }
             min_quality.tooltip = {"hex-core-gui.minimum-trade-quality"}
-            gui_events.register(min_quality, "on-elem-selected", function() event_system.trigger("trade-quality-bounds-selected", player, min_quality, trade_number) end)
 
             local max_quality = trade_control_flow.add {
                 type = "choose-elem-button",
                 name = "max-quality-" .. trade_number,
                 elem_type = "signal",
                 signal = {type = "quality", name = allowed_qualities[1]},
+                tags = {handlers = {["gui-elem-changed"] = "trade-quality-bounds"}, trade_number = trade_number},
             }
             max_quality.tooltip = {"hex-core-gui.maximum-trade-quality"}
-            gui_events.register(max_quality, "on-elem-selected", function() event_system.trigger("trade-quality-bounds-selected", player, max_quality, trade_number) end)
         end
     end
 
@@ -250,6 +250,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 name = "input-" .. tostring(i) .. "-" .. input_item.name,
                 sprite = "item/" .. input_item.name,
                 number = input_item.count,
+                tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = input_item.name, is_input = true},
             }
             if lib.is_coin(input_item.name) then
                 local coin = trades.get_input_coins_of_trade(trade, quality_to_show, quality_cost_mult)
@@ -262,7 +263,6 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 input_sprite_button.quality = quality_to_show
             end
             gui.give_item_tooltip(player, trade.surface_name, input_sprite_button)
-            gui_events.register(input_sprite_button, "on-clicked", function() event_system.trigger("trade-item-clicked", player, input_sprite_button, input_item.name, true) end)
         else
             total_empty = total_empty + 1
             local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
@@ -329,6 +329,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 name = "output-" .. tostring(i) .. "-" .. tostring(output_item.name),
                 sprite = "item/" .. output_item.name,
                 number = output_item.count,
+                tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = output_item.name, is_input = false},
             }
             if lib.is_coin(output_item.name) then
                 local coin = trades.get_output_coins_of_trade(trade, quality_to_show)
@@ -341,7 +342,6 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 output_sprite_button.quality = quality_to_show
             end
             gui.give_item_tooltip(player, trade.surface_name, output_sprite_button)
-            gui_events.register(output_sprite_button, "on-clicked", function() event_system.trigger("trade-item-clicked", player, output_sprite_button, output_item.name, false) end)
         else
             total_empty = total_empty + 1
             local empty = trade_table.add {type = "sprite-button", name = "empty" .. tostring(total_empty)}
@@ -382,13 +382,15 @@ function trades_gui.update_trades_scroll_pane(player, trades_scroll_pane, trades
     storage.gui.trades_scroll_pane_update[player.name] = process
 end
 
-function trades_gui.on_core_finder_button_click(player, element, trade_number)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_core_finder_button_click(player, elem)
     if not storage.trade_overview.trades[player.name] then
         lib.log_error("gui.on_core_finder_button_click: Player trades list not found")
         return
     end
 
-    local trade = storage.trade_overview.trades[player.name][trade_number]
+    local trade = storage.trade_overview.trades[player.name][elem.tags.trade_number]
     if not trade then
         lib.log_error("gui.on_core_finder_button_click: No trade found from trade overview")
         return
@@ -402,12 +404,72 @@ function trades_gui.on_core_finder_button_click(player, element, trade_number)
     player.set_controller {
         type = defines.controllers.remote,
         position = trade.hex_core_state.hex_core.position,
-        surface = trade.hex_core_state.hex_core.surface
+        surface = trade.hex_core_state.hex_core.surface,
     }
 
-    event_system.trigger("core-finder-button-clicked", player, element)
+    event_system.trigger("core-finder-button-clicked", player, elem)
 
     player.opened = trade.hex_core_state.hex_core
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_ping_button_clicked(player, elem)
+    local trade = trades_gui.get_trade_from_trade_number(player, elem.tags.trade_number, gui.is_descendant_of(elem, "trade-overview"))
+    if not trade or not trade.hex_core_state or not trade.hex_core_state.hex_core then return end
+
+    local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
+    local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
+
+    game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
+    quests.set_progress_for_type("ping-trade", 1)
+end
+
+function trades_gui.get_trade_from_trade_number(player, trade_number, trade_overview)
+    if trade_overview then
+        return storage.trade_overview.trades[player.name][trade_number]
+    end
+
+    local hex_core = player.opened
+    if hex_core and hex_core.name == "hex-core" then
+        local state = hex_grid.get_hex_state_from_core(hex_core)
+        if state and state.trades then
+            local trade_id = state.trades[trade_number]
+            if trade_id then
+                return trades.get_trade_from_id(trade_id)
+            end
+        end
+    end
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_toggle_trade_button_clicked(player, elem)
+    event_system.trigger("trade-toggle-button-clicked", player, elem)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_trade_tag_button_clicked(player, elem)
+    event_system.trigger("trade-tag-button-clicked", player, elem)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_trade_add_to_filters_button_clicked(player, elem)
+    event_system.trigger("trade-add-to-filters-button-clicked", player, elem)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_trade_item_clicked(player, elem)
+    event_system.trigger("trade-item-clicked", player, elem, elem.tags.item_name, elem.tags.is_input)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_trade_quality_bounds_selected(player, elem)
+    event_system.trigger("trade-quality-bounds-selected", player, elem, elem.tags.trade_number)
 end
 
 

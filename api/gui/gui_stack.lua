@@ -126,15 +126,6 @@ function gui_stack.index_of(player, element)
     return -1
 end
 
----Handle the player closing the given GUI element.
----@param player LuaPlayer
----@param element LuaGuiElement
-function gui_stack.handle_gui_closed(player, element)
-    -- if gui_stack.contains(player, element) then
-    --     gui_stack.pop(player, gui_stack.index_of(player, element))
-    -- end
-end
-
 
 
 return gui_stack

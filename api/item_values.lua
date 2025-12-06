@@ -10,7 +10,7 @@ local item_values = {}
 
 
 function item_values.register_events()
-    event_system.register_callback("command-set-item-value", function(player, params)
+    event_system.register("command-set-item-value", function(player, params)
         local item_name = params[1]
         local value = params[2]
         local surface_name = params[3] or "nauvis"
@@ -38,7 +38,7 @@ function item_values.register_events()
         player.print {"hextorio.new-item-value-set", item_name, surface_name, coin_tiers.coin_to_text(coin_tiers.from_base_value(value), false, 4)}
     end)
 
-    event_system.register_callback("command-get-item-value", function(player, params)
+    event_system.register("command-get-item-value", function(player, params)
         local item_name = params[1]
         local surface_name = params[2]
         local quality = params[3] or "normal"
@@ -61,7 +61,7 @@ function item_values.register_events()
         end
     end)
 
-    event_system.register_callback("command-remove-item-value", function(player, params)
+    event_system.register("command-remove-item-value", function(player, params)
         local item_name = params[1]
 
         if params[2] and not storage.item_values.values[params[2]] then
@@ -92,7 +92,7 @@ function item_values.register_events()
         end
     end)
 
-    event_system.register_callback("command-export-item-values", function(player, params)
+    event_system.register("command-export-item-values", function(player, params)
         local json = helpers.table_to_json(storage.item_values.values)
         local str = helpers.encode_string(json)
 
@@ -101,7 +101,7 @@ function item_values.register_events()
         player.print {"hextorio.item-values-exported", "Factorio/script-output/" .. filename}
     end)
 
-    event_system.register_callback("command-import-item-values", function(player, params)
+    event_system.register("command-import-item-values", function(player, params)
         local str = params[1]
 
         local json = helpers.decode_string(str)

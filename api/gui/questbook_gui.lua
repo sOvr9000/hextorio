@@ -4,7 +4,6 @@ local gui = require "api.gui.core_gui"
 local coin_tiers  = require "api.coin_tiers"
 local event_system = require "api.event_system"
 local quests = require "api.quests"
-local gui_events = require "api.gui.gui_events"
 local gui_stack = require "api.gui.gui_stack"
 
 local questbook_gui = {}
@@ -12,6 +11,12 @@ local questbook_gui = {}
 
 
 function questbook_gui.register_events()
+    event_system.register_gui("gui-clicked", "questbook-button", questbook_gui.on_questbook_button_click)
+    event_system.register_gui("gui-clicked", "debug-complete-quest", questbook_gui.on_debug_complete_quest_button_clicked)
+    event_system.register_gui("gui-selection-changed", "complete-list", questbook_gui.on_quest_name_selected)
+    event_system.register_gui("gui-selection-changed", "incomplete-list", questbook_gui.on_quest_name_selected)
+    event_system.register_gui("gui-closed", "questbook", questbook_gui.hide_questbook)
+
     local function update_quest_guis(quest)
         for _, player in pairs(game.connected_players) do
             questbook_gui.update_quest_lists(player, quest)
@@ -19,8 +24,8 @@ function questbook_gui.register_events()
         end
     end
 
-    event_system.register_callback("quest-revealed", update_quest_guis)
-    event_system.register_callback("quest-completed", update_quest_guis)
+    event_system.register("quest-revealed", update_quest_guis)
+    event_system.register("quest-completed", update_quest_guis)
 end
 
 ---Reinitialize the hex core GUI for the given player, or all online players if no player is provided.
@@ -52,7 +57,7 @@ function questbook_gui.init_questbook_button(player)
         sprite = "questbook",
         style = "side_menu_button",
     }
-    gui_events.register(questbook_button, "on-clicked", function() questbook_gui.on_questbook_button_click(player) end)
+    questbook_button.tags = {handlers = {["gui-clicked"] = "questbook-button"}}
 end
 
 function questbook_gui.init_questbook(player)
@@ -61,7 +66,7 @@ function questbook_gui.init_questbook(player)
     local questbook = player.gui.screen.add {type = "frame", name = "questbook", direction = "vertical"}
     questbook.style.size = {width = 1200, height = 800}
     questbook.visible = false
-    gui_events.register(questbook, "on-closed", function() questbook_gui.hide_questbook(player) end)
+    questbook.tags = {handlers = {["gui-closed"] = "questbook"}}
 
     gui.add_titlebar(questbook, {"hextorio-questbook.questbook-title"})
 
@@ -84,13 +89,13 @@ function questbook_gui.init_questbook(player)
     local incomplete_header = list_scroll_pane.add {type = "label", name = "incomplete-header", caption = {"hextorio-questbook.incomplete", 0}}
     incomplete_header.style.font = "heading-2"
     local incomplete_list = list_scroll_pane.add {type = "list-box", name = "incomplete-list"}
-    gui_events.register(incomplete_list, "on-selection-changed", function() questbook_gui.on_quest_name_selected(player, incomplete_list) end)
+    incomplete_list.tags = {handlers = {["gui-selection-changed"] = "incomplete-list"}}
     gui.auto_width_height(incomplete_list)
 
     local complete_header = list_scroll_pane.add {type = "label", name = "complete-header", caption = {"hextorio-questbook.complete", 0}}
     complete_header.style.font = "heading-2"
     local complete_list = list_scroll_pane.add {type = "list-box", name = "complete-list"}
-    gui_events.register(complete_list, "on-selection-changed", function() questbook_gui.on_quest_name_selected(player, complete_list) end)
+    complete_list.tags = {handlers = {["gui-selection-changed"] = "complete-list"}}
     gui.auto_width_height(complete_list)
 
     local quest_info_frame = quest_frame.add {type = "frame", name = "info-frame", direction = "horizontal"}
@@ -115,7 +120,7 @@ function questbook_gui.init_questbook(player)
     local quest_notes_flow = quest_info_main.add {type = "flow", name = "notes-flow", direction = "vertical"}
 
     local debug_complete_quest = quest_info_main.add {type = "button", name = "debug-complete-quest", caption = {"hextorio-debug.complete-quest"}}
-    gui_events.register(debug_complete_quest, "on-clicked", function() questbook_gui.on_debug_complete_quest_button_clicked(player, debug_complete_quest) end)
+    debug_complete_quest.tags = {handlers = {["gui-clicked"] = "debug-complete-quest"}}
 
     local quest_conditions_rewards = quest_frame.add {type = "flow", name = "conditions-rewards", direction = "horizontal"}
     gui.auto_width_height(quest_conditions_rewards)
@@ -450,14 +455,16 @@ function questbook_gui.set_player_current_quest_selected(player, quest_name)
     storage.quests.players_quest_selected[player.name] = quest_name
 end
 
-function questbook_gui.on_quest_name_selected(player, element)
-    if element.selected_index == 0 then return end
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function questbook_gui.on_quest_name_selected(player, elem)
+    if elem.selected_index == 0 then return end
 
     -- First, ensure that only one quest is selected between the two list boxes.
-    if element.name == "complete-list" then
-        element.parent['incomplete-list'].selected_index = 0
-    elseif element.name == "incomplete-list" then
-        element.parent['complete-list'].selected_index = 0
+    if elem.name == "complete-list" then
+        elem.parent['incomplete-list'].selected_index = 0
+    elseif elem.name == "incomplete-list" then
+        elem.parent['complete-list'].selected_index = 0
     end
 
     local quest = questbook_gui.get_current_selected_quest(player)
@@ -467,7 +474,9 @@ function questbook_gui.on_quest_name_selected(player, element)
     questbook_gui.update_questbook(player)
 end
 
-function questbook_gui.on_questbook_button_click(player)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function questbook_gui.on_questbook_button_click(player, elem)
     if gui.is_frame_open(player, "questbook") then
         questbook_gui.hide_questbook(player)
     else
@@ -475,7 +484,9 @@ function questbook_gui.on_questbook_button_click(player)
     end
 end
 
-function questbook_gui.on_debug_complete_quest_button_clicked(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function questbook_gui.on_debug_complete_quest_button_clicked(player, elem)
     local quest = questbook_gui.get_current_selected_quest(player)
     if not quest then return end
     quests.complete_quest(quest)

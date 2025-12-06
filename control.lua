@@ -26,15 +26,16 @@ item_values.register_events()
 hex_grid.register_events()
 trades.register_events()
 item_ranks.register_events()
-gui.register_hextorio_events()
 quests.register_events()
 dungeons.register_events()
 spiders.register_events()
 hex_island.register_events()
 space_platforms.register_events()
 
+gui.register_events()
+event_system.bind_gui_events()
+
 require "commands"
-require "bind_gui_events"
 require "handle_keybinds"
 require "handle_selections"
 require "handle_coin_splitting"
@@ -47,7 +48,6 @@ local data_coin_tiers = require "data.coin_tiers"
 local data_trades = require "data.trades"
 local data_quests = require "data.quests"
 local data_item_ranks = require "data.item_ranks"
-local data_event_system = require "data.event_system"
 local data_trade_overview = require "data.trade_overview"
 local data_blueprints = require "data.blueprints"
 local data_dungeons = require "data.dungeons"
@@ -66,11 +66,6 @@ end
 
 
 
-local reinit_guis = false
-script.on_load(function()
-    reinit_guis = true
-end)
-
 script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
     storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
@@ -83,7 +78,6 @@ script.on_init(function()
     storage.trades = data_trades
     storage.quests = data_quests
     storage.item_ranks = data_item_ranks
-    storage.event_system = data_event_system
     storage.trade_overview = data_trade_overview
     storage.blueprints = data_blueprints
     storage.dungeons = data_dungeons

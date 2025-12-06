@@ -11,7 +11,6 @@ local event_system = require "api.event_system"
 local quests = require "api.quests"
 local gui_stack = require "api.gui.gui_stack"
 local core_gui = require "api.gui.core_gui"
-local gui_events = require "api.gui.gui_events"
 local trades_gui = require "api.gui.trades_gui"
 
 local trade_overview_gui = {}
@@ -19,7 +18,18 @@ local trade_overview_gui = {}
 
 
 function trade_overview_gui.register_events()
-    event_system.register_callback("quest-reward-received", function(reward_type, value)
+    event_system.register_gui("gui-clicked", "trade-overview-button", trade_overview_gui.on_trade_overview_button_click)
+    event_system.register_gui("gui-closed", "trade-overview", trade_overview_gui.hide_trade_overview)
+    event_system.register_gui("gui-clicked", "trade-overview-clear-filters", trade_overview_gui.on_clear_filters_button_click)
+    event_system.register_gui("gui-clicked", "export-json", trade_overview_gui.on_export_json_button_click)
+    event_system.register_gui("gui-clicked", "planet-filter", trade_overview_gui.on_planet_filter_button_click)
+    event_system.register_gui("gui-slider-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
+    event_system.register_gui("gui-elem-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
+    event_system.register_gui("gui-selection-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
+    event_system.register_gui("gui-switch-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
+    event_system.register_gui("gui-clicked", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
+
+    event_system.register("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" then
             if value == "trade-overview" then
                 for _, player in pairs(game.players) do
@@ -29,7 +39,7 @@ function trade_overview_gui.register_events()
         end
     end)
 
-    event_system.register_callback("hex-core-deleted", function(state)
+    event_system.register("hex-core-deleted", function(state)
         if not state then return end
         for _, player in pairs(game.connected_players) do
             if core_gui.is_frame_open(player, "trade-overview") then
@@ -38,11 +48,11 @@ function trade_overview_gui.register_events()
         end
     end)
 
-    event_system.register_callback("core-finder-button-clicked", function(player, element)
+    event_system.register("core-finder-button-clicked", function(player, element)
         trade_overview_gui.hide_trade_overview(player)
     end)
 
-    event_system.register_callback("trade-item-clicked", function(player, element, item_name, is_input)
+    event_system.register("trade-item-clicked", function(player, element, item_name, is_input)
         trade_overview_gui.on_trade_item_clicked(player, element, item_name, is_input)
     end)
 end
@@ -73,8 +83,8 @@ function trade_overview_gui.init_trade_overview_button(player)
             type = "sprite-button",
             name = "trade-overview-button",
             sprite = "trade-overview",
+            tags = {handlers = {["gui-clicked"] = "trade-overview-button"}},
         }
-        gui_events.register(trade_overview_button, "on-clicked", function() trade_overview_gui.on_trade_overview_button_click(player) end)
     end
     player.gui.top["trade-overview-button"].visible = quests.is_feature_unlocked "trade-overview"
 end
@@ -84,11 +94,11 @@ function trade_overview_gui.init_trade_overview(player)
         type = "frame",
         name = "trade-overview",
         direction = "vertical",
+        tags = {handlers = {["gui-closed"] = "trade-overview"}},
     }
     frame.style.width = 900
     frame.style.height = 900
     frame.visible = false
-    gui_events.register(frame, "on-closed", function() trade_overview_gui.hide_trade_overview(player) end)
 
     gui.add_titlebar(frame, {"hex-core-gui.trade-overview"})
 
@@ -108,12 +118,20 @@ function trade_overview_gui.build_left_filter_frame(frame)
 
     local left_frame_buttons_flow = left_frame.add {type = "flow", name = "buttons-flow", direction = "horizontal"}
 
-    local clear_filters_button = left_frame_buttons_flow.add {type = "button", name = "clear-filters-button", caption = {"hextorio-gui.clear-filters"}}
-    gui_events.register(clear_filters_button, "on-clicked", function() trade_overview_gui.on_clear_filters_button_click(player, clear_filters_button) end)
+    local clear_filters_button = left_frame_buttons_flow.add {
+        type = "button",
+        name = "clear-filters",
+        caption = {"hextorio-gui.clear-filters"},
+        tags = {handlers = {["gui-clicked"] = "trade-overview-clear-filters"}},
+    }
 
-    local export_json_button = left_frame_buttons_flow.add {type = "button", name = "export-json", caption = {"hextorio-gui.export-json"}}
-    export_json_button.tooltip = {"hextorio-gui.export-json-tooltip"}
-    gui_events.register(export_json_button, "on-clicked", function() trade_overview_gui.on_export_json_button_click(player, export_json_button) end)
+    local export_json_button = left_frame_buttons_flow.add {
+        type = "button",
+        name = "export-json",
+        caption = {"hextorio-gui.export-json"},
+        tooltip = {"hextorio-gui.export-json-tooltip"},
+        tags = {handlers = {["gui-clicked"] = "export-json"}},
+    }
 
     local processing_flow = left_frame_buttons_flow.add {type = "flow", name = "processing-flow", direction = "horizontal"}
     local processing_label = processing_flow.add {type = "label", name = "label", caption = {"hextorio-gui.processing-finished"}}
@@ -133,11 +151,8 @@ function trade_overview_gui.build_left_filter_frame(frame)
                 sprite = "planet-" .. surface_name,
                 toggled = enabled,
                 enabled = enabled,
+                tags = {handlers = {["gui-clicked"] = "planet-filter"}}
             }
-            gui_events.register(surface_sprite, "on-clicked", function()
-                surface_sprite.toggled = not surface_sprite.toggled
-                trade_overview_gui.update_trade_overview(player)
-            end)
         end
     end
 
@@ -164,33 +179,45 @@ function trade_overview_gui.build_left_filter_frame(frame)
     }
 
     local max_input_items_flow = trade_inputs_flow.add {type = "flow", name = "max-inputs-flow", direction = "horizontal"}
-    local max_input_items_slider = max_input_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+    local max_input_items_slider = max_input_items_flow.add {
+        type = "slider",
+        name = "slider",
+        value = 3,
+        minimum_value = 1,
+        maximum_value = 3,
+        tags = {handlers = {["gui-slider-changed"] = "trade-overview-filter-changed"}},
+    }
     max_input_items_slider.style.width = 80
     max_input_items_slider.style.top_margin = 4
     local max_input_items_label = max_input_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
-    gui_events.register(max_input_items_slider, "on-slider-changed", function() trade_overview_gui.update_trade_overview(player) end)
 
     local exact_inputs_match_flow = trade_inputs_flow.add {type = "flow", name = "exact-inputs-match", direction = "horizontal"}
     gui.auto_width(
         exact_inputs_match_flow.add {type = "empty-widget", name = "empty-1"}
     )
     exact_inputs_match_flow.style.top_margin = -5
-    local toggle_exact_inputs_match = exact_inputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
+
+    local toggle_exact_inputs_match = exact_inputs_match_flow.add {
+        type = "checkbox",
+        name = "checkbox",
+        state = false,
+        tags = {handlers = {["gui-clicked"] = "trade-overview-filter-changed"}},
+    }
     toggle_exact_inputs_match.style.top_margin = 3
     local toggle_exact_inputs_match_label = exact_inputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact"}}
     gui.auto_width(
         exact_inputs_match_flow.add {type = "empty-widget", name = "empty-2"}
     )
-    gui_events.register(toggle_exact_inputs_match, "on-clicked", function() trade_overview_gui.update_trade_overview(player) end)
+    -- gui_handlers.register(toggle_exact_inputs_match, "on-clicked", function() trade_overview_gui.update_trade_overview(player) end)
 
     for i = 1, 3 do
         local input_item = choose_elems_flow.add {
             type = "choose-elem-button",
             elem_type = "item",
             name = "input-item-" .. i,
+            tags = {handlers = {["gui-elem-changed"] = "trade-overview-filter-changed"}},
         }
         input_item.elem_filters = elem_filters
-        gui_events.register(input_item, "on-elem-selected", function() trade_overview_gui.update_trade_overview(player) end)
     end
 
 
@@ -221,33 +248,44 @@ function trade_overview_gui.build_left_filter_frame(frame)
     }
 
     local max_output_items_flow = trade_outputs_flow.add {type = "flow", name = "max-outputs-flow", direction = "horizontal"}
-    local max_output_items_slider = max_output_items_flow.add {type = "slider", name = "slider", value = 3, minimum_value = 1, maximum_value = 3}
+    local max_output_items_slider = max_output_items_flow.add {
+        type = "slider",
+        name = "slider",
+        value = 3,
+        minimum_value = 1,
+        maximum_value = 3,
+        tags = {handlers = {["gui-slider-changed"] = "trade-overview-filter-changed"}},
+    }
     max_output_items_slider.style.width = 80
     max_output_items_slider.style.top_margin = 4
     local max_output_items_label = max_output_items_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max", 3}}
-    gui_events.register(max_output_items_slider, "on-slider-changed", function() trade_overview_gui.update_trade_overview(player) end)
 
     local exact_outputs_match_flow = trade_outputs_flow.add {type = "flow", name = "exact-outputs-match", direction = "horizontal"}
     gui.auto_width(
         exact_outputs_match_flow.add {type = "empty-widget", name = "empty-1"}
     )
     exact_outputs_match_flow.style.top_margin = -5
-    local toggle_exact_outputs_match = exact_outputs_match_flow.add {type = "checkbox", name = "checkbox", state = false}
+
+    local toggle_exact_outputs_match = exact_outputs_match_flow.add {
+        type = "checkbox",
+        name = "checkbox",
+        state = false,
+        tags = {handlers = {["gui-clicked"] = "trade-overview-filter-changed"}},
+    }
     toggle_exact_outputs_match.style.top_margin = 3
     local toggle_exact_outputs_match_label = exact_outputs_match_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exact"}}
     gui.auto_width(
         exact_outputs_match_flow.add {type = "empty-widget", name = "empty-2"}
     )
-    gui_events.register(toggle_exact_outputs_match, "on-clicked", function() trade_overview_gui.update_trade_overview(player) end)
 
     for i = 1, 3 do
         local output_item = choose_elems_flow.add {
             type = "choose-elem-button",
             elem_type = "item",
             name = "output-item-" .. (4 - i), -- 4 - i to be more consistent with how trades are shown in general
+            tags = {handlers = {["gui-elem-changed"] = "trade-overview-filter-changed"}},
         }
         output_item.elem_filters = elem_filters
-        gui_events.register(output_item, "on-elem-selected", function() trade_overview_gui.update_trade_overview(player) end)
     end
 end
 
@@ -260,47 +298,80 @@ function trade_overview_gui.build_right_filter_frame(frame)
     local max_trades_flow = right_frame.add {type = "flow", name = "max-trades-flow", direction = "horizontal"}
     local max_trades_label = max_trades_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-trades"}}
     max_trades_label.style.top_margin = 3
-    local max_trades_dropdown = max_trades_flow.add {type = "drop-down", name = "dropdown", selected_index = 4, items = {{"", 10}, {"", 25}, {"", 100}, {"", 250}}}
-    gui_events.register(max_trades_dropdown, "on-selection-changed", function(value) trade_overview_gui.update_trade_overview(player) end)
+    local max_trades_dropdown = max_trades_flow.add {
+        type = "drop-down",
+        name = "dropdown",
+        selected_index = 4,
+        items = {{"", 10}, {"", 25}, {"", 100}, {"", 250}},
+        tags = {handlers = {["gui-selection-changed"] = "trade-overview-filter-changed"}},
+    }
 
     local sort_method_flow = right_frame.add {type = "flow", name = "sort-method", direction = "horizontal"}
     local sort_method_label = sort_method_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sort-method"}}
-    local sort_method_dropdown = sort_method_flow.add {type = "drop-down", name = "dropdown", selected_index = 1, items = {{"trade-sort-method.distance-from-spawn"}, {"trade-sort-method.distance-from-character"}, {"trade-sort-method.total-item-value"}, {"trade-sort-method.num-inputs"}, {"trade-sort-method.num-outputs"}, {"trade-sort-method.productivity"}}}
-    gui_events.register(sort_method_dropdown, "on-selection-changed", function(value) trade_overview_gui.update_trade_overview(player) end)
+    local sort_method_dropdown = sort_method_flow.add {
+        type = "drop-down",
+        name = "dropdown",
+        selected_index = 1,
+        items = {
+            {"trade-sort-method.distance-from-spawn"},
+            {"trade-sort-method.distance-from-character"},
+            {"trade-sort-method.total-item-value"},
+            {"trade-sort-method.num-inputs"},
+            {"trade-sort-method.num-outputs"},
+            {"trade-sort-method.productivity"},
+        },
+        tags = {handlers = {["gui-selection-changed"] = "trade-overview-filter-changed"}},
+    }
 
     local sort_direction = right_frame.add {
         type = "switch",
         name = "sort-direction",
         left_label_caption = {"hextorio-gui.ascending"},
         right_label_caption = {"hextorio-gui.descending"},
+        tags = {handlers = {["gui-switch-changed"] = "trade-overview-filter-changed"}},
     }
-    gui_events.register(sort_direction, "on-switch-changed", function() trade_overview_gui.update_trade_overview(player) end)
 
     right_frame.add {type = "line", direction = "horizontal"}
 
     local show_only_claimed_flow = right_frame.add {type = "flow", name = "show-only-claimed", direction = "horizontal"}
-    local toggle_show_only_claimed = show_only_claimed_flow.add {type = "checkbox", name = "checkbox", state = false}
+    local toggle_show_only_claimed = show_only_claimed_flow.add {
+        type = "checkbox",
+        name = "checkbox",
+        state = false,
+        tags = {handlers = {["gui-clicked"] = "trade-overview-filter-changed"}},
+    }
     toggle_show_only_claimed.style.top_margin = 3
     local toggle_show_only_claimed_label = show_only_claimed_flow.add {type = "label", name = "label", caption = {"hextorio-gui.show-only-claimed"}}
-    gui_events.register(toggle_show_only_claimed, "on-clicked", function() trade_overview_gui.update_trade_overview(player) end)
 
     local show_only_interplanetary_flow = right_frame.add {type = "flow", name = "show-only-interplanetary", direction = "horizontal"}
-    local toggle_show_only_interplanetary = show_only_interplanetary_flow.add {type = "checkbox", name = "checkbox", state = false}
+    local toggle_show_only_interplanetary = show_only_interplanetary_flow.add {
+        type = "checkbox",
+        name = "checkbox",
+        state = false,
+        tags = {handlers = {["gui-clicked"] = "trade-overview-filter-changed"}},
+    }
     toggle_show_only_interplanetary.style.top_margin = 3
     local toggle_show_only_interplanetary_label = show_only_interplanetary_flow.add {type = "label", name = "label", caption = {"hextorio-gui.show-only-interplanetary"}}
-    gui_events.register(toggle_show_only_interplanetary, "on-clicked", function() trade_overview_gui.update_trade_overview(player) end)
 
     local exclude_dungeons_flow = right_frame.add {type = "flow", name = "exclude-dungeons", direction = "horizontal"}
-    local toggle_exclude_dungeons = exclude_dungeons_flow.add {type = "checkbox", name = "checkbox", state = false}
+    local toggle_exclude_dungeons = exclude_dungeons_flow.add {
+        type = "checkbox",
+        name = "checkbox",
+        state = false,
+        tags = {handlers = {["gui-clicked"] = "trade-overview-filter-changed"}},
+    }
     toggle_exclude_dungeons.style.top_margin = 3
     local toggle_exclude_dungeons_label = exclude_dungeons_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exclude-dungeons"}}
-    gui_events.register(toggle_exclude_dungeons, "on-clicked", function() trade_overview_gui.update_trade_overview(player) end)
 
     local exclude_sinks_generators_flow = right_frame.add {type = "flow", name = "exclude-sinks-generators", direction = "horizontal"}
-    local toggle_exclude_sinks_generators = exclude_sinks_generators_flow.add {type = "checkbox", name = "checkbox", state = false}
+    local toggle_exclude_sinks_generators = exclude_sinks_generators_flow.add {
+        type = "checkbox",
+        name = "checkbox",
+        state = false,
+        tags = {handlers = {["gui-clicked"] = "trade-overview-filter-changed"}},
+    }
     toggle_exclude_sinks_generators.style.top_margin = 3
     local toggle_exclude_sinks_generators_label = exclude_sinks_generators_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exclude-sinks-generators"}}
-    gui_events.register(toggle_exclude_sinks_generators, "on-clicked", function() trade_overview_gui.update_trade_overview(player) end)
 end
 
 function trade_overview_gui.build_trade_table_frame(frame)
@@ -587,8 +658,10 @@ function trade_overview_gui.on_trade_item_clicked(player, element, item_name, is
     trade_overview_gui.show_trade_overview(player)
 
     if is_input then
+        log("set input filter to " .. item_name)
         trade_overview_gui.set_trade_overview_item_filters(player, {}, {item_name})
     else
+        log("set output filter to " .. item_name)
         trade_overview_gui.set_trade_overview_item_filters(player, {item_name}, {})
     end
 end
@@ -610,14 +683,6 @@ function trade_overview_gui.set_trade_overview_item_filters(player, input_items,
     end
 
     trade_overview_gui.update_trade_overview(player)
-end
-
-function trade_overview_gui.on_trade_overview_button_click(player)
-    if gui.is_frame_open(player, "trade-overview") then
-        trade_overview_gui.hide_trade_overview(player)
-    else
-        trade_overview_gui.show_trade_overview(player)
-    end
 end
 
 function trade_overview_gui.get_player_trade_overview_filter(player)
@@ -730,7 +795,19 @@ function trade_overview_gui.swap_trade_overview_content_filters(player)
     end
 end
 
-function trade_overview_gui.on_export_json_button_click(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_trade_overview_button_click(player, elem)
+    if gui.is_frame_open(player, "trade-overview") then
+        trade_overview_gui.hide_trade_overview(player)
+    else
+        trade_overview_gui.show_trade_overview(player)
+    end
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_export_json_button_click(player, elem)
     local seen_items = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
     local item_value_lookup = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
     local formatted_trades = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
@@ -787,8 +864,12 @@ function trade_overview_gui.on_export_json_button_click(player, element)
     player.print({"hextorio.trades-exported", "Factorio/script-output/" .. filename})
 end
 
-function trade_overview_gui.on_clear_filters_button_click(player, element)
-    local filter_frame = element.parent.parent.parent
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_clear_filters_button_click(player, elem)
+    local filter_frame = elem.parent.parent.parent
+    if not filter_frame then return end
+
     for _, planet_button in pairs(filter_frame["left"]["planet-flow"].children) do
         planet_button.toggled = true
     end
@@ -813,6 +894,13 @@ function trade_overview_gui.on_clear_filters_button_click(player, element)
     trade_contents_frame["inputs"]["max-inputs-flow"]["slider"].slider_value = trade_contents_frame["inputs"]["max-inputs-flow"]["slider"].get_slider_maximum()
     trade_contents_frame["outputs"]["max-outputs-flow"]["slider"].slider_value = trade_contents_frame["outputs"]["max-outputs-flow"]["slider"].get_slider_maximum()
 
+    trade_overview_gui.update_trade_overview(player)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_planet_filter_button_click(player, elem)
+    elem.toggled = not elem.toggled
     trade_overview_gui.update_trade_overview(player)
 end
 

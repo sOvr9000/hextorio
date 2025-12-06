@@ -22,7 +22,7 @@ end
 
 ---Register events for spider management.
 function spiders.register_events()
-    event_system.register_callback("entity-built", function(entity)
+    event_system.register("entity-built", function(entity)
         if entity.name == "entity-ghost" or entity.name == "tile-ghost" then
             spiders.track_ghost(entity)
         elseif storage.spiders.valid_entity_names[entity.name] then

@@ -35,10 +35,10 @@ function trades.register_events()
     end
 
     -- Automatically discover all items when ranking up all items.
-    event_system.register_callback("command-discover-all", function(player, params) discover_all(player, params, true) end)
-    event_system.register_callback("command-rank-up-all", function(player, params) discover_all(player, params, false) end)
+    event_system.register("command-discover-all", function(player, params) discover_all(player, params, true) end)
+    event_system.register("command-rank-up-all", function(player, params) discover_all(player, params, false) end)
 
-    event_system.register_callback("command-simple-trade-loops", function(player, params)
+    event_system.register("command-simple-trade-loops", function(player, params)
         if not lib.is_player_cooldown_ready(player.index, "command-simple-trade-loops") then
             player.print {
                 "hextorio.operation-on-cooldown",

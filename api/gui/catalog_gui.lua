@@ -11,7 +11,6 @@ local event_system = require "api.event_system"
 local quests = require "api.quests"
 local item_buffs = require "api.item_buffs"
 local gui_stack = require "api.gui.gui_stack"
-local gui_events = require "api.gui.gui_events"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
 
 local catalog_gui = {}
@@ -19,21 +18,36 @@ local catalog_gui = {}
 
 
 function catalog_gui.register_events()
-    event_system.register_callback("post-rank-up-command", function(player, params)
+    event_system.register_gui("gui-clicked", "catalog-button", catalog_gui.on_catalog_button_click)
+    event_system.register_gui("gui-closed", "catalog", catalog_gui.hide_catalog)
+    event_system.register_gui("gui-clicked", "catalog-item", catalog_gui.on_catalog_item_click)
+    event_system.register_gui("gui-clicked", "item-buff-enhance-all", catalog_gui.on_item_buff_all_button_click)
+    event_system.register_gui("gui-clicked", "open-in-factoriopedia", catalog_gui.on_open_factoriopedia_button_click)
+    event_system.register_gui("gui-elem-changed", "selected-item-view", catalog_gui.on_catalog_search_item_selected)
+    event_system.register_gui("gui-clicked", "item-buff-button", catalog_gui.on_item_buff_button_click)
+
+    event_system.register_gui("gui-selection-changed", "quantum-bazaar-changed", catalog_gui.on_quantum_bazaar_changed)
+    event_system.register_gui("gui-clicked", "quantum-bazaar-sell-in-hand", catalog_gui.on_quantum_bazaar_sell_in_hand_clicked)
+    event_system.register_gui("gui-clicked", "quantum-bazaar-sell-inventory", catalog_gui.on_quantum_bazaar_sell_inventory_clicked)
+    event_system.register_gui("gui-clicked", "quantum-bazaar-buy-one", catalog_gui.on_quantum_bazaar_buy_item_clicked)
+    event_system.register_gui("gui-clicked", "quantum-bazaar-buy-stack", catalog_gui.on_quantum_bazaar_buy_item_clicked)
+    event_system.register_gui("gui-elem-changed", "quantum-bazaar-changed", catalog_gui.on_quantum_bazaar_changed)
+
+    event_system.register("post-rank-up-command", function(player, params)
         local selection = catalog_gui.get_catalog_selection(player)
         catalog_gui.set_catalog_selection(player, "nauvis", params[1], selection.bazaar_quality)
         catalog_gui.show_catalog(player)
     end)
 
-    event_system.register_callback("post-rank-up-all-command", function(player, params)
+    event_system.register("post-rank-up-all-command", function(player, params)
         catalog_gui.show_catalog(player)
     end)
 
-    event_system.register_callback("post-discover-all-command", function(player, params)
+    event_system.register("post-discover-all-command", function(player, params)
         catalog_gui.show_catalog(player)
     end)
 
-    event_system.register_callback("quest-reward-received", function(reward_type, value)
+    event_system.register("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" then
             if value == "catalog" then
                 for _, player in pairs(game.players) do
@@ -43,7 +57,7 @@ function catalog_gui.register_events()
         end
     end)
 
-    event_system.register_callback("item-buff-level-changed", function(item_name)
+    event_system.register("item-buff-level-changed", function(item_name)
         for _, player in pairs(game.connected_players) do
             if gui.is_frame_open(player, "catalog") then
                 local selection = catalog_gui.get_catalog_selection(player)
@@ -54,15 +68,15 @@ function catalog_gui.register_events()
         end
     end)
 
-    event_system.register_callback("item-buffs-enhance-all-finished", function(player, total_cost, enhanced_items)
+    event_system.register("item-buffs-enhance-all-finished", function(player, total_cost, enhanced_items)
         catalog_gui.update_catalog_inspect_frame(player)
     end)
 
-    event_system.register_callback("post-set-item-value-command", function(player, params)
+    event_system.register("post-set-item-value-command", function(player, params)
         catalog_gui.reinitialize()
     end)
 
-    event_system.register_callback("post-import-item-values-command", function(player, params)
+    event_system.register("post-import-item-values-command", function(player, params)
         catalog_gui.reinitialize()
     end)
 end
@@ -93,8 +107,8 @@ function catalog_gui.init_catalog_button(player)
             type = "sprite-button",
             name = "catalog-button",
             sprite = "catalog",
+            tags = {handlers = {["gui-clicked"] = "catalog-button"}},
         }
-        gui_events.register(catalog_button, "on-clicked", function() catalog_gui.on_catalog_button_click(player) end)
     end
     player.gui.top["catalog-button"].visible = quests.is_feature_unlocked "catalog"
 end
@@ -104,11 +118,11 @@ function catalog_gui.init_catalog(player)
         type = "frame",
         name = "catalog",
         direction = "vertical",
+        tags = {handlers = {["gui-closed"] = "catalog"}},
     }
     frame.style.width = 1200
     frame.style.height = 800
     frame.visible = false
-    gui_events.register(frame, "on-closed", function() catalog_gui.hide_catalog(player) end)
 
     gui.add_titlebar(frame, {"hextorio-gui.catalog"})
 
@@ -184,11 +198,9 @@ function catalog_gui.init_catalog(player)
                     type = "sprite-button",
                     name = "catalog-item",
                     sprite = "item/" .. item_name,
+                    tags = {handlers = {["gui-clicked"] = "catalog-item"}, surface_name = surface_name, item_name = item_name},
                 }
                 sprite_button.style.left_margin = 5
-                gui_events.register(sprite_button, "on-clicked", function()
-                    catalog_gui.on_catalog_item_click(player, surface_name, item_name)
-                end)
 
                 local rank_stars = rank_flow.add {
                     type = "sprite",
@@ -338,17 +350,17 @@ function catalog_gui.build_header(player, rank_obj, frame)
         name = "item-buff-enhance-all",
         sprite = "item-buff-enhance-all",
         tooltip = tooltip,
+        tags = {handlers = {["gui-clicked"] = "item-buff-enhance-all"}},
     }
     item_buff_enhance_all.enabled = show_buffs
-    gui_events.register(item_buff_enhance_all, "on-clicked", function() catalog_gui.on_item_buff_all_button_click(player, item_buff_enhance_all) end)
 
     local open_in_factoriopedia = control_flow.add {
         type = "sprite-button",
         name = "open-in-factoriopedia",
         sprite = "utility/side_menu_factoriopedia_icon",
         tooltip = {"hextorio-gui.open-in-factoriopedia"},
+        tags = {handlers = {["gui-clicked"] = "open-in-factoriopedia"}},
     }
-    gui_events.register(open_in_factoriopedia, "on-clicked", function() catalog_gui.on_open_factoriopedia_button_click(player, open_in_factoriopedia) end)
 
     -- Display only discovered items so that the player can view them in the catalog.
     local elem_filter_names = {}
@@ -365,8 +377,8 @@ function catalog_gui.build_header(player, rank_obj, frame)
         elem_type = "item",
         elem_filters = elem_filters,
         item = selection.item_name,
+        tags = {handlers = {["gui-elem-changed"] = "selected-item-view"}},
     }
-    gui_events.register(selected_item_view, "on-elem-selected", function() catalog_gui.on_catalog_search_item_selected(player, selected_item_view) end)
 
     frame.add {type = "line", direction = "horizontal"}
 end
@@ -406,9 +418,9 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
         type = "sprite-button",
         name = buff_button_type,
         sprite = buff_button_sprite,
+        tags = {handlers = {["gui-clicked"] = "item-buff-button"}},
     }
     buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
-    gui_events.register(buff_button, "on-clicked", function() catalog_gui.on_item_buff_button_click(player, buff_button) end)
 
     local coin_tier_flow = coin_tier_gui.create_coin_tier(item_buff_flow, "cost")
     coin_tier_gui.update_coin_tier(coin_tier_flow, cost)
@@ -627,7 +639,7 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
 
     local quality_dropdown = gui.create_quality_dropdown(left_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality))
     gui.auto_width(quality_dropdown)
-    gui_events.register(quality_dropdown, "on-selection-changed", function() catalog_gui.on_quantum_bazaar_changed(player, quality_dropdown) end)
+    quality_dropdown.tags = {handlers = {["gui-selection-changed"] = "quantum-bazaar-changed"}}
 
     local coin_tier = coin_tier_gui.create_coin_tier(left_flow, "coin-tier")
     local buy_one_coin
@@ -650,45 +662,45 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         type = "sprite-button",
         name = "sell-in-hand",
         sprite = "hand",
+        tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.sell-in-hand-header"}, "green", "heading-2"),
+            "\n",
+            {"quantum-bazaar.sell-in-hand-info"},
+        },
+        tags = {handlers = {["gui-clicked"] = "quantum-bazaar-sell-in-hand"}},
     }
-    sell_in_hand.tooltip = {"",
-        lib.color_localized_string({"quantum-bazaar.sell-in-hand-header"}, "green", "heading-2"),
-        "\n",
-        {"quantum-bazaar.sell-in-hand-info"},
-    }
-    gui_events.register(sell_in_hand, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, sell_in_hand) end)
 
     local sell_inventory = right_flow.add {
         type = "sprite-button",
         name = "sell-inventory",
         sprite = "backpack",
+        tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.sell-inventory-header"}, "yellow", "heading-2"),
+            "\n",
+            {"quantum-bazaar.sell-inventory-info", coin_tiers.coin_to_text(sell_inv_coin)},
+        },
+        tags = {handlers = {["gui-clicked"] = "quantum-bazaar-sell-inventory"}},
     }
-    sell_inventory.tooltip = {"",
-        lib.color_localized_string({"quantum-bazaar.sell-inventory-header"}, "yellow", "heading-2"),
-        "\n",
-        {"quantum-bazaar.sell-inventory-info", coin_tiers.coin_to_text(sell_inv_coin)},
-    }
-    gui_events.register(sell_inventory, "on-clicked", function() catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, sell_inventory) end)
 
     local buy_one = right_flow.add {
         type = "sprite-button",
         name = "buy-one",
         sprite = "stack-one",
+        tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.buy-one", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", coin_tiers.coin_to_text(buy_one_coin)}, "cyan"),
+        },
+        tags = {handlers = {["gui-clicked"] = "quantum-bazaar-buy-one"}},
     }
-    buy_one.tooltip = {"",
-        lib.color_localized_string({"quantum-bazaar.buy-one", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", coin_tiers.coin_to_text(buy_one_coin)}, "cyan"),
-    }
-    gui_events.register(buy_one, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_one) end)
 
     local buy_stack = right_flow.add {
         type = "sprite-button",
         name = "buy-stack",
         sprite = "stack-full",
+        tooltip = {"",
+            lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", stack_size, coin_tiers.coin_to_text(buy_stack_coin)}, "purple"),
+        },
+        tags = {handlers = {["gui-clicked"] = "quantum-bazaar-buy-stack"}},
     }
-    buy_stack.tooltip = {"",
-        lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", stack_size, coin_tiers.coin_to_text(buy_stack_coin)}, "purple"),
-    }
-    gui_events.register(buy_stack, "on-clicked", function() catalog_gui.on_quantum_bazaar_buy_item_clicked(player, buy_stack) end)
 
     local elem_filter_items = sets.new()
     for _, surface in pairs(game.surfaces) do
@@ -712,8 +724,8 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         elem_type = "item",
         elem_filters = elem_filters,
         item = selection.item_name,
+        tags = {handlers = {["gui-elem-changed"] = "quantum-bazaar-changed"}},
     }
-    gui_events.register(selected_item_qb, "on-elem-selected", function() catalog_gui.on_quantum_bazaar_changed(player, selected_item_qb) end)
 end
 
 function catalog_gui.show_catalog(player)
@@ -778,6 +790,7 @@ function catalog_gui.get_catalog_selection(player)
     return storage.catalog.current_selection[player.name]
 end
 
+---@param player LuaPlayer
 function catalog_gui.on_catalog_button_click(player)
     if gui.is_frame_open(player, "catalog") then
         catalog_gui.hide_catalog(player)
@@ -786,12 +799,22 @@ function catalog_gui.on_catalog_button_click(player)
     end
 end
 
-function catalog_gui.on_catalog_item_click(player, surface_name, item_name)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_catalog_item_click(player, elem)
+    local surface_name = elem.tags.surface_name
+    local item_name = elem.tags.item_name
+
+    ---@cast surface_name string
+    ---@cast item_name string
+
     local selection = catalog_gui.get_catalog_selection(player)
     catalog_gui.set_catalog_selection(player, surface_name, item_name, selection.bazaar_quality)
 end
 
-function catalog_gui.on_item_buff_button_click(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_item_buff_button_click(player, elem)
     local inv = lib.get_player_inventory(player)
     if not inv then return end
 
@@ -815,29 +838,37 @@ function catalog_gui.on_item_buff_button_click(player, element)
     catalog_gui.update_catalog_inspect_frame(player)
 end
 
-function catalog_gui.on_item_buff_all_button_click(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_item_buff_all_button_click(player, elem)
     item_buffs.enhance_all_item_buffs {
         player = player,
     }
 end
 
-function catalog_gui.on_quantum_bazaar_changed(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_quantum_bazaar_changed(player, elem)
     local selection = catalog_gui.get_catalog_selection(player)
-    if element.name == "quality-dropdown" then
-        selection.bazaar_quality = gui.get_quality_name_from_dropdown(element)
-    elseif element.name == "selected-item-qb" then
-        selection.item_name = element.elem_value or selection.last_qb_item_selected or "stone"
+    if elem.name == "quality-dropdown" then
+        selection.bazaar_quality = gui.get_quality_name_from_dropdown(elem)
+    elseif elem.name == "selected-item-qb" then
+        local id = elem.elem_value or selection.last_qb_item_selected or "stone"
+        ---@cast id string
+        selection.item_name = id
     end
     catalog_gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
-function catalog_gui.on_quantum_bazaar_buy_item_clicked(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_quantum_bazaar_buy_item_clicked(player, elem)
     local inv = player.get_main_inventory()
     if not inv then return end
 
     local selection = catalog_gui.get_catalog_selection(player)
     local count = 1
-    if element.name == "buy-stack" then
+    if elem.name == "buy-stack" then
         count = lib.get_stack_size(selection.item_name)
     end
 
@@ -855,7 +886,9 @@ function catalog_gui.on_quantum_bazaar_buy_item_clicked(player, element)
     catalog_gui.update_catalog_inspect_frame(player)
 end
 
-function catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, elem)
     local inv = player.get_main_inventory()
     if not inv then return end
 
@@ -866,7 +899,9 @@ function catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, element)
     catalog_gui.update_catalog_inspect_frame(player)
 end
 
-function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, elem)
     local item_stack = player.cursor_stack
     if not item_stack or not item_stack.valid_for_read then
         player.print(lib.color_localized_string({"hextorio.no-item-in-hand"}, "red"))
@@ -890,21 +925,29 @@ function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, element)
     catalog_gui.update_catalog_inspect_frame(player)
 end
 
-function catalog_gui.on_catalog_search_item_selected(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_catalog_search_item_selected(player, elem)
     local selection = catalog_gui.get_catalog_selection(player)
-    selection.item_name = element.elem_value or selection.last_item_selected or "stone"
+    local id = elem.elem_value or selection.last_item_selected or "stone"
+    ---@cast id string
+    selection.item_name = id
     catalog_gui.set_catalog_selection(player, selection.surface_name, selection.item_name, selection.bazaar_quality)
 end
 
-function catalog_gui.on_catalog_choose_elem_button_changed(player, element)
-    if element.name == "selected-item-view" then
-        catalog_gui.on_catalog_search_item_selected(player, element)
-    elseif element.name == "selected-item-qb" then
-        catalog_gui.on_quantum_bazaar_changed(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_catalog_choose_elem_button_changed(player, elem)
+    if elem.name == "selected-item-view" then
+        catalog_gui.on_catalog_search_item_selected(player, elem)
+    elseif elem.name == "selected-item-qb" then
+        catalog_gui.on_quantum_bazaar_changed(player, elem)
     end
 end
 
-function catalog_gui.on_open_factoriopedia_button_click(player, element)
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_open_factoriopedia_button_click(player, elem)
     local selection = catalog_gui.get_catalog_selection(player)
     lib.open_factoriopedia_gui(player, selection.item_name)
 end
