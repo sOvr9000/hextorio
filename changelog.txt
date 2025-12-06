@@ -1,11 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.1
 Date: 6/12/25
-  Major Features:
-    - Spidertrons and the Sentient Spider can now deliver items between hex cores or other inventories.
-    - Added a full-featured trade loop finder as a quest reward from Gleba.
   Bugfixes:
-    - Fixed that quest progress was getting reset on some save migrations to new versions of the mod.
+    - Fixed that quest progress was getting reset upon updating to some versions of the mod.
+        This version recalculates some important quest progress like catalog completion.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.0
 Date: 6/12/25
