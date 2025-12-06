@@ -1,13 +1,77 @@
 
 local lib = require "api.lib"
 local event_system = require "api.event_system"
-local sets         = require "api.sets"
-local axial        = require "api.axial"
-local terrain      = require "api.terrain"
 
 
 
 local quests = {}
+
+local quest_condition_progress_recalculators = {} ---@as {[QuestConditionType]: fun(condition_value: QuestConditionValue): int}
+
+---@param condition_type QuestConditionType
+---@param func fun(condition_value: QuestConditionValue): int
+local function define_progress_recalculator(condition_type, func)
+    quest_condition_progress_recalculators[condition_type] = func
+end
+
+define_progress_recalculator("items-at-rank", function(condition_value)
+    local rank = condition_value
+    local total = 0
+    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if lib.is_catalog_item(item_name) then -- Shouldn't be necessary to check this, but it's here just in case it prevents a bug/exploit.
+            if rank_obj.rank >= rank then
+                total = total + 1
+            end
+        end
+    end
+    return total
+end)
+
+define_progress_recalculator("total-item-rank", function(condition_value)
+    local total = 0
+    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if lib.is_catalog_item(item_name) then -- Shouldn't be necessary to check this, but it's here just in case it prevents a bug/exploit.
+            total = total + rank_obj.rank - 1
+        end
+    end
+    return total
+end)
+
+define_progress_recalculator("claimed-hexes-on", function(condition_value)
+    local surface_name = condition_value
+    ---@cast surface_name string
+
+    local surface = game.get_surface(surface_name)
+    if not surface then return 0 end
+
+    local surface_hexes = storage.hex_grid.surface_hexes[surface.index]
+    if not surface_hexes then return 0 end
+
+    local total = 0
+    for _, Q in pairs(surface_hexes) do
+        for _, state in pairs(Q) do
+            if state.claimed then
+                total = total + 1
+            end
+        end
+    end
+
+    return total
+end)
+
+define_progress_recalculator("claimed-hexes", function(condition_value)
+    local total = 0
+    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
+        for _, Q in pairs(hexes) do
+            for _, state in pairs(Q) do
+                if state.claimed then
+                    total = total + 1
+                end
+            end
+        end
+    end
+    return total
+end)
 
 
 
@@ -108,16 +172,28 @@ function quests.init()
         storage.quests.quests[new_quest.id] = new_quest
         storage.quests.quest_ids_by_name[def.name] = new_quest.id
 
-        if old_quest and quests.is_complete(old_quest) then
-            -- check if extra rewards have been added due to migration
-            local extra_rewards = quests.get_reward_list_additions(new_quest, old_quest)
-            for _, reward in pairs(extra_rewards) do
-                quests.give_reward(reward)
-            end
+        if old_quest then
+            if quests.is_complete(old_quest) then
+                -- check if extra rewards have been added due to migration
+                local extra_rewards = quests.get_reward_list_additions(new_quest, old_quest)
+                for _, reward in pairs(extra_rewards) do
+                    quests.give_reward(reward)
+                end
 
-            -- don't overwrite old quest progress
-            quests._mark_complete(new_quest)
-            table.insert(check_rev, new_quest)
+                -- don't overwrite old quest progress
+                quests._mark_complete(new_quest)
+                table.insert(check_rev, new_quest)
+            else
+                -- don't overwrite old quest progress
+                for _, new_condition in pairs(new_quest.conditions) do
+                    for _, old_condition in pairs(old_quest.conditions) do
+                        if quests.conditions_equal(new_condition, old_condition) then
+                            new_condition.progress = old_condition.progress
+                            break
+                        end
+                    end
+                end
+            end
         end
 
         quests.index_by_condition_types(new_quest)
@@ -137,6 +213,7 @@ function quests.init()
     end
 end
 
+---@param quest Quest
 function quests.index_by_condition_types(quest)
     if not storage.quests.quests_by_condition_type then
         storage.quests.quests_by_condition_type = {}
@@ -191,16 +268,24 @@ function quests.remove_duplicates()
     end
 end
 
+---@param condition_value QuestConditionValue
+---@param is_table boolean
+---@return string|number
 function quests.get_condition_value_key(condition_value, is_table)
     if condition_value == nil then
         return "none"
     end
     if is_table then
+        ---@cast condition_value (string|number)[]
         return table.concat(condition_value, "-")
     end
+    ---@cast condition_value string|number
     return condition_value
 end
 
+---@param new_quest Quest
+---@param old_quest Quest
+---@return QuestReward[]
 function quests.get_reward_list_additions(new_quest, old_quest)
     local additions = {}
 
@@ -268,6 +353,8 @@ function quests.new_quest(params, id)
     return quest
 end
 
+---@param params table
+---@return QuestCondition|nil
 function quests.new_condition(params)
     if not params.type then
         lib.log_error("Condition must have a type")
@@ -298,6 +385,8 @@ function quests.new_condition(params)
     return condition
 end
 
+---@param params table
+---@return QuestReward|nil
 function quests.new_reward(params)
     if not params.type then
         lib.log_error("Reward must have a type")
@@ -324,13 +413,26 @@ function quests.new_reward(params)
     return reward
 end
 
+---@param condition1 QuestCondition
+---@param condition2 QuestCondition
+---@return boolean
 function quests.conditions_equal(condition1, condition2)
     if condition1.type ~= condition2.type then return false end
     if condition1.progress_requirement ~= condition2.progress_requirement then return false end
-    if condition1.value ~= condition2.value then return false end
+    if condition1.value_is_table ~= condition2.value_is_table then return false end
+
+    if condition1.value_is_table then
+        if not lib.tables_equal(condition1.value, condition2.value) then return false end
+    else
+        if condition1.value ~= condition2.value then return false end
+    end
+
     return true
 end
 
+---@param reward1 QuestReward
+---@param reward2 QuestReward
+---@return boolean
 function quests.rewards_equal(reward1, reward2)
     if reward1.type ~= reward2.type then return false end
     if type(reward1.value) ~= type(reward2.value) then return false end
@@ -432,38 +534,56 @@ function quests.get_quest(quest)
     end
 end
 
+---@param quest Quest
+---@return LocalisedString
 function quests.get_quest_localized_title(quest)
     return {"quest-title." .. quest.name}
 end
 
+---@param quest Quest
+---@return LocalisedString
 function quests.get_quest_localized_description(quest)
     return {"quest-description." .. quest.name}
 end
 
+---@param condition QuestCondition
+---@return LocalisedString
 function quests.get_condition_localized_name(condition)
     return {"quest-condition-name." .. condition.type}
 end
 
+---@param condition QuestCondition
+---@return LocalisedString
 function quests.get_condition_localized_description(condition, ...)
     return {"quest-condition-description." .. condition.type, ...}
 end
 
+---@param reward QuestReward
+---@return LocalisedString
 function quests.get_reward_localized_name(reward)
     return {"quest-reward-name." .. reward.type}
 end
 
+---@param reward QuestReward
+---@return LocalisedString
 function quests.get_reward_localized_description(reward, ...)
     return {"quest-reward-description." .. reward.type, ...}
 end
 
+---@param note_name string
+---@return LocalisedString
 function quests.get_localized_note(note_name)
     return {"questbook-note." .. note_name}
 end
 
+---@param feature_name FeatureName
+---@return LocalisedString
 function quests.get_feature_localized_name(feature_name)
     return {"feature-name." .. feature_name}
 end
 
+---@param feature_name FeatureName
+---@return LocalisedString
 function quests.get_feature_localized_description(feature_name)
     return {"feature-description." .. feature_name}
 end
@@ -483,6 +603,7 @@ function quests.is_complete(quest)
     return q.complete == true
 end
 
+---@param quest Quest
 function quests._mark_complete(quest)
     quest.complete = true
     quest.revealed = true
@@ -503,6 +624,7 @@ function quests.is_revealed(quest)
     return q.revealed == true or quests.is_complete(q)
 end
 
+---@param quest Quest
 function quests._mark_revealed(quest)
     quest.revealed = true
 end
@@ -510,8 +632,8 @@ end
 ---Get the current progress of completion for a condition in a quest.
 ---If the quest is complete, assume 100% progress completion.
 ---@param quest Quest
----@param condition table
----@return float
+---@param condition QuestCondition
+---@return number
 function quests.get_condition_progress(quest, condition)
     if quests.is_complete(quest) then
         return 1
@@ -553,6 +675,10 @@ function quests.give_rewards_of_quest(quest)
     end
 end
 
+---@param player LuaPlayer
+---@param quest Quest
+---@param reward QuestReward
+---@return boolean
 function quests.try_receive_items_reward(player, quest, reward)
     if not storage.quests.players_rewarded[player.name] then
         storage.quests.players_rewarded[player.name] = {}
@@ -561,8 +687,11 @@ function quests.try_receive_items_reward(player, quest, reward)
 
     storage.quests.players_rewarded[player.name][quest.name] = true
 
+    local reward_value = reward.value
+    ---@cast reward_value ItemStackIdentification[]
+
     local spilled = false
-    for _, item_stack in pairs(reward.value) do
+    for _, item_stack in pairs(reward_value) do
         if not lib.safe_insert(player, item_stack) then
             spilled = true
         end
@@ -575,6 +704,7 @@ function quests.try_receive_items_reward(player, quest, reward)
     return true
 end
 
+---@param player LuaPlayer
 function quests.check_player_receive_items(player)
     local any = false
     for _, quest in pairs(storage.quests.quests) do
@@ -593,17 +723,21 @@ function quests.check_player_receive_items(player)
     end
 end
 
+---@param quest Quest
 function quests.print_quest_completion(quest)
     local rewards_str = {""}
     for _, reward in pairs(quest.rewards) do
+        local reward_value = reward.value
         local s = {"", "\n"}
         if reward.type == "unlock-feature" then
-            table.insert(s, lib.color_localized_string(quests.get_feature_localized_name(reward.value), "orange", "heading-1"))
+            ---@cast reward_value FeatureName
+            table.insert(s, lib.color_localized_string(quests.get_feature_localized_name(reward_value), "orange", "heading-1"))
             table.insert(s, " ")
-            table.insert(s, lib.color_localized_string(quests.get_feature_localized_description(reward.value), "gray"))
+            table.insert(s, lib.color_localized_string(quests.get_feature_localized_description(reward_value), "gray"))
         elseif reward.type == "receive-items" then
+            ---@cast reward_value ItemStackIdentification[]
             local item_imgs = {}
-            for _, item_stack in pairs(reward.value) do
+            for _, item_stack in pairs(reward_value) do
                 table.insert(item_imgs, "[img=item." .. item_stack.name .. "]x" .. item_stack.count)
             end
             table.insert(s, lib.color_localized_string(quests.get_reward_localized_name(reward), "yellow", "heading-1"))
@@ -611,10 +745,11 @@ function quests.print_quest_completion(quest)
         else
             table.insert(s, lib.color_localized_string(quests.get_reward_localized_name(reward), "white", "heading-1"))
             table.insert(s, " ")
-            if type(reward.value) == "table" then
-                table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "green", "heading-1", table.unpack(reward.value)), "gray"))
+            if type(reward_value) == "table" then
+                ---@cast reward_value SingleQuestConditionValue[]
+                table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "green", "heading-1", table.unpack(reward_value)), "gray"))
             else
-                table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "green", "heading-1", reward.value), "gray"))
+                table.insert(s, lib.color_localized_string(quests.get_reward_localized_description(reward, "green", "heading-1", reward_value), "gray"))
             end
         end
         table.insert(rewards_str, s)
@@ -635,7 +770,7 @@ function quests.print_quest_completion(quest)
 end
 
 -- Check if all conditions are satisfied.
----@param quest Quest|int
+---@param quest QuestIdentification
 function quests.check_quest_completion(quest)
     if quests.is_complete(quest) then return end
     for _, condition in pairs(quest.conditions) do
@@ -647,9 +782,9 @@ function quests.check_quest_completion(quest)
     quests.complete_quest(quest)
 end
 
----@param condition_type string
----@param condition_value any
----@return table[]
+---@param condition_type QuestConditionType
+---@param condition_value QuestConditionValue|nil
+---@return Quest[]
 function quests.get_quests_by_condition_type(condition_type, condition_value)
     if condition_value == nil then condition_value = "none" end
     if not storage.quests.quests_by_condition_type[condition_type] then
@@ -665,7 +800,10 @@ function quests.get_quests_by_condition_type(condition_type, condition_value)
     return q
 end
 
--- Set a quest condition's progress and check if the quest is complete.
+---Set a quest condition's progress and check if the quest is complete.
+---@param quest Quest
+---@param condition QuestCondition
+---@param amount int
 function quests.set_progress(quest, condition, amount)
     if quests.is_complete(quest) then return end
     condition.progress = math.max(0, math.min(condition.progress_requirement, amount))
@@ -674,7 +812,10 @@ function quests.set_progress(quest, condition, amount)
     end
 end
 
--- Set the progress of all quest conditions of a certain type.
+---Set the progress of all quest conditions of a certain type.
+---@param condition_type QuestConditionType
+---@param amount int
+---@param condition_value QuestConditionValue
 function quests.set_progress_for_type(condition_type, amount, condition_value)
     for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
         if not quests.is_complete(quest) then
@@ -691,7 +832,10 @@ function quests.set_progress_for_type(condition_type, amount, condition_value)
     end
 end
 
--- Increment the progress of all quest conditions of a certain type.
+---Increment the progress of all quest conditions of a certain type.
+---@param condition_type QuestConditionType
+---@param amount int|nil
+---@param condition_value QuestConditionValue|nil
 function quests.increment_progress_for_type(condition_type, amount, condition_value)
     if not amount then amount = 1 end
     if not storage.quests.quests_by_condition_type[condition_type] then return end
@@ -710,30 +854,38 @@ function quests.increment_progress_for_type(condition_type, amount, condition_va
     end
 end
 
--- Return whether a given feature has been unlocked by any quest.
+---Return whether a given feature has been unlocked by any quest.
+---@param feature_name FeatureName
 function quests.is_feature_unlocked(feature_name)
     return storage.quests.unlocked_features[feature_name] == true
 end
 
+---@param feature_name FeatureName
 function quests.unlock_feature(feature_name)
     storage.quests.unlocked_features[feature_name] = true
     event_system.trigger("quest-reward-received", "unlock-feature", feature_name)
 end
 
--- Reveal a quest, making it visible in the questbook.
+---Reveal a quest, making it visible in the questbook.
+---@param quest Quest
 function quests.reveal_quest(quest)
     if quest.revealed then return end
     quest.revealed = true
     event_system.trigger("quest-revealed", quest)
 end
 
--- Reveal any quests that are unlocked by this quest and have all prerequisite quests completed.
+---Reveal any quests that are unlocked by this quest and have all prerequisite quests completed.
+---@param quest Quest
 function quests.check_revelations(quest)
     -- Direct unlocks are always revealed (like OR).
     if quest.unlocks then
         for _, unlock in pairs(quest.unlocks) do
             local unlock_quest = quests.get_quest_from_name(unlock)
-            quests.reveal_quest(unlock_quest)
+            if unlock_quest then
+                quests.reveal_quest(unlock_quest)
+            else
+                lib.log_error("quests.check_revelations: unknown quest: " .. unlock)
+            end
         end
     end
 
@@ -807,7 +959,7 @@ function quests.complete_quest(quest)
 
     if quests.is_complete(q) then return end
 
-    quests.reveal_quest(quest)
+    quests.reveal_quest(q)
     quests.print_quest_completion(q)
     quests.give_rewards_of_quest(q)
     quests._mark_complete(q)
@@ -818,6 +970,51 @@ function quests.complete_quest(quest)
 
     quests.check_revelations(q)
     event_system.trigger("quest-completed", q)
+end
+
+---Return a list of all types of quest condition-value pairs.  If a quest condition doesn't have a defined value, the string `"none"` is the placeholder value in the returned list.
+---@return QuestConditionTypeValuePair[]
+function quests.get_all_condition_types_and_values()
+    local seen = {}
+    local t = {}
+
+    for _, quest in pairs(storage.quests.quests) do
+        ---@cast quest Quest
+        for _, condition in pairs(quest.conditions) do
+            local condition_value_key = quests.get_condition_value_key(condition.value, condition.value_is_table)
+            if not seen[condition.type] then
+                seen[condition.type] = {}
+            end
+            if not seen[condition.type][condition_value_key] then
+                table.insert(t, {condition.type, condition.value})
+                seen[condition.type][condition_value_key] = true
+            end
+        end
+    end
+
+    return t
+end
+
+function quests.recalculate_all_condition_progress()
+    for _, condition_type_value_pair in pairs(quests.get_all_condition_types_and_values()) do
+        quests.recalculate_condition_progress_of_type(condition_type_value_pair[1], condition_type_value_pair[2])
+    end
+end
+
+---@param condition_type QuestConditionType
+---@param condition_value QuestConditionValue
+function quests.recalculate_condition_progress_of_type(condition_type, condition_value)
+    local func = quest_condition_progress_recalculators[condition_type]
+    if not func then
+        -- Log to be used when most conditions have recalculator functions
+        -- lib.log("quests.recalculate_condition_progress_of_type: Attempted to recalculate progress for all quests of type " .. condition_type .. " with value " .. serpent.line(condition_value) .. " but found no recalculator function.")
+        return
+    end
+
+    local progress = func(condition_value)
+    quests.set_progress_for_type(condition_type, progress, condition_value)
+
+    lib.log("quests.recalculate_condition_progress_of_type: Recalculated progress for all quests of type " .. condition_type .. " with value " .. serpent.line(condition_value) .. ". New progress value: " .. progress)
 end
 
 
