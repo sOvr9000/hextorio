@@ -12,7 +12,6 @@ local trades_gui = {}
 
 
 function trades_gui.register_events()
-    log("registering for trades gui")
     event_system.register_gui("gui-clicked", "ping-button", trades_gui.on_ping_button_clicked)
     event_system.register_gui("gui-clicked", "core-finder", trades_gui.on_core_finder_button_click)
     event_system.register_gui("gui-clicked", "toggle-trade", trades_gui.on_toggle_trade_button_clicked)
