@@ -172,16 +172,28 @@ function quests.init()
         storage.quests.quests[new_quest.id] = new_quest
         storage.quests.quest_ids_by_name[def.name] = new_quest.id
 
-        if old_quest and quests.is_complete(old_quest) then
-            -- check if extra rewards have been added due to migration
-            local extra_rewards = quests.get_reward_list_additions(new_quest, old_quest)
-            for _, reward in pairs(extra_rewards) do
-                quests.give_reward(reward)
-            end
+        if old_quest then
+            if quests.is_complete(old_quest) then
+                -- check if extra rewards have been added due to migration
+                local extra_rewards = quests.get_reward_list_additions(new_quest, old_quest)
+                for _, reward in pairs(extra_rewards) do
+                    quests.give_reward(reward)
+                end
 
-            -- don't overwrite old quest progress
-            quests._mark_complete(new_quest)
-            table.insert(check_rev, new_quest)
+                -- don't overwrite old quest progress
+                quests._mark_complete(new_quest)
+                table.insert(check_rev, new_quest)
+            else
+                -- don't overwrite old quest progress
+                for _, new_condition in pairs(new_quest.conditions) do
+                    for _, old_condition in pairs(old_quest.conditions) do
+                        if quests.conditions_equal(new_condition, old_condition) then
+                            new_condition.progress = old_condition.progress
+                            break
+                        end
+                    end
+                end
+            end
         end
 
         quests.index_by_condition_types(new_quest)
@@ -407,7 +419,14 @@ end
 function quests.conditions_equal(condition1, condition2)
     if condition1.type ~= condition2.type then return false end
     if condition1.progress_requirement ~= condition2.progress_requirement then return false end
-    if condition1.value ~= condition2.value then return false end
+    if condition1.value_is_table ~= condition2.value_is_table then return false end
+
+    if condition1.value_is_table then
+        if not lib.tables_equal(condition1.value, condition2.value) then return false end
+    else
+        if condition1.value ~= condition2.value then return false end
+    end
+
     return true
 end
 
