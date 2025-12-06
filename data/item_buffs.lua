@@ -570,7 +570,7 @@ return {
         ["flamethrower-turret"] = {
             {
                 type = "recipe-productivity",
-                values = {"heavy-oil-cracking-to-light-oil", 5},
+                values = {"heavy-oil-cracking", 5},
                 level_scaling = 1.05,
             },
         },
