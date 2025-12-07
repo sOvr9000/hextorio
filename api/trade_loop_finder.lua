@@ -84,24 +84,6 @@ function trade_loop_finder.find_simple_loops(trades_list)
     return loops
 end
 
----(NOT YET IMPLEMENTED) Begin an iterative process for detecting trade loops of arbitrary order (length), triggering events as loops are found.
----@param trades_list Trade[]
----@return int trade_search_process_id PID-like number which corresponds uniquely to the search initiated at the time this function is called, for use in terminating the search.
-function trade_loop_finder.find_loops(trades_list)
-    return 0
-end
-
----(NOT YET IMPLEMENTED) Perform a step in the iterative deepening search.
-function trade_loop_finder.iterative_step()
-
-end
-
----(NOT YET IMPLEMENTED) Terminate the given search process, obtained from the return value of `trade_loop_finder.find_loops()`.
----@param trade_search_process_id int
-function trade_loop_finder.terminate(trade_search_process_id)
-
-end
-
 
 
 return trade_loop_finder
