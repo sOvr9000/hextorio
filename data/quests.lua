@@ -214,13 +214,13 @@ return {
         {
             name = "getting-somewhere",
             conditions = {{type = "coins-in-inventory", progress_requirement = 10000}},
-            rewards = {{type = "unlock-feature", value = "generator-mode"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
+            rewards = {{type = "unlock-feature", value = "generator-mode", notes = {"irreversible-action", "low-efficiency"}}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"find-some-trades"},
         },
         {
             name = "trades-galore",
             conditions = {{type = "trades-found", progress_requirement = 200}},
-            rewards = {{type = "unlock-feature", value = "sink-mode"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
+            rewards = {{type = "unlock-feature", value = "sink-mode", notes = {"irreversible-action", "low-efficiency"}}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"find-some-trades"},
         },
         {
