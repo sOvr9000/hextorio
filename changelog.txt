@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.0
 Date: 6/12/25
+  Features:
+    - Added quest reward on Vulcanus which allows teleporting to hex cores on other planets as long as there are no items in your inventory (except your equipped armor and weapons).
   Minor Features:
     - Teleportation to hex cores now works while inside a spidertron or other vehicle, bringing the vehicle with you.
   Bugfixes:

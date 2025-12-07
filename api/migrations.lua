@@ -595,6 +595,12 @@ local process_migration = {
         quests.recalculate_all_condition_progress()
     end,
     ["1.3.1"] = function()
+        storage.quests.quest_defs = data_quests.quest_defs
+        quests.reinitialize_everything()
+
+        -- if quests.is_complete "cant-step-on-that" then
+        --     quests.unlock_feature "teleportation-cross-planet"
+        -- end
     end,
 }
 

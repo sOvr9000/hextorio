@@ -501,15 +501,19 @@ function lib.teleport_player(player, position, surface, allow_vehicle)
     end
 
     local entity_name = "character"
-    if player.vehicle then
+    if player.character.vehicle then
         if not allow_vehicle then
             return
         end
-        if not player.vehicle.valid then
+        if not player.character.vehicle.valid then
             lib.log_error("lib.teleport_player: Player vehicle entity is invalid.")
             return
         end
-        entity_name = player.vehicle.name
+        local prot_type = player.character.vehicle.prototype.type
+        if prot_type ~= "car" and prot_type ~= "spider-vehicle" then
+            return
+        end
+        entity_name = player.character.vehicle.name
     end
 
     local non_colliding_position = surface.find_non_colliding_position(entity_name, position, 20, 0.5, false)
@@ -518,11 +522,69 @@ function lib.teleport_player(player, position, surface, allow_vehicle)
         return
     end
 
-    if player.vehicle then
-        player.vehicle.teleport(non_colliding_position, surface)
+    if player.character.vehicle then
+        player.character.vehicle.teleport(non_colliding_position, surface)
+        player.set_controller {
+            type = defines.controllers.character,
+            character = player.character,
+        }
+        player.set_driving(true)
     else
         player.teleport(non_colliding_position, surface)
     end
+end
+
+---Teleport a player to a position on a surface.  If the surface is different from the player's character's current one, then prevent teleportation if items exist in the player's inventory, or the main inventory of the player's current vehicle if they are in one.
+---@param player LuaPlayer
+---@param position MapPosition
+---@param surface LuaSurface|nil Defaults to the current surface of the player's character.
+---@param allow_vehicle boolean|nil Whether to instead teleport the vehicle that the player is driving if they are in one. Defaults to false.
+---@return boolean succeeded Whether the teleportation succeeded, failing when the player is in locomotive or cargo wagon, or when items other than equipment are in any connected inventories.
+function lib.teleport_player_cross_surface(player, position, surface, allow_vehicle)
+    if not player.character then
+        return false
+    end
+
+    if player.character.surface == surface then
+        lib.teleport_player(player, position, surface, allow_vehicle)
+        return true
+    end
+
+    for _, inv_type in pairs {
+        defines.inventory.character_main,
+        defines.inventory.character_trash,
+        defines.inventory.character_ammo,
+    } do
+        local inv = player.character.get_inventory(inv_type)
+        if inv and inv.valid and not inv.is_empty() then
+            return false
+        end
+    end
+
+    if player.character.vehicle and allow_vehicle then
+        local prot_type = player.character.vehicle.prototype.type
+        if prot_type ~= "car" and prot_type ~= "spider-vehicle" then
+            return false
+        end
+        for _, inv_type in pairs {
+            defines.inventory.spider_trash,
+            defines.inventory.spider_trunk,
+            defines.inventory.spider_ammo,
+            defines.inventory.car_trash,
+            defines.inventory.car_trunk,
+            defines.inventory.car_ammo,
+            defines.inventory.fuel,
+        } do
+            local inv = player.character.vehicle.get_inventory(inv_type)
+            if inv and inv.valid and not inv.is_empty() then
+                return false
+            end
+        end
+    end
+
+    lib.teleport_player(player, position, surface, allow_vehicle)
+
+    return true
 end
 
 function lib.initial_player_spawn(player)

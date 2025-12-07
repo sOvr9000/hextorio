@@ -266,7 +266,7 @@ function hex_core_gui.update_hex_core(player)
 
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["stats"].tooltip = lib.get_str_from_hex_core_stats(hex_grid.get_hex_core_stats(state))
-        frame["hex-control-flow"]["teleport"].visible = quests.is_feature_unlocked "teleportation" and not lib.is_player_editor_like(player) and state.hex_core ~= nil and player.character ~= nil and player.character.surface.name == state.hex_core.surface.name
+        frame["hex-control-flow"]["teleport"].visible = (quests.is_feature_unlocked "teleportation" or quests.is_feature_unlocked "teleportation-cross-planet") and not lib.is_player_editor_like(player) and state.hex_core ~= nil and player.character ~= nil
         frame["hex-control-flow"]["toggle-hexport"].visible = quests.is_feature_unlocked "hexports"
 
         if state.hexport then
@@ -632,10 +632,24 @@ end
 
 function hex_core_gui.on_teleport_button_click(player, element)
     local hex_core = lib.get_player_opened_entity(player)
-    if not hex_core then return end
-    if hex_core.surface.name ~= player.surface.name then return end
+    if not hex_core or not player.character then return end
 
-    lib.teleport_player(player, hex_core.position, hex_core.surface, true)
+    if hex_core.surface == player.character.surface then
+        lib.teleport_player(player, hex_core.position, hex_core.surface, true)
+        return
+    end
+
+    if not quests.is_feature_unlocked "teleportation-cross-planet" then
+        player.print(lib.color_localized_string({"hextorio.teleportation-cross-planet-locked"}, "red"))
+        return
+    end
+
+    if not lib.teleport_player_cross_surface(player, hex_core.position, hex_core.surface, true) then
+        player.print({"hextorio.empty-character-inventories"})
+        if player.character and player.character.vehicle then
+            player.print({"hextorio.empty-vehicle-inventories"})
+        end
+    end
 end
 
 function hex_core_gui.on_toggle_hexport_button_click(player, element)

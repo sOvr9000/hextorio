@@ -395,7 +395,11 @@ return {
         {
             name = "cant-step-on-that",
             conditions = {{type = "kill-entity", value = "big-demolisher", progress_requirement = 1}},
-            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 15}}},
+            rewards = {
+                {type = "unlock-feature", value = "teleportation-cross-planet", notes = {"empty-inventories"}},
+                {type = "all-trades-productivity", value = 5},
+                {type = "claim-free-hexes", value = {"vulcanus", 15},
+            }},
             prerequisites = {"stepping-on-beetles"},
         },
         {
