@@ -2,8 +2,7 @@
 Version: 1.4.0
 Date: 6/12/25
   Bugfixes:
-    - Fixed that quest progress was getting reset upon updating to some versions of the mod.
-        This version recalculates some important quest progress like catalog completion.
+    - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.1
 Date: 6/12/25

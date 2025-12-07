@@ -81,6 +81,7 @@ boost_resistances(dungeon_laser_turret, {"fire"}, fire_resistance_percentage_boo
 boost_resistances(dungeon_laser_turret, {"explosion"}, explosion_resistance_percentage_boost)
 boost_range(dungeon_laser_turret, range_boost)
 boost_damage(dungeon_laser_turret, damage_boost)
+dungeon_laser_turret.heating_energy = "0J"
 
 local dungeon_tesla_turret = table.deepcopy(data.raw["electric-turret"]["tesla-turret"])
 dungeon_tesla_turret.name = "dungeon-tesla-turret"
@@ -92,6 +93,7 @@ boost_resistances(dungeon_tesla_turret, {"fire"}, fire_resistance_percentage_boo
 boost_resistances(dungeon_tesla_turret, {"explosion"}, explosion_resistance_percentage_boost)
 boost_range(dungeon_tesla_turret, range_boost)
 boost_damage(dungeon_tesla_turret, damage_boost)
+dungeon_tesla_turret.heating_energy = "0J"
 
 local dungeon_railgun_turret = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
 dungeon_railgun_turret.name = "dungeon-railgun-turret"
