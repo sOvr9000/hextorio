@@ -243,7 +243,7 @@ script.on_event(defines.events.on_tick, function (event)
         local r = storage.debug_spider.color.r
         local g = storage.debug_spider.color.g
         local b = storage.debug_spider.color.b
-        storage.debug_spider.color = {math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(r, math.random(), 0.5))}
+        storage.debug_spider.color = {math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(g, math.random(), 0.5)), math.sqrt(lib.lerp(b, math.random(), 0.5))}
     end
 end)
 
