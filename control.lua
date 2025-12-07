@@ -237,6 +237,14 @@ script.on_event(defines.events.on_tick, function (event)
     dungeons._tick_turret_reload()
     item_buffs._enhance_all_item_buffs_tick()
     gui.trades._process_trades_scroll_panes()
+
+    if storage.debug_spider then
+        -- Make it LOUD brutha
+        local r = storage.debug_spider.color.r
+        local g = storage.debug_spider.color.g
+        local b = storage.debug_spider.color.b
+        storage.debug_spider.color = {math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(r, math.random(), 0.5))}
+    end
 end)
 
 script.on_event(defines.events.on_player_main_inventory_changed, function(event)

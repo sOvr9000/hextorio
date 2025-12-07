@@ -327,6 +327,7 @@ function on_command(player, command, params)
             }
             if spider then
                 player.set_driving(true)
+                storage.debug_spider = spider
                 spider.vehicle_automatic_targeting_parameters = {auto_target_with_gunner = true, auto_target_without_gunner = true}
                 local main_inv = spider.get_inventory(defines.inventory.spider_trunk)
                 if main_inv then

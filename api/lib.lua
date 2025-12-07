@@ -186,6 +186,15 @@ function lib.random_unit_vector(length)
     return {x=length*math.cos(angle), y=length*math.sin(angle)}
 end
 
+---Linearly interpolate from `a` to `b` by the factor `t`.
+---@param a number
+---@param b number
+---@param t number
+---@return number
+function lib.lerp(a, b, t)
+    return a + (b - a) * t
+end
+
 ---Round the position to integer coordinates, and optionally offset by 0.5.
 ---@param pos MapPosition
 ---@param offset_by_half boolean|nil
