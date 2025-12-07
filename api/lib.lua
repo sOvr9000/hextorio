@@ -485,26 +485,44 @@ function lib.unstuck_player(player)
     player.teleport(position, surface)
 end
 
-function lib.teleport_player(player, position, surface)
-    if not player then
-        lib.log_error("teleport_player: player is nil")
-        return
-    end
+---Teleport a player to a position on a surface.
+---@param player LuaPlayer
+---@param position MapPosition
+---@param surface LuaSurface|nil Defaults to the current surface of the player's character.
+---@param allow_vehicle boolean|nil Whether to instead teleport the vehicle that the player is driving if they are in one. Defaults to false.
+function lib.teleport_player(player, position, surface, allow_vehicle)
     if not player.character then
-        lib.log_error("teleport_player: player has no character")
+        lib.log_error("lib.teleport_player: player has no character")
         return
     end
-    if not position then
-        lib.log_error("teleport_player: position is nil")
-        return
-    end
+
     if not surface then
-        surface = player.surface
+        surface = player.character.surface
     end
-    if not position.x then position.x = position[1] end
-    if not position.y then position.y = position[2] end
-    player.teleport(position, surface)
-    lib.unstuck_player(player)
+
+    local entity_name = "character"
+    if player.vehicle then
+        if not allow_vehicle then
+            return
+        end
+        if not player.vehicle.valid then
+            lib.log_error("lib.teleport_player: Player vehicle entity is invalid.")
+            return
+        end
+        entity_name = player.vehicle.name
+    end
+
+    local non_colliding_position = surface.find_non_colliding_position(entity_name, position, 20, 0.5, false)
+    if not non_colliding_position then
+        lib.log_error("lib.teleport_player: Could not find a non-colliding position for the player's character or vehicle.")
+        return
+    end
+
+    if player.vehicle then
+        player.vehicle.teleport(non_colliding_position, surface)
+    else
+        player.teleport(non_colliding_position, surface)
+    end
 end
 
 function lib.initial_player_spawn(player)

@@ -36,7 +36,7 @@ script.on_event("teleport-to-hex-core", function(event)
         return
     end
 
-    lib.teleport_player(player, hex_core.position, hex_core.surface)
+    lib.teleport_player(player, hex_core.position, hex_core.surface, true)
 end)
 
 script.on_event("claim-hex-core", function(event)

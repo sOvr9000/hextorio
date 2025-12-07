@@ -635,7 +635,7 @@ function hex_core_gui.on_teleport_button_click(player, element)
     if not hex_core then return end
     if hex_core.surface.name ~= player.surface.name then return end
 
-    lib.teleport_player(player, hex_core.position, hex_core.surface)
+    lib.teleport_player(player, hex_core.position, hex_core.surface, true)
 end
 
 function hex_core_gui.on_toggle_hexport_button_click(player, element)

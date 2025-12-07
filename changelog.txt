@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.0
 Date: 6/12/25
+  Minor Features:
+    - Teleportation to hex cores now works while inside a spidertron or other vehicle, bringing the vehicle with you.
   Bugfixes:
     - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
   Balancing:
