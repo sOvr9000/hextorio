@@ -305,10 +305,18 @@ function core_gui.add_sprite_buttons(element, item_stacks, name_prefix, give_ite
     end
 end
 
-function core_gui.create_quality_dropdown(parent, name, selected_index)
+---Create a dropdown element for qualities.
+---@param parent LuaGuiElement Parent element of new dropdown element.
+---@param name string Name of new dropdown element.
+---@param selected_index int|nil The pre-selected index of the new dropdown element. Defaults to 1 (top).
+---@param unlocked_only boolean|nil Whether to only put unlocked qualities in the dropdown. Defaults to false.
+---@return LuaGuiElement
+function core_gui.create_quality_dropdown(parent, name, selected_index, unlocked_only)
+    if unlocked_only == nil then unlocked_only = false end
+
     local quality_locales = {}
-    for quality_name, _ in pairs(prototypes.quality) do
-        if quality_name ~= "quality-unknown" then
+    for quality_name, prot in pairs(prototypes.quality) do
+        if quality_name ~= "quality-unknown" and (not unlocked_only or game.forces.player.is_quality_unlocked(prot)) then
             table.insert(quality_locales, {"", "[img=quality." .. quality_name .. "] ", {"quality-name." .. quality_name}})
         end
     end

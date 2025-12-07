@@ -3,6 +3,8 @@ Version: 1.4.0
 Date: 6/12/25
   Bugfixes:
     - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
+  Balancing:
+    - The Quantum Bazaar no longer lets you buy items of qualities that you haven't yet unlocked.  Selling items of locked qualities is still allowed.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.1
 Date: 6/12/25

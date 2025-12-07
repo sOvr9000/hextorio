@@ -637,7 +637,8 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         column_count = 2,
     }
 
-    local quality_dropdown = gui.create_quality_dropdown(left_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality))
+    -- TODO: Potential bug with other mods. If qualities are unlocked in an order such that successive quality "levels" are skipped, then this will not work as expected. Reason: lib.get_quality_tier() will not match what could be listed as unlocked qualities.
+    local quality_dropdown = gui.create_quality_dropdown(left_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality), true)
     gui.auto_width(quality_dropdown)
     quality_dropdown.tags = {handlers = {["gui-selection-changed"] = "quantum-bazaar-changed"}}
 
