@@ -307,7 +307,7 @@ end
 
 ---Create a dropdown element for qualities.
 ---@param parent LuaGuiElement Parent element of new dropdown element.
----@param name string Name of new dropdown element.
+---@param name string|nil Name of new dropdown element. Defaults to "quality-dropdown".
 ---@param selected_index int|nil The pre-selected index of the new dropdown element. Defaults to 1 (top).
 ---@param unlocked_only boolean|nil Whether to only put unlocked qualities in the dropdown. Defaults to false.
 ---@return LuaGuiElement
