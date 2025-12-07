@@ -569,36 +569,75 @@ function catalog_gui.build_rank_bonuses(player, rank_obj, frame)
     if rank_obj.rank < 5 then
         frame.add {type = "line", direction = "horizontal"}
 
-        local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
+        local rank_up_header = frame.add {
+            type = "label",
+            name = "rank-up-header",
+            caption = lib.get_rank_img_str(rank_obj.rank + 1),
+        }
 
         local needs_prod = true
         if rank_obj.rank == 1 then
-            if trades.get_total_bought(selection.item_name) > 0 then
-                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
-            else
-                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
-            end
-            if trades.get_total_sold(selection.item_name) > 0 then
-                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-check]")
-            else
-                table.insert(rank_up_localized_str, "[img=virtual-signal.signal-deny]")
-            end
+            -- Buy requirement
+            local buy_completed = trades.get_total_bought(selection.item_name) > 0
+            local buy_flow = frame.add {
+                type = "flow",
+                name = "buy-requirement-flow",
+                direction = "horizontal",
+            }
+            local buy_checkbox = buy_flow.add {
+                type = "checkbox",
+                name = "buy-checkbox",
+                state = buy_completed,
+                enabled = not buy_completed,
+            }
+            buy_checkbox.ignored_by_interaction = true
+            local buy_text_color = buy_completed and "96,96,96" or "white"
+            local buy_label = buy_flow.add {
+                type = "label",
+                name = "buy-label",
+                caption = lib.color_localized_string({"hextorio-gui.buy-requirement"}, buy_text_color),
+            }
+            buy_label.style.top_margin = -3
+
+            -- Sell requirement
+            local sell_completed = trades.get_total_sold(selection.item_name) > 0
+            local sell_flow = frame.add {
+                type = "flow",
+                name = "sell-requirement-flow",
+                direction = "horizontal",
+            }
+            local sell_checkbox = sell_flow.add {
+                type = "checkbox",
+                name = "sell-checkbox",
+                state = sell_completed,
+                enabled = not sell_completed,
+            }
+            sell_checkbox.ignored_by_interaction = true
+            local sell_text_color = sell_completed and "96,96,96" or "white"
+            local sell_label = sell_flow.add {
+                type = "label",
+                name = "sell-label",
+                caption = lib.color_localized_string({"hextorio-gui.sell-requirement"}, sell_text_color),
+            }
+            sell_label.style.top_margin = -3
+
             needs_prod = false
         end
 
         if needs_prod then
+            local rank_up_localized_str = {"hextorio-gui.rank-up-instructions-" .. rank_obj.rank}
             table.insert(rank_up_localized_str, lib.format_percentage(storage.item_ranks.productivity_requirements[rank_obj.rank], 0, false, true))
             table.insert(rank_up_localized_str, "green")
             table.insert(rank_up_localized_str, "heading-2")
-        end
 
-        local rank_up_instructions = frame.add {
-            type = "label",
-            name = "rank-up-instructions",
-            caption = {"", lib.get_rank_img_str(rank_obj.rank + 1) .. "\n", rank_up_localized_str},
-        }
-        rank_up_instructions.style.single_line = false
-        gui.auto_width_height(rank_up_instructions)
+            local rank_up_instructions = frame.add {
+                type = "label",
+                name = "rank-up-instructions",
+                caption = rank_up_localized_str,
+            }
+            rank_up_instructions.style.single_line = false
+            gui.auto_width_height(rank_up_instructions)
+        end
     end
 
     if rank_obj.rank == 1 then

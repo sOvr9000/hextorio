@@ -367,9 +367,9 @@ function core_gui.get_bronze_sprite_half(item_name)
     local left_half
 
     if trades.get_total_bought(item_name) > 0 then
-        left_half = true
-    elseif trades.get_total_sold(item_name) > 0 then
         left_half = false
+    elseif trades.get_total_sold(item_name) > 0 then
+        left_half = true
     end
 
     return left_half
