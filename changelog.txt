@@ -7,8 +7,13 @@ Date: 6/12/25
     - Teleportation to hex cores now works while inside a spidertron or other vehicle, bringing the vehicle with you.
   Bugfixes:
     - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
+  Changes:
+    - Swapped the meanings of the bronze star halves in item ranks.
   Balancing:
     - The Quantum Bazaar no longer lets you buy items of qualities that you haven't yet unlocked.  Selling items of locked qualities is still allowed.
+  Gui:
+    - Added notes to the rewards unlocking the sink and generator modes to indicate the trade-offs of using them, allowing for a more concise description of each mode.
+    - Changed the checkmarks and X's for the buy/sell rank-up instructions to checkboxes which check off and gray out when completed.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.1
 Date: 6/12/25
