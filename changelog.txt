@@ -11,6 +11,7 @@ Date: 6/12/25
     - Swapped the meanings of the bronze star halves in item ranks.
   Balancing:
     - The Quantum Bazaar no longer lets you buy items of qualities that you haven't yet unlocked.  Selling items of locked qualities is still allowed.
+    - Fixed that "upgrade all item buffs" could get stuck in an infinite loop and crash the game.
   Gui:
     - Added notes to the rewards unlocking the sink and generator modes to indicate the trade-offs of using them, allowing for a more concise description of each mode.
     - Changed the checkmarks and X's for the buy/sell rank-up instructions to checkboxes which check off and gray out when completed.

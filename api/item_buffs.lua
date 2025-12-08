@@ -602,6 +602,14 @@ function item_buffs._enhance_all_item_buffs_tick()
     event_system.trigger("item-buffs-enhance-all-finished", player, storage.item_buffs.enhance_all.total_cost, enhanced_items)
 end
 
+function item_buffs.migrate_buff_changes(new_buffs)
+    for item_name, level in pairs(storage.item_buffs.levels) do
+        item_buffs.set_item_buff_level(item_name, 0) -- Remove current effects
+        storage.item_buffs.item_buffs[item_name] = new_buffs[item_name]
+        item_buffs.set_item_buff_level(item_name, level) -- Apply with new effects
+    end
+end
+
 
 
 return item_buffs

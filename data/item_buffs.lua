@@ -705,7 +705,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.02,
-                level_scaling = 1.05,
+                level_scaling = 1.04,
             },
         },
         ["efficiency-module-2"] = {
@@ -717,7 +717,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.02,
-                level_scaling = 1.05,
+                level_scaling = 1.04,
             },
         },
         ["efficiency-module-3"] = {
@@ -729,7 +729,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.03,
-                level_scaling = 1.05,
+                level_scaling = 1.04,
             },
         },
         ["hexa-efficiency-module"] = {
@@ -741,7 +741,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.05,
-                level_scaling = 1.05,
+                level_scaling = 1.04,
             },
         },
         ["logistic-robot"] = {
@@ -783,14 +783,14 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.03,
-                level_scaling = 1.1,
+                level_scaling = 1.04,
             },
         },
         ["processing-unit"] = {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.03,
-                level_scaling = 1.1,
+                level_scaling = 1.04,
             },
         },
         ["lithium-plate"] = {
@@ -816,7 +816,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.25,
-                level_scaling = 1.25,
+                level_scaling = 1.05,
             },
         },
         ["locomotive"] = {
@@ -911,7 +911,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.1,
-                level_scaling = 1.1,
+                level_scaling = 1.05,
             },
         },
         ["foundry"] = {
