@@ -6,6 +6,7 @@ Date: 6/12/25
   Minor Features:
     - Teleportation to hex cores now works while inside a spidertron or other vehicle, bringing the vehicle with you.
     - Added hotkeys for opening/closing the questbook, catalog, and trade overview.
+    - Added button in the catalog for opening the trade overview with the selected item set in the filter, the side depending on what remains to be done for ranking up the item.
   Bugfixes:
     - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
   Changes:

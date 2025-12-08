@@ -55,6 +55,10 @@ function trade_overview_gui.register_events()
     event_system.register("trade-item-clicked", function(player, element, item_name, is_input)
         trade_overview_gui.on_trade_item_clicked(player, element, item_name, is_input)
     end)
+
+    event_system.register("catalog-trade-overview-clicked", function(player, item_name, is_input)
+        trade_overview_gui.on_catalog_trade_overview_clicked(player, item_name, not is_input)
+    end)
 end
 
 ---Reinitialize the hex core GUI for the given player, or all online players if no player is provided.
@@ -654,15 +658,17 @@ function trade_overview_gui.hide_trade_overview(player)
 end
 
 function trade_overview_gui.on_trade_item_clicked(player, element, item_name, is_input)
+    trade_overview_gui.on_catalog_trade_overview_clicked(player, item_name, is_input)
+end
+
+function trade_overview_gui.on_catalog_trade_overview_clicked(player, item_name, is_input)
     if not quests.is_feature_unlocked "trade-overview" then return end
 
     trade_overview_gui.show_trade_overview(player)
 
     if is_input then
-        log("set input filter to " .. item_name)
         trade_overview_gui.set_trade_overview_item_filters(player, {}, {item_name})
     else
-        log("set output filter to " .. item_name)
         trade_overview_gui.set_trade_overview_item_filters(player, {item_name}, {})
     end
 end

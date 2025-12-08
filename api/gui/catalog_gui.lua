@@ -23,6 +23,7 @@ function catalog_gui.register_events()
     event_system.register_gui("gui-clicked", "catalog-item", catalog_gui.on_catalog_item_click)
     event_system.register_gui("gui-clicked", "item-buff-enhance-all", catalog_gui.on_item_buff_all_button_click)
     event_system.register_gui("gui-clicked", "open-in-factoriopedia", catalog_gui.on_open_factoriopedia_button_click)
+    event_system.register_gui("gui-clicked", "open-in-trade-overview", catalog_gui.on_open_trade_overview_button_click)
     event_system.register_gui("gui-elem-changed", "selected-item-view", catalog_gui.on_catalog_search_item_selected)
     event_system.register_gui("gui-clicked", "item-buff-button", catalog_gui.on_item_buff_button_click)
 
@@ -342,27 +343,6 @@ function catalog_gui.build_header(player, rank_obj, frame)
 
     local show_buffs = quests.is_feature_unlocked "item-buffs"
 
-    local tooltip = {"hextorio-gui.obfuscated-text"}
-    if show_buffs then
-        tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"}
-    end
-    local item_buff_enhance_all = control_flow.add {
-        type = "sprite-button",
-        name = "item-buff-enhance-all",
-        sprite = "item-buff-enhance-all",
-        tooltip = tooltip,
-        tags = {handlers = {["gui-clicked"] = "item-buff-enhance-all"}},
-    }
-    item_buff_enhance_all.enabled = show_buffs
-
-    local open_in_factoriopedia = control_flow.add {
-        type = "sprite-button",
-        name = "open-in-factoriopedia",
-        sprite = "utility/side_menu_factoriopedia_icon",
-        tooltip = {"hextorio-gui.open-in-factoriopedia"},
-        tags = {handlers = {["gui-clicked"] = "open-in-factoriopedia"}},
-    }
-
     -- Display only discovered items so that the player can view them in the catalog.
     local elem_filter_names = {}
     for _, name in pairs(item_ranks.get_items_at_rank(1)) do
@@ -380,6 +360,45 @@ function catalog_gui.build_header(player, rank_obj, frame)
         item = selection.item_name,
         tags = {handlers = {["gui-elem-changed"] = "selected-item-view"}},
     }
+
+    local is_input = catalog_gui.get_expected_trade_overview_filter_side(selection.item_name)
+    local open_in_trade_overview = control_flow.add {
+        type = "sprite-button",
+        name = "open-in-trade-overview",
+        sprite = "trade-overview",
+        tags = {handlers = {["gui-clicked"] = "open-in-trade-overview"}},
+    }
+
+    if is_input then
+        open_in_trade_overview.tooltip = {"hextorio-gui.open-in-trade-overview-input"}
+    else
+        open_in_trade_overview.tooltip = {"hextorio-gui.open-in-trade-overview-output"}
+    end
+
+    if not quests.is_feature_unlocked "trade-overview" then
+        open_in_trade_overview.enabled = false
+    end
+
+    local open_in_factoriopedia = control_flow.add {
+        type = "sprite-button",
+        name = "open-in-factoriopedia",
+        sprite = "utility/side_menu_factoriopedia_icon",
+        tooltip = {"hextorio-gui.open-in-factoriopedia"},
+        tags = {handlers = {["gui-clicked"] = "open-in-factoriopedia"}},
+    }
+
+    local tooltip = {"hextorio-gui.obfuscated-text"}
+    if show_buffs then
+        tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"}
+    end
+    local item_buff_enhance_all = control_flow.add {
+        type = "sprite-button",
+        name = "item-buff-enhance-all",
+        sprite = "item-buff-enhance-all",
+        tooltip = tooltip,
+        tags = {handlers = {["gui-clicked"] = "item-buff-enhance-all"}},
+    }
+    item_buff_enhance_all.enabled = show_buffs
 
     frame.add {type = "line", direction = "horizontal"}
 end
@@ -831,6 +850,26 @@ function catalog_gui.get_catalog_selection(player)
     return storage.catalog.current_selection[player.name]
 end
 
+---Return whether the given item is more likely to be set as an input or output filter in the trade overview, based on the current rank-up requirements.
+---@param item_name string
+---@return boolean is_input Whether the item would be an input filter
+function catalog_gui.get_expected_trade_overview_filter_side(item_name)
+    local rank = item_ranks.get_item_rank(item_name)
+    if rank == 1 then
+        if trades.get_total_bought(item_name) > 0 then
+            return true
+        end
+        return false
+    elseif rank == 2 then
+        return false
+    elseif rank == 3 then
+        return true
+    elseif rank == 4 then
+        return true
+    end
+    return true
+end
+
 ---@param player LuaPlayer
 function catalog_gui.on_catalog_button_click(player)
     if gui.is_frame_open(player, "catalog") then
@@ -991,6 +1030,14 @@ end
 function catalog_gui.on_open_factoriopedia_button_click(player, elem)
     local selection = catalog_gui.get_catalog_selection(player)
     lib.open_factoriopedia_gui(player, selection.item_name)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_open_trade_overview_button_click(player, elem)
+    local selection = catalog_gui.get_catalog_selection(player)
+    local is_input = catalog_gui.get_expected_trade_overview_filter_side(selection.item_name)
+    event_system.trigger("catalog-trade-overview-clicked", player, selection.item_name, is_input)
 end
 
 
