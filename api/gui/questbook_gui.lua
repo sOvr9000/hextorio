@@ -56,6 +56,7 @@ function questbook_gui.init_questbook_button(player)
         name = "questbook-button",
         sprite = "questbook",
         style = "side_menu_button",
+        tooltip = {"hextorio-gui.questbook-button-tooltip"},
     }
     questbook_button.tags = {handlers = {["gui-clicked"] = "questbook-button"}}
 end

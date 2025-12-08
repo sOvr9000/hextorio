@@ -2,8 +2,49 @@
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
 local quests = require "api.quests"
+local gui = require "api.gui"
 
 
+
+script.on_event("toggle-questbook", function(event)
+    ---@cast event {player_index: int}]]
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if gui.core_gui.is_frame_open(player, "questbook") then
+        gui.questbook.hide_questbook(player)
+    else
+        gui.questbook.show_questbook(player)
+    end
+end)
+
+script.on_event("toggle-catalog", function(event)
+    ---@cast event {player_index: int}]]
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if not quests.is_feature_unlocked "catalog" then return end
+
+    if gui.core_gui.is_frame_open(player, "catalog") then
+        gui.catalog.hide_catalog(player)
+    else
+        gui.catalog.show_catalog(player)
+    end
+end)
+
+script.on_event("toggle-trade-overview", function(event)
+    ---@cast event {player_index: int}]]
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if not quests.is_feature_unlocked "trade-overview" then return end
+
+    if gui.core_gui.is_frame_open(player, "trade-overview") then
+        gui.trade_overview.hide_trade_overview(player)
+    else
+        gui.trade_overview.show_trade_overview(player)
+    end
+end)
 
 script.on_event("teleport-to-hex-core", function(event)
     event = event--[[@as {player_index: int}]] -- suppress warnings

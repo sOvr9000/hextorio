@@ -2,6 +2,21 @@
 data:extend({
     {
         type = "custom-input",
+        name = "toggle-questbook",
+        key_sequence = "",
+    },
+    {
+        type = "custom-input",
+        name = "toggle-catalog",
+        key_sequence = "",
+    },
+    {
+        type = "custom-input",
+        name = "toggle-trade-overview",
+        key_sequence = "",
+    },
+    {
+        type = "custom-input",
         name = "teleport-to-hex-core",
         key_sequence = "T",
     },

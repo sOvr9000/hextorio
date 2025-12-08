@@ -5,6 +5,7 @@ Date: 6/12/25
     - Added quest reward on Vulcanus which allows teleporting to hex cores on other planets as long as there are no items in your inventory (except your equipped armor and weapons).
   Minor Features:
     - Teleportation to hex cores now works while inside a spidertron or other vehicle, bringing the vehicle with you.
+    - Added hotkeys for opening/closing the questbook, catalog, and trade overview.
   Bugfixes:
     - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
   Changes:

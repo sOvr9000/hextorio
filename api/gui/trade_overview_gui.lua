@@ -84,6 +84,7 @@ function trade_overview_gui.init_trade_overview_button(player)
             name = "trade-overview-button",
             sprite = "trade-overview",
             tags = {handlers = {["gui-clicked"] = "trade-overview-button"}},
+            tooltip = {"hextorio-gui.trade-overview-button-tooltip"},
         }
     end
     player.gui.top["trade-overview-button"].visible = quests.is_feature_unlocked "trade-overview"

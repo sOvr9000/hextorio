@@ -108,6 +108,7 @@ function catalog_gui.init_catalog_button(player)
             name = "catalog-button",
             sprite = "catalog",
             tags = {handlers = {["gui-clicked"] = "catalog-button"}},
+            tooltip = {"hextorio-gui.catalog-button-tooltip"},
         }
     end
     player.gui.top["catalog-button"].visible = quests.is_feature_unlocked "catalog"
