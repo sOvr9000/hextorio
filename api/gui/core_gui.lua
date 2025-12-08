@@ -45,6 +45,28 @@ function core_gui.is_descendant_of(element, parent_name)
     return core_gui.is_descendant_of(parent, parent_name)
 end
 
+---Get the first element of name `parent_name` that is a parent of `elem`.
+---@param elem LuaGuiElement
+---@param parent_name string
+---@return LuaGuiElement|nil
+function core_gui.get_parent_of_name(elem, parent_name)
+    local parent = elem.parent
+    if not parent then return end
+    if parent.name == parent_name then return parent end
+    return core_gui.get_parent_of_name(parent, parent_name)
+end
+
+---Get the first element of a name that matches the pattern `pattern` and is a parent of `elem`.
+---@param elem LuaGuiElement
+---@param pattern string
+---@return LuaGuiElement|nil
+function core_gui.get_parent_of_name_match(elem, pattern)
+    local parent = elem.parent
+    if not parent then return end
+    if parent.name:match(pattern) then return parent end
+    return core_gui.get_parent_of_name_match(parent, pattern)
+end
+
 ---Return the player who owns the given LuaGuiElement.  Throws an error if no player owns it.
 ---@param element LuaGuiElement
 ---@return LuaPlayer
@@ -373,6 +395,23 @@ function core_gui.get_bronze_sprite_half(item_name)
     end
 
     return left_half
+end
+
+---Return the element that's currently under the mouse of the player.
+---@param player_index int
+---@return LuaGuiElement|nil
+function core_gui.get_currently_hovered_element(player_index)
+    local g = storage.gui
+    if not g then
+        g = {}
+        storage.gui = g
+    end
+    local hovered = g.hovered_element
+    if not hovered then
+        hovered = {}
+        g.hovered_element = hovered
+    end
+    return hovered[player_index]
 end
 
 

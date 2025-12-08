@@ -45,6 +45,30 @@ function event_system.trigger_gui(name, tag, player, elem)
 end
 
 function event_system.bind_gui_events()
+    script.on_event(defines.events.on_gui_hover, function(event)
+        if not storage.gui then
+            storage.gui = {}
+        end
+
+        if not storage.gui.hovered_element then
+            storage.gui.hovered_element = {}
+        end
+
+        storage.gui.hovered_element[event.player_index] = event.element
+    end)
+
+    script.on_event(defines.events.on_gui_leave, function(event)
+        if not storage.gui then
+            storage.gui = {}
+        end
+
+        if storage.gui.hovered_element then
+            storage.gui.hovered_element[event.player_index] = nil
+        else
+            storage.gui.hovered_element = {}
+        end
+    end)
+
     script.on_event(defines.events.on_gui_opened, function (event)
         local player = game.get_player(event.player_index)
         if not player then return end

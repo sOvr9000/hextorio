@@ -1770,6 +1770,56 @@ function trades.is_interplanetary_trade(trade)
     return false
 end
 
+---Set whether a trade is favorited for a player.
+---@param player LuaPlayer
+---@param trade Trade
+---@param flag boolean|nil Defaults to true.
+function trades.favorite_trade(player, trade, flag)
+    if flag == nil then flag = true end
+
+    local fav = storage.trades.favorites
+    if not fav then
+        fav = {}
+        storage.trades.favorites = fav
+    end
+
+    local player_favs = fav[player.index]
+    if not player_favs then
+        player_favs = {}
+        fav[player.index] = player_favs
+    end
+
+    local prev_val = player_favs[trade.id]
+    if flag then
+        player_favs[trade.id] = true
+    else
+        player_favs[trade.id] = nil
+    end
+
+    if player_favs[trade.id] ~= prev_val then
+        event_system.trigger("player-favorited-trade", player, trade)
+    end
+end
+
+---Return whether a trade is favorited for a player.
+---@param player LuaPlayer
+---@param trade Trade
+---@return boolean
+function trades.is_trade_favorited(player, trade)
+    local fav = storage.trades.favorites
+    if not fav then
+        fav = {}
+        storage.trades.favorites = fav
+    end
+
+    local player_favs = fav[player.index]
+    if not player_favs then
+        return false
+    end
+
+    return player_favs[trade.id] == true
+end
+
 
 
 return trades

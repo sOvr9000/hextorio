@@ -27,6 +27,11 @@ data:extend({
     },
     {
         type = "custom-input",
+        name = "favorite-trade",
+        key_sequence = "K",
+    },
+    {
+        type = "custom-input",
         name = "hextorio-fast-entity-split",
         key_sequence = "CONTROL + mouse-button-2",
         linked_game_control = "fast-entity-split",

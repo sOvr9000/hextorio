@@ -59,6 +59,11 @@ function trade_overview_gui.register_events()
     event_system.register("catalog-trade-overview-clicked", function(player, item_name, is_input)
         trade_overview_gui.on_catalog_trade_overview_clicked(player, item_name, not is_input)
     end)
+
+    event_system.register("player-favorited-trade", function(player, trade)
+        -- might be annoying if updated each time?
+        -- trade_overview_gui.update_trade_overview(player)
+    end)
 end
 
 ---Reinitialize the hex core GUI for the given player, or all online players if no player is provided.
@@ -358,6 +363,16 @@ function trade_overview_gui.build_right_filter_frame(frame)
     toggle_show_only_interplanetary.style.top_margin = 3
     local toggle_show_only_interplanetary_label = show_only_interplanetary_flow.add {type = "label", name = "label", caption = {"hextorio-gui.show-only-interplanetary"}}
 
+    local exclude_favorited_flow = right_frame.add {type = "flow", name = "exclude-favorited", direction = "horizontal"}
+    local toggle_exclude_favorited = exclude_favorited_flow.add {
+        type = "checkbox",
+        name = "checkbox",
+        state = false,
+        tags = {handlers = {["gui-clicked"] = "trade-overview-filter-changed"}},
+    }
+    toggle_exclude_favorited.style.top_margin = 3
+    local toggle_exclude_favorited_label = exclude_favorited_flow.add {type = "label", name = "label", caption = {"hextorio-gui.exclude-favorited"}}
+
     local exclude_dungeons_flow = right_frame.add {type = "flow", name = "exclude-dungeons", direction = "horizontal"}
     local toggle_exclude_dungeons = exclude_dungeons_flow.add {
         type = "checkbox",
@@ -490,6 +505,9 @@ function trade_overview_gui.update_trade_overview(player)
         if filter.show_interplanetary_only and not trades.is_interplanetary_trade(trade) then
             return true
         end
+        if filter.exclude_favorited and trades.is_trade_favorited(player, trade) then
+            return true
+        end
         if filter.planets and trade.surface_name then
             if not filter.planets[trade.surface_name] then
                 return true
@@ -515,9 +533,12 @@ function trade_overview_gui.update_trade_overview(player)
     end
 
     -- At this point, trades_set cannot be nil and must be a lookup table that maps trade ids to trade objects.
+    local is_favorited = {}
     for _, trade in pairs(trades_set) do
         if filter_trade(trade) then
             trades_set[trade.id] = nil
+        else
+            is_favorited[trade.id] = trades.is_trade_favorited(player, trade)
         end
     end
 
@@ -603,7 +624,18 @@ function trade_overview_gui.update_trade_overview(player)
         if not filter.sorting.ascending then
             directed_sort_func = function(a, b) return sort_func(b, a) end
         end
-        table.sort(trades_list, directed_sort_func)
+        table.sort(trades_list, function(trade1, trade2)
+            -- Sort by trade favorites first, then the other method if favoritedness is equal
+            local fav1 = is_favorited[trade1.id]
+            local fav2 = is_favorited[trade2.id]
+            if fav1 and not fav2 then
+                return true
+            elseif not fav1 and fav2 then
+                return false
+            end
+
+            return directed_sort_func(trade1, trade2)
+        end)
     end
 
     local to_show = {}
@@ -746,6 +778,7 @@ function trade_overview_gui.update_player_trade_overview_filters(player)
     filter.exact_outputs_match = filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["exact-outputs-match"]["checkbox"].state
     filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
     filter.show_interplanetary_only = filter_frame["right"]["show-only-interplanetary"]["checkbox"].state
+    filter.exclude_favorited = filter_frame["right"]["exclude-favorited"]["checkbox"].state
     filter.exclude_dungeons = filter_frame["right"]["exclude-dungeons"]["checkbox"].state
     filter.exclude_sinks_generators = filter_frame["right"]["exclude-sinks-generators"]["checkbox"].state
 
@@ -892,6 +925,7 @@ function trade_overview_gui.on_clear_filters_button_click(player, elem)
     local right_frame = filter_frame["right"]
     right_frame["show-only-claimed"]["checkbox"].state = false
     right_frame["show-only-interplanetary"]["checkbox"].state = false
+    right_frame["exclude-favorited"]["checkbox"].state = false
     right_frame["exclude-dungeons"]["checkbox"].state = false
     right_frame["exclude-sinks-generators"]["checkbox"].state = false
 

@@ -6,6 +6,7 @@ local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
 local quests = require "api.quests"
 local hex_grid = require "api.hex_grid"
+local core_gui = require "api.gui.core_gui"
 
 local trades_gui = {}
 
@@ -19,6 +20,8 @@ function trades_gui.register_events()
     event_system.register_gui("gui-clicked", "add-to-filters", trades_gui.on_trade_add_to_filters_button_clicked)
     event_system.register_gui("gui-clicked", "trade-item", trades_gui.on_trade_item_clicked)
     event_system.register_gui("gui-elem-changed", "trade-quality-bounds", trades_gui.on_trade_quality_bounds_selected)
+
+    event_system.register("favorite-trade-key-pressed", trades_gui.on_favorite_trade_key_pressed)
 end
 
 function trades_gui._process_trades_scroll_panes()
@@ -126,6 +129,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             name = "ping-button",
             sprite = "utility/shoot_cursor_red",
             tags = {handlers = {["gui-clicked"] = "ping-button"}, trade_number = trade_number},
+            raise_hover_events = true,
         }
         ping_button.tooltip = {"hextorio-gui.ping-in-chat"}
     end
@@ -136,6 +140,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             name = "core-finder-button-" .. trade_number,
             sprite = "utility/gps_map_icon",
             tags = {handlers = {["gui-clicked"] = "core-finder"}, trade_number = trade_number},
+            raise_hover_events = true,
         }
         core_finder_button.tooltip = {"hextorio-gui.core-finder-button"}
     end
@@ -167,6 +172,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             type = "flow",
             name = "trade-control-flow",
             direction = "horizontal",
+            raise_hover_events = true,
         }
 
         if params.show_toggle_trade then
@@ -181,6 +187,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 name = "toggle-trade-" .. trade_number,
                 sprite = sprite,
                 tags = {handlers = {["gui-clicked"] = "toggle-trade"}},
+                raise_hover_events = true,
             }
             toggle_trade_button.tooltip = {"hex-core-gui.trade-checkbox-tooltip"}
         end
@@ -192,6 +199,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 sprite = "utility/show_tags_in_map_view",
                 tooltip = {"hex-core-gui.tag-button"},
                 tags = {handlers = {["gui-clicked"] = "tag-button"}},
+                raise_hover_events = true,
             }
         end
 
@@ -204,6 +212,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 type = "sprite-button",
                 name = "productivity-info",
                 sprite = "item/productivity-module-3",
+                raise_hover_events = true,
             }
             gui.give_productivity_tooltip(prod_info, trade, quality_to_show, quality_cost_mult)
         end
@@ -214,6 +223,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 name = "add-to-filters-" .. trade_number,
                 sprite = "item/loader",
                 tags = {handlers = {["gui-clicked"] = "add-to-filters"}},
+                raise_hover_events = true,
             }
             add_to_filters_button.tooltip = {"hex-core-gui.add-to-filters-tooltip"}
         end
@@ -226,6 +236,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 elem_type = "signal",
                 signal = {type = "quality", name = allowed_qualities[#allowed_qualities]},
                 tags = {handlers = {["gui-elem-changed"] = "trade-quality-bounds"}, trade_number = trade_number},
+                raise_hover_events = true,
             }
             min_quality.tooltip = {"hex-core-gui.minimum-trade-quality"}
 
@@ -235,6 +246,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 elem_type = "signal",
                 signal = {type = "quality", name = allowed_qualities[1]},
                 tags = {handlers = {["gui-elem-changed"] = "trade-quality-bounds"}, trade_number = trade_number},
+                raise_hover_events = true,
             }
             max_quality.tooltip = {"hex-core-gui.maximum-trade-quality"}
         end
@@ -250,6 +262,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 sprite = "item/" .. input_item.name,
                 number = input_item.count,
                 tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = input_item.name, is_input = true},
+                raise_hover_events = true,
             }
             if lib.is_coin(input_item.name) then
                 local coin = trades.get_input_coins_of_trade(trade, quality_to_show, quality_cost_mult)
@@ -271,15 +284,11 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         end
     end
 
-    local sprite_name = "trade-arrow"
-    if trades.is_interplanetary_trade(trade) then
-        sprite_name = "interplanetary-trade-arrow"
-    end
-
     local trade_arrow_sprite = trade_table.add {
         type = "sprite",
         name = "trade-arrow",
-        sprite = sprite_name,
+        sprite = "trade-arrow",
+        raise_hover_events = true,
     }
     trade_arrow_sprite.style.width = size / 1.2
     trade_arrow_sprite.style.height = size / 1.2
@@ -294,6 +303,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             name = "prod-bar",
             value = trades.get_current_prod_value(trade, quality_to_show),
             style = "bonus_progressbar",
+            raise_hover_events = true,
         }
         if prod < 0 then
             prod_bar.style.color = {1, 0, 0}
@@ -315,6 +325,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         type = "label",
         name = "productivity",
         caption = prod_str,
+        raise_hover_events = true,
     }
     prod_label.style.left_margin = -32 / 1.2
     prod_label.style.top_margin = 24 / 1.2
@@ -329,6 +340,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 sprite = "item/" .. output_item.name,
                 number = output_item.count,
                 tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = output_item.name, is_input = false},
+                raise_hover_events = true,
             }
             if lib.is_coin(output_item.name) then
                 local coin = trades.get_output_coins_of_trade(trade, quality_to_show)
@@ -349,6 +361,25 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             empty.ignored_by_interaction = true
         end
     end
+
+    trades_gui.update_trade_elements(player, trade_flow, trade)
+end
+
+---@param player LuaPlayer
+---@param trade_flow LuaGuiElement
+---@param trade Trade
+function trades_gui.update_trade_elements(player, trade_flow, trade)
+    local sprite_name = "trade-arrow"
+
+    if trades.is_trade_favorited(player, trade) then
+        sprite_name = sprite_name .. "-favorited"
+    end
+
+    if trades.is_interplanetary_trade(trade) then
+        sprite_name = "interplanetary-" .. sprite_name
+    end
+
+    trade_flow["frame"]["trade-table"]["trade-arrow"].sprite = sprite_name
 end
 
 function trades_gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
@@ -469,6 +500,43 @@ end
 ---@param elem LuaGuiElement
 function trades_gui.on_trade_quality_bounds_selected(player, elem)
     event_system.trigger("trade-quality-bounds-selected", player, elem, elem.tags.trade_number)
+end
+
+---@param player LuaPlayer
+function trades_gui.on_favorite_trade_key_pressed(player)
+    local elem = core_gui.get_currently_hovered_element(player.index)
+    if not elem then return end
+
+    local flow = core_gui.get_parent_of_name_match(elem, "^trade%-%d+$")
+    if not flow then return end
+
+    local trade_number = tonumber(flow.name:sub(7))
+    if not trade_number then return end -- Shouldn't be possible due to string match
+
+    local trade
+    local is_trade_overview = core_gui.is_descendant_of(flow, "trade-overview")
+    if is_trade_overview then
+        trade = (storage.trade_overview.trades[player.name] or {})[trade_number]
+    else
+        local hex_core = player.opened
+        if not hex_core then return end
+
+        local state = hex_grid.get_hex_state_from_core(hex_core)
+        if not state or not state.trades then return end
+
+        local trade_id = state.trades[trade_number]
+        if not trade_id then return end
+
+        trade = trades.get_trade_from_id(trade_id)
+    end
+
+    if not trade then return end
+
+    trades.favorite_trade(player, trade, not trades.is_trade_favorited(player, trade))
+
+    -- TODO: Bad practice below.  Instead of separately calling the GUI update here, the trades.favorite_trade() should trigger an event which causes this GUI manager to update sprites.
+    -- But I'm cutting corners here for now because it saves a lot more time than it would initially seem.
+    trades_gui.update_trade_elements(player, flow, trade)
 end
 
 
