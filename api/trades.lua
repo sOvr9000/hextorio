@@ -1801,6 +1801,25 @@ function trades.favorite_trade(player, trade, flag)
     end
 end
 
+---Return the set of trade IDs that are marked as favorited for a player.
+---@param player LuaPlayer
+---@return {[int]: boolean}
+function trades.get_favorited_trades(player)
+    local fav = storage.trades.favorites
+    if not fav then
+        fav = {}
+        storage.trades.favorites = fav
+    end
+
+    local player_favs = fav[player.index]
+    if not player_favs then
+        player_favs = {}
+        fav[player.index] = player_favs
+    end
+
+    return table.deepcopy(player_favs)
+end
+
 ---Return whether a trade is favorited for a player.
 ---@param player LuaPlayer
 ---@param trade Trade

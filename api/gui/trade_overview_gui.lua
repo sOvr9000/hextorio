@@ -35,6 +35,7 @@ local trade_overview_gui = {}
 ---@field planets {[string]: boolean}
 ---@field show_interplanetary_only boolean
 ---@field show_claimed_only boolean
+---@field show_favorited_only boolean
 ---@field exclude_favorited boolean
 ---@field exclude_dungeons boolean
 ---@field exclude_sinks_generators boolean
@@ -58,6 +59,7 @@ function trade_overview_gui.register_events()
     event_system.register_gui("gui-clicked", "trade-overview-clear-filters", trade_overview_gui.on_clear_filters_button_click)
     event_system.register_gui("gui-clicked", "export-json", trade_overview_gui.on_export_json_button_click)
     event_system.register_gui("gui-clicked", "planet-filter", trade_overview_gui.on_planet_filter_button_click)
+    event_system.register_gui("gui-clicked", "trade-overview-contents-arrow", trade_overview_gui.on_trade_overview_contents_arrow_click)
     event_system.register_gui("gui-slider-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-elem-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-selection-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
@@ -338,6 +340,7 @@ function trade_overview_gui.build_trade_content_filter_center(frame)
         type = "sprite",
         name = "trade-arrow",
         sprite = "trade-arrow",
+        tags = {handlers = {["gui-clicked"] = "trade-overview-contents-arrow"}},
     }
     trade_arrow.style.top_margin = 4
     trade_arrow.style.left_margin = 4
@@ -486,12 +489,21 @@ function trade_overview_gui.update_trade_overview(player)
     trade_contents_frame["inputs"]["max-inputs-flow"]["slider"].enabled = not filter.exact_inputs_match
     trade_contents_frame["outputs"]["max-outputs-flow"]["slider"].enabled = not filter.exact_outputs_match
     filter_frame["right"]["exclude-dungeons"]["checkbox"].enabled = not filter.show_claimed_only
+    filter_frame["right"]["exclude-favorited"]["checkbox"].enabled = not filter.show_favorited_only
 
     if filter.show_claimed_only then
         filter_frame["right"]["exclude-dungeons"]["checkbox"].state = true
     end
 
+    if filter.show_favorited_only then
+        filter_frame["right"]["exclude-favorited"]["checkbox"].state = false
+    end
+
     local trades_set
+    if filter.show_favorited_only then
+        trades_set = trades.get_favorited_trades(player)
+    end
+
     if filter.input_items then
         for _, item in pairs(filter.input_items) do
             if trades_set then
@@ -829,9 +841,15 @@ function trade_overview_gui.update_player_trade_overview_filters(player)
     filter.exact_outputs_match = filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["exact-outputs-match"]["checkbox"].state
     filter.show_claimed_only = filter_frame["right"]["show-only-claimed"]["checkbox"].state
     filter.show_interplanetary_only = filter_frame["right"]["show-only-interplanetary"]["checkbox"].state
-    filter.exclude_favorited = filter_frame["right"]["exclude-favorited"]["checkbox"].state
+    filter.show_favorited_only = filter_frame["left"]["trade-contents-flow"]["frame"]["center"]["trade-arrow"].sprite == "trade-arrow-favorited"
     filter.exclude_dungeons = filter_frame["right"]["exclude-dungeons"]["checkbox"].state
     filter.exclude_sinks_generators = filter_frame["right"]["exclude-sinks-generators"]["checkbox"].state
+
+    if filter.show_favorited_only then
+        filter.exclude_favorited = false
+    else
+        filter.exclude_favorited = filter_frame["right"]["exclude-favorited"]["checkbox"].state
+    end
 
     filter.num_item_bounds = {
         inputs = {
@@ -1018,6 +1036,7 @@ function trade_overview_gui.on_clear_filters_button_click(player, elem)
     trade_contents_frame["outputs"]["exact-outputs-match"]["checkbox"].state = false
     trade_contents_frame["inputs"]["max-inputs-flow"]["slider"].slider_value = trade_contents_frame["inputs"]["max-inputs-flow"]["slider"].get_slider_maximum()
     trade_contents_frame["outputs"]["max-outputs-flow"]["slider"].slider_value = trade_contents_frame["outputs"]["max-outputs-flow"]["slider"].get_slider_maximum()
+    trade_contents_frame["center"]["trade-arrow"].sprite = "trade-arrow"
 
     trade_overview_gui.update_trade_overview(player)
 end
@@ -1026,6 +1045,18 @@ end
 ---@param elem LuaGuiElement
 function trade_overview_gui.on_planet_filter_button_click(player, elem)
     elem.toggled = not elem.toggled
+    trade_overview_gui.update_trade_overview(player)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_trade_overview_contents_arrow_click(player, elem)
+    if elem.sprite == "trade-arrow" then
+        elem.sprite = "trade-arrow-favorited"
+    else
+        elem.sprite = "trade-arrow"
+    end
+
     trade_overview_gui.update_trade_overview(player)
 end
 
