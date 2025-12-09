@@ -326,6 +326,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         type = "label",
         name = "productivity",
         caption = prod_str,
+        tags = {handlers = {["gui-clicked"] = "trade-arrow"}},
         raise_hover_events = true,
     }
     prod_label.style.left_margin = -32 / 1.2
