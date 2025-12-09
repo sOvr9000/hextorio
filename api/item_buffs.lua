@@ -103,6 +103,9 @@ local buff_type_actions = {
     ["trade-productivity"] = function(value)
         storage.trades.base_productivity = storage.trades.base_productivity + value
     end,
+    ["passive-coins"] = function(value)
+        storage.item_buffs.passive_coins_rate = storage.item_buffs.passive_coins_rate + value
+    end,
     ["all-buffs-level"] = function(value)
         storage.item_buffs.level_bonus = storage.item_buffs.level_bonus + value
 

@@ -268,6 +268,20 @@ return {
                 level_scaling = 1.3,
             },
         },
+        ["lightning-rod"] = {
+            {
+                type = "passive-coins",
+                value = 0.02,
+                level_scaling = 1.08,
+            },
+        },
+        ["lightning-collector"] = {
+            {
+                type = "passive-coins",
+                value = 0.03,
+                level_scaling = 1.08,
+            },
+        },
         ["defender-capsule"] = {
             {
                 type = "combat-robot-count",
@@ -958,6 +972,7 @@ return {
     has_description = {
         ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
+        ["passive-coins"] = true,
     },
 
     is_fractional = { -- Some bonuses like inventory slots must be integers, so the fractional bonuses are combined here to then be rounded before applying.
@@ -990,4 +1005,5 @@ return {
 
     cost_multiplier = 1,
     level_bonus = 0,
+    passive_coins_rate = 0,
 }

@@ -12,6 +12,7 @@ local quests = require "api.quests"
 local item_buffs = require "api.item_buffs"
 local gui_stack = require "api.gui.gui_stack"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
+local passive_coin_buff = require "api.passive_coin_buff"
 
 local catalog_gui = {}
 
@@ -510,7 +511,23 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
             }
 
             if is_buff_unlocked and storage.item_buffs.has_description[buff.type] then
-                buff_label.tooltip = {"item-buff-description." .. buff.type}
+                if buff.type == "passive-coins" then
+                    local interval = 10 -- seconds between coin accumulation
+                    local calculation_steps = passive_coin_buff.get_passive_gain_calculation_steps(interval * 60)
+
+                    local breakdown_str = {"",
+                        coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[#calculation_steps]))),
+                        "\n\n[color=128,128,128][font=heading-2]", {"hextorio-gui.calculation-breakdown"}, "[.font]",
+                        "\n", {"hextorio-gui.net-coins-per-hour", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[1])))},
+                        "\n\n", {"hextorio-gui.normalize-to-interval", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[2]))), interval},
+                        "\n\n", {"hextorio-gui.buff-effect", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[3]))), "[color=green]" .. lib.format_percentage(storage.item_buffs.passive_coins_rate, 1, true, true) .. "[.color]"},
+                        "[.color]",
+                    }
+
+                    buff_label.tooltip = {"item-buff-description." .. buff.type, breakdown_str, interval}
+                else
+                    buff_label.tooltip = {"item-buff-description." .. buff.type}
+                end
             end
         elseif buff.values then
             local caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")

@@ -1,5 +1,6 @@
 
 require "util" -- For table.deepcopy()
+local passive_coin_buff = require("api.passive_coin_buff")
 
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
@@ -187,6 +188,10 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     if storage.initialization.is_nauvis_generating then return end
 
     hex_grid.on_chunk_generated(surface.name, chunk_position)
+end)
+
+script.on_nth_tick(600, function()
+    passive_coin_buff.process_accumulation()
 end)
 
 script.on_nth_tick(300, function()
