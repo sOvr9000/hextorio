@@ -42,6 +42,8 @@ end
 ---@param player LuaPlayer
 ---@param element LuaGuiElement
 function gui_stack.add(player, element)
+    if not element.valid then return end
+
     if not storage.gui then
         storage.gui = {}
     end
@@ -93,6 +95,8 @@ function gui_stack.pop(player, index)
     else
         player.opened = nil
     end
+
+    if not elem.valid then return end
 
     elem.visible = false
 

@@ -10,6 +10,7 @@ Date: 6/12/25
     - Added button in the catalog for opening the trade overview with the selected item set in the filter, the side depending on what remains to be done for ranking up the item.
   Bugfixes:
     - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
+    - Fixed rare crash with GUI management.
   Changes:
     - Swapped the meanings of the bronze star halves in item ranks.
   Balancing:
