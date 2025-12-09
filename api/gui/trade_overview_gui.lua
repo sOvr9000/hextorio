@@ -741,7 +741,7 @@ end
 
 function trade_overview_gui.hide_trade_overview(player)
     local frame = player.gui.screen["trade-overview"]
-    if not frame then return end
+    if not frame or not frame.valid then return end
     gui_stack.pop(player, gui_stack.index_of(player, frame))
 
     if storage.gui and storage.gui.trades_scroll_pane_update and storage.gui.trades_scroll_pane_update[player.name] then

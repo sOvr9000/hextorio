@@ -69,6 +69,8 @@ function gui_stack.add(player, element)
     -- end
 
     element.visible = true
+
+    if player.opened and not player.opened.valid then return end
     player.opened = element --  THIS IS TRIGGERING ON_CLOSED EVENTS, a workaround that's not yet implemented is crucial for the "gui stack" to work
 end
 
@@ -77,6 +79,8 @@ end
 ---@param index int|nil
 ---@return LuaGuiElement|nil
 function gui_stack.pop(player, index)
+    if player.opened and not player.opened.valid then return end
+
     local stack = gui_stack.get_stack(player)
     if not next(stack) then return end
 

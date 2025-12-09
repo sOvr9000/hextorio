@@ -818,7 +818,7 @@ end
 
 function catalog_gui.hide_catalog(player)
     local frame = player.gui.screen["catalog"]
-    if not frame then return end
+    if not frame or not frame.valid then return end
     gui_stack.pop(player, gui_stack.index_of(player, frame))
 end
 

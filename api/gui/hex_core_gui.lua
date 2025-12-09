@@ -443,7 +443,7 @@ end
 
 function hex_core_gui.hide_hex_core(player)
     local frame = player.gui.relative["hex-core"]
-    if not frame then return end
+    if not frame or not frame.valid then return end
     frame.visible = false
 end
 
