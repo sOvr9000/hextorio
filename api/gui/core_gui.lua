@@ -1,6 +1,7 @@
 
 local lib = require "api.lib"
 local trades = require "api.trades"
+local hex_grid = require "api.hex_grid"
 local coin_tiers = require "api.coin_tiers"
 local item_ranks = require "api.item_ranks"
 local item_values = require "api.item_values"
@@ -412,6 +413,31 @@ function core_gui.get_currently_hovered_element(player_index)
         g.hovered_element = hovered
     end
     return hovered[player_index]
+end
+
+---Get the Trade object that the trade GUI flow represents.
+---@param player LuaPlayer
+---@param flow LuaGuiElement
+---@return Trade|nil
+function core_gui.get_trade_from_trade_flow(player, flow)
+    local trade_number = tonumber(flow.name:sub(7))
+    if not trade_number then return end
+
+    local is_trade_overview = core_gui.is_descendant_of(flow, "trade-overview")
+    if is_trade_overview then
+        return (storage.trade_overview.trades[player.name] or {})[trade_number]
+    end
+
+    local hex_core = player.opened
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state or not state.trades then return end
+
+    local trade_id = state.trades[trade_number]
+    if not trade_id then return end
+
+    return trades.get_trade_from_id(trade_id)
 end
 
 

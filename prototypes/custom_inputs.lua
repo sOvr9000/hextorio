@@ -25,11 +25,11 @@ data:extend({
         name = "claim-hex-core",
         key_sequence = "Y",
     },
-    {
-        type = "custom-input",
-        name = "favorite-trade",
-        key_sequence = "K",
-    },
+    -- {
+    --     type = "custom-input",
+    --     name = "favorite-trade",
+    --     key_sequence = "K",
+    -- },
     {
         type = "custom-input",
         name = "hextorio-fast-entity-split",

@@ -119,12 +119,12 @@ script.on_event("claim-hex-core", function(event)
     hex_grid.add_hex_to_claim_queue(surface, hex_pos, player, false)
 end)
 
-script.on_event("favorite-trade", function(event)
-    event = event--[[@as {player_index: int}]] -- suppress warnings
-    local player = game.get_player(event.player_index)
-    if not player then return end
+-- script.on_event("favorite-trade", function(event)
+--     event = event--[[@as {player_index: int}]] -- suppress warnings
+--     local player = game.get_player(event.player_index)
+--     if not player then return end
 
-    event_system.trigger("favorite-trade-key-pressed", player)
-end)
+--     event_system.trigger("favorite-trade-key-pressed", player)
+-- end)
 
 

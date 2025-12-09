@@ -5,7 +5,6 @@ local trades = require "api.trades"
 local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
 local quests = require "api.quests"
-local hex_grid = require "api.hex_grid"
 local core_gui = require "api.gui.core_gui"
 
 local trades_gui = {}
@@ -19,9 +18,10 @@ function trades_gui.register_events()
     event_system.register_gui("gui-clicked", "tag-button", trades_gui.on_trade_tag_button_clicked)
     event_system.register_gui("gui-clicked", "add-to-filters", trades_gui.on_trade_add_to_filters_button_clicked)
     event_system.register_gui("gui-clicked", "trade-item", trades_gui.on_trade_item_clicked)
+    event_system.register_gui("gui-clicked", "trade-arrow", trades_gui.on_trade_arrow_clicked)
     event_system.register_gui("gui-elem-changed", "trade-quality-bounds", trades_gui.on_trade_quality_bounds_selected)
 
-    event_system.register("favorite-trade-key-pressed", trades_gui.on_favorite_trade_key_pressed)
+    -- event_system.register("favorite-trade-key-pressed", trades_gui.on_favorite_trade_key_pressed)
 end
 
 function trades_gui._process_trades_scroll_panes()
@@ -289,6 +289,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         name = "trade-arrow",
         sprite = "trade-arrow",
         raise_hover_events = true,
+        tags = {handlers = {["gui-clicked"] = "trade-arrow"}},
     }
     trade_arrow_sprite.style.width = size / 1.2
     trade_arrow_sprite.style.height = size / 1.2
@@ -445,7 +446,10 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function trades_gui.on_ping_button_clicked(player, elem)
-    local trade = trades_gui.get_trade_from_trade_number(player, elem.tags.trade_number, gui.is_descendant_of(elem, "trade-overview"))
+    local flow = trades_gui.get_trade_flow_from_trade_element(elem)
+    if not flow then return end
+
+    local trade = core_gui.get_trade_from_trade_flow(player, flow)
     if not trade or not trade.hex_core_state or not trade.hex_core_state.hex_core then return end
 
     local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
@@ -455,22 +459,13 @@ function trades_gui.on_ping_button_clicked(player, elem)
     quests.set_progress_for_type("ping-trade", 1)
 end
 
-function trades_gui.get_trade_from_trade_number(player, trade_number, trade_overview)
-    if trade_overview then
-        return storage.trade_overview.trades[player.name][trade_number]
-    end
-
-    local hex_core = player.opened
-    if hex_core and hex_core.name == "hex-core" then
-        local state = hex_grid.get_hex_state_from_core(hex_core)
-        if state and state.trades then
-            local trade_id = state.trades[trade_number]
-            if trade_id then
-                return trades.get_trade_from_id(trade_id)
-            end
-        end
-    end
+---Get a trade GUI flow from one of its nested child elements.
+---@param elem LuaGuiElement
+---@return LuaGuiElement|nil
+function trades_gui.get_trade_flow_from_trade_element(elem)
+    return core_gui.get_parent_of_name_match(elem, "^trade%-%d+$")
 end
+
 
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
@@ -502,34 +497,21 @@ function trades_gui.on_trade_quality_bounds_selected(player, elem)
     event_system.trigger("trade-quality-bounds-selected", player, elem, elem.tags.trade_number)
 end
 
----@param player LuaPlayer
-function trades_gui.on_favorite_trade_key_pressed(player)
-    local elem = core_gui.get_currently_hovered_element(player.index)
-    if not elem then return end
+-- ---@param player LuaPlayer
+-- function trades_gui.on_favorite_trade_key_pressed(player)
+--     local elem = core_gui.get_currently_hovered_element(player.index)
+--     if not elem then return end
 
-    local flow = core_gui.get_parent_of_name_match(elem, "^trade%-%d+$")
+--     trades_gui.on_trade_arrow_clicked(player, elem)
+-- end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trades_gui.on_trade_arrow_clicked(player, elem)
+    local flow = trades_gui.get_trade_flow_from_trade_element(elem)
     if not flow then return end
 
-    local trade_number = tonumber(flow.name:sub(7))
-    if not trade_number then return end -- Shouldn't be possible due to string match
-
-    local trade
-    local is_trade_overview = core_gui.is_descendant_of(flow, "trade-overview")
-    if is_trade_overview then
-        trade = (storage.trade_overview.trades[player.name] or {})[trade_number]
-    else
-        local hex_core = player.opened
-        if not hex_core then return end
-
-        local state = hex_grid.get_hex_state_from_core(hex_core)
-        if not state or not state.trades then return end
-
-        local trade_id = state.trades[trade_number]
-        if not trade_id then return end
-
-        trade = trades.get_trade_from_id(trade_id)
-    end
-
+    local trade = core_gui.get_trade_from_trade_flow(player, flow)
     if not trade then return end
 
     trades.favorite_trade(player, trade, not trades.is_trade_favorited(player, trade))
