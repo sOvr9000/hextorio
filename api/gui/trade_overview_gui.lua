@@ -17,6 +17,41 @@ local trade_overview_gui = {}
 
 
 
+---@alias TradeOverviewSortingMethod
+---| "distance-from-spawn"
+---| "distance-from-character"
+---| "total-item-value"
+---| "num-inputs"
+---| "num-outputs"
+---| "productivity"
+
+---@class TradeOverviewFilterSettings
+---@field input_items string[]|nil
+---@field output_items string[]|nil
+---@field input_items_lookup {[string]: boolean}|nil
+---@field output_items_lookup {[string]: boolean}|nil
+---@field exact_inputs_match boolean|nil
+---@field exact_outputs_match boolean|nil
+---@field planets {[string]: boolean}
+---@field show_interplanetary_only boolean
+---@field show_claimed_only boolean
+---@field exclude_favorited boolean
+---@field exclude_dungeons boolean
+---@field exclude_sinks_generators boolean
+---@field num_item_bounds TradeOverviewFilterNumItemBounds|nil
+---@field sorting TradeOverviewSortingSettings
+---@field max_trades int
+
+---@class TradeOverviewSortingSettings
+---@field method TradeOverviewSortingMethod
+---@field ascending boolean
+
+---@class TradeOverviewFilterNumItemBounds
+---@field inputs {min: int, max: int}
+---@field outputs {min: int, max: int}
+
+
+
 function trade_overview_gui.register_events()
     event_system.register_gui("gui-clicked", "trade-overview-button", trade_overview_gui.on_trade_overview_button_click)
     event_system.register_gui("gui-closed", "trade-overview", trade_overview_gui.hide_trade_overview)
@@ -28,6 +63,7 @@ function trade_overview_gui.register_events()
     event_system.register_gui("gui-selection-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-switch-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-clicked", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
+    event_system.register_gui("gui-clicked", "swap-filters", trade_overview_gui.swap_trade_overview_content_filters)
 
     event_system.register("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" then
@@ -168,10 +204,14 @@ function trade_overview_gui.build_left_filter_frame(frame)
 
     left_frame.add {type = "line", direction = "horizontal"}
 
+    trade_overview_gui.build_trade_content_filter(left_frame)
+end
+
+function trade_overview_gui.build_trade_content_filter(frame)
     local item_names_with_value = item_values.get_all_items_with_value(true)
     local elem_filters = {{filter = "name", name = item_names_with_value}}
 
-    local trade_contents_flow = left_frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
+    local trade_contents_flow = frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
     local trade_contents_label = trade_contents_flow.add {type = "label", name = "label", caption = {"hextorio-gui.trade-contents"}}
     local trade_contents_frame = trade_contents_flow.add {type = "flow", name = "frame", direction = "horizontal"}
     trade_contents_label.style.font = "heading-2"
@@ -230,19 +270,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
         input_item.elem_filters = elem_filters
     end
 
-
-
-    local trade_arrow = trade_contents_frame.add {
-        type = "sprite",
-        name = "trade-arrow",
-        sprite = "trade-arrow",
-    }
-    trade_arrow.style.top_margin = 4
-    trade_arrow.style.width = 40 / 1.2
-    trade_arrow.style.height = 40 / 1.2
-    trade_arrow.style.stretch_image_to_widget_size = true
-
-
+    trade_overview_gui.build_trade_content_filter_center(trade_contents_frame)
 
     local trade_outputs_flow = trade_contents_frame.add {
         type = "flow",
@@ -297,6 +325,32 @@ function trade_overview_gui.build_left_filter_frame(frame)
         }
         output_item.elem_filters = elem_filters
     end
+end
+
+function trade_overview_gui.build_trade_content_filter_center(frame)
+    local flow = frame.add {
+        type = "flow",
+        name = "center",
+        direction = "vertical",
+    }
+
+    local trade_arrow = flow.add {
+        type = "sprite",
+        name = "trade-arrow",
+        sprite = "trade-arrow",
+    }
+    trade_arrow.style.top_margin = 4
+    trade_arrow.style.left_margin = 4
+    trade_arrow.style.width = 40 / 1.2
+    trade_arrow.style.height = 40 / 1.2
+    trade_arrow.style.stretch_image_to_widget_size = true
+
+    local swap_filters = flow.add {
+        type = "sprite-button",
+        name = "swap-filters",
+        sprite = "virtual-signal/signal-rightwards-leftwards-arrow",
+        tags = {handlers = {["gui-clicked"] = "swap-filters"}},
+    }
 end
 
 function trade_overview_gui.build_right_filter_frame(frame)
@@ -420,16 +474,10 @@ function trade_overview_gui.update_trade_overview(player)
         filter_frame["left"]["planet-flow"][surface_name].enabled = game.get_surface(surface_name) ~= nil
     end
 
-    trade_overview_gui.update_player_trade_overview_filters(player)
     local filter = trade_overview_gui.get_player_trade_overview_filter(player)
 
-    if filter.exact_inputs_match and filter.input_items and #filter.input_items > 0 then
-        filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value = #filter.input_items
-    end
-
-    if filter.exact_outputs_match and filter.output_items and #filter.output_items > 0 then
-        filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value = #filter.output_items
-    end
+    trade_overview_gui.update_player_trade_overview_filters(player)
+    trade_overview_gui.update_filter_max_items(player, true)
 
     local trade_contents_frame = filter_frame["left"]["trade-contents-flow"]["frame"]
     trade_contents_frame["inputs"]["max-inputs-flow"]["label"].caption = {"hextorio-gui.max", trade_contents_frame["inputs"]["max-inputs-flow"]["slider"].slider_value}
@@ -724,6 +772,9 @@ function trade_overview_gui.set_trade_overview_item_filters(player, input_items,
     trade_overview_gui.update_trade_overview(player)
 end
 
+---Get the current filter settings for a player's trade overview.
+---@param player LuaPlayer
+---@return TradeOverviewFilterSettings
 function trade_overview_gui.get_player_trade_overview_filter(player)
     local filters = storage.trade_overview.filters
     if not filters[player.name] then
@@ -797,21 +848,25 @@ function trade_overview_gui.update_player_trade_overview_filters(player)
         filter.input_items_lookup = sets.new(filter.input_items)
         if filter.input_items then
             filter.num_item_bounds.inputs.max = #filter.input_items
+        else
+            filter.num_item_bounds.inputs.max = 3
         end
     end
     if filter.exact_outputs_match then
         filter.output_items_lookup = sets.new(filter.output_items)
         if filter.output_items then
             filter.num_item_bounds.outputs.max = #filter.output_items
+        else
+            filter.num_item_bounds.outputs.max = 3
         end
     end
 
     -- Sorting stuff
-    filter.sorting = {}
-
+    local sorting = {}
     local sorting_dropdown = filter_frame["right"]["sort-method"]["dropdown"]
-    filter.sorting.method = sorting_dropdown.get_item(sorting_dropdown.selected_index)[1]:sub(19)
-    filter.sorting.ascending = filter_frame["right"]["sort-direction"].switch_state == "left"
+    sorting.method = sorting_dropdown.get_item(sorting_dropdown.selected_index)[1]:sub(19)
+    sorting.ascending = filter_frame["right"]["sort-direction"].switch_state == "left"
+    filter.sorting = sorting
 
     local max_trades
     local max_trades_dropdown = filter_frame["right"]["max-trades-flow"]["dropdown"]
@@ -821,17 +876,46 @@ function trade_overview_gui.update_player_trade_overview_filters(player)
         local selected = max_trades_dropdown.items[max_trades_dropdown.selected_index]
         max_trades = tonumber(selected[2])
     end
-    filter.max_trades = max_trades
+    filter.max_trades = max_trades or 100
 end
 
+---@param player LuaPlayer
 function trade_overview_gui.swap_trade_overview_content_filters(player)
     local filters = trade_overview_gui.get_player_trade_overview_filter(player)
     local new_inputs = filters.output_items or {}
     local new_outputs = filters.input_items or {}
 
     -- Only trigger a refresh if necessary.
-    if not lib.tables_equal(sets.new(new_inputs), sets.new(new_outputs)) then
-        trade_overview_gui.set_trade_overview_item_filters(player, new_inputs, new_outputs)
+    if
+        lib.tables_equal(sets.new(new_inputs), sets.new(new_outputs)) and
+        lib.tables_equal(filters.num_item_bounds.inputs, filters.num_item_bounds.outputs) and
+        filters.exact_inputs_match == filters.exact_outputs_match
+    then return end
+
+    filters.num_item_bounds.inputs, filters.num_item_bounds.outputs = filters.num_item_bounds.outputs, filters.num_item_bounds.inputs
+    filters.exact_inputs_match, filters.exact_outputs_match = filters.exact_outputs_match, filters.exact_inputs_match
+
+    trade_overview_gui.update_filter_max_items(player, false)
+    trade_overview_gui.set_trade_overview_item_filters(player, new_inputs, new_outputs)
+end
+
+---@param player LuaPlayer
+---@param only_if_exact boolean
+function trade_overview_gui.update_filter_max_items(player, only_if_exact)
+    local filter_frame = (player.gui.screen["trade-overview"] or {})["filter-frame"]
+    if not filter_frame then return end
+
+    local filter = trade_overview_gui.get_player_trade_overview_filter(player)
+
+    filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["exact-inputs-match"]["checkbox"].state = filter.exact_inputs_match
+    filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["exact-outputs-match"]["checkbox"].state = filter.exact_outputs_match
+
+    if not only_if_exact or filter.exact_inputs_match then
+        filter_frame["left"]["trade-contents-flow"]["frame"]["inputs"]["max-inputs-flow"]["slider"].slider_value = filter.num_item_bounds.inputs.max
+    end
+
+    if not only_if_exact or filter.exact_outputs_match then
+        filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["max-outputs-flow"]["slider"].slider_value = filter.num_item_bounds.outputs.max
     end
 end
 
