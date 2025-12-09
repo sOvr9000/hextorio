@@ -80,6 +80,7 @@ local versions = {
     "1.3.0",
     "1.3.1",
     "1.3.2",
+    "1.3.3",
 }
 
 local version_stepping = {}
@@ -603,6 +604,8 @@ local process_migration = {
         storage.item_buffs.item_buffs = data_item_buffs.item_buffs
         storage.item_buffs.has_description = data_item_buffs.has_description
         storage.item_buffs.passive_coins_rate = 0
+    end,
+    ["1.3.2"] = function()
     end,
 }
 
