@@ -44,7 +44,7 @@
 ---@alias SingleQuestRewardValue string|number|ItemStackIdentification
 ---@alias QuestConditionValue SingleQuestConditionValue|SingleQuestConditionValue[]
 ---@alias QuestRewardValue SingleQuestRewardValue|SingleQuestRewardValue[]
----@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"
+---@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"
 ---@alias QuestConditionTypeValuePair {[1]: QuestConditionType, [2]: QuestConditionValue}
 ---@alias QuestCondition {type: QuestConditionType, value: QuestConditionValue, value_is_table: boolean, progress_requirement: int, progress: int, show_progress_bar: boolean, notes: string[]|nil}
 ---@alias QuestRewardType "unlock-feature"|"receive-items"|"claim-free-hexes"|"reduce-biters"|"all-trades-productivity"|"receive-spaceship"

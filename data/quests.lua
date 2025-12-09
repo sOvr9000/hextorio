@@ -69,6 +69,7 @@ return {
         ["hex-span"] = {"hex-span-simplified"},
         ["coins-in-inventory"] = {"does-not-consume"},
         ["loot-dungeons-on"] = {"dungeon-loot-condition"},
+        ["favorite-trade"] = {"favorite-trade"},
     },
 
     quest_defs = {
@@ -108,6 +109,19 @@ return {
             rewards = {{type = "unlock-feature", value = "trade-overview"}, {type = "claim-free-hexes", value = {"nauvis", 2}}},
             notes = {"trades-randomized"},
             prerequisites = {"ground-zero"},
+        },
+        {
+            name = "remind-me-later",
+            conditions = {{type = "favorite-trade", progress_requirement = 1, show_progress_bar = true}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "submachine-gun", count = 1, quality = "uncommon"},
+                    },
+                },
+            },
+            prerequisites = {"find-some-trades"},
         },
         {
             name = "biter-rammer",

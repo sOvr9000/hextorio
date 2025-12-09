@@ -9,6 +9,7 @@ Date: 6/12/25
     - Added hotkeys for opening/closing the questbook, catalog, and trade overview.
     - Added button in the catalog for opening the trade overview with the selected item set in the filter, the side depending on what remains to be done for ranking up the item.
     - Added button in trade overview for swapping sides of the filter.
+    - Added quest for teaching how to favorite a trade and what favoriting a trade does.
   Bugfixes:
     - Fixed that dungeon laser and tesla turrets were frozen on Aquilo.
     - Fixed rare crash with GUI management.

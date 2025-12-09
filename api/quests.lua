@@ -134,6 +134,10 @@ function quests.register_events()
     event_system.register("surface-created", function(surface)
         quests.set_progress_for_type("visit-planet", 1, surface.name)
     end)
+
+    event_system.register("player-favorited-trade", function(player, trade)
+        quests.set_progress_for_type("favorite-trade", 1)
+    end)
 end
 
 function quests.reinitialize_everything()
