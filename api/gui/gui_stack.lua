@@ -90,6 +90,8 @@ function gui_stack.pop(player, index)
     local elem = stack[index]
     table.remove(stack, index)
 
+    if elem and not elem.valid then return end -- Seems to rarely happen for some players.  It has only been observed to be a problem for Steam Deck players. (???)
+
     if next(stack) then
         if player.opened == elem then
             player.opened = stack[index]
