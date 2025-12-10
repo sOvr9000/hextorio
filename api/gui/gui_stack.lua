@@ -90,19 +90,21 @@ function gui_stack.pop(player, index)
     local elem = stack[index]
     table.remove(stack, index)
 
-    if elem and not elem.valid then return end -- Seems to rarely happen for some players.  It has only been observed to be a problem for Steam Deck players. (???)
+    if not elem.valid then
+        -- Seems to rarely happen for some players.  It has only been observed to be a problem for Steam Deck players. (???)
+        lib.log_error("gui_stack.pop: Tried to pop an invalid element")
+        return
+    end
 
     if next(stack) then
         if player.opened == elem then
-            player.opened = stack[index]
+            player.opened = stack[index] -- Set to next element after elem, as this is after the table.remove()
         else
             player.opened = stack[#stack]
         end
     else
         player.opened = nil
     end
-
-    if not elem.valid then return end
 
     elem.visible = false
 
