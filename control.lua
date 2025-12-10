@@ -23,6 +23,8 @@ local dungeons = require "api.dungeons"
 local spiders = require "api.spiders"
 local hex_island = require "api.hex_island"
 
+migrations.load_handlers()
+
 item_values.register_events()
 hex_grid.register_events()
 trades.register_events()
