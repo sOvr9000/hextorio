@@ -3265,7 +3265,6 @@ function hex_grid.add_to_output_buffer(state, items)
             if count <= 0 then
                 lib.log_error("hex_grid.add_to_output_buffer: Tried to add a negative amount of items to the output buffer: " .. serpent.block(_items))
             else
-                log("output buffer: " .. item_name .. ": +" .. count)
                 state.output_buffer[quality][item_name] = (state.output_buffer[quality][item_name] or 0) + count
             end
         end
@@ -3306,15 +3305,12 @@ function hex_grid.try_unload_output_buffer(state, inventory_output)
             if is_train then
                 ---@cast inventory_output LuaTrain
                 inserted = inventories.insert_into_train(inventory_output, {name = item_name, count = math.min(10000, count), quality = quality})
-                log("unloading from buffer: " .. item_name .. ": -" .. inserted)
             else
                 inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
             end
 
             local remaining = state.output_buffer[quality][item_name] - inserted
             empty = empty and remaining == 0
-
-            log("remaining buffer: " .. item_name .. ": " .. remaining)
 
             if remaining > 0 then
                 state.output_buffer[quality][item_name] = remaining
