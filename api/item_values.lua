@@ -183,7 +183,7 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
         lib.log_error("item_values.get_item_value: surface_name is nil, defaulting to 1")
         return 1
     end
-    if lib.is_space_platform(surface.name) then
+    if lib.is_space_platform(surface_name) then
         lib.log_error("item_values.get_item_value: surface_name = " .. surface.name .. " refers to a space platform, defaulting to " .. item_name .. " item value = 1")
         return 1
     end
