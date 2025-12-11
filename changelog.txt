@@ -5,6 +5,7 @@ Date: 11/12/25
     - Added item buffs for locomotives and cargo wagons.
   Changes:
     - Unvisited surfaces no longer have an entry in the JSON trades export.
+    - The clear filters button in the trade overview now leaves your planet filters alone unless all planets are toggled off.
   Balancing:
     - Limited the number of wagons that a train can use in trading.
     - Buffed crystalline fuel's effect on train speed and acceleration.

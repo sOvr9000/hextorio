@@ -1024,8 +1024,17 @@ function trade_overview_gui.on_clear_filters_button_click(player, elem)
     local filter_frame = elem.parent.parent.parent
     if not filter_frame then return end
 
+    local all_planets_off = true
     for _, planet_button in pairs(filter_frame["left"]["planet-flow"].children) do
-        planet_button.toggled = true
+        if planet_button.toggled then
+            all_planets_off = false
+        end
+    end
+
+    if all_planets_off then
+        for _, planet_button in pairs(filter_frame["left"]["planet-flow"].children) do
+            planet_button.toggled = planet_button.name == "nauvis"
+        end
     end
 
     for i = 1, 3 do
