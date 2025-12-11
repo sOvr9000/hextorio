@@ -585,6 +585,7 @@ end
 function hex_grid.apply_extra_trades_bonus(state)
     if not state or not state.hex_core or not state.trades then return end
     local surface = state.hex_core.surface
+    if lib.is_space_platform(surface.name) then return end
     local surface_values = item_values.get_item_values_for_surface(surface.name)
     if not surface_values then return end
 

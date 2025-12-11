@@ -183,6 +183,10 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
         lib.log_error("item_values.get_item_value: surface_name is nil, defaulting to 1")
         return 1
     end
+    if lib.is_space_platform(surface.name) then
+        lib.log_error("item_values.get_item_value: surface_name = " .. surface.name .. " refers to a space platform, defaulting to " .. item_name .. " item value = 1")
+        return 1
+    end
     if not item_name then
         lib.log_error("item_values.get_item_value: item_name is nil, defaulting to 1")
         return 1
@@ -304,6 +308,10 @@ function item_values.has_item_value(surface_name, item_name, allow_interplanetar
         return false
     end
 
+    if lib.is_space_platform(surface_name) then
+        return false
+    end
+
     local surface_vals = item_values.get_item_values_for_surface(surface_name)
     if not surface_vals then
         lib.log_error("item_values.has_item_value: No item values for surface " .. surface_name)
@@ -389,6 +397,7 @@ end
 ---@param surface_name string
 ---@return {[string]: number}
 function item_values.get_expanded_item_values_for_surface(surface_name)
+    if lib.is_space_platform(surface_name) then return {} end
     if not storage.item_values.expanded_values then
         storage.item_values.expanded_values = {}
     end
@@ -409,6 +418,7 @@ function item_values.get_expanded_item_values_for_surface(surface_name)
 end
 
 function item_values.get_items_sorted_by_value(surface_name, items_only, allow_coins, allow_spoilable)
+    if lib.is_space_platform(surface_name) then return {} end
     if allow_coins == nil then
         allow_coins = true
     end
@@ -434,6 +444,7 @@ end
 
 -- Return a list of item names whose values are within a ratio range of a center value
 function item_values.get_items_near_value(surface_name, center_value, max_ratio, items_only, allow_coins, allow_interplanetary)
+    if lib.is_space_platform(surface_name) then return {} end
     if allow_interplanetary == nil then allow_interplanetary = false end
     if allow_coins == nil then allow_coins = true end
 
