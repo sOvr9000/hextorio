@@ -3143,8 +3143,13 @@ function hex_grid.process_hex_core_trades(state, inventory_input, inventory_outp
         max_items_per_output = 1000000
     end
 
+    -- First try to unload whatever buffer is here.  Without this first check for unloading the buffer, a partially full buffer (which wouldn't completely fill the output inventory) can prevent trading from happening to fill the rest of the output inventory in the same tick.
+    hex_grid.try_unload_output_buffer(state, inventory_output)
+
     local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers, max_items_per_output)
     hex_grid.add_to_output_buffer(state, remaining_to_insert)
+
+    -- Now try to unload whatever was just traded.
     hex_grid.try_unload_output_buffer(state, inventory_output)
 
     if not state.total_items_sold then

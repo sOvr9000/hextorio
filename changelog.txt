@@ -5,6 +5,8 @@ Date: 11/12/25
     - Added item buffs for locomotives and cargo wagons.
   Balancing:
     - Limited the number of wagons that a train can use in trading.
+  Bugfixes:
+    - Fixed that trading was sometimes blocked by output buffers, affecting both trains and hex cores.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.5
 Date: 11/12/25
