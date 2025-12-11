@@ -11,6 +11,7 @@ Date: 11/12/25
     - Buffed crystalline fuel's effect on train speed and acceleration.
   Bugfixes:
     - Fixed that trading was sometimes blocked by output buffers, affecting both trains and hex cores.
+    - Fixed that multiple trades could occur at the same time consuming the same items at the same time, only removing items for the cost of one of the trades.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.5
 Date: 11/12/25

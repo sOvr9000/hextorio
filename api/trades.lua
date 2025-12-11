@@ -1617,6 +1617,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
         local trade = trades.get_trade_from_id(trade_id)
         if trade and trade.active then
             for _, quality in pairs(trade.allowed_qualities or {"normal"}) do
+                local all_items_quality = all_items_lookup[quality] or {}
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
                 if num_batches > 0 then
@@ -1629,16 +1630,18 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                     -- Accumulate without normalization for performance
                     coin_tiers.accumulate(total_coins_added_values, coins_added)
 
-                    if not _total_removed[quality] then _total_removed[quality] = {} end
-                    for item_name, amount in pairs(total_removed[quality] or {}) do
-                        _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
-                        handle_item_in_trade(trade_id, quality, item_name, amount, "give")
-                    end
-
                     if not _total_inserted[quality] then _total_inserted[quality] = {} end
                     for item_name, amount in pairs(total_inserted[quality] or {}) do
                         _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
+                        all_items_quality[item_name] = (all_items_quality[item_name] or 0) + amount
                         handle_item_in_trade(trade_id, quality, item_name, amount, "receive")
+                    end
+
+                    if not _total_removed[quality] then _total_removed[quality] = {} end
+                    for item_name, amount in pairs(total_removed[quality] or {}) do
+                        _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
+                        all_items_quality[item_name] = math.max(0, (all_items_quality[item_name] or 0) - amount)
+                        handle_item_in_trade(trade_id, quality, item_name, amount, "give")
                     end
 
                     if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
