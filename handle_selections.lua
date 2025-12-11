@@ -8,14 +8,42 @@ local quests = require "api.quests"
 
 
 
-local function on_claim_tool_used(player, entities)
-    for _, e in pairs(entities) do
-        if e.name == "hex-core" then
-            local transformation = terrain.get_surface_transformation(e.surface)
-            local hex_pos = axial.get_hex_containing(e.position, transformation.scale, transformation.rotation)
-            if hex_grid.can_claim_hex(player, e.surface, hex_pos) then
-                hex_grid.add_hex_to_claim_queue(e.surface, hex_pos, player)
+---@param player LuaPlayer
+---@param surface LuaSurface
+---@param entities LuaEntity[]
+---@param area BoundingBox
+---@param reverse boolean
+---@param alt boolean
+local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
+    local params = {}
+    local transformation = terrain.get_surface_transformation(surface)
+
+    if alt then
+        -- Include ALL hexes, not just ones that have hex cores currently.
+        local overlapping = axial.get_overlapping_hexes(area.left_top, area.right_bottom, transformation.scale, transformation.rotation, false)
+        for _, hex_pos in pairs(overlapping) do
+            local center = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
+            if lib.is_position_in_rect(center, area.left_top, area.right_bottom) then
+                table.insert(params, {surface, hex_pos, player, false})
             end
+        end
+    else
+        -- Only include the hexes with hex cores.
+        for _, e in pairs(entities) do
+            if e.name == "hex-core" then
+                local hex_pos = axial.get_hex_containing(e.position, transformation.scale, transformation.rotation)
+                if hex_grid.can_claim_hex(player, e.surface, hex_pos) then
+                    table.insert(params, {e.surface, hex_pos, player, false})
+                end
+            end
+        end
+    end
+
+    for _, param in pairs(params) do
+        if reverse then
+            hex_grid.remove_hex_from_claim_queue(table.unpack(param, 1, 2))
+        else
+            hex_grid.add_hex_to_claim_queue(table.unpack(param))
         end
     end
 end
@@ -79,7 +107,7 @@ script.on_event(defines.events.on_player_selected_area, function (event)
     if not player then return end
 
     if event.item == "claim-tool" then
-        on_claim_tool_used(player, event.entities)
+        on_claim_tool_used(player, event.surface, event.entities, event.area, false, false)
     elseif event.item == "delete-core-tool" then
         on_delete_core_tool_used(player, event.entities)
     elseif event.item == "hexport-tool" then
@@ -91,7 +119,27 @@ script.on_event(defines.events.on_player_reverse_selected_area, function (event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    if event.item == "hexport-tool" then
+    if event.item == "claim-tool" then
+        on_claim_tool_used(player, event.surface, event.entities, event.area, true, false)
+    elseif event.item == "hexport-tool" then
         on_hexport_tool_used(player, event.entities, true)
+    end
+end)
+
+script.on_event(defines.events.on_player_alt_selected_area, function (event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if event.item == "claim-tool" then
+        on_claim_tool_used(player, event.surface, event.entities, event.area, false, true)
+    end
+end)
+
+script.on_event(defines.events.on_player_alt_reverse_selected_area, function (event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if event.item == "claim-tool" then
+        on_claim_tool_used(player, event.surface, event.entities, event.area, true, true)
     end
 end)

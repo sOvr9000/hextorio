@@ -19,8 +19,13 @@ local claim_tool = {
         cursor_box_type = "copy",
         entity_filters = {"hex-core"},
     },
+
+    alt_select = {
+        border_color = {1, 1, 0},
+        mode = {"nothing"},
+        cursor_box_type = "copy",
+    },
 }
-claim_tool.alt_select = claim_tool.select -- no intuitive alt selection behavior needed yet
 
 local delete_core_tool = {
     type = "selection-tool",

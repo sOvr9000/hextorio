@@ -412,12 +412,15 @@ function axial.does_hex_overlap_rect(hex_pos, hex_grid_scale, hex_grid_rotation,
 end
 
 -- Get all hexes that overlap a rectangular area
-function axial.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
+function axial.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation, cache)
+    if cache == nil then cache = true end
     local coords = {x = rect_top_left.x, y = rect_top_left.y}
     local result = lib.get_at_multi_index(storage.cached, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
     if result then return result end
     result = axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
-    lib.set_at_multi_index(storage.cached, result, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
+    if cache then
+        lib.set_at_multi_index(storage.cached, result, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
+    end
     return result
 end
 
