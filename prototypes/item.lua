@@ -135,8 +135,8 @@ crystalline_fuel.pictures.layers[1].filename = "__hextorio__/graphics/icons/crys
 crystalline_fuel.order = "r[uranium-processing]-f[crystalline-fuel]"
 crystalline_fuel.default_import_location = "nauvis"
 crystalline_fuel.fuel_value = "6GJ"
-crystalline_fuel.fuel_acceleration_multiplier = 3
-crystalline_fuel.fuel_top_speed_multiplier = 1.36
+crystalline_fuel.fuel_acceleration_multiplier = 4
+crystalline_fuel.fuel_top_speed_multiplier = 1.5
 
 -- Dungeons
 local dungeon_chest = table.deepcopy(data.raw["item"]["steel-chest"])
