@@ -718,10 +718,21 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         remaining_coin = input_coin
     end
 
+    local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches, quality)
+
+    local coins_added
+    if trade.has_coins_in_output and total_output_batches > 0 then
+        local trade_coin = trades.get_output_coins_of_trade(trade, quality)
+        coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
+        coin_tiers.add_coin_to_inventory(inventory_output, coins_added)
+        flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
+    else
+        coins_added = coin_tiers.new()
+    end
+
     local total_inserted = {}
     local remaining_to_insert = {}
 
-    local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches, quality)
     if total_output_batches > 0 then
         for _, output_item in pairs(trade.output_items) do
             if not lib.is_coin(output_item.name) then
@@ -750,16 +761,6 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
                 flow_statistics.on_flow({name = output_item.name, quality = quality}, to_insert) -- Track entire stacks being inserted into both the output inventory and the buffer (remaining_to_insert).
             end
         end
-    end
-
-    local coins_added
-    if trade.has_coins_in_output then
-        local trade_coin = trades.get_output_coins_of_trade(trade, quality)
-        coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
-        coin_tiers.add_coin_to_inventory(inventory_output, coins_added)
-        flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
-    else
-        coins_added = coin_tiers.new()
     end
 
     event_system.trigger("trade-processed", trade, total_removed, total_inserted)
