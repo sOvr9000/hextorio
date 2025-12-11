@@ -3309,7 +3309,8 @@ function hex_grid.try_unload_output_buffer(state, inventory_output)
             local inserted
             if is_train then
                 ---@cast inventory_output LuaTrain
-                inserted = inventories.insert_into_train(inventory_output, {name = item_name, count = math.min(10000, count), quality = quality})
+                local wagon_limit = storage.item_buffs.train_trading_capacity
+                inserted = inventories.insert_into_train(inventory_output, {name = item_name, count = math.min(10000, count), quality = quality}, wagon_limit)
             else
                 inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
             end

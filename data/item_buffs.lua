@@ -839,11 +839,21 @@ return {
                 value = 0.1,
                 level_scaling = 1.1,
             },
+            {
+                type = "train-trading-capacity",
+                value = 2,
+                level_scaling = 1.1,
+            },
         },
         ["cargo-wagon"] = {
             {
                 type = "braking-force",
                 value = 0.1,
+                level_scaling = 1.1,
+            },
+            {
+                type = "train-trading-capacity",
+                value = 1,
                 level_scaling = 1.1,
             },
         },
@@ -967,12 +977,14 @@ return {
         ["combat-robot-count"] = true,
         ["robot-cargo-size"] = true,
         ["health"] = true,
+        ["train-trading-capacity"] = true,
     },
 
     has_description = {
         ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
         ["passive-coins"] = true,
+        ["train-trading-capacity"] = true,
     },
 
     is_fractional = { -- Some bonuses like inventory slots must be integers, so the fractional bonuses are combined here to then be rounded before applying.
@@ -987,6 +999,7 @@ return {
         ["robot-cargo-size"] = true,
         ["recipe-productivity"] = true, -- Recipe productivity is rounded to two decimal places by the engine, so assume integers representing percentage values, and scale down when applying
         ["health"] = true, -- might not be necessary but it's here just in case
+        ["train-trading-capacity"] = true,
     },
 
     is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.
@@ -1006,4 +1019,5 @@ return {
     cost_multiplier = 1,
     level_bonus = 0,
     passive_coins_rate = 0,
+    train_trading_capacity = 10,
 }

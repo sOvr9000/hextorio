@@ -525,6 +525,8 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
                     }
 
                     buff_label.tooltip = {"item-buff-description." .. buff.type, breakdown_str, interval}
+                elseif buff.type == "train-trading-capacity" then
+                    buff_label.tooltip = {"item-buff-description." .. buff.type, "[font=heading-2][color=green]" .. storage.item_buffs.train_trading_capacity .. "[.color][.font]"}
                 else
                     buff_label.tooltip = {"item-buff-description." .. buff.type}
                 end

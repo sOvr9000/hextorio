@@ -741,7 +741,8 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
                 local actually_inserted
                 if is_train_output then
                     ---@cast inventory_output LuaTrain
-                    actually_inserted = inventories.insert_into_train(inventory_output, {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality})
+                    local wagon_limit = storage.item_buffs.train_trading_capacity
+                    actually_inserted = inventories.insert_into_train(inventory_output, {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}, wagon_limit)
                 else
                     actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
                 end

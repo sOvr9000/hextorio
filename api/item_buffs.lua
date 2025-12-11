@@ -106,6 +106,9 @@ local buff_type_actions = {
     ["passive-coins"] = function(value)
         storage.item_buffs.passive_coins_rate = storage.item_buffs.passive_coins_rate + value
     end,
+    ["train-trading-capacity"] = function(value)
+        storage.item_buffs.train_trading_capacity = storage.item_buffs.train_trading_capacity + value
+    end,
     ["all-buffs-level"] = function(value)
         storage.item_buffs.level_bonus = storage.item_buffs.level_bonus + value
 
@@ -605,11 +608,19 @@ function item_buffs._enhance_all_item_buffs_tick()
     event_system.trigger("item-buffs-enhance-all-finished", player, storage.item_buffs.enhance_all.total_cost, enhanced_items)
 end
 
-function item_buffs.migrate_buff_changes(new_buffs)
-    for item_name, level in pairs(storage.item_buffs.levels) do
-        item_buffs.set_item_buff_level(item_name, 0) -- Remove current effects
-        storage.item_buffs.item_buffs[item_name] = new_buffs[item_name]
-        item_buffs.set_item_buff_level(item_name, level) -- Apply with new effects
+function item_buffs.migrate_buff_changes(new_data)
+    storage.item_buffs.show_as_linear = new_data.show_as_linear
+    storage.item_buffs.is_fractional = new_data.is_fractional
+    storage.item_buffs.has_description = new_data.has_description
+    storage.item_buffs.is_nonlinear = new_data.is_nonlinear
+
+    for item_name, buffs in pairs(new_data.item_buffs) do
+        if not lib.tables_equal(storage.item_buffs.item_buffs[item_name], buffs) then
+            local level = item_buffs.get_item_buff_level(item_name)
+            item_buffs.set_item_buff_level(item_name, 0) -- Remove current effects
+            storage.item_buffs.item_buffs[item_name] = buffs
+            item_buffs.set_item_buff_level(item_name, level) -- Apply with new effects
+        end
     end
 end
 

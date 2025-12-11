@@ -61,15 +61,16 @@ end
 
 ---@param train LuaTrain
 ---@param stack ItemStackIdentification
+---@param wagon_limit int
 ---@return int inserted How many items were successfully inserted
-function inventories.insert_into_train(train, stack)
+function inventories.insert_into_train(train, stack, wagon_limit)
     -- This function is supposed to be LuaTrain.insert(stack), but that function does not return how many items were successfully inserted like LuaInventory.insert()
     local quality = stack.quality or "normal"
     local count = stack.count or 1
 
     local remaining_count = count
-    for _, cargo_wagon in pairs(train.cargo_wagons) do
-        if remaining_count <= 0 then break end
+    for i, cargo_wagon in ipairs(train.cargo_wagons) do
+        if remaining_count <= 0 or i > wagon_limit then break end
 
         remaining_count = remaining_count - cargo_wagon.insert {
             name = stack.name,
