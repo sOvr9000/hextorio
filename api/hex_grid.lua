@@ -353,6 +353,7 @@ function hex_grid.register_events()
     end)
 
     event_system.register("train-arrived-at-stop", hex_grid.on_train_arrived_at_stop)
+    event_system.register("entity-built", hex_grid.on_entity_built)
 end
 
 ---Get or create surface storage
@@ -773,6 +774,10 @@ function hex_grid.update_hex_core_inventory_filters(hex_core_state)
         if i+2 <= #inventory then inventory.set_filter(i+2, {name = "meteor-coin", quality = "normal"}) end
         if i+3 <= #inventory then inventory.set_filter(i+3, {name = "hexaprism-coin", quality = "normal"}) end
     end
+end
+
+function hex_grid.copy_signals_to_combinator(entity)
+    -- TODO: Set signals of this constant combinator to the contents of the "next" enabled trade, if adjacent to hex core.
 end
 
 ---Initialize a hex for a dungeon.
@@ -3620,6 +3625,15 @@ function hex_grid.on_train_arrived_at_stop(train, train_stop)
 
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
     hex_grid.process_hex_core_trades(state, train, inventory_output, quality_cost_multipliers)
+end
+
+---@param entity LuaEntity
+function hex_grid.on_entity_built(entity)
+    if not entity.valid then return end
+
+    if entity.type == "constant-combinator" then
+        hex_grid.copy_signals_to_combinator(entity)
+    end
 end
 
 
