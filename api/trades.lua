@@ -622,7 +622,7 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     end
 
     if not max_items_per_output then
-        max_items_per_output = trade.max_items_per_output or 1000
+        max_items_per_output = trade.max_items_per_output or 100000
     end
     if max_items_per_output < 1 then return 0 end -- Probably won't ever happen, but if it ever does, it's an optimization.
 

@@ -3132,9 +3132,9 @@ function hex_grid.process_hex_core_trades(state, inventory_input, inventory_outp
         hex_grid._set_state_active(state, true)
     end
 
-    local max_items_per_output = 1000
+    local max_items_per_output = 100000
     if inventory_output.object_name == "LuaTrain" then
-        max_items_per_output = 10000
+        max_items_per_output = 1000000
     end
 
     local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers, max_items_per_output)
