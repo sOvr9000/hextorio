@@ -647,7 +647,7 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
             if inventory_output_size then
                 local prot = prototypes["item"][output_item.name]
                 if prot then
-                    num_batches = math.min(inventory_output_size * prot.stack_size / output_item.count, num_batches)
+                    num_batches = math.min(math.floor(inventory_output_size * prot.stack_size / output_item.count), num_batches)
                     if num_batches == 0 then return 0 end
                 end
             end

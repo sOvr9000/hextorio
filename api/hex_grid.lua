@@ -3312,22 +3312,26 @@ function hex_grid.try_unload_output_buffer(state, inventory_output)
     local empty = true
     for quality, counts in pairs(state.output_buffer) do
         for item_name, count in pairs(counts) do
-            local inserted
-            if is_train then
-                ---@cast inventory_output LuaTrain
-                local wagon_limit = storage.item_buffs.train_trading_capacity
-                inserted = inventories.insert_into_train(inventory_output, {name = item_name, count = math.min(10000, count), quality = quality}, wagon_limit)
+            if count <= 0 then
+                counts[item_name] = nil
             else
-                inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
-            end
+                local inserted
+                if is_train then
+                    ---@cast inventory_output LuaTrain
+                    local wagon_limit = storage.item_buffs.train_trading_capacity
+                    inserted = inventories.insert_into_train(inventory_output, {name = item_name, count = math.min(10000, count), quality = quality}, wagon_limit)
+                else
+                    inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
+                end
 
-            local remaining = state.output_buffer[quality][item_name] - inserted
-            empty = empty and remaining == 0
+                local remaining = state.output_buffer[quality][item_name] - inserted
+                empty = empty and remaining == 0
 
-            if remaining > 0 then
-                state.output_buffer[quality][item_name] = remaining
-            else
-                state.output_buffer[quality][item_name] = nil
+                if remaining > 0 then
+                    state.output_buffer[quality][item_name] = remaining
+                else
+                    state.output_buffer[quality][item_name] = nil
+                end
             end
         end
     end
