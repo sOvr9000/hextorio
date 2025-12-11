@@ -234,6 +234,10 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
         params = {}
     end
 
+    if lib.is_space_platform(surface_name) then
+        lib.log_error("trades.from_item_names: Attempting to create a trade for a space platform (illegal) with input_item_names = " .. serpent.line(input_item_names) .. ", output_item_names = " .. serpent.line(output_item_names))
+    end
+
     if type(input_item_names) == "string" then
         input_item_names = {input_item_names}
     end
