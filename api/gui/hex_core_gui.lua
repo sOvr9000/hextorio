@@ -26,6 +26,8 @@ function hex_core_gui.register_events()
     event_system.register_gui("gui-clicked", "upgrade-quality", hex_core_gui.on_upgrade_quality_button_click)
     event_system.register_gui("gui-clicked", "convert-resources", hex_core_gui.on_convert_resources_button_click)
     event_system.register_gui("gui-clicked", "confirmation-button", hex_core_gui.on_confirmation_button_click)
+    event_system.register_gui("gui-clicked", "allow-locomotive-trading", hex_core_gui.on_allow_locomotive_trading_button_click)
+    event_system.register_gui("gui-clicked", "send-outputs-to-cargo-wagons", hex_core_gui.on_send_outputs_to_cargo_wagons_button_click)
     event_system.register_gui("gui-selection-changed", "update-hex-core", hex_core_gui.update_hex_core)
 
     event_system.register("trade-processed", function(trade)
@@ -126,7 +128,7 @@ function hex_core_gui.init_hex_core(player)
     local claimed_by = frame.add {type = "label", name = "claimed-by", caption = {"hex-core-gui.claimed-by"}}
     claimed_by.style.font = "heading-2"
 
-    local hex_control_flow = frame.add {type = "table", name = "hex-control-flow", column_count = 5}
+    local hex_control_flow = frame.add {type = "table", name = "hex-control-flow", column_count = 6}
     hex_control_flow.visible = false
 
     local teleport = hex_control_flow.add {
@@ -150,6 +152,13 @@ function hex_core_gui.init_hex_core(player)
         name = "supercharge",
         sprite = "item/electric-mining-drill",
         tags = {handlers = {["gui-clicked"] = "supercharge"}},
+    }
+
+    local delete_core = hex_control_flow.add {
+        type = "sprite-button",
+        name = "delete-core",
+        sprite = "utility/empty_trash_slot",
+        tags = {handlers = {["gui-clicked"] = "delete-core"}},
     }
 
     local sink_mode = hex_control_flow.add {
@@ -186,11 +195,20 @@ function hex_core_gui.init_hex_core(player)
 
     local stats = hex_control_flow.add {type = "sprite-button", name = "stats", sprite = "utility/side_menu_production_icon"}
 
-    local delete_core = hex_control_flow.add {
+    local allow_locomotive_trading = hex_control_flow.add {
         type = "sprite-button",
-        name = "delete-core",
-        sprite = "utility/empty_trash_slot",
-        tags = {handlers = {["gui-clicked"] = "delete-core"}},
+        name = "allow-locomotive-trading",
+        sprite = "item/locomotive",
+        tags = {handlers = {["gui-clicked"] = "allow-locomotive-trading"}},
+        tooltip = {"hex-core-gui.allow-locomotive-trading-tooltip"},
+    }
+
+    local send_outputs_to_cargo_wagons = hex_control_flow.add {
+        type = "sprite-button",
+        name = "send-outputs-to-cargo-wagons",
+        sprite = "item/cargo-wagon",
+        tags = {handlers = {["gui-clicked"] = "send-outputs-to-cargo-wagons"}},
+        tooltip = {"hex-core-gui.send-outputs-to-cargo-wagons-tooltip"},
     }
 
     local upgrade_quality = hex_control_flow.add {
@@ -264,10 +282,25 @@ function hex_core_gui.update_hex_core(player)
         frame["claimed-by"].visible = true
         frame["claimed-by"].caption = {"hex-core-gui.claimed-by", claimed_by_name, lib.ticks_to_string(claimed_timestamp)}
 
+        local locomotive_trading_unlocked = quests.is_feature_unlocked "locomotive-trading"
+
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["stats"].tooltip = lib.get_str_from_hex_core_stats(hex_grid.get_hex_core_stats(state))
         frame["hex-control-flow"]["teleport"].visible = (quests.is_feature_unlocked "teleportation" or quests.is_feature_unlocked "teleportation-cross-planet") and not lib.is_player_editor_like(player) and state.hex_core ~= nil and player.character ~= nil
         frame["hex-control-flow"]["toggle-hexport"].visible = quests.is_feature_unlocked "hexports"
+        frame["hex-control-flow"]["allow-locomotive-trading"].visible = locomotive_trading_unlocked
+        frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].visible = locomotive_trading_unlocked
+
+        if locomotive_trading_unlocked then
+            frame["hex-control-flow"]["allow-locomotive-trading"].toggled = state.allow_locomotive_trading == true
+            frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].toggled = state.send_outputs_to_cargo_wagons == true
+            frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].enabled = state.allow_locomotive_trading == true
+            if state.allow_locomotive_trading then
+                frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].tooltip = {"hex-core-gui.send-outputs-to-cargo-wagons-tooltip"}
+            else
+                frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].tooltip = nil
+            end
+        end
 
         if state.hexport then
             frame["hex-control-flow"]["toggle-hexport"].sprite = "item/roboport"
@@ -767,6 +800,32 @@ function hex_core_gui._reset_quality_bound(element, hex_core_quality)
         end
         element.elem_value = {type = "quality", name = lib.get_quality_at_tier(quality_tier)}
     end
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function hex_core_gui.on_allow_locomotive_trading_button_click(player, elem)
+    local hex_core = lib.get_player_opened_entity(player)
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    state.allow_locomotive_trading = not elem.toggled
+    hex_core_gui.update_hex_core(player)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function hex_core_gui.on_send_outputs_to_cargo_wagons_button_click(player, elem)
+    local hex_core = lib.get_player_opened_entity(player)
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    state.send_outputs_to_cargo_wagons = not elem.toggled
+    hex_core_gui.update_hex_core(player)
 end
 
 

@@ -420,18 +420,20 @@ function coin_tiers.floor(coin)
 end
 
 ---Get a coin object from the given inventory.
----@param inventory LuaInventory
+---@param inventory LuaInventory|LuaTrain
 ---@return Coin
 function coin_tiers.get_coin_from_inventory(inventory)
     return coin_tiers.new {inventory.get_item_count "hex-coin", inventory.get_item_count "gravity-coin", inventory.get_item_count "meteor-coin", inventory.get_item_count "hexaprism-coin"}
 end
 
 ---Update the inventory contents such that it contains the given coin.
----@param inventory LuaInventory
+---@param inventory LuaInventory|LuaTrain
 ---@param current_coin Coin
 ---@param new_coin Coin
 function coin_tiers.update_inventory(inventory, current_coin, new_coin)
     storage.coin_tiers.is_processing[inventory] = true
+
+    local is_train = inventory.object_name == "LuaTrain"
 
     for tier = 1, 4 do
         local coin_name = lib.get_coin_name_of_tier(tier)
@@ -441,7 +443,11 @@ function coin_tiers.update_inventory(inventory, current_coin, new_coin)
         if new_amount > current_amount then
             inventory.insert {name = coin_name, count = new_amount - current_amount}
         elseif new_amount < current_amount then
-            inventory.remove {name = coin_name, count = current_amount - new_amount}
+            if is_train then
+                inventory.remove_item {name = coin_name, count = current_amount - new_amount}
+            else
+                inventory.remove {name = coin_name, count = current_amount - new_amount}
+            end
         end
     end
 
@@ -449,7 +455,7 @@ function coin_tiers.update_inventory(inventory, current_coin, new_coin)
 end
 
 ---Normalize the inventory, combining multiple stacks of coins into their next tiers.
----@param inventory LuaInventory
+---@param inventory LuaInventory|LuaTrain
 ---@return Coin|nil
 function coin_tiers.normalize_inventory(inventory)
     if storage.coin_tiers.is_processing[inventory] then return end
@@ -464,24 +470,20 @@ function coin_tiers.normalize_inventory(inventory)
 end
 
 ---Add coins to the inventory.
----@param inventory LuaInventory
+---@param inventory LuaInventory|LuaTrain
 ---@param coin Coin
 function coin_tiers.add_coin_to_inventory(inventory, coin)
     local current_coin = coin_tiers.get_coin_from_inventory(inventory)
     local new_coin = coin_tiers.add(current_coin, coin)
-    -- log("add_coin_to_inventory: current_coin = " .. serpent.line(current_coin))
-    -- log("add_coin_to_inventory: new_coin = " .. serpent.line(new_coin))
     coin_tiers.update_inventory(inventory, current_coin, new_coin)
 end
 
 ---Remove coins from the inventory
----@param inventory LuaInventory
+---@param inventory LuaInventory|LuaTrain
 ---@param coin Coin
 function coin_tiers.remove_coin_from_inventory(inventory, coin)
     local current_coin = coin_tiers.get_coin_from_inventory(inventory)
     local new_coin = coin_tiers.subtract(current_coin, coin)
-    -- log("remove_coin_from_inventory: current_coin = " .. serpent.line(current_coin))
-    -- log("remove_coin_from_inventory: new_coin = " .. serpent.line(new_coin))
     coin_tiers.update_inventory(inventory, current_coin, new_coin)
 end
 

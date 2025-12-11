@@ -22,6 +22,7 @@ local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
 local spiders = require "api.spiders"
 local hex_island = require "api.hex_island"
+local train_trading = require "api.train_trading"
 
 migrations.load_handlers()
 
@@ -34,6 +35,7 @@ dungeons.register_events()
 spiders.register_events()
 hex_island.register_events()
 space_platforms.register_events()
+train_trading.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -147,6 +149,7 @@ script.on_init(function()
     dungeons.init()
     spiders.init()
     hex_island.init()
+    train_trading.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then

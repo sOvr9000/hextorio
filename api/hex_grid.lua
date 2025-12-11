@@ -6,6 +6,7 @@ local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"
 local trade_loop_finder = require "api.trade_loop_finder"
+local inventories       = require "api.inventories"
 
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
@@ -350,6 +351,8 @@ function hex_grid.register_events()
     event_system.register("runtime-setting-changed-dungeon-hexlight-color", function()
         hex_grid.update_hexlight_default_colors()
     end)
+
+    event_system.register("train-arrived-at-stop", hex_grid.on_train_arrived_at_stop)
 end
 
 ---Get or create surface storage
@@ -932,6 +935,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     end
 
     state.generated = true
+    state.send_outputs_to_cargo_wagons = true
 
     local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
     if hex_grid.can_hex_core_spawn(surface, hex_pos) then
@@ -2732,7 +2736,7 @@ function hex_grid.process_hex_core_pool()
     for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
 
-        hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
+        hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers)
         hex_grid.process_hexlight(state)
     end
     -- prof.stop()
@@ -3105,26 +3109,37 @@ end
 --     end
 -- end
 
-function hex_grid.process_hex_core_trades(state, quality_cost_multipliers)
+---@param state HexState
+---@param inventory_input LuaInventory|LuaTrain|nil
+---@param inventory_output LuaInventory|LuaTrain|nil
+---@param quality_cost_multipliers {[string]: number}|nil
+function hex_grid.process_hex_core_trades(state, inventory_input, inventory_output, quality_cost_multipliers)
     if not state.trades then return end
-    if not state.hex_core then return end
-    local inventory_input = state.hex_core_input_inventory
-    if not inventory_input then return end
-    local inventory_output = state.hex_core_output_inventory
-    if not inventory_output then return end
+    if not state.hex_core or not state.hex_core.valid then return end
+    if not inventory_input or not inventory_input.valid then return end
+    if not inventory_output or not inventory_output.valid then return end
 
     -- Check if trades can occur
     local total_items = inventory_input.get_item_count()
     if total_items == 0 then
-        hex_grid._set_state_active(state, false)
+        if inventory_input.object_name == "LuaInventory" then
+            hex_grid._set_state_active(state, false)
+        end
         return
     end
 
-    hex_grid._set_state_active(state, true)
+    if inventory_input.object_name == "LuaInventory" then
+        hex_grid._set_state_active(state, true)
+    end
 
-    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers)
+    local max_items_per_output = 1000
+    if inventory_output.object_name == "LuaTrain" then
+        max_items_per_output = 10000
+    end
+
+    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers, max_items_per_output)
     hex_grid.add_to_output_buffer(state, remaining_to_insert)
-    hex_grid.try_unload_output_buffer(state)
+    hex_grid.try_unload_output_buffer(state, inventory_output)
 
     if not state.total_items_sold then
         state.total_items_sold = {}
@@ -3250,6 +3265,7 @@ function hex_grid.add_to_output_buffer(state, items)
             if count <= 0 then
                 lib.log_error("hex_grid.add_to_output_buffer: Tried to add a negative amount of items to the output buffer: " .. serpent.block(_items))
             else
+                log("output buffer: " .. item_name .. ": +" .. count)
                 state.output_buffer[quality][item_name] = (state.output_buffer[quality][item_name] or 0) + count
             end
         end
@@ -3275,19 +3291,31 @@ end
 
 ---Return whether the buffer is empty after unloading.
 ---@param state table
+---@param inventory_output LuaInventory|LuaTrain|nil
 ---@return boolean
-function hex_grid.try_unload_output_buffer(state)
+function hex_grid.try_unload_output_buffer(state, inventory_output)
     if not state.output_buffer or not next(state.output_buffer) then return true end
-    local inventory_output = state.hex_core_output_inventory
-    if not inventory_output then return true end
+    if not inventory_output or not inventory_output.valid then return next(state.output_buffer) == nil end
+
+    local is_train = inventory_output.object_name == "LuaTrain"
 
     local empty = true
     for quality, counts in pairs(state.output_buffer) do
         for item_name, count in pairs(counts) do
-            -- "AND" with prev value of empty because it needs to stay false if it ever becomes false
-            local inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
+            local inserted
+            if is_train then
+                ---@cast inventory_output LuaTrain
+                inserted = inventories.insert_into_train(inventory_output, {name = item_name, count = math.min(10000, count), quality = quality})
+                log("unloading from buffer: " .. item_name .. ": -" .. inserted)
+            else
+                inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
+            end
+
             local remaining = state.output_buffer[quality][item_name] - inserted
             empty = empty and remaining == 0
+
+            log("remaining buffer: " .. item_name .. ": " .. remaining)
+
             if remaining > 0 then
                 state.output_buffer[quality][item_name] = remaining
             else
@@ -3573,6 +3601,29 @@ function hex_grid.get_hex_core_stats(state)
     }
 
     return stats
+end
+
+---@param train LuaTrain
+---@param train_stop LuaEntity
+function hex_grid.on_train_arrived_at_stop(train, train_stop)
+    if not quests.is_feature_unlocked "locomotive-trading" then return end
+
+    local transformation = terrain.get_surface_transformation(train_stop.surface)
+    local hex_pos = axial.get_hex_containing(train_stop.position, transformation.scale, transformation.rotation)
+    local state = hex_grid.get_hex_state(train_stop.surface, hex_pos)
+    if not state then return end
+
+    if not state.allow_locomotive_trading then return end
+
+    local inventory_output
+    if state.send_outputs_to_cargo_wagons then
+        inventory_output = train
+    else
+        inventory_output = state.hex_core_output_inventory
+    end
+
+    local quality_cost_multipliers = lib.get_quality_cost_multipliers()
+    hex_grid.process_hex_core_trades(state, train, inventory_output, quality_cost_multipliers)
 end
 
 

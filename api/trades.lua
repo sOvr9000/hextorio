@@ -9,6 +9,7 @@ local event_system= require "api.event_system"
 local quests      = require "api.quests"
 local hex_island  = require "api.hex_island"
 local trade_loop_finder = require "api.trade_loop_finder"
+local inventories       = require "api.inventories"
 
 
 
@@ -603,8 +604,9 @@ end
 ---@param quality string|nil
 ---@param quality_cost_mult number|nil
 ---@param max_items_per_output number|nil
+---@param inventory_output_size int|nil
 ---@return number
-function trades.get_num_batches_for_trade(input_items, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
+function trades.get_num_batches_for_trade(input_items, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
     if not trade.active then return 0 end
 
     quality = quality or "normal"
@@ -637,6 +639,14 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
         if not lib.is_coin(output_item.name) then
             num_batches = math.min(math.floor(max_items_per_output / output_item.count), num_batches)
             if num_batches == 0 then return 0 end
+
+            if inventory_output_size then
+                local prot = prototypes["item"][output_item.name]
+                if prot then
+                    num_batches = math.min(inventory_output_size * prot.stack_size / output_item.count, num_batches)
+                    if num_batches == 0 then return 0 end
+                end
+            end
         end
     end
 
@@ -649,8 +659,8 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
 end
 
 ---Trade items within an inventory, returning the total items removed, total items inserted, remaining items to insert if inventory was filled completely, the remaining coins in the inventory input inventory, and the newly added coins to the output inventory.
----@param inventory_input LuaInventory
----@param inventory_output LuaInventory
+---@param inventory_input LuaInventory|LuaTrain
+---@param inventory_output LuaInventory|LuaTrain
 ---@param trade Trade
 ---@param num_batches number
 ---@param quality string|nil
@@ -662,6 +672,9 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     if not trade.active or num_batches <= 0 then
         return {}, {}, {}, input_coin or coin_tiers.new(), coin_tiers.new()
     end
+
+    local is_train_input = inventory_input.object_name == "LuaTrain"
+    local is_train_output = inventory_output.object_name == "LuaTrain"
 
     -- TODO: Handle two flow statistics if input and output inventories are on different surfaces
     local flow_statistics = game.forces.player.get_item_production_statistics(trade.surface_name)
@@ -678,8 +691,15 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         if not lib.is_coin(input_item.name) then
             local to_remove = math.min(input_item.count * num_batches, input_items[quality][input_item.name] or 0)
             if to_remove > 0 then
-                local actually_removed = inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
+                local actually_removed
+                if is_train_input then
+                    actually_removed = inventory_input.remove_item {name = input_item.name, count = to_remove, quality = quality}
+                else
+                    actually_removed = inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
+                end
+
                 if not total_removed[quality] then total_removed[quality] = {} end
+
                 total_removed[quality][input_item.name] = (total_removed[quality][input_item.name] or 0) + actually_removed
                 trades.increment_total_sold(input_item.name, actually_removed)
                 flow_statistics.on_flow({name = input_item.name, quality = quality}, -actually_removed)
@@ -706,13 +726,26 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         for _, output_item in pairs(trade.output_items) do
             if not lib.is_coin(output_item.name) then
                 local to_insert = output_item.count * total_output_batches
-                local actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
-                if not total_inserted[quality] then total_inserted[quality] = {} end
+
+                local actually_inserted
+                if is_train_output then
+                    ---@cast inventory_output LuaTrain
+                    actually_inserted = inventories.insert_into_train(inventory_output, {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality})
+                else
+                    actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
+                end
+
+                if not total_inserted[quality] then
+                    total_inserted[quality] = {}
+                end
+
                 total_inserted[quality][output_item.name] = (total_inserted[quality][output_item.name] or 0) + actually_inserted
+
                 if actually_inserted < to_insert then
                     if not remaining_to_insert[quality] then remaining_to_insert[quality] = {} end
                     remaining_to_insert[quality][output_item.name] = (remaining_to_insert[quality][output_item.name] or 0) + to_insert - actually_inserted
                 end
+
                 trades.increment_total_bought(output_item.name, to_insert)
                 flow_statistics.on_flow({name = output_item.name, quality = quality}, to_insert) -- Track entire stacks being inserted into both the output inventory and the buffer (remaining_to_insert).
             end
@@ -1506,7 +1539,7 @@ function trades.get_item_names_in_trade(trade)
 end
 
 ---Get the total amount of coins and items of an inventory.
----@param inv LuaInventory
+---@param inv LuaInventory|LuaTrain
 ---@return Coin, QualityItemCounts
 function trades.get_coins_and_items_of_inventory(inv)
     local input_coin_values = {}
@@ -1529,8 +1562,8 @@ end
 
 ---Process all trades from one inventory to another.
 ---@param surface_name string
----@param input_inv LuaInventory
----@param output_inv LuaInventory
+---@param input_inv LuaInventory|LuaTrain
+---@param output_inv LuaInventory|LuaTrain
 ---@param trade_ids int[]
 ---@param quality_cost_multipliers StringAmounts|nil
 ---@param max_items_per_output int|nil
@@ -1560,13 +1593,26 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
         end
     end
 
+    local inventory_output_size
+    if output_inv.object_name == "LuaTrain" then
+        inventory_output_size = 0
+        for _, wagon in pairs(output_inv.cargo_wagons) do
+            inventory_output_size = inventory_output_size + wagon.prototype.get_inventory_size(defines.inventory.cargo_wagon, wagon.quality)
+        end
+    elseif output_inv.object_name == "LuaInventory" then
+        local hex_core = output_inv.entity_owner
+        if hex_core then
+            inventory_output_size = hex_core.prototype.get_inventory_size(defines.inventory.chest, hex_core.quality)
+        end
+    end
+
     local total_batches = 0
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
         if trade and trade.active then
             for _, quality in pairs(trade.allowed_qualities or {"normal"}) do
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
-                local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output)
+                local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
                 if num_batches > 0 then
                     quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + 1

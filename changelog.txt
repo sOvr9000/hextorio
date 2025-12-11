@@ -1,6 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.5
 Date: 10/12/25
+  Major Features:
+    - Integrated locomotives into the trading nexus:
+        Cargo wagons of trains at a train stop now serve as substitute inventories for the hex core in the same hex as the train stop.
+        Upon arrival at a stop, if the associated hex core is set to allow trading with trains, the train's inventories will be used for trading.
+  Changes:
+    - Made the output buffer loading smarter, preventing from trading too many stacks of items at once.
+        (e.g. buying cars with hexaprism coins doesn't put billions of cars into the output buffer that'll take an eternity to unload.)
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.4
 Date: 10/12/25

@@ -111,6 +111,12 @@ return {
             prerequisites = {"ground-zero"},
         },
         {
+            name = "too-many-belts",
+            conditions = {{type = "trades-found", progress_requirement = 4000}},
+            rewards = {{type = "unlock-feature", value = "locomotive-trading"}, {type = "claim-free-hexes", value = {"nauvis", 10}}},
+            prerequisites = {"find-some-trades"},
+        },
+        {
             name = "remind-me-later",
             conditions = {{type = "favorite-trade", progress_requirement = 1, show_progress_bar = true}},
             rewards = {
