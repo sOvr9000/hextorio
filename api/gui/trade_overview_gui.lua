@@ -990,6 +990,18 @@ function trade_overview_gui.on_export_json_button_click(player, elem)
         end
     end
 
+    for surface_name, trades_list in pairs(formatted_trades) do
+        if not next(trades_list) then
+            formatted_trades[surface_name] = nil
+        end
+    end
+
+    for surface_name, values in pairs(item_value_lookup) do
+        if not next(values) then
+            item_value_lookup[surface_name] = nil
+        end
+    end
+
     local to_export = {
         trades = formatted_trades,
         item_values = item_value_lookup,
