@@ -3312,7 +3312,7 @@ function hex_grid.try_unload_output_buffer(state, inventory_output)
     local empty = true
     for quality, counts in pairs(state.output_buffer) do
         for item_name, count in pairs(counts) do
-            if count <= 0 then
+            if count < 1 then
                 counts[item_name] = nil
             else
                 local inserted
