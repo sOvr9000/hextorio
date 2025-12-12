@@ -6,6 +6,7 @@ Date: 11/12/25
     - Extended the tooltip for the locomotive trading button in the hex core GUI to make it clearer that the number of cargo wagons allowed per train trade is limited but upgradeable.
   Balancing:
     - Increased the requirements for most "total item rank" quests.
+    - Multiplied the loot value of dungeon chests on all planets by 10x, effectively upgrading all rolled loot items by one quality level.
   Bugfixes:
     - Fixed rare crash with output buffer unloading.
     - Fixed that train trading input inventory wasn't limited like output inventory.
