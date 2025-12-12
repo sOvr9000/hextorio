@@ -3151,7 +3151,6 @@ function hex_grid.process_hex_core_trades(state, inventory_input, inventory_outp
         ---@cast inventory_input LuaTrain
         ---@cast train_stop LuaEntity
         cargo_wagons = lib.get_cargo_wagons_nearest_to_stop(inventory_input, train_stop)
-        log(serpent.line(cargo_wagons))
     end
 
     -- First try to unload whatever buffer is here.  Without this first check for unloading the buffer, a partially full buffer (which wouldn't completely fill the output inventory) can prevent trading from happening to fill the rest of the output inventory in the same tick.

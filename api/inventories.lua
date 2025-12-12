@@ -66,20 +66,20 @@ function inventories.get_coins_and_items_on_train(cargo_wagons, wagon_limit)
     local input_coin_values = {}
     local all_items_lookup = {}
 
-    for i, wagon in pairs(cargo_wagons) do
+    for i, wagon in ipairs(cargo_wagons) do
         if i > wagon_limit then break end
 
         local inv = wagon.get_inventory(defines.inventory.cargo_wagon)
         if inv then
             for _, stack in pairs(inv.get_contents()) do
                 if lib.is_coin(stack.name) then
-                    input_coin_values[stack.name] = stack.count
+                    input_coin_values[stack.name] = (input_coin_values[stack.name] or 0) + stack.count
                 else
                     local quality = stack.quality or "normal"
                     if not all_items_lookup[quality] then
                         all_items_lookup[quality] = {}
                     end
-                    all_items_lookup[quality][stack.name] = stack.count
+                    all_items_lookup[quality][stack.name] = (all_items_lookup[quality][stack.name] or 0) + stack.count
                 end
             end
         end
