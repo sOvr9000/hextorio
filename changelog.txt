@@ -3,6 +3,8 @@ Version: 1.3.7
 Date: 11/12/25
   Balancing:
     - Increased the requirements for most "total item rank" quests.
+  Bugfixes:
+    - Fixed rare crash with output buffer unloading.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.6
 Date: 11/12/25
