@@ -200,7 +200,7 @@ function hex_core_gui.init_hex_core(player)
         name = "allow-locomotive-trading",
         sprite = "item/locomotive",
         tags = {handlers = {["gui-clicked"] = "allow-locomotive-trading"}},
-        tooltip = {"hex-core-gui.allow-locomotive-trading-tooltip"},
+        tooltip = {"hex-core-gui.allow-locomotive-trading-tooltip", storage.item_buffs.train_trading_capacity},
     }
 
     local send_outputs_to_cargo_wagons = hex_control_flow.add {
@@ -293,6 +293,7 @@ function hex_core_gui.update_hex_core(player)
 
         if locomotive_trading_unlocked then
             frame["hex-control-flow"]["allow-locomotive-trading"].toggled = state.allow_locomotive_trading == true
+            frame["hex-control-flow"]["allow-locomotive-trading"].tooltip = {"hex-core-gui.allow-locomotive-trading-tooltip", "[font=heading-2][color=green]" .. storage.item_buffs.train_trading_capacity .. "[.color][.font]"}
             frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].toggled = state.send_outputs_to_cargo_wagons == true
             frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].enabled = state.allow_locomotive_trading == true
             if state.allow_locomotive_trading then
