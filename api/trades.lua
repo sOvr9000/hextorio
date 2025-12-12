@@ -1577,7 +1577,17 @@ end
 function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
     quality_cost_multipliers = quality_cost_multipliers or {}
 
-    local input_coin, all_items_lookup = trades.get_coins_and_items_of_inventory(input_inv)
+    local is_output_train = output_inv.object_name == "LuaTrain"
+    local is_input_train = input_inv.object_name == "LuaTrain"
+
+    local input_coin, all_items_lookup
+    if is_input_train then
+        ---@cast input_inv LuaTrain
+        input_coin, all_items_lookup = inventories.get_coins_and_items_on_train(input_inv, storage.item_buffs.train_trading_capacity)
+    else
+        input_coin, all_items_lookup = trades.get_coins_and_items_of_inventory(input_inv)
+    end
+
     local initial_input_coin = coin_tiers.copy(input_coin)
 
     local _total_removed = {}
@@ -1600,12 +1610,12 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     end
 
     local inventory_output_size
-    if output_inv.object_name == "LuaTrain" then
+    if is_output_train then
         inventory_output_size = 0
         for _, wagon in pairs(output_inv.cargo_wagons) do
             inventory_output_size = inventory_output_size + wagon.prototype.get_inventory_size(defines.inventory.cargo_wagon, wagon.quality)
         end
-    elseif output_inv.object_name == "LuaInventory" then
+    else
         local hex_core = output_inv.entity_owner
         if hex_core then
             inventory_output_size = hex_core.prototype.get_inventory_size(defines.inventory.chest, hex_core.quality)

@@ -5,6 +5,7 @@ Date: 11/12/25
     - Increased the requirements for most "total item rank" quests.
   Bugfixes:
     - Fixed rare crash with output buffer unloading.
+    - Fixed that train trading input inventory wasn't limited like output inventory.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.6
 Date: 11/12/25

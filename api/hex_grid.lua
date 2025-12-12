@@ -3125,16 +3125,18 @@ function hex_grid.process_hex_core_trades(state, inventory_input, inventory_outp
     if not inventory_input or not inventory_input.valid then return end
     if not inventory_output or not inventory_output.valid then return end
 
+    local is_input_train = inventory_input.object_name == "LuaTrain"
+
     -- Check if trades can occur
     local total_items = inventory_input.get_item_count()
     if total_items == 0 then
-        if inventory_input.object_name == "LuaInventory" then
+        if not is_input_train then
             hex_grid._set_state_active(state, false)
         end
         return
     end
 
-    if inventory_input.object_name == "LuaInventory" then
+    if not is_input_train then
         hex_grid._set_state_active(state, true)
     end
 

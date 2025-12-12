@@ -82,6 +82,36 @@ function inventories.insert_into_train(train, stack, wagon_limit)
     return count - remaining_count
 end
 
+---@param train LuaTrain
+---@param wagon_limit int
+---@return Coin, QualityItemCounts
+function inventories.get_coins_and_items_on_train(train, wagon_limit)
+    local input_coin_values = {}
+    local all_items_lookup = {}
+
+    for i, wagon in pairs(train.cargo_wagons) do
+        if i > wagon_limit then break end
+
+        local inv = wagon.get_inventory(defines.inventory.cargo_wagon)
+        if inv then
+            for _, stack in pairs(inv.get_contents()) do
+                if lib.is_coin(stack.name) then
+                    input_coin_values[stack.name] = stack.count
+                else
+                    local quality = stack.quality or "normal"
+                    if not all_items_lookup[quality] then
+                        all_items_lookup[quality] = {}
+                    end
+                    all_items_lookup[quality][stack.name] = stack.count
+                end
+            end
+        end
+    end
+
+    local input_coin = coin_tiers.normalized(coin_tiers.new(input_coin_values))
+    return input_coin, all_items_lookup
+end
+
 
 
 return inventories
