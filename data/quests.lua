@@ -200,7 +200,7 @@ return {
         },
         {
             name = "catalog-professional",
-            conditions = {{type = "total-item-rank", progress_requirement = 80}},
+            conditions = {{type = "total-item-rank", progress_requirement = 120}},
             rewards = {
                 {
                     type = "receive-items",
@@ -322,7 +322,7 @@ return {
         },
         {
             name = "catalog-master",
-            conditions = {{type = "total-item-rank", progress_requirement = 120}},
+            conditions = {{type = "total-item-rank", progress_requirement = 160}},
             rewards = {
                 {
                     type = "receive-items",
