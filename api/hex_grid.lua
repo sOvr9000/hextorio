@@ -857,9 +857,10 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                         name = "gun-turret",
                         position = pos,
                         force = "player",
+                        quality = "epic",
                     })
                 end
-                lib.reload_turrets(turrets, {bullet_type = "firearm-magazine", bullet_count = 15})
+                lib.reload_turrets(turrets, {bullet_type = "piercing-rounds-magazine", bullet_count = 30})
             end
             for _, player in pairs(game.connected_players) do
                 if not player.character then

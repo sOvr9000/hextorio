@@ -93,6 +93,7 @@ script.on_init(function()
     hex_grid.update_hexlight_default_colors()
 
     storage.ammo_type_per_entity = {
+        ["gun-turret"] = "bullet_type",
         ["dungeon-gun-turret"] = "bullet_type",
         ["dungeon-flamethrower-turret"] = "flamethrower_type",
         ["dungeon-rocket-turret"] = "rocket_type",
