@@ -1942,6 +1942,21 @@ function lib.insert_into_train(cargo_wagons, stack, wagon_limit)
     local count = stack.count or 1
 
     local remaining_count = count
+
+    -- First try to insert into wagons that already contain this item
+    for i, cargo_wagon in ipairs(cargo_wagons) do
+        if remaining_count <= 0 or i > wagon_limit then break end
+
+        if cargo_wagon.get_item_count(stack.name) > 0 then
+            remaining_count = remaining_count - cargo_wagon.insert {
+                name = stack.name,
+                count = remaining_count,
+                quality = quality,
+            }
+        end
+    end
+
+    -- Then try to insert into wagons with remaining space
     for i, cargo_wagon in ipairs(cargo_wagons) do
         if remaining_count <= 0 or i > wagon_limit then break end
 
