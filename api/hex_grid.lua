@@ -3324,13 +3324,13 @@ function hex_grid.try_unload_output_buffer(state, inventory_output)
                     inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
                 end
 
-                local remaining = state.output_buffer[quality][item_name] - inserted
+                local remaining = counts[item_name] - inserted
                 empty = empty and remaining == 0
 
                 if remaining > 0 then
-                    state.output_buffer[quality][item_name] = remaining
+                    counts[item_name] = remaining
                 else
-                    state.output_buffer[quality][item_name] = nil
+                    counts[item_name] = nil
                 end
             end
         end
