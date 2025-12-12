@@ -9,6 +9,7 @@ Date: 11/12/25
   Bugfixes:
     - Fixed rare crash with output buffer unloading.
     - Fixed that train trading input inventory wasn't limited like output inventory.
+    - Fixed train item insertion direction for double-ended trains making trades.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.6
 Date: 11/12/25
