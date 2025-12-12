@@ -336,7 +336,7 @@ return {
         },
         {
             name = "catalog-obsession",
-            conditions = {{type = "total-item-rank", progress_requirement = 160}},
+            conditions = {{type = "total-item-rank", progress_requirement = 200}},
             rewards = {
                 {
                     type = "receive-items",
