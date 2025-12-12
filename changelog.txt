@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.7
-Date: 11/12/25
+Date: 12/12/25
   Changes:
     - Improved train item insertion logic.
     - Extended the tooltip for the locomotive trading button in the hex core GUI to make it clearer that the number of cargo wagons allowed per train trade is limited but upgradeable.
