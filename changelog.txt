@@ -4,6 +4,8 @@ Date: 12/12/25
   Changes:
     - Improved train item insertion logic.
     - Extended the tooltip for the locomotive trading button in the hex core GUI to make it clearer that the number of cargo wagons allowed per train trade is limited but upgradeable.
+  Gui:
+    - Reworked Quantum Bazaar interface.
   Balancing:
     - Increased the requirements for most "total item rank" quests.
     - Multiplied the loot value of dungeon chests on all planets by 10x, effectively upgrading all rolled loot items by one quality level.
