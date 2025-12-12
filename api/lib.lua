@@ -1917,6 +1917,67 @@ function lib.trigger_player_cooldown(player_index, cooldown_name, cooldown_time)
     cooldowns[cooldown_name] = game.tick + cooldown_time
 end
 
+---@param train LuaTrain
+---@param train_stop LuaEntity
+---@return LuaEntity[]
+function lib.get_cargo_wagons_nearest_to_stop(train, train_stop)
+    local front = train.locomotives.front_movers[1]
+    if not front or not front.valid then return {} end
+    if not train_stop.valid then return train.cargo_wagons end
+
+    if lib.square_distance(front.position, train_stop.position) < 13.2 then -- Comparing distance is the best way I can come up with for correctly distinguishing this.
+        return train.cargo_wagons
+    end
+
+    return lib.table_reversed(train.cargo_wagons)
+end
+
+---@param cargo_wagons LuaEntity[]
+---@param stack ItemStackIdentification
+---@param wagon_limit int
+---@return int inserted How many items were successfully inserted
+function lib.insert_into_train(cargo_wagons, stack, wagon_limit)
+    -- This function is supposed to be LuaTrain.insert(stack), but that function does not return how many items were successfully inserted like LuaInventory.insert()
+    local quality = stack.quality or "normal"
+    local count = stack.count or 1
+
+    local remaining_count = count
+    for i, cargo_wagon in ipairs(cargo_wagons) do
+        if remaining_count <= 0 or i > wagon_limit then break end
+
+        remaining_count = remaining_count - cargo_wagon.insert {
+            name = stack.name,
+            count = remaining_count,
+            quality = quality,
+        }
+    end
+
+    return count - remaining_count
+end
+
+---@param cargo_wagons LuaEntity[]
+---@param stack ItemStackIdentification
+---@param wagon_limit int
+---@return int removed How many items were successfully removed
+function lib.remove_from_train(cargo_wagons, stack, wagon_limit)
+    -- This function is supposed to be LuaTrain.remove_item(stack), but that function does not always go in the correct order of cargo wagons.
+    local quality = stack.quality or "normal"
+    local count = stack.count or 1
+
+    local remaining_count = count
+    for i, cargo_wagon in ipairs(cargo_wagons) do
+        if remaining_count <= 0 or i > wagon_limit then break end
+
+        remaining_count = remaining_count - cargo_wagon.remove_item {
+            name = stack.name,
+            count = remaining_count,
+            quality = quality,
+        }
+    end
+
+    return count - remaining_count
+end
+
 
 
 return lib

@@ -671,8 +671,9 @@ end
 ---@param quality_cost_mult number|nil
 ---@param input_items QualityItemCounts|nil The total amount of items in the input inventory. Calculated automatically if not provided.
 ---@param input_coin Coin|nil The total amount of coins in the input inventory. Calculated automatically if not provided.
+---@param cargo_wagons LuaEntity[]|nil If either the input or output inventory is a LuaTrain, then these are the cargo wagons closest to the train stop where the train had stopped.
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, Coin, Coin
-function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, quality_cost_mult, input_items, input_coin)
+function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, quality_cost_mult, input_items, input_coin, cargo_wagons)
     if not trade.active or num_batches <= 0 then
         return {}, {}, {}, input_coin or coin_tiers.new(), coin_tiers.new()
     end
@@ -684,7 +685,11 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local flow_statistics = game.forces.player.get_item_production_statistics(trade.surface_name)
 
     if not input_items or not input_coin then
-        input_coin, input_items = trades.get_coins_and_items_of_inventory(inventory_input)
+        if is_train_input then
+            input_coin, input_items = inventories.get_coins_and_items_on_train(cargo_wagons or {}, storage.item_buffs.train_trading_capacity)
+        else
+            input_coin, input_items = trades.get_coins_and_items_of_inventory(inventory_input)
+        end
     end
 
     quality = quality or "normal"
@@ -697,7 +702,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
             if to_remove > 0 then
                 local actually_removed
                 if is_train_input then
-                    actually_removed = inventory_input.remove_item {name = input_item.name, count = to_remove, quality = quality}
+                    actually_removed = lib.remove_from_train(cargo_wagons or {}, {name = input_item.name, count = to_remove, quality = quality}, storage.item_buffs.train_trading_capacity)
                 else
                     actually_removed = inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
                 end
@@ -716,7 +721,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
         local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
         remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
-        coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed)
+        coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed, cargo_wagons)
         flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
     else
         remaining_coin = input_coin
@@ -728,7 +733,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     if trade.has_coins_in_output and total_output_batches > 0 then
         local trade_coin = trades.get_output_coins_of_trade(trade, quality)
         coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
-        coin_tiers.add_coin_to_inventory(inventory_output, coins_added)
+        coin_tiers.add_coin_to_inventory(inventory_output, coins_added, cargo_wagons)
         flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
     else
         coins_added = coin_tiers.new()
@@ -744,9 +749,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
 
                 local actually_inserted
                 if is_train_output then
-                    ---@cast inventory_output LuaTrain
-                    local wagon_limit = storage.item_buffs.train_trading_capacity
-                    actually_inserted = inventories.insert_into_train(inventory_output, {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}, wagon_limit)
+                    actually_inserted = lib.insert_into_train(cargo_wagons or {}, {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}, storage.item_buffs.train_trading_capacity)
                 else
                     actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
                 end
@@ -1573,17 +1576,25 @@ end
 ---@param trade_ids int[]
 ---@param quality_cost_multipliers StringAmounts|nil
 ---@param max_items_per_output int|nil
+---@param cargo_wagons LuaEntity[]|nil If either the input or output inventory is a LuaTrain, then these are its cargo wagons closest to train stop.
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, table, table
-function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output)
+function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output, cargo_wagons)
     quality_cost_multipliers = quality_cost_multipliers or {}
 
     local is_output_train = output_inv.object_name == "LuaTrain"
     local is_input_train = input_inv.object_name == "LuaTrain"
 
+    if is_input_train or is_output_train then
+        if not cargo_wagons then
+            lib.log_error("trades.process_trades_in_inventories: train inventories are involved but no cargo wagons were passed")
+            return {}, {}, {}, coin_tiers.new(), coin_tiers.new()
+        end
+        ---@cast cargo_wagons LuaEntity[]
+    end
+
     local input_coin, all_items_lookup
     if is_input_train then
-        ---@cast input_inv LuaTrain
-        input_coin, all_items_lookup = inventories.get_coins_and_items_on_train(input_inv, storage.item_buffs.train_trading_capacity)
+        input_coin, all_items_lookup = inventories.get_coins_and_items_on_train(cargo_wagons, storage.item_buffs.train_trading_capacity)
     else
         input_coin, all_items_lookup = trades.get_coins_and_items_of_inventory(input_inv)
     end
@@ -1612,7 +1623,9 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     local inventory_output_size
     if is_output_train then
         inventory_output_size = 0
-        for _, wagon in pairs(output_inv.cargo_wagons) do
+        for i, wagon in ipairs(cargo_wagons) do
+            if i > storage.item_buffs.train_trading_capacity then break end
+
             inventory_output_size = inventory_output_size + wagon.prototype.get_inventory_size(defines.inventory.cargo_wagon, wagon.quality)
         end
     else
@@ -1634,7 +1647,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                     quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + 1
 
-                    local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin)
+                    local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin, cargo_wagons)
                     input_coin = remaining_coin
 
                     -- Accumulate without normalization for performance

@@ -421,8 +421,17 @@ end
 
 ---Get a coin object from the given inventory.
 ---@param inventory LuaInventory|LuaTrain
+---@param cargo_wagons LuaEntity[]|nil
 ---@return Coin
-function coin_tiers.get_coin_from_inventory(inventory)
+function coin_tiers.get_coin_from_inventory(inventory, cargo_wagons)
+    if cargo_wagons then
+        local coin_values = {0, 0, 0, 0}
+        for i, wagon in ipairs(cargo_wagons) do
+            if i > storage.item_buffs.train_trading_capacity then break end
+            coin_values = coin_tiers.accumulate(coin_values, coin_tiers.new {wagon.get_item_count "hex-coin", wagon.get_item_count "gravity-coin", wagon.get_item_count "meteor-coin", wagon.get_item_count "hexaprism-coin"})
+        end
+        return coin_tiers.normalized(coin_tiers.new(coin_values))
+    end
     return coin_tiers.new {inventory.get_item_count "hex-coin", inventory.get_item_count "gravity-coin", inventory.get_item_count "meteor-coin", inventory.get_item_count "hexaprism-coin"}
 end
 
@@ -430,7 +439,8 @@ end
 ---@param inventory LuaInventory|LuaTrain
 ---@param current_coin Coin
 ---@param new_coin Coin
-function coin_tiers.update_inventory(inventory, current_coin, new_coin)
+---@param cargo_wagons LuaEntity[]|nil
+function coin_tiers.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
     storage.coin_tiers.is_processing[inventory] = true
 
     local is_train = inventory.object_name == "LuaTrain"
@@ -441,10 +451,14 @@ function coin_tiers.update_inventory(inventory, current_coin, new_coin)
         local current_amount = current_coin.values[tier]
 
         if new_amount > current_amount then
-            inventory.insert {name = coin_name, count = new_amount - current_amount}
+            if is_train then
+                lib.insert_into_train(cargo_wagons or {}, {name = coin_name, count = new_amount - current_amount}, storage.item_buffs.train_trading_capacity)
+            else
+                inventory.insert {name = coin_name, count = new_amount - current_amount}
+            end
         elseif new_amount < current_amount then
             if is_train then
-                inventory.remove_item {name = coin_name, count = current_amount - new_amount}
+                lib.remove_from_train(cargo_wagons or {}, {name = coin_name, count = current_amount - new_amount}, storage.item_buffs.train_trading_capacity)
             else
                 inventory.remove {name = coin_name, count = current_amount - new_amount}
             end
@@ -472,19 +486,21 @@ end
 ---Add coins to the inventory.
 ---@param inventory LuaInventory|LuaTrain
 ---@param coin Coin
-function coin_tiers.add_coin_to_inventory(inventory, coin)
+---@param cargo_wagons LuaEntity[]|nil
+function coin_tiers.add_coin_to_inventory(inventory, coin, cargo_wagons)
     local current_coin = coin_tiers.get_coin_from_inventory(inventory)
     local new_coin = coin_tiers.add(current_coin, coin)
-    coin_tiers.update_inventory(inventory, current_coin, new_coin)
+    coin_tiers.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
 end
 
 ---Remove coins from the inventory
 ---@param inventory LuaInventory|LuaTrain
 ---@param coin Coin
-function coin_tiers.remove_coin_from_inventory(inventory, coin)
+---@param cargo_wagons LuaEntity[]|nil
+function coin_tiers.remove_coin_from_inventory(inventory, coin, cargo_wagons)
     local current_coin = coin_tiers.get_coin_from_inventory(inventory)
     local new_coin = coin_tiers.subtract(current_coin, coin)
-    coin_tiers.update_inventory(inventory, current_coin, new_coin)
+    coin_tiers.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
 end
 
 ---Convert a coin object to a human-readable string which represents its value.

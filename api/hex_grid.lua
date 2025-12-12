@@ -6,7 +6,6 @@ local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"
 local trade_loop_finder = require "api.trade_loop_finder"
-local inventories       = require "api.inventories"
 
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
@@ -2742,7 +2741,7 @@ function hex_grid.process_hex_core_pool()
     for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
 
-        hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers)
+        hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
         hex_grid.process_hexlight(state)
     end
     -- prof.stop()
@@ -3119,13 +3118,15 @@ end
 ---@param inventory_input LuaInventory|LuaTrain|nil
 ---@param inventory_output LuaInventory|LuaTrain|nil
 ---@param quality_cost_multipliers {[string]: number}|nil
-function hex_grid.process_hex_core_trades(state, inventory_input, inventory_output, quality_cost_multipliers)
+---@param train_stop LuaEntity|nil
+function hex_grid.process_hex_core_trades(state, inventory_input, inventory_output, quality_cost_multipliers, train_stop)
     if not state.trades then return end
     if not state.hex_core or not state.hex_core.valid then return end
     if not inventory_input or not inventory_input.valid then return end
     if not inventory_output or not inventory_output.valid then return end
 
     local is_input_train = inventory_input.object_name == "LuaTrain"
+    local is_output_train = inventory_output.object_name == "LuaTrain"
 
     -- Check if trades can occur
     local total_items = inventory_input.get_item_count()
@@ -3145,14 +3146,22 @@ function hex_grid.process_hex_core_trades(state, inventory_input, inventory_outp
         max_items_per_output = 1000000
     end
 
-    -- First try to unload whatever buffer is here.  Without this first check for unloading the buffer, a partially full buffer (which wouldn't completely fill the output inventory) can prevent trading from happening to fill the rest of the output inventory in the same tick.
-    hex_grid.try_unload_output_buffer(state, inventory_output)
+    local cargo_wagons
+    if is_input_train or is_output_train then
+        ---@cast inventory_input LuaTrain
+        ---@cast train_stop LuaEntity
+        cargo_wagons = lib.get_cargo_wagons_nearest_to_stop(inventory_input, train_stop)
+        log(serpent.line(cargo_wagons))
+    end
 
-    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers, max_items_per_output)
+    -- First try to unload whatever buffer is here.  Without this first check for unloading the buffer, a partially full buffer (which wouldn't completely fill the output inventory) can prevent trading from happening to fill the rest of the output inventory in the same tick.
+    hex_grid.try_unload_output_buffer(state, inventory_output, cargo_wagons)
+
+    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inventory_input, inventory_output, state.trades, quality_cost_multipliers, max_items_per_output, cargo_wagons)
     hex_grid.add_to_output_buffer(state, remaining_to_insert)
 
     -- Now try to unload whatever was just traded.
-    hex_grid.try_unload_output_buffer(state, inventory_output)
+    hex_grid.try_unload_output_buffer(state, inventory_output, cargo_wagons)
 
     if not state.total_items_sold then
         state.total_items_sold = {}
@@ -3304,8 +3313,9 @@ end
 ---Return whether the buffer is empty after unloading.
 ---@param state table
 ---@param inventory_output LuaInventory|LuaTrain|nil
+---@param cargo_wagons LuaEntity[]|nil
 ---@return boolean
-function hex_grid.try_unload_output_buffer(state, inventory_output)
+function hex_grid.try_unload_output_buffer(state, inventory_output, cargo_wagons)
     if not state.output_buffer or not next(state.output_buffer) then return true end
     if not inventory_output or not inventory_output.valid then return next(state.output_buffer) == nil end
 
@@ -3319,9 +3329,7 @@ function hex_grid.try_unload_output_buffer(state, inventory_output)
             else
                 local inserted
                 if is_train then
-                    ---@cast inventory_output LuaTrain
-                    local wagon_limit = storage.item_buffs.train_trading_capacity
-                    inserted = inventories.insert_into_train(inventory_output, {name = item_name, count = math.min(10000, count), quality = quality}, wagon_limit)
+                    inserted = lib.insert_into_train(cargo_wagons or {}, {name = item_name, count = math.min(10000, count), quality = quality}, storage.item_buffs.train_trading_capacity)
                 else
                     inserted = inventory_output.insert {name = item_name, count = math.min(10000, count), quality = quality}
                 end
@@ -3637,7 +3645,7 @@ function hex_grid.on_train_arrived_at_stop(train, train_stop)
     end
 
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
-    hex_grid.process_hex_core_trades(state, train, inventory_output, quality_cost_multipliers)
+    hex_grid.process_hex_core_trades(state, train, inventory_output, quality_cost_multipliers, train_stop)
 end
 
 ---@param entity LuaEntity
