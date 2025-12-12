@@ -20,7 +20,7 @@ local dungeons = {}
 function dungeons.register_events()
     event_system.register("dungeon-update", function()
         local player = game.connected_players[(game.tick / 300) % #game.connected_players + 1]
-        if lib.is_space_platform(player.surface.name) then return end
+        if player and lib.is_space_platform(player.surface.name) then return end
 
         local transformation = terrain.get_surface_transformation(player.surface)
         local hex_pos = axial.get_hex_containing(player.position, transformation.scale, transformation.rotation)
