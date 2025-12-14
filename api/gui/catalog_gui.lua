@@ -1016,7 +1016,7 @@ function catalog_gui.on_quantum_bazaar_slider_changed(player, elem)
 
         slider_flow["buy-button"].caption = {"quantum-bazaar.buy-button-caption", new_amount}
         slider_flow["buy-button"].tooltip = {"",
-            lib.color_localized_string({"quantum-bazaar.buy-amount", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", new_amount, coin_tiers.coin_to_text(buy_amount_coin)}, "cyan"),
+            lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", new_amount, coin_tiers.coin_to_text(buy_amount_coin)}, "cyan"),
         }
     end
 end
