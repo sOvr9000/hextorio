@@ -135,7 +135,7 @@ end
 ---@return {scale:number, rotation:number, stroke_width:number}
 function terrain.get_surface_transformation(surfaceID)
     local surface_id = lib.get_surface_id(surfaceID)
-    surface = game.get_surface(surface_id)
+    local surface = game.get_surface(surface_id)
     if not surface then
         lib.log_error("Cannot find surface from " .. serpent.line(surfaceID))
         return {

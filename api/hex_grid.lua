@@ -153,13 +153,18 @@ function hex_grid.register_events()
         end
 
         local ip_trades_per_item = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
-        for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
-            trades.generate_interplanetary_trade_locations(surface.name, ip_trades_per_item)
+        for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
+            local surface = game.get_surface(surface_id)
+            if surface then
+                trades.generate_interplanetary_trade_locations(surface.name, ip_trades_per_item)
 
-            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
-                if state.hex_core then
-                    hex_grid.add_initial_trades(state)
+                for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+                    if state.hex_core then
+                        hex_grid.add_initial_trades(state)
+                    end
                 end
+            else
+                lib.log_error("command /regenerate-trades: Could not find surface")
             end
         end
     end)
@@ -1587,27 +1592,41 @@ function hex_grid.is_hex_near_claimed_hex(surface, hex_pos)
     return false
 end
 
-function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
+function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_coins, player_inventory_coins)
+    if check_coins == nil then check_coins = true end
+
     local state = hex_grid.get_hex_state(surface, hex_pos)
-    if state.claimed then return false end
+    if not state or state.claimed then
+        log("hex already claimed")
+        log("overall state:")
+        log(serpent.block(state))
+        return false
+    end
+
+    if state.is_dungeon then
+        log("dungeon not allowed")
+        return false
+    end
+
+    if not state.is_land and not allow_nonland then
+        log("non-land not allowed")
+        log("overall state:")
+        log(serpent.block(state))
+        return false
+    end
 
     local surface_id = lib.get_surface_id(surface)
     if surface_id == -1 then
         lib.log_error("hex_grid.can_claim_hex: No surface found")
         return false
     end
-    surface = game.surfaces[surface_id]
+    surface = game.get_surface(surface_id)
+    if not surface then log("surface not found?") return false end
 
-    if lib.is_player_editor_like(player) then
-        return true
-    end
-
-    if state.is_dungeon then
-        return false
-    end
-
-    if not state.is_land and not allow_nonland then
-        return false
+    if player then
+        if lib.is_player_editor_like(player) then
+            return true
+        end
     end
 
     if hex_grid.get_free_hex_claims(surface.name) > 0 then
@@ -1619,13 +1638,28 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland)
         return true
     end
 
-    local inv = lib.get_player_inventory(player)
-    if not inv then
-        lib.log_error("hex_grid.can_claim_hex: No inventory found")
-        return false
+    if check_coins then
+        if not player_inventory_coins then
+            if not player then
+                return true
+            end
+
+            local inv = lib.get_player_inventory(player)
+            if not inv then
+                lib.log_error("hex_grid.can_claim_hex: No player inventory found")
+                return false
+            end
+
+            player_inventory_coins = coin_tiers.get_coin_from_inventory(inv)
+        end
+
+        if coin_tiers.lt(player_inventory_coins, coin) then
+            log("not enough coins: " .. serpent.line(player_inventory_coins.values) .. " < " .. serpent.line(coin.values))
+            return false
+        end
     end
 
-    return coin_tiers.ge(coin_tiers.get_coin_from_inventory(inv), coin)
+    return true
 end
 
 ---Claim a hex and spawn hex cores in adjacent hexes if possible.
@@ -1634,8 +1668,9 @@ end
 ---@param by_player LuaPlayer|nil
 ---@param allow_nonland boolean|nil
 function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
-    if by_player and not hex_grid.can_claim_hex(by_player, surface, hex_pos) then
-        hex_grid.remove_hex_from_claim_queue(surface, hex_pos)
+    if by_player and not hex_grid.can_claim_hex(by_player, surface_id, hex_pos) then
+        log("tried to claim hex that was unclaimable")
+        hex_grid.remove_hex_from_claim_queue(surface_id, hex_pos)
         return
     end
 
@@ -1797,18 +1832,15 @@ function hex_grid.remove_hex_from_claim_queue(surface, hex_pos)
         lib.log_error("hex_grid.add_hex_to_claim_queue: No surface found")
         return
     end
-    surface = game.surfaces[surface_id]
+    surface = game.get_surface(surface_id)
+    if not surface then return end
 
-    local key
-    for i, params in pairs(storage.hex_grid.claim_queue) do
+    for i, params in ipairs(storage.hex_grid.claim_queue) do
         if params.surface_name == surface.name and params.hex_pos.q == hex_pos.q and params.hex_pos.r == hex_pos.r then
-            key = i
+            table.remove(storage.hex_grid.claim_queue, i)
+            return
         end
     end
-
-    if not key then return end
-
-    table.remove(storage.hex_grid.claim_queue, key)
 end
 
 function hex_grid.process_claim_queue()
@@ -1822,6 +1854,8 @@ function hex_grid.process_claim_queue()
     local found = false
     for i = 1, #storage.hex_grid.claim_queue do
         params = storage.hex_grid.claim_queue[i]
+        -- TODO: Optimize by not repeatedly calculating coin amounts in inventories
+        -- if hex_grid.can_claim_hex(params.by_player, params.surface_name, params.hex_pos, params.allow_nonland) then
         local state = hex_grid.get_hex_state(params.surface_name, params.hex_pos)
         if state.hex_core then
             found = true

@@ -18,13 +18,23 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
     local params = {}
     local transformation = terrain.get_surface_transformation(surface)
 
+    local player_inventory_coins
+    if not reverse then
+        local inv = lib.get_player_inventory(player)
+        if inv then
+            player_inventory_coins = coin_tiers.get_coin_from_inventory(inv)
+        end
+    end
+
     if alt then
         -- Include ALL hexes, not just ones that have hex cores currently.
         local overlapping = axial.get_overlapping_hexes(area.left_top, area.right_bottom, transformation.scale, transformation.rotation, false)
         for _, hex_pos in pairs(overlapping) do
-            local center = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
-            if lib.is_position_in_rect(center, area.left_top, area.right_bottom) then
-                table.insert(params, {surface, hex_pos, player, false})
+            if reverse or hex_grid.can_claim_hex(player, surface, hex_pos, false, true, player_inventory_coins) then
+                local center = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
+                if lib.is_position_in_rect(center, area.left_top, area.right_bottom) then
+                    table.insert(params, {surface, hex_pos, player, false})
+                end
             end
         end
     else
@@ -32,8 +42,8 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
         for _, e in pairs(entities) do
             if e.name == "hex-core" then
                 local hex_pos = axial.get_hex_containing(e.position, transformation.scale, transformation.rotation)
-                if hex_grid.can_claim_hex(player, e.surface, hex_pos) then
-                    table.insert(params, {e.surface, hex_pos, player, false})
+                if reverse or hex_grid.can_claim_hex(player, surface, hex_pos, false, true, player_inventory_coins) then
+                    table.insert(params, {surface, hex_pos, player, false})
                 end
             end
         end
