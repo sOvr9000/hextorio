@@ -581,6 +581,7 @@ function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
     local coin = coin_tiers.new(values)
     local mult = lib.get_quality_value_scale(quality) * quality_cost_mult
     coin = coin_tiers.multiply(coin, mult)
+    coin = coin_tiers.floor(coin)
     return coin
 end
 
@@ -598,6 +599,7 @@ function trades.get_output_coins_of_trade(trade, quality)
     end
     local coin = coin_tiers.new(values)
     coin = coin_tiers.multiply(coin, lib.get_quality_value_scale(quality))
+    coin = coin_tiers.floor(coin)
     return coin
 end
 
@@ -674,7 +676,7 @@ end
 ---@param cargo_wagons LuaEntity[]|nil If either the input or output inventory is a LuaTrain, then these are the cargo wagons closest to the train stop where the train had stopped.
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, Coin, Coin
 function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, quality_cost_mult, input_items, input_coin, cargo_wagons)
-    if not trade.active or num_batches <= 0 then
+    if not trade.active or num_batches < 1 then
         return {}, {}, {}, input_coin or coin_tiers.new(), coin_tiers.new()
     end
 
@@ -699,7 +701,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     for _, input_item in pairs(trade.input_items) do
         if not lib.is_coin(input_item.name) then
             local to_remove = math.min(input_item.count * num_batches, input_items[quality][input_item.name] or 0)
-            if to_remove > 0 then
+            if to_remove >= 1 then
                 local actually_removed
                 if is_train_input then
                     actually_removed = lib.remove_from_train(cargo_wagons or {}, {name = input_item.name, count = to_remove, quality = quality}, storage.item_buffs.train_trading_capacity)
@@ -720,6 +722,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     if trade.has_coins_in_input then
         local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
         local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
+        log(serpent.line(trade_coin.values) .. " * " .. num_batches .. " = " .. serpent.line(coins_removed.values))
         remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
         coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed, cargo_wagons)
         flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
@@ -730,7 +733,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local total_output_batches = num_batches + trades.increment_current_prod_value(trade, num_batches, quality)
 
     local coins_added
-    if trade.has_coins_in_output and total_output_batches > 0 then
+    if trade.has_coins_in_output and total_output_batches >= 1 then
         local trade_coin = trades.get_output_coins_of_trade(trade, quality)
         coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
         coin_tiers.add_coin_to_inventory(inventory_output, coins_added, cargo_wagons)
@@ -742,7 +745,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local total_inserted = {}
     local remaining_to_insert = {}
 
-    if total_output_batches > 0 then
+    if total_output_batches >= 1 then
         for _, output_item in pairs(trade.output_items) do
             if not lib.is_coin(output_item.name) then
                 local to_insert = output_item.count * total_output_batches
@@ -1643,7 +1646,8 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                 local all_items_quality = all_items_lookup[quality] or {}
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
-                if num_batches > 0 then
+                log(num_batches)
+                if num_batches >= 1 then
                     quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + 1
 
