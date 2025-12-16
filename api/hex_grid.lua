@@ -1597,21 +1597,14 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
 
     local state = hex_grid.get_hex_state(surface, hex_pos)
     if not state or state.claimed then
-        log("hex already claimed")
-        log("overall state:")
-        log(serpent.block(state))
         return false
     end
 
     if state.is_dungeon then
-        log("dungeon not allowed")
         return false
     end
 
     if not state.is_land and not allow_nonland then
-        log("non-land not allowed")
-        log("overall state:")
-        log(serpent.block(state))
         return false
     end
 
@@ -1621,7 +1614,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
         return false
     end
     surface = game.get_surface(surface_id)
-    if not surface then log("surface not found?") return false end
+    if not surface then return false end
 
     if player then
         if lib.is_player_editor_like(player) then
@@ -1654,7 +1647,6 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
         end
 
         if coin_tiers.lt(player_inventory_coins, coin) then
-            log("not enough coins: " .. serpent.line(player_inventory_coins.values) .. " < " .. serpent.line(coin.values))
             return false
         end
     end
@@ -1669,7 +1661,6 @@ end
 ---@param allow_nonland boolean|nil
 function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     if by_player and not hex_grid.can_claim_hex(by_player, surface_id, hex_pos) then
-        log("tried to claim hex that was unclaimable")
         hex_grid.remove_hex_from_claim_queue(surface_id, hex_pos)
         return
     end
