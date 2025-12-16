@@ -1019,5 +1019,6 @@ return {
     cost_multiplier = 1,
     level_bonus = 0,
     passive_coins_rate = 0,
+    passive_coins_interval = 30,
     train_trading_capacity = 10,
 }

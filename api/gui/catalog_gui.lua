@@ -512,7 +512,7 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
 
             if is_buff_unlocked and storage.item_buffs.has_description[buff.type] then
                 if buff.type == "passive-coins" then
-                    local interval = 10 -- seconds between coin accumulation
+                    local interval = storage.item_buffs.passive_coins_interval
                     local calculation_steps = passive_coin_buff.get_passive_gain_calculation_steps(interval * 60)
 
                     local breakdown_str = {"",

@@ -196,7 +196,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
     hex_grid.on_chunk_generated(surface.name, chunk_position)
 end)
 
-script.on_nth_tick(600, function()
+script.on_nth_tick(60 * 30, function()
     passive_coin_buff.process_accumulation()
 end)
 
