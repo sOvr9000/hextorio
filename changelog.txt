@@ -8,6 +8,7 @@ Date: 12/12/25
     - Fixed that the claim tool would sometimes ignore claiming the selected hexes.
     - Fixed rare crash upon dungeon generation.
     - Fixed that dungeon chests could be spawned inside of other entities.
+    - Fixed rare crash around item value retrieval.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.9
 Date: 12/12/25
