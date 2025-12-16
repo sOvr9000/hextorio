@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.10
-Date: 12/12/25
+Date: 16/12/25
   Changes:
     - Increased the Passive Coins buff interval of coin accumulation from 10 seconds to 30 seconds.
   Bugfixes:
