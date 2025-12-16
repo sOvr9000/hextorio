@@ -12,4 +12,6 @@ return function()
         end
         storage.trades.tree[tab_name] = new_table
     end
+
+    -- TODO (very low priority): HexState.is_oil was renamed to is_well for >=0.3.0.  Update that here.
 end

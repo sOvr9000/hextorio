@@ -3,6 +3,7 @@ local sets = require "api.sets"
 
 return {
     surface_hexes = {},
+    flattened_surface_hexes = {}, ---@type {[int]: HexPos[]}
     surface_transformations = {},
     hex_span = {},
     mgs = {},

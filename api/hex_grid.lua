@@ -6,7 +6,7 @@ local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"
 local trade_loop_finder = require "api.trade_loop_finder"
-
+local hex_state_manager = require "api.hex_state_manager"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
 local coin_tiers = require "api.coin_tiers"
@@ -52,7 +52,7 @@ function hex_grid.register_events()
         elseif rank == 4 then
             hex_grid.recover_trades_retro(item_name)
         end
-        hex_grid.update_all_trades()
+        trades.queue_productivity_update_job()
     end)
 
     event_system.register("command-add-trade", function(player, params)
@@ -138,7 +138,7 @@ function hex_grid.register_events()
         storage.trades.interplanetary_trade_locations = {}
 
         for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
-            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+            for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
                 if state.trades then
                     for i = #state.trades, 1, -1 do
                         local trade_id = state.trades[i]
@@ -158,7 +158,7 @@ function hex_grid.register_events()
             if surface then
                 trades.generate_interplanetary_trade_locations(surface.name, ip_trades_per_item)
 
-                for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+                for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_id)) do
                     if state.hex_core then
                         hex_grid.add_initial_trades(state)
                     end
@@ -228,7 +228,7 @@ function hex_grid.register_events()
             if value == "catalog" then
                 local all_trades = {}
                 for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
-                    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+                    for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
                         if state.trades then
                             for _, trade_id in pairs(state.trades) do
                                 table.insert(all_trades, trades.get_trade_from_id(trade_id))
@@ -239,7 +239,7 @@ function hex_grid.register_events()
                 trades.discover_items_in_trades(all_trades)
             -- elseif value == "hexports" then
             --     for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
-            --         for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+            --         for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
             --             if state.claimed then
             --                 hex_grid.spawn_hexport(state, true)
             --             end
@@ -252,7 +252,7 @@ function hex_grid.register_events()
             hex_grid.reduce_biters(value * 0.01)
         elseif reward_type == "all-trades-productivity" then
             trades.increment_base_trade_productivity(value * 0.01)
-            hex_grid.update_all_trades()
+            trades.queue_productivity_update_job()
         end
     end)
 
@@ -261,7 +261,7 @@ function hex_grid.register_events()
         local trades_found = 0
         local claimed_hexes = 0
         for _, surface in pairs(game.surfaces) do
-            for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface.name)) do
+            for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface.name)) do
                 if state.trades then
                     trades_found = trades_found + #state.trades
                 end
@@ -281,7 +281,7 @@ function hex_grid.register_events()
     event_system.register("dungeon-looted", function(dungeon)
         for _, tile in pairs(dungeon.maze.tiles) do
             local hex_pos = tile.pos
-            local state = hex_grid.get_hex_state(dungeon.surface.index, hex_pos)
+            local state = hex_state_manager.get_hex_state(dungeon.surface.index, hex_pos)
             if state then
                 state.is_dungeon = nil
                 state.was_dungeon = true
@@ -294,7 +294,7 @@ function hex_grid.register_events()
         if damage_type == "electric" then
             local transformation = terrain.get_surface_transformation(entity.surface)
             local hex_pos = axial.get_hex_containing(entity.position, transformation.scale, transformation.rotation)
-            local hex_state = hex_grid.get_hex_state(entity.surface, hex_pos)
+            local hex_state = hex_state_manager.get_hex_state(entity.surface, hex_pos)
             if hex_state and hex_state.trades then
                 local prod_req = storage.item_ranks.productivity_requirements[3]
                 for _, trade_id in pairs(hex_state.trades) do
@@ -313,23 +313,23 @@ function hex_grid.register_events()
     end)
 
     event_system.register("runtime-setting-changed-base-trade-prod-nauvis", function()
-        hex_grid.update_all_trades "nauvis"
+        trades.queue_productivity_update_job "nauvis"
     end)
 
     event_system.register("runtime-setting-changed-base-trade-prod-vulcanus", function()
-        hex_grid.update_all_trades "vulcanus"
+        trades.queue_productivity_update_job "vulcanus"
     end)
 
     event_system.register("runtime-setting-changed-base-trade-prod-fulgora", function()
-        hex_grid.update_all_trades "fulgora"
+        trades.queue_productivity_update_job "fulgora"
     end)
 
     event_system.register("runtime-setting-changed-base-trade-prod-gleba", function()
-        hex_grid.update_all_trades "gleba"
+        trades.queue_productivity_update_job "gleba"
     end)
 
     event_system.register("runtime-setting-changed-base-trade-prod-aquilo", function()
-        hex_grid.update_all_trades "aquilo"
+        trades.queue_productivity_update_job "aquilo"
     end)
 
     event_system.register("runtime-setting-changed-default-nauvis-hexlight-color", function()
@@ -360,76 +360,24 @@ function hex_grid.register_events()
     event_system.register("entity-built", hex_grid.on_entity_built)
 end
 
----Get or create surface storage
----@param surface SurfaceIdentification
-function hex_grid.get_surface_hexes(surface)
-    local surface_id = lib.get_surface_id(surface)
-    if surface_id == -1 then
-        lib.log_error("hex_grid.get_surface_hexes: surface not found: " .. tostring(surface))
-        surface_id = 0
-    end
-    local surface_hexes = storage.hex_grid.surface_hexes[surface_id]
-    if not surface_hexes then
-        surface_hexes = {}
-        storage.hex_grid.surface_hexes[surface_id] = surface_hexes
-    end
-    return surface_hexes
-end
-
--- Same as get_surface_hexes, but the returned array is one-dimensional.
-function hex_grid.get_flattened_surface_hexes(surface)
-    local surface_hexes = hex_grid.get_surface_hexes(surface)
-    local flattened_surface_hexes = {}
-    for _, Q in pairs(surface_hexes) do
-        for _, state in pairs(Q) do
-            table.insert(flattened_surface_hexes, state)
-        end
-    end
-    return flattened_surface_hexes
-end
-
--- Get a hex by its axial coordinates in a surface's hex grid.  Defaults and sets to an empty table if the hex does not exist.
-function hex_grid.get_hex_in_surface_hexes(surface_hexes, hex_pos)
-    local Q = surface_hexes[hex_pos.q]
-    if not Q then
-        Q = {}
-        surface_hexes[hex_pos.q] = Q
-    end
-    local state = Q[hex_pos.r]
-    if not state then
-        state = {}
-        Q[hex_pos.r] = state
-    end
-    return state
-end
-
--- Get the state of a hex on a specific surface
-function hex_grid.get_hex_state(surface, hex_pos)
-    local surface_hexes = hex_grid.get_surface_hexes(surface)
-    local state = hex_grid.get_hex_in_surface_hexes(surface_hexes, hex_pos)
-
-    if not state.position then
-        state.position = {q = hex_pos.q, r = hex_pos.r} -- copy position just in case
-    end
-
-    return state
-end
-
--- Get the state of a hex from a hex core entity
+---Get the state of a hex from a hex core entity
+---@param hex_core LuaEntity
+---@return HexState|nil
 function hex_grid.get_hex_state_from_core(hex_core)
-    if not hex_core then return end
+    if not hex_core or not hex_core.valid then return end
 
     local transformation = terrain.get_surface_transformation(hex_core.surface.name)
     if not transformation then
-        lib.log_error("No transformation found for surface " .. serpent.line(hex_core.surface.name))
+        lib.log_error("hex_grid.get_hex_state_from_core: No transformation found for surface " .. serpent.line(hex_core.surface.name))
         return
     end
 
     local hex_pos = axial.get_hex_containing(hex_core.position, transformation.scale, transformation.rotation)
-    local state = hex_grid.get_hex_state(hex_core.surface.name, hex_pos)
+    local state = hex_state_manager.get_hex_state(hex_core.surface.index, hex_pos)
+    if not state then return end
 
     if state.hex_core ~= hex_core then
-        lib.log_error("hex core entities do not match")
+        lib.log_error("hex_grid.get_hex_state_from_core: hex core entities do not match")
         lib.log_error(state.hex_core)
         lib.log_error(hex_core)
     end
@@ -555,7 +503,7 @@ function hex_grid.add_items_to_unloader_filters(state, output_item_names)
     end
 
     local item_name_idx = 1
-    for _, unloader in pairs(state.output_loaders) do
+    for _, unloader in pairs(state.output_loaders or {}) do
         ---@cast unloader LuaEntity
         for n = 1, 2 do
             if not unloader.get_filter(n) then
@@ -686,7 +634,7 @@ end
 
 ---Set a trade's minimum and maximum allowed qualities. Return whether the trade's resulting quality bounds reflect exactly what was provided to this function.
 ---Return true if no qualities were automatically excluded due to hex core quality or currently unlocked qualities.
----@param hex_core HexState
+---@param hex_core LuaEntity
 ---@param trade Trade
 ---@param min_quality string|nil If not provided, this and max_quality will be set based on the "default-trade-quality" mod setting.
 ---@param max_quality string|nil If not provided, this and min_quality will be set based on the "default-trade-quality" mod setting.
@@ -804,7 +752,8 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         return
     end
 
-    local state = hex_grid.get_hex_state(surface_id, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
+    if not state then return end
 
     -- Skip if this hex has already been generated
     if state.generated then
@@ -945,8 +894,18 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         terrain.generate_non_land_tiles(surface, hex_pos)
     end
 
+    local flattened_surface_hexes = storage.hex_grid.flattened_surface_hexes[surface.index]
+    if not flattened_surface_hexes then
+        flattened_surface_hexes = {}
+        storage.hex_grid.flattened_surface_hexes[surface.index] = flattened_surface_hexes
+    end
+    local flat_index = #flattened_surface_hexes + 1
+
     state.generated = true
     state.send_outputs_to_cargo_wagons = true
+    state.flat_index = flat_index
+
+    flattened_surface_hexes[flat_index] = hex_pos
 
     local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
     if hex_grid.can_hex_core_spawn(surface, hex_pos) then
@@ -975,7 +934,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         return
     end
 
-    local state = hex_grid.get_hex_state(surface_id, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
     if not state then
         lib.log_error("hex_grid.generate_hex_resources: No hex state found")
         return
@@ -1565,10 +1524,13 @@ function hex_grid.get_quality_tier_from_distance(surface_name, dist)
     return i
 end
 
--- Check if a hex core can be spawned within a hex
+---Check if a hex core can be spawned within a hex
+---@param surface SurfaceIdentification
+---@param hex_pos HexPos
+---@return boolean
 function hex_grid.can_hex_core_spawn(surface, hex_pos)
-    local state = hex_grid.get_hex_state(surface, hex_pos)
-    if state.hex_core or not state.is_land or state.deleted then
+    local state = hex_state_manager.get_hex_state(surface, hex_pos)
+    if not state or state.hex_core or not state.is_land or state.deleted then
         return false
     end
     if hex_pos.q == 0 and hex_pos.r == 0 then
@@ -1584,8 +1546,8 @@ end
 function hex_grid.is_hex_near_claimed_hex(surface, hex_pos)
     local adjacent_hexes = axial.get_adjacent_hexes(hex_pos)
     for _, adj_hex in pairs(adjacent_hexes) do
-        local state = hex_grid.get_hex_state(surface, adj_hex)
-        if state.claimed then
+        local state = hex_state_manager.get_hex_state(surface, adj_hex)
+        if state and state.claimed then
             return true
         end
     end
@@ -1595,7 +1557,7 @@ end
 function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_coins, player_inventory_coins)
     if check_coins == nil then check_coins = true end
 
-    local state = hex_grid.get_hex_state(surface, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface, hex_pos)
     if not state or state.claimed then
         return false
     end
@@ -1676,8 +1638,8 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
 
     local surface_name = surface.name
 
-    local state = hex_grid.get_hex_state(surface_id, hex_pos)
-    if state.claimed then return end
+    local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
+    if not state or state.claimed then return end
 
     if not allow_nonland then
         if not state.hex_core or not state.is_land then return end
@@ -1685,7 +1647,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
 
     state.claimed = true
     if by_player then
-        state.claimed_by = by_player.name -- player's name, not player object, and nil means by server
+        state.claimed_by = by_player.name
     end
 
     state.claimed_timestamp = game.tick
@@ -1794,7 +1756,7 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
     end
     surface = game.surfaces[surface_id]
 
-    local state = hex_grid.get_hex_state(surface, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface, hex_pos)
     if not state then return end
     if hex_grid.is_claimed_or_in_queue(state) then return end
 
@@ -1823,7 +1785,7 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
 end
 
 function hex_grid.remove_hex_from_claim_queue(surface, hex_pos)
-    local state = hex_grid.get_hex_state(surface, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface, hex_pos)
     state.is_in_claim_queue = nil
 
     if not storage.hex_grid.claim_queue then return end
@@ -1857,8 +1819,8 @@ function hex_grid.process_claim_queue()
         params = storage.hex_grid.claim_queue[i]
         -- TODO: Optimize by not repeatedly calculating coin amounts in inventories
         -- if hex_grid.can_claim_hex(params.by_player, params.surface_name, params.hex_pos, params.allow_nonland) then
-        local state = hex_grid.get_hex_state(params.surface_name, params.hex_pos)
-        if state.hex_core then
+        local state = hex_state_manager.get_hex_state(params.surface_name, params.hex_pos)
+        if state and state.hex_core then
             found = true
             table.remove(storage.hex_grid.claim_queue, i)
             break
@@ -1871,7 +1833,7 @@ function hex_grid.process_claim_queue()
     end
 
     -- Set in-queue flag to nil
-    local state = hex_grid.get_hex_state(params.surface_name, params.hex_pos)
+    local state = hex_state_manager.get_hex_state(params.surface_name, params.hex_pos)
     if state then
         state.is_in_claim_queue = nil
     end
@@ -1888,13 +1850,13 @@ function hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, center_po
     local dist = axial.distance(hex_pos, center_pos)
     if dist > range then return end
 
-    local state = hex_grid.get_hex_state(surface, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface, hex_pos)
     if not hex_grid.is_claimed_or_in_queue(state) then
         hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland)
     end
 
     for _, adj_hex in pairs(axial.get_adjacent_hexes(hex_pos)) do
-        local adj_state = hex_grid.get_hex_state(surface, adj_hex)
+        local adj_state = hex_state_manager.get_hex_state(surface, adj_hex)
         if not hex_grid.is_claimed_or_in_queue(adj_state) then
             hex_grid._claim_hexes_dfs(surface, adj_hex, range, by_player, center_pos, allow_nonland)
         end
@@ -1914,7 +1876,7 @@ function hex_grid.check_hex_span(surface, hex_pos)
     surface = game.surfaces[surface_id]
 
     local span = 0
-    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface)) do
+    for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
         if state.claimed then
             span = math.max(span, axial.distance(hex_pos, state.position))
         end
@@ -1987,13 +1949,22 @@ function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_gri
     return overlapping_hexes
 end
 
+---Return whether a hex state can be initialized at the given hex position on the given surface.
+---@param surface SurfaceIdentification
+---@param hex_pos HexPos
+---@param hex_grid_scale number
+---@param hex_grid_rotation number
+---@return boolean
 function hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation)
     local surface_id = lib.get_surface_id(surface)
-    surface = game.surfaces[surface_id]
+    if surface_id == -1 then return false end
+
+    local surface_obj = game.get_surface(surface_id)
+    if not surface_obj then return false end
 
     -- Only return true if all overlapping chunks are generated
     for _, chunk_pos in pairs(axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)) do
-        if not surface.is_chunk_generated(chunk_pos) then
+        if not surface_obj.is_chunk_generated(chunk_pos) then
             return false
         end
     end
@@ -2002,8 +1973,8 @@ end
 
 function hex_grid.initialize_adjacent_hexes(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     for _, adj in pairs(axial.get_adjacent_hexes(hex_pos)) do
-        local state = hex_grid.get_hex_state(surface, adj)
-        if not state.generated then
+        local state = hex_state_manager.get_hex_state(surface, adj)
+        if state and not state.generated then
             if hex_grid.can_initialize_hex(surface, adj, hex_grid_scale, hex_grid_rotation) then
                 hex_grid.initialize_hex(surface, adj, hex_grid_scale, hex_grid_rotation, stroke_width)
             end
@@ -2029,8 +2000,8 @@ function hex_grid.spawn_hex_core(surface, position)
     local rounded_position = lib.rounded_position(position, true)
 
     local hex_pos = axial.get_hex_containing(position, transformation.scale, transformation.rotation)
-    local state = hex_grid.get_hex_state(surface_id, hex_pos)
-    if state.hex_core then return end
+    local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
+    if not state or state.hex_core then return end
 
     local dist = axial.distance(hex_pos, {q=0, r=0})
 
@@ -2110,6 +2081,8 @@ function hex_grid.spawn_hexport(state, replace_existing)
         force = "player",
     }
 
+    if not hexport then return end
+
     hexport.destructible = false
     hexport.minable = false
 
@@ -2124,6 +2097,7 @@ function hex_grid.remove_hexport(state)
     state.hexport = nil
 end
 
+---@param state HexState
 function hex_grid.spawn_hexlight(state)
     if not state.hex_core or state.hexlight then return end
 
@@ -2132,6 +2106,16 @@ function hex_grid.spawn_hexlight(state)
         position = {state.hex_core.position.x + 2, state.hex_core.position.y + 2},
         force = "player",
     }
+
+    if not hexlight then return end
+
+    local hexlight2 = state.hex_core.surface.create_entity {
+        name = "hexlight-" .. state.hex_core.surface.name,
+        position = {state.hex_core.position.x - 2, state.hex_core.position.y - 2},
+        force = "player",
+    }
+
+    if not hexlight2 then return end
 
     hexlight.destructible = false
     hexlight.minable = false
@@ -2144,12 +2128,6 @@ function hex_grid.spawn_hexlight(state)
     end
 
     state.hexlight = hexlight
-
-    local hexlight2 = state.hex_core.surface.create_entity {
-        name = "hexlight-" .. state.hex_core.surface.name,
-        position = {state.hex_core.position.x - 2, state.hex_core.position.y - 2},
-        force = "player",
-    }
 
     hexlight2.destructible = false
     hexlight2.minable = false
@@ -2170,6 +2148,7 @@ function hex_grid.remove_hexlight(state)
     end
 end
 
+---@param state HexState
 function hex_grid.add_initial_trades(state)
     local dist = axial.distance(state.position, {q=0, r=0})
     local is_starting_hex = dist == 0
@@ -2281,6 +2260,7 @@ function hex_grid.delete_hex_core(hex_core)
     return true
 end
 
+---@param hex_core LuaEntity
 function hex_grid.supercharge_resources(hex_core)
     for _, e in pairs(hex_grid.get_hex_resource_entities(hex_core)) do
         e.amount = 4294967295
@@ -2292,6 +2272,7 @@ function hex_grid.supercharge_resources(hex_core)
     state.is_infinite = true
 end
 
+---@param hex_core LuaEntity
 function hex_grid.convert_resources(hex_core)
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state or not state.ore_entities then return end
@@ -2320,16 +2301,9 @@ function hex_grid.convert_resources(hex_core)
     end
 end
 
+---@param hex_core LuaEntity
+---@param quality LuaQualityPrototype|string
 function hex_grid.set_quality(hex_core, quality)
-    if not hex_core then
-        lib.log_error("hex_grid.set_quality: hex core is nil")
-        return
-    end
-    if not quality then
-        lib.log_error("hex_grid.set_quality: quality is nil")
-        return
-    end
-
     -- Destroy old entity, spawn new one in with higher quality.
     -- Transfer all old inventory items to new entity.
     -- Transfer slot filters
@@ -2381,7 +2355,11 @@ function hex_grid.set_quality(hex_core, quality)
     end
 
     for _, item_stack in pairs(contents) do
-        state.hex_core_input_inventory.insert(item_stack)
+        state.hex_core_input_inventory.insert {
+            name = item_stack.name,
+            count = item_stack.count,
+            quality = item_stack.quality,
+        }
     end
 
     for _, player in pairs(update_players) do
@@ -2472,7 +2450,7 @@ end
 
 function hex_grid.regenerate_all_hex_core_loaders()
     for _, surface in pairs(game.surfaces) do
-        for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface)) do
+        for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
             hex_grid.generate_loaders(state)
         end
     end
@@ -2503,8 +2481,8 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
 
     if surface.name == "aquilo" then return end
 
-    local state = hex_grid.get_hex_state(surface_id, hex_pos)
-    if not state.claimed then return end
+    local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
+    if not state or not state.claimed then return end
 
     -- If no tile type is specified, use the last claimed hex tile type
     if not tile_type then
@@ -2513,8 +2491,8 @@ function hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, tile_type)
 
     -- Process each adjacent hex that is claimed
     for _, adj_hex in pairs(axial.get_adjacent_hexes(hex_pos)) do
-        local adj_state = hex_grid.get_hex_state(surface_id, adj_hex)
-        if adj_state.claimed then
+        local adj_state = hex_state_manager.get_hex_state(surface_id, adj_hex)
+        if adj_state and adj_state.claimed then
             terrain.fill_edges_between_hexes(surface, hex_pos, adj_hex, tile_type)
         end
     end
@@ -2531,8 +2509,8 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
 
     if surface.name == "fulgora" or surface.name == "aquilo" then return end
 
-    local state = hex_grid.get_hex_state(surface_id, hex_pos)
-    if not state.claimed then return end
+    local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
+    if not state or not state.claimed then return end
 
     -- If no tile type is specified, use the last claimed hex tile type
     if not tile_type then
@@ -2545,12 +2523,12 @@ function hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, tile_type
     -- For each pair of adjacent hexes, check if they share a corner
     for i = 1, #adjacent_hexes do
         local hex_pos2 = adjacent_hexes[i]
-        local hex2_state = hex_grid.get_hex_state(surface_id, hex_pos2)
-        if hex2_state.claimed then
+        local hex2_state = hex_state_manager.get_hex_state(surface_id, hex_pos2)
+        if hex2_state and hex2_state.claimed then
             for j = i+1, #adjacent_hexes do
                 local hex_pos3 = adjacent_hexes[j]
-                local hex3_state = hex_grid.get_hex_state(surface_id, hex_pos3)
-                if hex3_state.claimed then
+                local hex3_state = hex_state_manager.get_hex_state(surface_id, hex_pos3)
+                if hex3_state and hex3_state.claimed then
                     -- Check if these three hexes share a corner
                     -- For this to be true, hex1 and hex2 must be adjacent to each other
                     if axial.distance(hex_pos2, hex_pos3) == 1 then
@@ -2776,9 +2754,10 @@ function hex_grid.process_hex_core_pool()
     local pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
     for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
-
-        hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
-        hex_grid.process_hexlight(state)
+        if state then
+            hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
+            hex_grid.process_hexlight(state)
+        end
     end
     -- prof.stop()
 
@@ -2849,10 +2828,11 @@ function hex_grid.add_to_pool(state, pool_idx)
         storage.hex_grid.pool[pool_idx] = pool
     end
 
+    ---@type HexPoolParameters
     local pool_params = {
         surface_id = state.hex_core.surface.index,
         hex_pos = state.position,
-    } --[[@as HexPoolParameters]]
+    }
 
     table.insert(pool, pool_params)
 end
@@ -2925,7 +2905,9 @@ function hex_grid.verify_pool_sizes()
             for idx_in_pool = #pool, size + 1, -1 do
                 local params = pool[idx_in_pool]
                 local state = hex_grid.get_hex_state_from_pool_params(params)
-                hex_grid.relocate_in_pool(state, pool_idx, idx_in_pool)
+                if state then
+                    hex_grid.relocate_in_pool(state, pool_idx, idx_in_pool)
+                end
             end
         end
     end
@@ -2939,7 +2921,9 @@ function hex_grid.verify_pool_sizes()
                 local pool2 = storage.hex_grid.pool[k]
                 if next(pool2) then
                     local state = hex_grid.get_hex_state_from_pool_params(pool2[1])
-                    hex_grid.relocate_in_pool(state, k, 1)
+                    if state then
+                        hex_grid.relocate_in_pool(state, k, 1)
+                    end
                     break
                 end
             end
@@ -2976,8 +2960,10 @@ function hex_grid.get_pool_size()
     return storage.hex_grid.pool_size
 end
 
+---@param params HexPoolParameters
+---@return HexState|nil
 function hex_grid.get_hex_state_from_pool_params(params)
-    return hex_grid.get_hex_state(params.surface_id, params.hex_pos)
+    return hex_state_manager.get_hex_state(params.surface_id, params.hex_pos)
 end
 
 function hex_grid.count_active_hexes(pool)
@@ -2985,7 +2971,7 @@ function hex_grid.count_active_hexes(pool)
 
     for _, params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(params)
-        if state.is_active then
+        if state and state.is_active then
             total = total + 1
         end
     end
@@ -2998,7 +2984,7 @@ function hex_grid.has_active_hexes_fewer_than(pool, limit)
 
     for _, params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(params)
-        if state.is_active then
+        if state and state.is_active then
             total = total + 1
             if total >= limit then
                 return false
@@ -3023,6 +3009,7 @@ function hex_grid._set_state_active(state, flag)
 
     if flag == prev then return false end
     if not flag then return false end
+    if not state.hex_core.valid then return false end
 
     -- This hex just became active.
     -- Swap to another pool, if possible.
@@ -3043,7 +3030,7 @@ function hex_grid._set_state_active(state, flag)
 
     for i, params in ipairs(this_pool) do
         local other = hex_grid.get_hex_state_from_pool_params(params)
-        if not other.is_active then
+        if other and not other.is_active then
             -- Bubble down all active hex cores over time, towards the front of the pool for fastest processing in the loop below.
             hex_grid.swap_params_in_pool(storage.hex_grid.cur_pool_idx, this_index_in_pool, storage.hex_grid.cur_pool_idx, i)
             this_index_in_pool = i
@@ -3068,7 +3055,7 @@ function hex_grid._set_state_active(state, flag)
 
             for i, params in ipairs(pool) do
                 local other = hex_grid.get_hex_state_from_pool_params(params)
-                if other.is_active then
+                if other and other.is_active then
                     num_active_there = num_active_there + 1
                     if num_active_there > active_threshold then
                         break
@@ -3111,12 +3098,20 @@ function hex_grid._get_state_active(state)
     return state.is_active == true
 end
 
+---@param pool_idx1 int
+---@param index_in_pool1 int
+---@param pool_idx2 int
+---@param index_in_pool2 int
 function hex_grid.swap_params_in_pool(pool_idx1, index_in_pool1, pool_idx2, index_in_pool2)
     -- log("Swapping: " .. serpent.line({pool_idx1 = pool_idx1, index_in_pool1 = index_in_pool1, pool_idx2 = pool_idx2, index_in_pool2 = index_in_pool2}))
     storage.hex_grid.pool[pool_idx1][index_in_pool1], storage.hex_grid.pool[pool_idx2][index_in_pool2] = storage.hex_grid.pool[pool_idx2][index_in_pool2], storage.hex_grid.pool[pool_idx1][index_in_pool1]
     -- log("New pool active hexes: " .. hex_grid.count_active_hexes(storage.hex_grid.pool[pool_idx1]) .. ", " .. hex_grid.count_active_hexes(storage.hex_grid.pool[pool_idx2]))
 end
 
+---@param pool HexPoolParameters[]
+---@param surface_id int
+---@param hex_pos HexPos
+---@return integer
 function hex_grid.get_index_in_pool(pool, surface_id, hex_pos)
     for i, params in ipairs(pool) do
         if params.surface_id == surface_id and params.hex_pos.q == hex_pos.q and params.hex_pos.r == hex_pos.r then
@@ -3388,10 +3383,15 @@ end
 ---@param surface_name string|nil If not provided, all surfaces are updated.
 function hex_grid.update_hexlight_default_colors(surface_name)
     if surface_name == nil then
-        storage.hex_grid.dungeon_hexlight_color = lib.runtime_setting_value "dungeon-hexlight-color"
+        local dungeon_color = lib.runtime_setting_value "dungeon-hexlight-color"
+        ---@cast dungeon_color Color
+
+        storage.hex_grid.dungeon_hexlight_color = dungeon_color
+
         for _surface_name, _ in pairs(storage.item_values.values) do -- intended to iterate over ALL, not just the existing ones
             hex_grid.update_hexlight_default_colors(_surface_name)
         end
+
         return
     end
 
@@ -3400,6 +3400,8 @@ function hex_grid.update_hexlight_default_colors(surface_name)
     end
 
     local color = lib.runtime_setting_value("default-" .. surface_name .. "-hexlight-color")
+    ---@cast color Color
+
     storage.hex_grid.default_hexlight_color[surface_name] = color
 
     local dungeon_color = storage.hex_grid.dungeon_hexlight_color
@@ -3408,7 +3410,9 @@ function hex_grid.update_hexlight_default_colors(surface_name)
 
     if not game.get_surface(surface_name) then return end
 
-    local surface_hexes = hex_grid.get_surface_hexes(surface_name)
+    local surface_hexes = hex_state_manager.get_surface_hexes(surface_name)
+    if not surface_hexes then return end
+
     for _, Q in pairs(surface_hexes) do
         for _, state in pairs(Q) do
             if state.hexlight then
@@ -3434,7 +3438,9 @@ function hex_grid.update_all_trades(surface)
         return
     end
 
-    local surface_hexes = hex_grid.get_surface_hexes(surface)
+    local surface_hexes = hex_state_manager.get_surface_hexes(surface)
+    if not surface_hexes then return end
+
     for _, Q in pairs(surface_hexes) do
         for _, state in pairs(Q) do
             if state.trades then
@@ -3453,7 +3459,7 @@ function hex_grid.get_states_with_fewest_trades(surface_name, claimed_only)
     if claimed_only == nil then claimed_only = true end
     local states = {}
     local num_trades = math.huge
-    for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_name)) do
+    for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
         if state.hex_core and (state.claimed or not claimed_only) then
             if state.trades and #state.trades > 0 then
                 if #state.trades < num_trades then
@@ -3541,7 +3547,7 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
 end
 
 function hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
-    local state = hex_grid.get_hex_state(surface_name, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface_name, hex_pos)
     if not state or not state.hex_core then return end
 
     hex_grid.apply_interplanetary_trade_bonus(state, item_name)
@@ -3602,7 +3608,7 @@ function hex_grid.reduce_biters(portion)
     storage.hex_grid.total_biter_multiplier = (storage.total_biter_multiplier or 1) * (1 - portion)
     local surface = game.surfaces.nauvis
 
-    for _, state in pairs(hex_grid.get_flattened_surface_hexes "nauvis") do
+    for _, state in pairs(hex_state_manager.get_flattened_surface_hexes "nauvis") do
         if state.is_biters then
             if math.random() < portion then
                 local entities = surface.find_entities_filtered {
@@ -3667,7 +3673,7 @@ function hex_grid.on_train_arrived_at_stop(train, train_stop)
 
     local transformation = terrain.get_surface_transformation(train_stop.surface)
     local hex_pos = axial.get_hex_containing(train_stop.position, transformation.scale, transformation.rotation)
-    local state = hex_grid.get_hex_state(train_stop.surface, hex_pos)
+    local state = hex_state_manager.get_hex_state(train_stop.surface, hex_pos)
     if not state then return end
 
     if not state.allow_locomotive_trading then return end

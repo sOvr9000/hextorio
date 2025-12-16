@@ -3,6 +3,7 @@ local lib = require "api.lib"
 local trades = require "api.trades"
 local quests = require "api.quests"
 local hex_grid = require "api.hex_grid"
+local hex_state_manager = require "api.hex_state_manager"
 local dungeons = require "api.dungeons"
 local coin_tiers = require "api.coin_tiers"
 
@@ -36,7 +37,7 @@ return function()
     end
 
     for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
-        for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+        for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_id)) do
             -- Fix dungeon claim bug
             if state.is_dungeon then
                 if not dungeons.get_dungeon_at_hex_pos(surface_id, state.position, false) then

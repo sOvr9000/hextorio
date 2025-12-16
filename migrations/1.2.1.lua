@@ -1,6 +1,7 @@
 
 local trades = require "api.trades"
 local hex_grid = require "api.hex_grid"
+local hex_state_manager = require "api.hex_state_manager"
 local item_values = require "api.item_values"
 
 local data_item_buffs = require "data.item_buffs"
@@ -18,7 +19,7 @@ return function()
     hex_grid.set_pool_size(storage.hex_grid.pool_size / 5)
 
     for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
-        for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+        for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_id)) do
             -- Fix hexlight/hexport bug
             if not state.hex_core then
                 if state.hexlight or state.hexlight2 then

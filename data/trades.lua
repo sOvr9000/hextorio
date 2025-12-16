@@ -56,5 +56,7 @@ return {
     total_items_traded = {},
     total_items_sold = {},
     total_items_bought = {},
+
+    productivity_update_jobs = {}, ---@type TradeProductivityUpdateJob[]
 }
 

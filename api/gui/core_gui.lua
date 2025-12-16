@@ -429,7 +429,7 @@ function core_gui.get_trade_from_trade_flow(player, flow)
     end
 
     local hex_core = player.opened
-    if not hex_core then return end
+    if not hex_core or hex_core.object_name ~= "LuaEntity" then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state or not state.trades then return end

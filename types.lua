@@ -1,7 +1,6 @@
 
 ---@alias GuiEventName "gui-opened"|"gui-closed"|"gui-confirmed"|"gui-clicked"|"gui-switch-changed"|"gui-selection-changed"|"gui-elem-changed"|"gui-slider-changed"
 
----@alias HexPos {q: int, r: int}
 ---@alias HexPosMap {[int]: {[int]: any}}
 ---@alias AxialDirection 1|2|3|4|5|6
 ---@alias AxialDirectionSet {[AxialDirection]: boolean}
@@ -18,11 +17,6 @@
 ---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], walls: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet, is_looted: boolean|nil}
 
 ---@alias PlayerCatalogSelection {surface_name: string, item_name: string, bazaar_quality: string, last_item_selected: string|nil, last_qb_item_selected: string|nil, bazaar_buy_amount: int|nil}
-
----@alias HexCoreMode "normal"|"sink"|"generator"
----@alias HexState table
----@alias HexCoreStats {total_items_produced: QualityItemCounts, total_items_consumed: QualityItemCounts, total_coins_produced: table, total_coins_consumed: table}
----@alias HexPoolParameters {surface_id: int, q: int, r: int}
 
 ---@alias IslandConfig {radius: int, fill_ratio: number, algorithm: string, seed: int?, start_pos: HexPos?}
 

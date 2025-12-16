@@ -1,16 +1,17 @@
 
 local hex_grid = require "api.hex_grid"
+local hex_state_manager = require "api.hex_state_manager"
 local trades = require "api.trades"
 
 return function()
     table.insert(storage.trades.starting_trades, {{"copper-cable", "boiler"}, {"wood", "raw-fish"}})
     local trade = trades.from_item_names("nauvis", {"copper-cable", "boiler"}, {"wood", "raw-fish"})
-    local starter_hex_state = hex_grid.get_hex_state("nauvis", {q=0, r=0})
+    local starter_hex_state = hex_state_manager.get_hex_state("nauvis", {q=0, r=0})
     hex_grid.remove_trade_by_index(starter_hex_state, 4)
     hex_grid.add_trade(starter_hex_state, trade)
 
     -- Revert trades to original
-    for _, state in pairs(hex_grid.get_flattened_surface_hexes(game.surfaces.nauvis)) do
+    for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(game.surfaces.nauvis)) do
         if state.trades and state.trades_original then
             for _, trade in pairs(state.trades) do
                 trade.trades = trade.trades_original

@@ -4,6 +4,7 @@ local core_gui = require "api.gui.core_gui"
 local axial = require "api.axial"
 local terrain = require "api.terrain"
 local hex_grid = require "api.hex_grid"
+local hex_state_manager = require "api.hex_state_manager"
 local coin_tiers  = require "api.coin_tiers"
 local trades = require "api.trades"
 local event_system = require "api.event_system"
@@ -444,7 +445,7 @@ function hex_core_gui.update_hex_core_resources(player)
             amount = 1000000000000
         end
         local sprite = "item/" .. resource_name
-        if state.is_well or state.is_oil then -- is_oil for <=0.2.3, should make this a function
+        if state.is_well then
             sprite = "entity/" .. resource_name
         end
         local resource = resources_flow.add {
@@ -647,11 +648,13 @@ function hex_core_gui.on_claim_hex_button_click(player)
     local hex_pos = axial.get_hex_containing(hex_core.position, transformation.scale, transformation.rotation)
 
     if not hex_grid.can_claim_hex(player, player.surface, hex_pos) then
-        local state = hex_grid.get_hex_state(hex_core.surface.index, hex_pos)
-        if state.is_dungeon then
-            player.print(lib.color_localized_string({"hextorio.loot-dungeon-first"}, "red"))
-        else
-            player.print(lib.color_localized_string({"hextorio.cannot-afford"}, "red"))
+        local state = hex_state_manager.get_hex_state(hex_core.surface.index, hex_pos)
+        if state then
+            if state.is_dungeon then
+                player.print(lib.color_localized_string({"hextorio.loot-dungeon-first"}, "red"))
+            else
+                player.print(lib.color_localized_string({"hextorio.cannot-afford"}, "red"))
+            end
         end
         return
     end

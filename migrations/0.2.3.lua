@@ -2,6 +2,7 @@
 local lib = require "api.lib"
 local trades = require "api.trades"
 local hex_grid = require "api.hex_grid"
+local hex_state_manager = require "api.hex_state_manager"
 local blueprints = require "api.blueprints"
 local weighted_choice = require "api.weighted_choice"
 
@@ -45,7 +46,7 @@ return function()
     storage.trades.starting_trades = data_trades.starting_trades
 
     for surface_id, _ in pairs(game.surfaces) do
-        for _, state in pairs(hex_grid.get_flattened_surface_hexes(surface_id)) do
+        for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_id)) do
             if state.trades then
                 local params
                 if state.mode == "generator" or state.mode == "sink" then

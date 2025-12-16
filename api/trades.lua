@@ -10,10 +10,18 @@ local quests      = require "api.quests"
 local hex_island  = require "api.hex_island"
 local trade_loop_finder = require "api.trade_loop_finder"
 local inventories       = require "api.inventories"
+local hex_state_manager = require "api.hex_state_manager"
 
 
 
 local trades = {}
+
+
+
+---@class TradeProductivityUpdateJob
+---@field surface_id int The surface ID to update trades on
+---@field current_flat_index int The current flat index in the flattened_surface_hexes array
+---@field total_flat_indices int The total number of flat indices to process
 
 
 
@@ -1228,6 +1236,67 @@ function trades.check_productivity(trade)
     for j, item in ipairs(trade.output_items) do
         if lib.is_catalog_item(item.name) then
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
+        end
+    end
+end
+
+---Queue a job to update trade productivities for a surface, or for all surfaces if surface is nil.
+---@param surface SurfaceIdentification|nil If not provided, queues jobs for all existing surfaces.
+function trades.queue_productivity_update_job(surface)
+    if surface == nil then
+        for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
+            surface = game.get_surface(surface_id)
+            if surface and not lib.is_space_platform(surface.name) then
+                trades.queue_productivity_update_job(surface_id)
+            end
+        end
+        return
+    end
+
+    local surface_id = lib.get_surface_id(surface)
+    if surface_id == -1 then return end
+
+    local flattened_hexes = storage.hex_grid.flattened_surface_hexes[surface_id]
+    if not flattened_hexes then return end
+
+    ---@type TradeProductivityUpdateJob
+    local job = {
+        surface_id = surface_id,
+        current_flat_index = 1,
+        total_flat_indices = #flattened_hexes,
+    }
+
+    log("starting trade productivity update job on surface index = " .. job.surface_id)
+
+    table.insert(storage.trades.productivity_update_jobs, job)
+end
+
+---Process trade productivity update jobs. Processes up to 50 hex cores per tick.
+---Call this function every tick from control.lua.
+function trades.process_trade_productivity_updates()
+    local jobs = storage.trades.productivity_update_jobs
+
+    local batch_size = 50
+
+    for i = #jobs, 1, -1 do
+        local job = jobs[i]
+
+        local end_index = math.min(job.current_flat_index + batch_size - 1, job.total_flat_indices)
+        local hex_states = hex_state_manager.get_hexes_from_flat_indices(job.surface_id, job.current_flat_index, end_index)
+
+        for _, state in pairs(hex_states) do
+            for _, trade_id in pairs(state.trades or {}) do
+                local trade = trades.get_trade_from_id(trade_id)
+                if trade then
+                    trades.check_productivity(trade)
+                end
+            end
+        end
+
+        job.current_flat_index = end_index + 1
+        if job.current_flat_index > job.total_flat_indices then
+            table.remove(jobs, i)
+            log("finished trade productivity update job on surface index = " .. job.surface_id)
         end
     end
 end
