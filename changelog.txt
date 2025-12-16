@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.12
 Date: 16/12/25
+  Bugfixes:
+    - Fixed that massively overspending coins while receiving passive coin buffs caused an explosion of hexaprism coin gain.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.11
 Date: 16/12/25
