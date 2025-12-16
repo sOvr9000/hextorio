@@ -6,6 +6,7 @@ Date: 12/12/25
     - Fixed that the command /regenerate-trades could put interplanetary trades on the wrong planets.
     - Fixed that the claim tool would sometimes claim dungeon hexes.
     - Fixed that the claim tool would sometimes ignore claiming the selected hexes.
+    - Fixed that the claim tool would sometimes let you claim a hex you cannot afford, taking your coins anyway.
     - Fixed rare crash upon dungeon generation.
     - Fixed that dungeon chests could be spawned inside of other entities.
     - Fixed rare crash around item value retrieval.
