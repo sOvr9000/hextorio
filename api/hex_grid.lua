@@ -285,7 +285,7 @@ function hex_grid.register_events()
             if state then
                 state.is_dungeon = nil
                 state.was_dungeon = true
-                hex_grid.add_hex_to_claim_queue(dungeon.surface.index, hex_pos, nil, true)
+                hex_grid.add_hex_to_claim_queue(dungeon.surface.index, hex_pos, nil, true, false)
             end
         end
     end)
@@ -1659,7 +1659,10 @@ end
 ---@param hex_pos HexPos
 ---@param by_player LuaPlayer|nil
 ---@param allow_nonland boolean|nil
-function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
+---@param spend_free_claims boolean|nil
+function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend_free_claims)
+    if spend_free_claims == nil then spend_free_claims = true end
+
     if by_player and not hex_grid.can_claim_hex(by_player, surface_id, hex_pos) then
         hex_grid.remove_hex_from_claim_queue(surface_id, hex_pos)
         return
@@ -1763,8 +1766,12 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
         end
     end
 
-    hex_grid.add_free_hex_claims(surface_name, -1)
+    if spend_free_claims then
+        hex_grid.add_free_hex_claims(surface_name, -1)
+    end
+
     hex_grid.check_hex_span(surface, hex_pos)
+
     quests.increment_progress_for_type("claimed-hexes", 1)
     quests.increment_progress_for_type("claimed-hexes-on", 1, surface_name)
 
@@ -1773,7 +1780,9 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland)
     state.is_in_claim_queue = nil
 end
 
-function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland)
+function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland, spend_free_claims)
+    if spend_free_claims == nil then spend_free_claims = true end
+
     if not storage.hex_grid.claim_queue then
         storage.hex_grid.claim_queue = {}
     end
@@ -1809,6 +1818,7 @@ function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonl
         hex_pos = hex_pos,
         by_player = by_player,
         allow_nonland = allow_nonland,
+        spend_free_claims = spend_free_claims,
     })
 end
 
@@ -1866,7 +1876,7 @@ function hex_grid.process_claim_queue()
         state.is_in_claim_queue = nil
     end
 
-    hex_grid.claim_hex(params.surface_name, params.hex_pos, params.by_player, params.allow_nonland)
+    hex_grid.claim_hex(params.surface_name, params.hex_pos, params.by_player, params.allow_nonland, params.spend_free_claims)
 end
 
 -- Claim hexes within a range, covering water as well

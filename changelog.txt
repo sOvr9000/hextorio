@@ -10,6 +10,7 @@ Date: 12/12/25
     - Fixed rare crash upon dungeon generation.
     - Fixed that dungeon chests could be spawned inside of other entities.
     - Fixed rare crash around item value retrieval.
+    - Fixed that the auto-claiming after looting a dungeon would spend free hex claims.
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.9
 Date: 12/12/25
