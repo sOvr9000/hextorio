@@ -722,7 +722,6 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     if trade.has_coins_in_input then
         local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
         local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
-        log(serpent.line(trade_coin.values) .. " * " .. num_batches .. " = " .. serpent.line(coins_removed.values))
         remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
         coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed, cargo_wagons)
         flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
@@ -1646,7 +1645,6 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                 local all_items_quality = all_items_lookup[quality] or {}
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
-                log(num_batches)
                 if num_batches >= 1 then
                     quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + 1
