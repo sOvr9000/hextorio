@@ -3611,7 +3611,7 @@ function hex_grid.try_recover_trade(trade, states, notify)
 
         if notify then
             local item_name
-            for _, _item_name in pairs(trades.get_input_output_item_names_of_trade(trade)) do
+            for _, _item_name in pairs(trades.get_item_names_in_trade(trade)) do
                 if item_ranks.get_item_rank(_item_name) >= 4 then
                     item_name = _item_name
                     break
