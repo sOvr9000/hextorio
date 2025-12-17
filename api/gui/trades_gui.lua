@@ -85,7 +85,7 @@ function trades_gui._update_trades_scroll_pane_tick(process)
             break
         end
 
-        if process.params.expanded and trade_number ~= 1 then
+        if process.params.expanded and process.params.is_configuration_unlocked and trade_number ~= 1 then
             local line = process.trades_scroll_pane.add {
                 type = "line",
                 direction = "horizontal",

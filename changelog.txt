@@ -14,6 +14,7 @@ Date: 17/12/25
     - Newly added trades to hex cores with existing items in their inventories will no longer auto-update inventory slot filters based on the trade contents.
   Gui:
     - Re-spaced the lines between trades in the hex core GUI.
+    - Lines only show between trades once the "Trade Configuration" feature is unlocked.
   Bugfixes:
     - Fixed that spidertrons and other vehicles would disappear when a hex core spawns underneath them.
     - Fixed that connecting cliff sprites were not updated after a hex core spawns in their way, destroying them.
