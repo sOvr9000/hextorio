@@ -2283,8 +2283,6 @@ function trades.recalculate_researched_items()
 
     -- Add raw items to set
     researched_items = sets.union(researched_items, lib.get_raw_items())
-
-    log(serpent.block(researched_items))
     storage.trades.researched_items = researched_items
 end
 
