@@ -1033,7 +1033,7 @@ function trades.discover_items(items_list)
             end
             s = s .. "[img=item." .. item_name .. "]"
         end
-        lib.print_notification("item-ranked-up", {"", {"hextorio.new-catalog-items"}, s})
+        lib.print_notification("item-ranked-up", lib.color_localized_string({"", {"hextorio.new-catalog-items"}, s}, "green", "heading-1"))
     end
 
     return new_discoveries

@@ -12,6 +12,7 @@ Date: 17/12/25
     - Changed that the belt capacity tech from this mod doesn't consume promethium science packs.
     - Dungeon hexes with extra trades from the bronze effect no longer ping them in chat if they are in uncharted areas of the map.
     - Newly added trades to hex cores with existing items in their inventories will no longer auto-update inventory slot filters based on the trade contents.
+    - The notifications in chat about various upgrades taking effect now have more of an arcade style to them.
   Gui:
     - Re-spaced the lines between trades in the hex core GUI.
     - Lines only show between trades once the "Trade Configuration" feature is unlocked.

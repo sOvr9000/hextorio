@@ -141,12 +141,7 @@ function item_ranks.rank_up(item_name)
 
     rank.rank = rank.rank + 1
 
-    local localization = "hextorio.item-rank-up"
-    if rank.rank == 5 then
-        localization = "hextorio.item-rank-up-max"
-    end
-
-    lib.print_notification("item-ranked-up", {localization, "[item=" .. item_name .. "]", lib.get_rank_img_str(rank.rank)})
+    lib.print_notification("item-ranked-up", lib.color_localized_string({"", {"hextorio.item-rank-up"}, " [img=item." .. item_name .. "]", lib.get_rank_img_str(rank.rank - 1), "->", lib.get_rank_img_str(rank.rank), "[img=item." .. item_name .. "]"}, storage.item_ranks.rank_colors[rank.rank], "heading-1"))
     event_system.trigger("item-rank-up", item_name)
 
     quests.increment_progress_for_type "total-item-rank"

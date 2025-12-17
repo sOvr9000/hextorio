@@ -570,11 +570,18 @@ function hex_grid.apply_extra_trades_bonus(state)
 
     local chunk_pos = lib.get_chunk_pos_from_tile_position(state.hex_core.position)
     if next(added_trades) and game.forces.player.is_chunk_charted(state.hex_core.surface, chunk_pos) then
-        local new_trades_str = ""
         for item_name, trade in pairs(added_trades) do
-            new_trades_str = new_trades_str .. "[img=item." .. item_name .. "]"
+            lib.print_notification("extra-trade", {"",
+                lib.color_localized_string(
+                    {"hextorio.bonus-trade", "[img=item." .. item_name .. "]"},
+                    "yellow", "heading-1"
+                ),
+                " ",
+                lib.get_gps_str_from_hex_core(state.hex_core),
+                " ",
+                lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
+            })
         end
-        lib.print_notification("extra-trade", {"hextorio.bonus-trade", lib.get_gps_str_from_hex_core(state.hex_core), new_trades_str})
     end
 end
 
@@ -3525,35 +3532,51 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
             end
             hex_cores_str = hex_cores_str .. lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
         end
-        lib.print_notification("extra-trade", {"", {"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"}, "\n", hex_cores_str})
+        lib.print_notification("extra-trade", {"", lib.color_localized_string({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"}, "yellow", "heading-1"), "\n", hex_cores_str})
     end
 end
 
 function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
     if not state.hex_core then return end
+
     local surface_name = state.hex_core.surface.name
+
     if not item_name then
         for _item_name, _ in pairs(trades.get_interplanetary_trade_items(surface_name, state.position)) do
             hex_grid.apply_interplanetary_trade_bonus(state, _item_name)
         end
         return
     end
-    local added = false
+
+    local trade
     local rank = item_ranks.get_item_rank(item_name)
     if rank >= 3 then
-        local trade = trades.new_coin_trade(surface_name, item_name)
+        trade = trades.new_coin_trade(surface_name, item_name)
         if trade then
             -- Avoid interfering with currently active trading lines by deactivating the new trade.
             trades.set_trade_active(trade, false)
 
             hex_grid.add_trade(state, trade)
-            added = true
         else
             lib.log_error("hex_grid.apply_interplanetary_trade_bonus: Could not generate interplanetary trade")
         end
     end
-    if added then
-        lib.print_notification("interplanetary-trade", {"hextorio.bonus-trade-interplanetary", lib.get_gps_str_from_hex_core(state.hex_core), "[img=item." .. item_name .. "]"})
+
+    if trade then
+        lib.print_notification("interplanetary-trade", {"",
+            "[space-age] ",
+            lib.color_localized_string(
+                {
+                    "hextorio.bonus-trade-interplanetary",
+                    "[img=item." .. item_name .. "]"
+                },
+                "cyan", "heading-1"
+            ),
+            " ",
+            lib.get_gps_str_from_hex_core(state.hex_core),
+            " ",
+            lib.get_trade_img_str(trade),
+        })
     end
 end
 
@@ -3587,7 +3610,30 @@ function hex_grid.try_recover_trade(trade, states, notify)
         hex_grid.add_trade(state, trade)
 
         if notify then
-            lib.print_notification("trade-recovered", {"hextorio.trade-recovered", lib.get_trade_img_str(trade), lib.get_gps_str_from_hex_core(state.hex_core)})
+            local item_name
+            for _, _item_name in pairs(trades.get_input_output_item_names_of_trade(trade)) do
+                if item_ranks.get_item_rank(_item_name) >= 4 then
+                    item_name = _item_name
+                    break
+                end
+            end
+            if item_name then
+                lib.print_notification("trade-recovered", {
+                    "",
+                    lib.color_localized_string(
+                        {
+                            "hextorio.trade-recovered",
+                            "[img=item." .. item_name .. "]",
+                        },
+                        "purple",
+                        "heading-1"
+                    ),
+                    " ",
+                    lib.get_gps_str_from_hex_core(state.hex_core),
+                    " ",
+                    lib.get_trade_img_str(trade),
+                })
+            end
         end
     else
         -- This should never happen, but it's here just in case.
