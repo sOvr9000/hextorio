@@ -6,6 +6,7 @@ Date: 16/12/25
     - Changed that the belt capacity tech from this mod doesn't consume promethium science packs.
   Bugfixes:
     - Fixed that spidertrons and other vehicles would disappear when a hex core spawns underneath them.
+    - Fixed that connecting cliff sprites were not updated after a hex core spawns in their way, destroying them.
   Optimizations:
     - Throttled processing for most frame-dropping events: item rank ups (trade productivity updates), hex tile placement, trade overview calculations.
     - When multiple players are using the trade overview simulataneously, the calculations are load balanced (full speed for one player, half speed for two players, etc.).

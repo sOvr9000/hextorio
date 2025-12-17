@@ -2017,7 +2017,11 @@ function hex_grid.spawn_hex_core(surface, position)
 
     for _, e in pairs(entities) do
         if e.valid and not lib.is_entity_immune_to_hex_core_clearing(e) then
-            e.destroy()
+            if e.type == "cliff" then
+                e.destroy {do_cliff_correction = true}
+            else
+                e.destroy()
+            end
         end
     end
 
