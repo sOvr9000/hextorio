@@ -90,8 +90,8 @@ function trades_gui._update_trades_scroll_pane_tick(process)
                 type = "line",
                 direction = "horizontal",
             }
-            line.style.top_margin = 8 / 1.2
-            line.style.bottom_margin = 8 / 1.2
+            line.style.top_margin = 3
+            line.style.bottom_margin = 6
         end
 
         trades_gui.add_trade_elements(process.player, group_flow, trade, trade_number, process.params)
