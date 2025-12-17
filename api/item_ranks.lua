@@ -33,6 +33,9 @@ function item_ranks.register_events()
     event_system.register("runtime-setting-changed-rank-4-prod-requirement", function()
         storage.item_ranks.productivity_requirements[4] = lib.runtime_setting_value "rank-4-prod-requirement"
     end)
+    event_system.register("runtime-setting-changed-rank-2-effect", function()
+        storage.item_ranks.bronze_rank_bonus_effect = lib.runtime_setting_value "rank-2-effect"
+    end)
 end
 
 function item_ranks.init()

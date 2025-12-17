@@ -1,11 +1,14 @@
 
 local hex_state_manager = require "api.hex_state_manager"
+local lib               = require "api.lib"
 
 return function()
     storage.trades.productivity_update_jobs = {}
     storage.trades.trade_collection_jobs = {}
     storage.trades.trade_filtering_jobs = {}
     storage.hex_grid.flattened_surface_hexes = {}
+
+    storage.item_ranks.bronze_rank_bonus_effect = lib.runtime_setting_value "rank-2-effect"
 
     -- Index all existing hexes
     for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do

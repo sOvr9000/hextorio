@@ -161,6 +161,8 @@ script.on_init(function()
         remote.call("freeplay", "set_skip_intro", true)
     end
 
+    storage.item_ranks.bronze_rank_bonus_effect = lib.runtime_setting_value "rank-2-effect"
+
     local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
     trades.generate_interplanetary_trade_locations("nauvis", num_trades)
 
