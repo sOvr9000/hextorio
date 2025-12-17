@@ -15,6 +15,7 @@ Date: 16/12/25
     - Fixed that spidertrons and other vehicles would disappear when a hex core spawns underneath them.
     - Fixed that connecting cliff sprites were not updated after a hex core spawns in their way, destroying them.
     - Fixed that the mod setting for the bronze rank effect did not actually change the effect.
+    - Fixed that trade productivity progress bars could be off by very tiny amounts when they shouldn't be (floating point rounding errors).
   Optimizations:
     - Throttled processing for most frame-dropping events: item rank ups (trade productivity updates), hex tile placement, trade overview calculations.
     - When multiple players are using the trade overview simulataneously, the calculations are load balanced (full speed for one player, half speed for two players, etc.).
