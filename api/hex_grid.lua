@@ -442,6 +442,10 @@ function hex_grid.add_trade(hex_core_state, trade)
         return
     end
 
+    if not hex_core_state.trades then
+        hex_core_state.trades = {}
+    end
+
     trade.hex_core_state = hex_core_state
     table.insert(hex_core_state.trades, trade.id)
 
@@ -3483,23 +3487,19 @@ end
 function hex_grid.apply_extra_trades_bonus_retro(item_name)
     if not lib.is_catalog_item(item_name) then return end
     local added_trades = {}
-    for surface_id, surface_hexes in pairs(storage.hex_grid.surface_hexes) do
+    for surface_id, flattened_surface_hexes in pairs(storage.hex_grid.flattened_surface_hexes) do
         local surface = game.get_surface(surface_id)
         if surface then
-            local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. surface.name)
-            if surface then
-                local volume = item_values.get_item_value(surface.name, item_name)
-                if not item_values.is_item_interplanetary(surface.name, item_name) then
-                    for _, Q in pairs(surface_hexes) do
-                        for _, state in pairs(Q) do
-                            if state.trades and #state.trades == trades_per_hex then
-                                local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
-                                if trade and trade.hex_core_state then
-                                    -- Avoid interfering with currently active trading lines by deactivating the new trade.
-                                    trades.set_trade_active(trade, false)
-                                    table.insert(added_trades, trade)
-                                end
-                            end
+            local volume = item_values.get_item_value(surface.name, item_name)
+            if not item_values.is_item_interplanetary(surface.name, item_name) then
+                for _, hex_pos in pairs(flattened_surface_hexes) do
+                    local state = hex_state_manager.get_hex_state(surface, hex_pos)
+                    if state and state.trades then
+                        local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
+                        if trade and trade.hex_core_state then
+                            -- Avoid interfering with currently active trading lines by deactivating the new trade.
+                            trades.set_trade_active(trade, false)
+                            table.insert(added_trades, trade)
                         end
                     end
                 end
