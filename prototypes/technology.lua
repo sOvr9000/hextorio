@@ -20,7 +20,6 @@ transport_belt_capacity_3.unit = {
         {"electromagnetic-science-pack", 1},
         {"agricultural-science-pack", 1},
         {"cryogenic-science-pack", 1},
-        {"promethium-science-pack", 1},
     },
 }
 table.insert(transport_belt_capacity_3.effects, {

@@ -3,6 +3,7 @@ Version: 1.3.13
 Date: 16/12/25
   Changes:
     - Changed that the bronze star "extra trade" effect to apply on ALL hex cores, not just ones that never had an extra trade given to it before.
+    - Changed that the belt capacity tech from this mod doesn't consume promethium science packs.
   Optimizations:
     - Throttled processing for most frame-dropping events: item rank ups (trade productivity updates), hex tile placement, trade overview calculations.
     - When multiple players are using the trade overview simulataneously, the calculations are load balanced (full speed for one player, half speed for two players, etc.).
