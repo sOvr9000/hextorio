@@ -1169,33 +1169,53 @@ end
 ---@param value number
 ---@param quality string|nil
 function trades.set_current_prod_value(trade, value, quality)
+    if quality == nil then quality = "normal" end
     if not trade.current_prod_value then
         trade.current_prod_value = {}
     end
-    trade.current_prod_value[quality or "normal"] = value
+    trade.current_prod_value[quality] = value
 end
 
 ---Increment a trade's current progress toward filling the productivity bar, returning how many times the bar has been filled.
 ---@param trade Trade
----@param times int
+---@param times int The number of times the trade was made.
 ---@param quality string
 ---@return int
 function trades.increment_current_prod_value(trade, times, quality)
     local total_prod = trades.get_productivity(trade, quality)
     local prod_amount
+
     if not trade.current_prod_value then
         trade.current_prod_value = {}
     end
+
     if total_prod < 0 then
-        trade.current_prod_value[quality] = (trade.current_prod_value[quality] or 0) + times / (1 - total_prod)
+        local new_value = (trade.current_prod_value[quality] or 0) + times / (1 - total_prod)
+        local rounded = math.floor(0.5 + new_value)
+        if math.abs(new_value - rounded) < 1e-12 then
+            -- This value came very close to a whole number, and likely a floating point rounding error is what threw it off.
+            -- Snapping to the expected value like this keeps situations from happening where -500% prod results in having to make 7 trades instead of 6.
+            new_value = rounded
+        end
+
+        trade.current_prod_value[quality] = new_value
         local f = math.floor(trade.current_prod_value[quality])
         prod_amount = f - times
         trade.current_prod_value[quality] = trade.current_prod_value[quality] - f
     else
-        trade.current_prod_value[quality] = (trade.current_prod_value[quality] or 0) + total_prod * (times or 1)
+        local new_value = (trade.current_prod_value[quality] or 0) + total_prod * (times or 1)
+        local rounded = math.floor(0.5 + new_value)
+        if math.abs(new_value - rounded) < 1e-12 then
+            -- This value came very close to a whole number, and likely a floating point rounding error is what threw it off.
+            -- Snapping to the expected value like this keeps situations from happening where -500% prod results in having to make 7 trades instead of 6.
+            new_value = rounded
+        end
+
+        trade.current_prod_value[quality] = new_value
         prod_amount = math.floor(trade.current_prod_value[quality])
         trade.current_prod_value[quality] = trade.current_prod_value[quality] - prod_amount
     end
+
     return prod_amount
 end
 
