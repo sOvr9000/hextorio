@@ -251,6 +251,8 @@ function hex_core_gui.init_hex_core(player)
     quality_dropdown_info.style.top_margin = 4
     quality_dropdown.tags = {handlers = {["gui-selection-changed"] = "update-hex-core"}}
 
+    core_gui.add_warning(frame, {"hex-core-gui.unresearched-penalty"}, "unresearched-penalty")
+
     local trades_scroll_pane = frame.add {type = "scroll-pane", name = "trades", direction = "vertical"}
     core_gui.auto_width_height(trades_scroll_pane)
 end
@@ -275,6 +277,16 @@ function hex_core_gui.update_hex_core(player)
     local quality_unlocked = game.forces.player.is_quality_unlocked(prototypes.quality.uncommon)
     frame["trades-header"]["quality-dropdown"].visible = quality_unlocked
     frame["trades-header"]["info"].visible = quality_unlocked
+
+    local has_penalties = false
+    for _, trade_id in pairs(state.trades or {}) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade and trades.has_unresearched_penalty(trade) then
+            has_penalties = true
+            break
+        end
+    end
+    frame["unresearched-penalty"].visible = has_penalties
 
     if state.claimed then
         frame["claim-flow"].visible = false

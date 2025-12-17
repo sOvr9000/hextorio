@@ -48,9 +48,12 @@ return {
         },
     },
 
+    unresearched_penalty = 0,
+
     guaranteed_trades = {},
 
     discovered_items = {},
+    researched_items = {},
     trade_volume_base = {},
 
     total_items_traded = {},

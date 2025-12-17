@@ -92,6 +92,12 @@ script.on_init(function()
 
     hex_grid.update_hexlight_default_colors()
 
+    local penalty = lib.runtime_setting_value "unresearched-penalty"
+    ---@cast penalty number
+
+    storage.trades.unresearched_penalty = penalty
+    trades.recalculate_researched_items()
+
     storage.ammo_type_per_entity = {
         ["gun-turret"] = "bullet_type",
         ["dungeon-gun-turret"] = "bullet_type",
@@ -533,6 +539,11 @@ script.on_event(defines.events.on_surface_created, function (event)
         local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
         trades.generate_interplanetary_trade_locations(surface.name, num_trades)
     end
+end)
+
+script.on_event(defines.events.on_research_finished, function(event)
+    trades.recalculate_researched_items()
+    trades.queue_productivity_update_job()
 end)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)

@@ -358,6 +358,7 @@ function hex_grid.register_events()
 
     event_system.register("train-arrived-at-stop", hex_grid.on_train_arrived_at_stop)
     event_system.register("entity-built", hex_grid.on_entity_built)
+    event_system.register("runtime-setting-changed-unresearched-penalty", hex_grid.on_setting_changed_unresearched_penalty)
 end
 
 ---Get the state of a hex from a hex core entity
@@ -3701,6 +3702,16 @@ function hex_grid.on_entity_built(entity)
     if entity.type == "constant-combinator" then
         hex_grid.copy_signals_to_combinator(entity)
     end
+end
+
+function hex_grid.on_setting_changed_unresearched_penalty()
+    trades.recalculate_researched_items()
+
+    local penalty = lib.runtime_setting_value "unresearched-penalty"
+    ---@cast penalty number
+
+    storage.trades.unresearched_penalty = penalty
+    trades.queue_productivity_update_job()
 end
 
 

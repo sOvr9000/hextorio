@@ -1213,19 +1213,44 @@ end
 ---@param quality string|nil
 ---@return boolean
 function trades.has_any_productivity_modifiers(trade, quality)
-    for j, item in ipairs(trade.input_items) do
+    if trades.get_productivity(trade, quality) ~= 0 then return true end
+
+    if storage.trades.base_productivity ~= nil and storage.trades.base_productivity ~= 0 then
+        return true
+    end
+
+    for _, item in pairs(trade.input_items) do
         if lib.is_catalog_item(item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
             return true
         end
     end
-    for j, item in ipairs(trade.output_items) do
+
+    for _, item in pairs(trade.output_items) do
         if lib.is_catalog_item(item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
             return true
         end
+        if not storage.trades.researched_items[item.name] then
+            return true
+        end
     end
-    return lib.runtime_setting_value("base-trade-prod-" .. trade.surface_name) ~= 0
-        or (storage.trades.base_productivity ~= nil and storage.trades.base_productivity ~= 0)
-        or (quality ~= nil and quality ~= "normal")
+
+    if lib.runtime_setting_value("base-trade-prod-" .. trade.surface_name) ~= 0 then
+        return true
+    end
+
+    return false
+end
+
+---Return whether the given trade is receiving a productivity penalty for giving unresearched items.
+---@param trade Trade
+---@return boolean
+function trades.has_unresearched_penalty(trade)
+    for _, item in pairs(trade.output_items) do
+        if not storage.trades.researched_items[item.name] then
+            return true
+        end
+    end
+    return false
 end
 
 ---Set the base productivity bonus for all trades.
@@ -1246,15 +1271,22 @@ end
 ---Recalculate the trade's productivity effect based on base productivity and its input and output item ranks.
 ---@param trade Trade
 function trades.check_productivity(trade)
-    trades.set_productivity(trade, trades.get_base_trade_productivity_on_surface(trade.surface_name))
-    for j, item in ipairs(trade.input_items) do
+    local base_prod = trades.get_base_trade_productivity_on_surface(trade.surface_name)
+    trades.set_productivity(trade, base_prod)
+
+    for _, item in pairs(trade.input_items) do
         if lib.is_catalog_item(item.name) then
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
         end
     end
-    for j, item in ipairs(trade.output_items) do
+
+    for _, item in pairs(trade.output_items) do
         if lib.is_catalog_item(item.name) then
-            trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
+            local penalty_prod = 0.0
+            if not storage.trades.researched_items[item.name] then
+                penalty_prod = storage.trades.unresearched_penalty
+            end
+            trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) - penalty_prod)
         end
     end
 end
@@ -2214,6 +2246,26 @@ function trades.is_trade_favorited(player, trade)
     end
 
     return player_favs[trade.id] == true
+end
+
+function trades.recalculate_researched_items()
+    -- Determine which items are "researched"
+    local researched_items = sets.new()
+    for _, recipe in pairs(game.forces.player.recipes) do
+        if not recipe.hidden and recipe.enabled then
+            for _, product in pairs(recipe.products) do
+                if product.type == "item" then
+                    sets.add(researched_items, product.name)
+                end
+            end
+        end
+    end
+
+    -- Add raw items to set
+    researched_items = sets.union(researched_items, lib.get_raw_items())
+
+    log(serpent.block(researched_items))
+    storage.trades.researched_items = researched_items
 end
 
 

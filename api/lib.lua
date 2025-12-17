@@ -34,7 +34,7 @@ local immune_to_hex_core_clearing = sets.new {
     "segmented-unit",
 }
 
-non_buildable_on_tile_lookup = sets.union(non_land_tile_name_lookup, sets.new {
+local non_buildable_on_tile_lookup = sets.union(non_land_tile_name_lookup, sets.new {
     "deepwater",
     "deepwater-green",
     "water",
@@ -60,6 +60,27 @@ non_buildable_on_tile_lookup = sets.union(non_land_tile_name_lookup, sets.new {
     "ammoniacal-ocean-2",
     "brash-ice",
 })
+
+-- This can probably be auto-populated, but that may not work well with modded items.
+local raw_items = sets.new {
+    "iron-ore",
+    "copper-ore",
+    "stone",
+    "coal",
+    "uranium-ore",
+    "wood",
+    "raw-fish",
+    "tungsten-ore",
+    "carbon", -- Just so that coal synthesis isn't needed to be unlocked from Gleba before trading on Vulcanus
+    "scrap",
+    "yumako",
+    "jellynut",
+
+    "hex-coin",
+    "gravity-coin",
+    "meteor-coin",
+    "hexaprism-coin",
+}
 
 
 
@@ -1937,6 +1958,12 @@ function lib.remove_from_train(cargo_wagons, stack, wagon_limit)
     end
 
     return count - remaining_count
+end
+
+---Return a lookup table of names of items (and not fluids) that are only obtainable from planets without recipes.
+---@return {[string]: boolean}
+function lib.get_raw_items()
+    return raw_items
 end
 
 

@@ -63,6 +63,14 @@ data:extend({
         default_value = 1.5,
         minimum_value = 0.1,
     },
+    {
+        type = "double-setting",
+        setting_type = "runtime-global",
+        name = "hextorio-unresearched-penalty",
+        default_value = 5,
+        minimum_value = -10,
+        maximum_value = 100,
+    },
 
     {
         type = "double-setting",
