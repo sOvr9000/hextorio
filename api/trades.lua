@@ -156,6 +156,17 @@ function trades.register_events()
             #loops,
         }
     end)
+
+    local function fetch_and_queue_update(surface_name)
+        trades.fetch_base_trade_productivity_settings(surface_name)
+        trades.queue_productivity_update_job(surface_name)
+    end
+
+    event_system.register("runtime-setting-changed-base-trade-prod-nauvis", function() fetch_and_queue_update "nauvis" end)
+    event_system.register("runtime-setting-changed-base-trade-prod-vulcanus", function() fetch_and_queue_update "vulcanus" end)
+    event_system.register("runtime-setting-changed-base-trade-prod-fulgora", function() fetch_and_queue_update "fulgora" end)
+    event_system.register("runtime-setting-changed-base-trade-prod-gleba", function() fetch_and_queue_update "gleba" end)
+    event_system.register("runtime-setting-changed-base-trade-prod-aquilo", function() fetch_and_queue_update "aquilo" end)
 end
 
 function trades.init()
@@ -1224,7 +1235,7 @@ end
 ---@return number
 function trades.get_base_trade_productivity_on_surface(surface_name)
     local base_prod = storage.trades.base_productivity or 0 -- Upgrades from quests.
-    local planet_prod = lib.runtime_setting_value("base-trade-prod-" .. surface_name) -- Planet-wide buff/debuff
+    local planet_prod = storage.trades.base_trade_productivity[surface_name] or 0 -- Planet-wide buff/debuff
     return base_prod + planet_prod
 end
 
@@ -1254,7 +1265,7 @@ function trades.has_any_productivity_modifiers(trade, quality)
         end
     end
 
-    if lib.runtime_setting_value("base-trade-prod-" .. trade.surface_name) ~= 0 then
+    if storage.trades.base_trade_productivity[trade.surface_name] ~= 0 then
         return true
     end
 
@@ -2284,6 +2295,21 @@ function trades.recalculate_researched_items()
     -- Add raw items to set
     researched_items = sets.union(researched_items, lib.get_raw_items())
     storage.trades.researched_items = researched_items
+end
+
+---@param surface_name string|nil
+function trades.fetch_base_trade_productivity_settings(surface_name)
+    if surface_name == nil then
+        for _surface_name, _ in pairs(storage.item_values.values) do
+            trades.fetch_base_trade_productivity_settings(_surface_name)
+        end
+        return
+    end
+
+    local prod = lib.runtime_setting_value("base-trade-prod-" .. surface_name)
+    ---@cast prod number
+
+    storage.trades.base_trade_productivity[surface_name] = prod
 end
 
 

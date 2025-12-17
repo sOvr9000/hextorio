@@ -312,26 +312,6 @@ function hex_grid.register_events()
         end
     end)
 
-    event_system.register("runtime-setting-changed-base-trade-prod-nauvis", function()
-        trades.queue_productivity_update_job "nauvis"
-    end)
-
-    event_system.register("runtime-setting-changed-base-trade-prod-vulcanus", function()
-        trades.queue_productivity_update_job "vulcanus"
-    end)
-
-    event_system.register("runtime-setting-changed-base-trade-prod-fulgora", function()
-        trades.queue_productivity_update_job "fulgora"
-    end)
-
-    event_system.register("runtime-setting-changed-base-trade-prod-gleba", function()
-        trades.queue_productivity_update_job "gleba"
-    end)
-
-    event_system.register("runtime-setting-changed-base-trade-prod-aquilo", function()
-        trades.queue_productivity_update_job "aquilo"
-    end)
-
     event_system.register("runtime-setting-changed-default-nauvis-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "nauvis"
     end)

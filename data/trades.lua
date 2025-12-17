@@ -48,6 +48,9 @@ return {
         },
     },
 
+    base_trade_productivity = {}, -- Planet-wide buffs/debuffs to trade productivity.
+    base_productivity = 0, -- Universal buff to trade productivity, regardless of planet.
+
     unresearched_penalty = 0,
 
     guaranteed_trades = {},

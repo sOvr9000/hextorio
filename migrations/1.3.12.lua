@@ -8,6 +8,7 @@ return function()
     storage.trades.trade_collection_jobs = {}
     storage.trades.trade_filtering_jobs = {}
     storage.trades.researched_items = {}
+    storage.trades.base_trade_productivity = {}
     storage.hex_grid.flattened_surface_hexes = {}
 
     storage.item_ranks.bronze_rank_bonus_effect = lib.runtime_setting_value "rank-2-effect"

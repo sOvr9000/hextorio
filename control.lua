@@ -91,6 +91,7 @@ script.on_init(function()
     storage.item_buffs = data_item_buffs
 
     hex_grid.update_hexlight_default_colors()
+    trades.fetch_base_trade_productivity_settings()
 
     local penalty = lib.runtime_setting_value "unresearched-penalty"
     ---@cast penalty number
