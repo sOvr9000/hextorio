@@ -253,11 +253,15 @@ script.on_event(defines.events.on_tick, function (event)
     trades.process_trade_filtering_jobs()
 
     if storage.debug_spider then
-        -- Make it LOUD brutha
-        local r = storage.debug_spider.color.r
-        local g = storage.debug_spider.color.g
-        local b = storage.debug_spider.color.b
-        storage.debug_spider.color = {math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(g, math.random(), 0.5)), math.sqrt(lib.lerp(b, math.random(), 0.5))}
+        if not storage.debug_spider.valid then
+            storage.debug_spider = nil
+        else
+            -- Make it LOUD brutha
+            local r = storage.debug_spider.color.r
+            local g = storage.debug_spider.color.g
+            local b = storage.debug_spider.color.b
+            storage.debug_spider.color = {math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(g, math.random(), 0.5)), math.sqrt(lib.lerp(b, math.random(), 0.5))}
+        end
     end
 end)
 
