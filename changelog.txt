@@ -1,14 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.13
 Date: 17/12/25
+  Minor Features:
+    - Notifications about extra trades (bronze star effect), interplanetary trades (silver star effect), and trade recovery (gold star effect) now also show the trade in the text.
   Balancing:
     - Trades that give items which are not yet produceable with a researched recipe now have a penalty to trade productivity. Can be tweaked or disabled in the mod settings.
     - Increased default mod settings for productivity rank-up requirements:
         Bronze -> Silver: 35%
         Silver -> Gold: 85%
         Gold -> Red: 130%
-  Minor Features:
-    - Notifications about extra trades (bronze star effect), interplanetary trades (silver star effect), and trade recovery (gold star effect) now also show the trade in the text.
   Changes:
     - Changed that the bronze star "extra trade" effect to apply on ALL hex cores, not just ones that never had an extra trade given to it before.
     - Changed that the belt capacity tech from this mod doesn't consume promethium science packs.
