@@ -28,6 +28,7 @@ local hazard_tile_name_lookup = sets.new {
 local immune_to_hex_core_clearing = sets.new {
     "character",
     "spider-vehicle",
+    "spider-leg",
     "car",
     "segment",
     "segmented-unit",
