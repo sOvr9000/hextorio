@@ -562,7 +562,8 @@ function hex_grid.apply_extra_trades_bonus(state)
         end
     end
 
-    if next(added_trades) then
+    local chunk_pos = lib.get_chunk_pos_from_tile_position(state.hex_core.position)
+    if next(added_trades) and game.forces.player.is_chunk_charted(state.hex_core.surface, chunk_pos) then
         local new_trades_str = ""
         for item_name, trade in pairs(added_trades) do
             new_trades_str = new_trades_str .. "[img=item." .. item_name .. "]"
