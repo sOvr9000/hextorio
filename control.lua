@@ -249,6 +249,8 @@ script.on_event(defines.events.on_tick, function (event)
     item_buffs._enhance_all_item_buffs_tick()
     gui.trades._process_trades_scroll_panes()
     trades.process_trade_productivity_updates()
+    trades.process_trade_collection_jobs()
+    trades.process_trade_filtering_jobs()
 
     if storage.debug_spider then
         -- Make it LOUD brutha

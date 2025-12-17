@@ -67,6 +67,14 @@ function trade_overview_gui.register_events()
     event_system.register_gui("gui-clicked", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-clicked", "swap-filters", trade_overview_gui.swap_trade_overview_content_filters)
 
+    -- Listen to trade job events
+    event_system.register("trade-collection-progress", trade_overview_gui.on_trade_collection_progress)
+    event_system.register("trade-collection-complete", trade_overview_gui.on_trade_collection_complete)
+    event_system.register("trade-filtering-progress", trade_overview_gui.on_trade_filtering_progress)
+    event_system.register("trade-sorting-starting", trade_overview_gui.on_trade_sorting_starting)
+    event_system.register("trade-filtering-complete", trade_overview_gui.on_trade_filtering_complete)
+    event_system.register("trade-overview-jobs-cancelled", trade_overview_gui.on_trade_overview_jobs_cancelled)
+
     event_system.register("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" then
             if value == "trade-overview" then
@@ -541,70 +549,158 @@ function trade_overview_gui.update_trade_overview(player)
         trades_set = sets.new()
     end
 
-    -- At this point, trades_set is either nil or a lookup table that maps trade ids to boolean (true) values.
-    -- Convert to lookup table mapping trade ids to trade objects.
-    ---@diagnostic disable-next-line: param-type-mismatch
-    trades_set = trades.convert_boolean_lookup_to_trades_lookup(trades_set)
+    -- Cancel any existing jobs and clear the trade table immediately
+    trades.cancel_trade_overview_jobs(player)
+    storage.trade_overview.trades[player.name] = {}
 
-    local function filter_trade(trade)
-        if trade.hex_core_state then
-            local state = trade.hex_core_state
-            if not state.hex_core or not state.hex_core.valid then
-                return true
-            end
-            if filter.show_claimed_only and not state.claimed then
-                return true
-            end
-            if filter.exclude_dungeons and state.is_dungeon then
-                return true
-            end
-            if filter.exclude_sinks_generators and (state.mode == "sink" or state.mode == "generator") then
-                return true
-            end
+    -- Update GUI with loading message and progress bars
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    trade_table.clear()
+
+    local progress_flow = trade_table.add {type = "flow", name = "progress-flow", direction = "vertical"}
+    progress_flow.style.horizontally_stretchable = true
+    progress_flow.style.vertical_spacing = 8
+
+    -- Collection progress
+    local collection_flow = progress_flow.add {type = "flow", name = "collection-flow", direction = "vertical"}
+    collection_flow.style.horizontally_stretchable = true
+    collection_flow.style.vertical_spacing = 0
+    collection_flow.style.bottom_padding = 0
+    collection_flow.style.top_padding = 0
+    local collection_label = collection_flow.add {type = "label", name = "label", caption = {"hextorio-gui.collecting-trades", 0, 0}}
+    collection_label.style.font = "default-bold"
+    local collection_progressbar = collection_flow.add {type = "progressbar", name = "progressbar", value = 0}
+    collection_progressbar.style.horizontally_stretchable = true
+    -- collection_progressbar.style.height = 20
+
+    -- Filtering progress
+    local filtering_flow = progress_flow.add {type = "flow", name = "filtering-flow", direction = "vertical"}
+    filtering_flow.style.horizontally_stretchable = true
+    filtering_flow.style.vertical_spacing = 0
+    filtering_flow.style.bottom_padding = 0
+    filtering_flow.style.top_padding = 0
+    local filtering_label = filtering_flow.add {type = "label", name = "label", caption = {"hextorio-gui.filtering-trades", 0, 0}}
+    filtering_label.style.font = "default-bold"
+    filtering_label.style.font_color = {0.5, 0.5, 0.5}
+    local filtering_progressbar = filtering_flow.add {type = "progressbar", name = "progressbar", value = 0}
+    filtering_progressbar.style.horizontally_stretchable = true
+    -- filtering_progressbar.style.height = 20
+
+    -- Queue the trade collection job (which will trigger filtering when complete)
+    trades.queue_trade_collection_job(player, trades_set, filter)
+end
+
+function trade_overview_gui.on_trade_collection_progress(player, progress, current, total)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
+
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    local progress_flow = trade_table["progress-flow"]
+    if not progress_flow then return end
+
+    local collection_flow = progress_flow["collection-flow"]
+    if collection_flow then
+        collection_flow["label"].caption = {"hextorio-gui.collecting-trades", current, total}
+        collection_flow["progressbar"].value = progress
+    end
+end
+
+function trade_overview_gui.on_trade_collection_complete(player, collected_trades, filter)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
+
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    local progress_flow = trade_table["progress-flow"]
+    if progress_flow then
+        local collection_flow = progress_flow["collection-flow"]
+        if collection_flow then
+            collection_flow["progressbar"].value = 1
         end
-        if filter.show_interplanetary_only and not trades.is_interplanetary_trade(trade) then
-            return true
+
+        -- Enable filtering label (remove greyed out appearance)
+        local filtering_flow = progress_flow["filtering-flow"]
+        if filtering_flow then
+            filtering_flow["label"].style.font_color = {1, 1, 1}
         end
-        if filter.exclude_favorited and trades.is_trade_favorited(player, trade) then
-            return true
-        end
-        if filter.planets and trade.surface_name then
-            if not filter.planets[trade.surface_name] then
-                return true
-            end
-        end
-        if filter.num_item_bounds then
-            local input_bounds = filter.num_item_bounds.inputs
-            if input_bounds then
-                local num_inputs = #trade.input_items
-                if num_inputs < (input_bounds.min or 1) or num_inputs > (input_bounds.max or math.huge) then
-                    return true
-                end
-            end
-            local output_bounds = filter.num_item_bounds.outputs
-            if output_bounds then
-                local num_outputs = #trade.output_items
-                if num_outputs < (output_bounds.min or 1) or num_outputs > (output_bounds.max or math.huge) then
-                    return true
-                end
-            end
-        end
-        return false
     end
 
-    -- At this point, trades_set cannot be nil and must be a lookup table that maps trade ids to trade objects.
-    local is_favorited = {}
-    for _, trade in pairs(trades_set) do
-        if filter_trade(trade) then
-            trades_set[trade.id] = nil
+    -- Queue the filtering job
+    trades.queue_trade_filtering_job(player, collected_trades, filter)
+end
+
+function trade_overview_gui.on_trade_filtering_progress(player, progress, current, total)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
+
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    local progress_flow = trade_table["progress-flow"]
+    if not progress_flow then return end
+
+    local filtering_flow = progress_flow["filtering-flow"]
+    if filtering_flow then
+        filtering_flow["label"].caption = {"hextorio-gui.filtering-trades", current, total}
+        filtering_flow["progressbar"].value = progress
+    end
+end
+
+function trade_overview_gui.on_trade_sorting_starting(player, num_trades)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
+
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    local progress_flow = trade_table["progress-flow"]
+    if progress_flow then
+        -- Mark filtering as complete
+        local filtering_flow = progress_flow["filtering-flow"]
+        if filtering_flow then
+            filtering_flow["progressbar"].value = 1
+        end
+
+        -- Add sorting label below the progress bars (don't clear yet)
+        if not progress_flow["sorting-label"] then
+            local sorting_label = progress_flow.add {type = "label", name = "sorting-label", caption = {"hextorio-gui.sorting-trades", num_trades}}
+            sorting_label.style.font = "default-large-bold"
+            sorting_label.style.top_padding = 8
+        end
+    end
+end
+
+function trade_overview_gui.on_trade_filtering_complete(player, filtered_trades, is_favorited, filter)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
+
+    local trades_list = trades.convert_trades_lookup_to_array(filtered_trades)
+
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    local progress_flow = trade_table["progress-flow"]
+
+    if #trades_list == 0 then
+        if progress_flow then
+            progress_flow.clear()
         else
-            is_favorited[trade.id] = trades.is_trade_favorited(player, trade)
+            trade_table.clear()
         end
+
+        local has_planet_selected = false
+        if filter.planets then
+            for _, allow in pairs(filter.planets) do
+                if allow then
+                    has_planet_selected = true
+                    break
+                end
+            end
+        end
+
+        if not has_planet_selected then
+            trade_table.add {type = "label", caption = lib.color_localized_string({"hextorio-gui.no-planets-selected"}, "white", "heading-2")}
+        else
+            trade_table.add {type = "label", caption = lib.color_localized_string({"hextorio-gui.no-trades-match-filters"}, "white", "heading-2")}
+        end
+
+        storage.trade_overview.trades[player.name] = {}
+        return
     end
 
-    local trades_list = trades.convert_trades_lookup_to_array(trades_set)
-
-    -- Sort trades
     local sort_func
     if filter.sorting and filter.sorting.method then
         if filter.sorting.method == "distance-from-spawn" then
@@ -673,8 +769,12 @@ function trade_overview_gui.update_trade_overview(player)
                 return a < b
             end
         elseif filter.sorting.method == "total-item-value" then
+            local trade_volumes = {}
+            for _, trade in pairs(trades_list) do
+                trade_volumes[trade.id] = trades.get_volume_of_trade(trade.surface_name, trade)
+            end
             sort_func = function(trade1, trade2)
-                return trades.get_volume_of_trade(trade1.surface_name, trade1) < trades.get_volume_of_trade(trade2.surface_name, trade2)
+                return trade_volumes[trade1.id] < trade_volumes[trade2.id]
             end
         end
     end
@@ -684,6 +784,9 @@ function trade_overview_gui.update_trade_overview(player)
         if not filter.sorting.ascending then
             directed_sort_func = function(a, b) return sort_func(b, a) end
         end
+
+        -- NOTE: THIS CAUSES FRAME DROPS, but custom sorting implementations take an unreasonably long time, so it's the lesser of two evils. (for now)
+        -- TODO: Switch over to NOT using sorting and instead finding the top `max_trades` trades based on the sorting method (using binary insertion and maintaining lower and upper bounds while iterating over the trades list ONCE).  That "top X" retrieval can be put into another job system in trades.lua for the best results.
         table.sort(trades_list, function(trade1, trade2)
             -- Sort by trade favorites first, then the other method if favoritedness is equal
             local fav1 = is_favorited[trade1.id]
@@ -706,7 +809,6 @@ function trade_overview_gui.update_trade_overview(player)
 
     storage.trade_overview.trades[player.name] = trades_list
 
-    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
     trades_gui.update_trades_scroll_pane(player, trade_table, trades_list, {
         show_toggle_trade = false,
         show_tag_creator = false,
@@ -726,6 +828,40 @@ function trade_overview_gui.update_trade_overview(player)
             horizontal_spacing = 28 / 1.2,
         },
     })
+end
+
+function trade_overview_gui.on_trade_overview_jobs_cancelled(player)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
+
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    local progress_flow = trade_table["progress-flow"]
+    if progress_flow then
+        local collection_flow = progress_flow["collection-flow"]
+        if collection_flow then
+            collection_flow["label"].caption = {"hextorio-gui.collecting-trades", 0, 0}
+            collection_flow["progressbar"].value = 0
+        end
+
+        local filtering_flow = progress_flow["filtering-flow"]
+        if filtering_flow then
+            filtering_flow["label"].caption = {"hextorio-gui.filtering-trades", 0, 0}
+            filtering_flow["progressbar"].value = 0
+        end
+    end
+
+    local processing_flow = frame["filter-frame"]["left"]["buttons-flow"]["processing-flow"]
+    if processing_flow and processing_flow.valid then
+        local processing_label = processing_flow["label"]
+        local processing_progressbar = processing_flow["progressbar"]
+        if processing_label and processing_label.valid then
+            processing_label.caption = ""
+        end
+        if processing_progressbar and processing_progressbar.valid then
+            processing_progressbar.value = 0
+            processing_progressbar.visible = false
+        end
+    end
 end
 
 function trade_overview_gui.show_trade_overview(player)

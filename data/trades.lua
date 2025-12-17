@@ -58,5 +58,7 @@ return {
     total_items_bought = {},
 
     productivity_update_jobs = {}, ---@type TradeProductivityUpdateJob[]
+    trade_collection_jobs = {}, ---@type TradeCollectionJob[]
+    trade_filtering_jobs = {}, ---@type TradeFilteringJob[]
 }
 

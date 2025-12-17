@@ -23,6 +23,25 @@ local trades = {}
 ---@field current_flat_index int The current flat index in the flattened_surface_hexes array
 ---@field total_flat_indices int The total number of flat indices to process
 
+---@class TradeCollectionJob
+---@field player LuaPlayer The player that queued this job
+---@field trade_ids int[] Array of trade IDs to collect
+---@field current_index int Current index in the trade_ids array
+---@field total_count int Total number of trades to collect
+---@field collected_trades {[int]: Trade} Lookup table of collected trade objects
+---@field filter TradeOverviewFilterSettings The filter settings to use after collection
+
+---@class TradeFilteringJob
+---@field player LuaPlayer The player that queued this job
+---@field trades_lookup {[int]: Trade} Lookup table of trades to filter
+---@field trade_ids int[] Array of trade IDs to filter
+---@field current_index int Current index in the trade_ids array
+---@field total_count int Total number of trades to filter
+---@field filtered_trades {[int]: Trade} Lookup table of filtered trade objects
+---@field filter TradeOverviewFilterSettings The filter settings to apply
+---@field is_favorited {[int]: boolean} Lookup table of favorited status
+---@field ready_to_complete boolean If true, will trigger completion event on next tick
+
 
 
 function trades.register_events()
@@ -1266,8 +1285,6 @@ function trades.queue_productivity_update_job(surface)
         total_flat_indices = #flattened_hexes,
     }
 
-    log("starting trade productivity update job on surface index = " .. job.surface_id)
-
     table.insert(storage.trades.productivity_update_jobs, job)
 end
 
@@ -1296,9 +1313,218 @@ function trades.process_trade_productivity_updates()
         job.current_flat_index = end_index + 1
         if job.current_flat_index > job.total_flat_indices then
             table.remove(jobs, i)
-            log("finished trade productivity update job on surface index = " .. job.surface_id)
         end
     end
+end
+
+---Queue a job to collect trade objects from trade IDs for the trade overview.
+---@param player LuaPlayer
+---@param trade_ids_set {[int]: boolean} Set of trade IDs to collect
+---@param filter table The filter settings to apply after collection
+function trades.queue_trade_collection_job(player, trade_ids_set, filter)
+    trades.cancel_trade_overview_jobs(player)
+
+    local trade_ids = {}
+    for trade_id, _ in pairs(trade_ids_set) do
+        table.insert(trade_ids, trade_id)
+    end
+
+    ---@type TradeCollectionJob
+    local job = {
+        player = player,
+        trade_ids = trade_ids,
+        current_index = 1,
+        total_count = #trade_ids,
+        collected_trades = {},
+        filter = filter,
+    }
+
+    table.insert(storage.trades.trade_collection_jobs, job)
+end
+
+---Process trade collection jobs. Collects trade objects from IDs in batches.
+function trades.process_trade_collection_jobs()
+    local jobs = storage.trades.trade_collection_jobs
+    if #jobs == 0 then return end
+
+    local batch_size = math.floor(2000 / #jobs) -- Divide by number of jobs so that multiple players using the trade overview simultaneously is load balanced.
+    local lookup = trades.get_trades_lookup()
+
+    -- local prof = game.create_profiler()
+    for i = #jobs, 1, -1 do
+        local job = jobs[i]
+
+        if job.total_count == 0 then
+            -- Handle empty job (no trades to collect)
+            table.remove(jobs, i)
+            event_system.trigger("trade-collection-complete", job.player, job.collected_trades, job.filter)
+        else
+            local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+
+            for idx = job.current_index, end_index do
+                local trade_id = job.trade_ids[idx]
+                local trade = lookup[trade_id]
+                if trade then
+                    job.collected_trades[trade_id] = trade
+                end
+            end
+
+            job.current_index = end_index + 1
+            local progress = end_index / job.total_count
+
+            event_system.trigger("trade-collection-progress", job.player, progress, end_index, job.total_count)
+
+            if job.current_index > job.total_count then
+                table.remove(jobs, i)
+                event_system.trigger("trade-collection-complete", job.player, job.collected_trades, job.filter)
+            end
+        end
+    end
+    -- lib.log("Processed trade collection batch:")
+    -- log(prof)
+end
+
+---Queue a job to filter trades for the trade overview.
+---@param player LuaPlayer
+---@param trades_lookup {[int]: Trade}
+---@param filter table The filter settings to apply
+function trades.queue_trade_filtering_job(player, trades_lookup, filter)
+    local trade_ids = {}
+    for trade_id, _ in pairs(trades_lookup) do
+        table.insert(trade_ids, trade_id)
+    end
+
+    ---@type TradeFilteringJob
+    local job = {
+        player = player,
+        trades_lookup = trades_lookup,
+        trade_ids = trade_ids,
+        current_index = 1,
+        total_count = #trade_ids,
+        filtered_trades = {},
+        filter = filter,
+        is_favorited = {},
+        ready_to_complete = false,
+    }
+
+    table.insert(storage.trades.trade_filtering_jobs, job)
+end
+
+function trades.process_trade_filtering_jobs()
+    local jobs = storage.trades.trade_filtering_jobs
+    if #jobs == 0 then return end
+
+    local batch_size = math.floor(750 / #jobs) -- Divide by number of jobs so that multiple players using the trade overview simultaneously is load balanced.
+
+    -- local prof = game.create_profiler()
+    for i = #jobs, 1, -1 do
+        local job = jobs[i]
+        local player = job.player
+        if job.total_count == 0 then
+            -- Handle empty job (no trades to filter)
+            table.remove(jobs, i)
+            event_system.trigger("trade-filtering-complete", job.player, job.filtered_trades, job.is_favorited, job.filter)
+        else
+            local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+            local filter = job.filter
+
+            for idx = job.current_index, end_index do
+                local trade_id = job.trade_ids[idx]
+                local trade = job.trades_lookup[trade_id]
+                if trade then
+                    local should_filter = false
+
+                    local state = trade.hex_core_state
+                    if state then
+                        if not state.hex_core or not state.hex_core.valid then
+                            should_filter = true
+                        elseif filter.show_claimed_only and not state.claimed then
+                            should_filter = true
+                        elseif filter.exclude_dungeons and state.is_dungeon then
+                            should_filter = true
+                        elseif filter.exclude_sinks_generators and (state.mode == "sink" or state.mode == "generator") then
+                            should_filter = true
+                        end
+                    end
+                    if not should_filter and filter.show_interplanetary_only and not trades.is_interplanetary_trade(trade) then
+                        should_filter = true
+                    end
+                    if not should_filter and filter.exclude_favorited and trades.is_trade_favorited(player, trade) then
+                        should_filter = true
+                    end
+                    if not should_filter and filter.planets and trade.surface_name then
+                        if not filter.planets[trade.surface_name] then
+                            should_filter = true
+                        end
+                    end
+                    if not should_filter and filter.num_item_bounds then
+                        local input_bounds = filter.num_item_bounds.inputs
+                        if input_bounds then
+                            local num_inputs = #trade.input_items
+                            if num_inputs < (input_bounds.min or 1) or num_inputs > (input_bounds.max or math.huge) then
+                                should_filter = true
+                            end
+                        end
+                        local output_bounds = filter.num_item_bounds.outputs
+                        if output_bounds then
+                            local num_outputs = #trade.output_items
+                            if num_outputs < (output_bounds.min or 1) or num_outputs > (output_bounds.max or math.huge) then
+                                should_filter = true
+                            end
+                        end
+                    end
+
+                    if not should_filter then
+                        job.filtered_trades[trade_id] = trade
+                        job.is_favorited[trade_id] = trades.is_trade_favorited(player, trade)
+                    end
+                end
+            end
+
+            job.current_index = end_index + 1
+            local progress = end_index / job.total_count
+
+            event_system.trigger("trade-filtering-progress", job.player, progress, end_index, job.total_count)
+
+            if job.current_index > job.total_count then
+                if not job.ready_to_complete then
+                    event_system.trigger("trade-sorting-starting", job.player, lib.table_length(job.filtered_trades))
+
+                    -- Mark as ready to complete on next tick (allows GUI to update first)
+                    job.ready_to_complete = true
+                else
+                    -- One tick has passed, now trigger completion (which does the sorting)
+                    table.remove(jobs, i)
+                    event_system.trigger("trade-filtering-complete", job.player, job.filtered_trades, job.is_favorited, filter)
+                end
+            end
+        end
+    end
+    -- lib.log("Processed trade filtration batch:")
+    -- log(prof)
+end
+
+---Cancel all trade overview jobs for a player.
+---@param player LuaPlayer
+function trades.cancel_trade_overview_jobs(player)
+    for i = #storage.trades.trade_collection_jobs, 1, -1 do
+        if storage.trades.trade_collection_jobs[i].player == player then
+            table.remove(storage.trades.trade_collection_jobs, i)
+        end
+    end
+    for i = #storage.trades.trade_filtering_jobs, 1, -1 do
+        if storage.trades.trade_filtering_jobs[i].player == player then
+            table.remove(storage.trades.trade_filtering_jobs, i)
+        end
+    end
+
+    -- Also cancel the existing GUI rendering job
+    if storage.gui and storage.gui.trades_scroll_pane_update and storage.gui.trades_scroll_pane_update[player.name] then
+        storage.gui.trades_scroll_pane_update[player.name].finished = true
+    end
+
+    -- Reset the GUI progress bars
+    event_system.trigger("trade-overview-jobs-cancelled", player)
 end
 
 -- ---Sample a random value for the central value of items in a trade on a given surface.
@@ -1511,11 +1737,13 @@ end
 ---@param trades_lookup {[int]: Trade}
 ---@return Trade[]
 function trades.convert_trades_lookup_to_array(trades_lookup)
-    local _trades = {}
+    local trades_list = {}
+    local n = 0
     for _, trade in pairs(trades_lookup) do
-        table.insert(_trades, trade)
+        n = n + 1
+        trades_list[n] = trade
     end
-    return _trades
+    return trades_list
 end
 
 ---Get a trade from its id.

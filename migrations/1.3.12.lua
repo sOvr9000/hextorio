@@ -3,6 +3,8 @@ local hex_state_manager = require "api.hex_state_manager"
 
 return function()
     storage.trades.productivity_update_jobs = {}
+    storage.trades.trade_collection_jobs = {}
+    storage.trades.trade_filtering_jobs = {}
     storage.hex_grid.flattened_surface_hexes = {}
 
     -- Index all existing hexes
