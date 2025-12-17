@@ -427,7 +427,9 @@ function hex_grid.generate_random_trade(hex_core_state, volume, is_interplanetar
     -- Failed to generate trade. Return nil.
 end
 
--- Add a trade to a hex core.
+---Add a trade to a hex core.
+---@param hex_core_state HexState
+---@param trade Trade
 function hex_grid.add_trade(hex_core_state, trade)
     if not hex_core_state then
         lib.log_error("hex_grid.add_trade: hex core state is nil")
@@ -451,7 +453,10 @@ function hex_grid.add_trade(hex_core_state, trade)
     table.insert(hex_core_state.trades, trade.id)
 
     trades.add_trade_to_tree(trade)
-    hex_grid.update_hex_core_inventory_filters(hex_core_state)
+
+    if hex_core_state.hex_core_input_inventory and hex_core_state.hex_core_input_inventory.valid and hex_core_state.hex_core_input_inventory.is_empty() then
+        hex_grid.update_hex_core_inventory_filters(hex_core_state)
+    end
 
     hex_grid.set_trade_allowed_qualities(hex_core, trade)
 

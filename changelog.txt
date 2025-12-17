@@ -11,6 +11,7 @@ Date: 17/12/25
     - Changed that the bronze star "extra trade" effect to apply on ALL hex cores, not just ones that never had an extra trade given to it before.
     - Changed that the belt capacity tech from this mod doesn't consume promethium science packs.
     - Dungeon hexes with extra trades from the bronze effect no longer ping them in chat if they are in uncharted areas of the map.
+    - Newly added trades to hex cores with existing items in their inventories will no longer auto-update inventory slot filters based on the trade contents.
   Bugfixes:
     - Fixed that spidertrons and other vehicles would disappear when a hex core spawns underneath them.
     - Fixed that connecting cliff sprites were not updated after a hex core spawns in their way, destroying them.
