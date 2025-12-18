@@ -8,6 +8,10 @@ local coin_tiers = require "api.coin_tiers"
 
 local all_commands = {
     {
+        name = "refresh-all-trades",
+        usage = "/refresh-all-trades",
+    },
+    {
         name = "hextorio-commands",
         usage = "/hextorio-commands",
     },

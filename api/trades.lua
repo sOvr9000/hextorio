@@ -181,6 +181,12 @@ function trades.register_events()
         }
     end)
 
+    event_system.register("command-refresh-all-trades", function(player, params)
+        trades.recalculate_researched_items()
+        trades.fetch_base_trade_productivity_settings()
+        trades.queue_productivity_update_job()
+    end)
+
     local function fetch_and_queue_update(surface_name)
         trades.fetch_base_trade_productivity_settings(surface_name)
         trades.queue_productivity_update_job(surface_name)
@@ -1370,6 +1376,12 @@ function trades.queue_productivity_update_job(surface)
     local flattened_hexes = storage.hex_grid.flattened_surface_hexes[surface_id]
     if not flattened_hexes then return end
 
+    for i, job in ipairs(storage.trades.productivity_update_jobs) do
+        if job.surface_id == surface_id then
+            table.remove(storage.trades.productivity_update_jobs, i) -- Overwrite previous job if it exists.  Only one job needs to exist for this task.
+        end
+    end
+
     ---@type TradeProductivityUpdateJob
     local job = {
         surface_id = surface_id,
@@ -1377,16 +1389,15 @@ function trades.queue_productivity_update_job(surface)
         total_flat_indices = #flattened_hexes,
     }
 
-    storage.trades.productivity_update_jobs[1] = job -- Overwrite previous job if it exists.  Only one job needs to exist for this task.
+    table.insert(storage.trades.productivity_update_jobs, job)
 end
 
 ---Process trade productivity update jobs. Processes up to 50 hex cores per tick.
----Call this function every tick from control.lua.
 function trades.process_trade_productivity_updates()
     local jobs = storage.trades.productivity_update_jobs
     if #jobs == 0 then return end
 
-    local batch_size = 50
+    local batch_size = 400
 
     local job = jobs[1]
 
@@ -1404,7 +1415,7 @@ function trades.process_trade_productivity_updates()
 
     job.current_flat_index = end_index + 1
     if job.current_flat_index > job.total_flat_indices then
-        table.remove(jobs, i)
+        table.remove(jobs, 1)
     end
 end
 
