@@ -9,6 +9,11 @@ local terrain = {}
 
 
 
+---@class TerrainTransformation
+---@field scale number
+---@field rotation number
+---@field stroke_width number
+
 -- Set the tile type for a specific position
 function terrain.set_tile(surface, position, tile_type)
     local surface_id = lib.get_surface_id(surface)
@@ -132,12 +137,12 @@ function terrain.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid_
 end
 
 ---@param surfaceID SurfaceIdentification|LuaSurface|string
----@return {scale:number, rotation:number, stroke_width:number}
+---@return TerrainTransformation
 function terrain.get_surface_transformation(surfaceID)
     local surface_id = lib.get_surface_id(surfaceID)
     local surface = game.get_surface(surface_id)
     if not surface then
-        lib.log_error("Cannot find surface from " .. serpent.line(surfaceID))
+        lib.log_error("terrain.get_surface_transformation: Cannot find surface from " .. serpent.line(surfaceID))
         return {
             scale = 24,
             rotation = 0,
