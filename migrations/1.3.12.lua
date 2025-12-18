@@ -20,6 +20,7 @@ return function()
 
     storage.trades.unresearched_penalty = penalty
     trades.recalculate_researched_items()
+    trades.fetch_base_trade_productivity_settings()
 
     -- Index all existing hexes
     for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
