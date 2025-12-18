@@ -8,6 +8,7 @@ return function()
     storage.trades.trade_collection_jobs = {}
     storage.trades.trade_filtering_jobs = {}
     storage.trades.trade_sorting_jobs = {}
+    storage.trades.trade_export_jobs = {}
     storage.trades.researched_items = {}
     storage.trades.base_trade_productivity = {}
     storage.hex_grid.flattened_surface_hexes = {}

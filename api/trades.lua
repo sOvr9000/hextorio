@@ -57,6 +57,15 @@ local trades = {}
 ---@field max_sort_key number|nil Maximum sort key in sorted_top_trades (best trade)
 ---@field metrics {[int]: number}|nil Cached metrics (like distances, trade volumes, or trade productivities) for sorting
 
+---@class TradeExportJob
+---@field player LuaPlayer The player that queued this job
+---@field trade_ids int[] Array of trade IDs to export
+---@field current_index int Current index in the trade_ids array
+---@field total_count int Total number of trades to export
+---@field seen_items {[string]: {[string]: boolean}} Items seen per surface (surface_name -> item_name -> true)
+---@field formatted_trades {[string]: table[]} Formatted trades per surface
+---@field item_value_lookup {[string]: {[string]: number}} Item values per surface
+
 
 
 function trades.register_events()
@@ -1837,6 +1846,11 @@ function trades.cancel_trade_overview_jobs(player)
             table.remove(storage.trades.trade_sorting_jobs, i)
         end
     end
+    for i = #storage.trades.trade_export_jobs, 1, -1 do
+        if storage.trades.trade_export_jobs[i].player == player then
+            table.remove(storage.trades.trade_export_jobs, i)
+        end
+    end
 
     -- Also cancel the existing GUI rendering job
     if storage.gui and storage.gui.trades_scroll_pane_update and storage.gui.trades_scroll_pane_update[player.name] then
@@ -1845,6 +1859,124 @@ function trades.cancel_trade_overview_jobs(player)
 
     -- Reset the GUI progress bars
     event_system.trigger("trade-overview-jobs-cancelled", player)
+end
+
+---Queue a job to export all trades to JSON.
+---@param player LuaPlayer
+function trades.queue_trade_export_job(player)
+    local all_trades = trades.get_all_trades(true)
+    local trade_ids = {}
+    for _, trade in pairs(all_trades) do
+        table.insert(trade_ids, trade.id)
+    end
+
+    ---@type TradeExportJob
+    local job = {
+        player = player,
+        trade_ids = trade_ids,
+        current_index = 1,
+        total_count = #trade_ids,
+        seen_items = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}},
+        formatted_trades = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}},
+        item_value_lookup = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}},
+    }
+
+    for i = #storage.trades.trade_export_jobs, 1, -1 do
+        if storage.trades.trade_export_jobs[i].player == player then
+            table.remove(storage.trades.trade_export_jobs, i)
+        end
+    end
+
+    table.insert(storage.trades.trade_export_jobs, job)
+end
+
+---Process trade export jobs. Exports trades to JSON in batches.
+function trades.process_trade_export_jobs()
+    local jobs = storage.trades.trade_export_jobs
+    if #jobs == 0 then return end
+
+    local batch_size = 2000
+    local lookup = trades.get_trades_lookup()
+
+    for i = #jobs, 1, -1 do
+        local job = jobs[i]
+
+        local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+        for idx = job.current_index, end_index do
+            local trade_id = job.trade_ids[idx]
+            local trade = lookup[trade_id]
+            if trade then
+                local transformation = terrain.get_surface_transformation(trade.surface_name)
+                local hex_core = trade.hex_core_state.hex_core
+                local quality = "normal"
+                if hex_core and hex_core.valid then
+                    quality = hex_core.quality.name
+                end
+
+                table.insert(job.formatted_trades[trade.surface_name], {
+                    axial_pos = trade.hex_core_state.position,
+                    rect_pos = axial.get_hex_center(trade.hex_core_state.position, transformation.scale, transformation.rotation),
+                    inputs = trade.input_items,
+                    outputs = trade.output_items,
+                    claimed = trade.hex_core_state.claimed == true,
+                    is_dungeon = trade.hex_core_state.is_dungeon == true or trade.hex_core_state.was_dungeon == true,
+                    productivity = trades.get_productivity(trade),
+                    is_interplanetary = trades.is_interplanetary_trade(trade),
+                    mode = trade.hex_core_state.mode or "normal",
+                    core_quality = quality,
+                })
+
+                local seen = job.seen_items[trade.surface_name]
+                for _, input in pairs(trade.input_items) do
+                    seen[input.name] = true
+                end
+                for _, output in pairs(trade.output_items) do
+                    seen[output.name] = true
+                end
+            end
+        end
+
+        job.current_index = end_index + 1
+        local progress = end_index / job.total_count
+
+        event_system.trigger("trade-export-progress", job.player, progress, end_index, job.total_count)
+
+        if job.current_index > job.total_count then
+            table.remove(jobs, i)
+            trades.finalize_trade_export(job)
+        end
+    end
+end
+
+---@param job TradeExportJob
+function trades.finalize_trade_export(job)
+    -- Compute item values
+    local hex_coin_value_inv = 1 / item_values.get_item_value("nauvis", "hex-coin")
+    for surface_name, item_names in pairs(job.seen_items) do
+        for item_name, _ in pairs(item_names) do
+            job.item_value_lookup[surface_name][item_name] = item_values.get_item_value(surface_name, item_name, true, "normal") * hex_coin_value_inv
+        end
+    end
+
+    -- Remove empty surfaces
+    for surface_name, trades_list in pairs(job.formatted_trades) do
+        if not next(trades_list) then
+            job.formatted_trades[surface_name] = nil
+        end
+    end
+
+    for surface_name, values in pairs(job.item_value_lookup) do
+        if not next(values) then
+            job.item_value_lookup[surface_name] = nil
+        end
+    end
+
+    local to_export = {
+        trades = job.formatted_trades,
+        item_values = job.item_value_lookup,
+    }
+
+    event_system.trigger("trade-export-complete", job.player, to_export)
 end
 
 -- ---Sample a random value for the central value of items in a trade on a given surface.

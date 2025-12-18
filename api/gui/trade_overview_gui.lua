@@ -75,6 +75,8 @@ function trade_overview_gui.register_events()
     event_system.register("trade-sorting-progress", trade_overview_gui.on_trade_sorting_progress)
     event_system.register("trade-sorting-complete", trade_overview_gui.on_trade_sorting_complete)
     event_system.register("trade-overview-jobs-cancelled", trade_overview_gui.on_trade_overview_jobs_cancelled)
+    event_system.register("trade-export-progress", trade_overview_gui.on_trade_export_progress)
+    event_system.register("trade-export-complete", trade_overview_gui.on_trade_export_complete)
 
     event_system.register("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" then
@@ -1008,72 +1010,22 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function trade_overview_gui.on_export_json_button_click(player, elem)
-    local seen_items = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
-    local item_value_lookup = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
-    local formatted_trades = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}}
+    -- Queue the export job
+    trades.queue_trade_export_job(player)
 
-    for _, trade in pairs(trades.get_all_trades(true)) do
-        local transformation = terrain.get_surface_transformation(trade.surface_name)
-        local hex_core = trade.hex_core_state.hex_core
-        local quality = "normal"
-        if hex_core and hex_core.valid then
-            quality = hex_core.quality.name
+    -- Update the button to show it's processing
+    local processing_flow = elem.parent["processing-flow"]
+    if processing_flow and processing_flow.valid then
+        local processing_label = processing_flow["label"]
+        local processing_progressbar = processing_flow["progressbar"]
+        if processing_label and processing_label.valid then
+            processing_label.caption = {"hextorio-gui.exporting-trades", 0, 0}
         end
-        table.insert(formatted_trades[trade.surface_name], {
-            axial_pos = trade.hex_core_state.position,
-            rect_pos = axial.get_hex_center(trade.hex_core_state.position, transformation.scale, transformation.rotation),
-            inputs = trade.input_items,
-            outputs = trade.output_items,
-            claimed = trade.hex_core_state.claimed == true,
-            is_dungeon = trade.hex_core_state.is_dungeon == true or trade.hex_core_state.was_dungeon == true,
-            productivity = trades.get_productivity(trade),
-            is_interplanetary = trades.is_interplanetary_trade(trade),
-            mode = hex_grid.get_hex_core_mode(trade.hex_core_state),
-            core_quality = quality,
-        })
-
-        local seen = seen_items[trade.surface_name]
-        for _, input in pairs(trade.input_items) do
-            table.insert(seen, input.name)
-        end
-        for _, output in pairs(trade.output_items) do
-            table.insert(seen, output.name)
+        if processing_progressbar and processing_progressbar.valid then
+            processing_progressbar.value = 0
+            processing_progressbar.visible = true
         end
     end
-
-    local hex_coin_value_inv = 1 / item_values.get_item_value("nauvis", "hex-coin")
-    for surface_name, item_names in pairs(seen_items) do
-        for _, item_name in pairs(item_names) do
-            item_value_lookup[surface_name][item_name] = item_values.get_item_value(surface_name, item_name, true, "normal") * hex_coin_value_inv
-        end
-    end
-
-    for surface_name, trades_list in pairs(formatted_trades) do
-        if not next(trades_list) then
-            formatted_trades[surface_name] = nil
-        end
-    end
-
-    for surface_name, values in pairs(item_value_lookup) do
-        if not next(values) then
-            item_value_lookup[surface_name] = nil
-        end
-    end
-
-    local to_export = {
-        trades = formatted_trades,
-        item_values = item_value_lookup,
-    }
-
-    local filename = "all-trades-encoded-json.txt"
-    helpers.write_file(
-        filename,
-        helpers.encode_string(helpers.table_to_json(to_export)),
-        false,
-        player.index
-    )
-
-    player.print({"hextorio.trades-exported", "Factorio/script-output/" .. filename})
 end
 
 ---@param player LuaPlayer
@@ -1137,6 +1089,61 @@ function trade_overview_gui.on_trade_overview_contents_arrow_click(player, elem)
     end
 
     trade_overview_gui.update_trade_overview(player)
+end
+
+---@param player LuaPlayer
+---@param progress number
+---@param current int
+---@param total int
+function trade_overview_gui.on_trade_export_progress(player, progress, current, total)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not frame.valid then return end
+
+    local processing_flow = frame["filter-frame"]["left"]["buttons-flow"]["processing-flow"]
+    if processing_flow and processing_flow.valid then
+        local processing_label = processing_flow["label"]
+        local processing_progressbar = processing_flow["progressbar"]
+        if processing_label and processing_label.valid then
+            processing_label.caption = {"hextorio-gui.exporting-trades", current, total}
+        end
+        if processing_progressbar and processing_progressbar.valid then
+            processing_progressbar.value = progress
+            processing_progressbar.visible = true
+        end
+    end
+end
+
+---@param player LuaPlayer
+---@param to_export table
+function trade_overview_gui.on_trade_export_complete(player, to_export)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not frame.valid then return end
+
+    local processing_flow = frame["filter-frame"]["left"]["buttons-flow"]["processing-flow"]
+    if processing_flow and processing_flow.valid then
+        local processing_label = processing_flow["label"]
+        local processing_progressbar = processing_flow["progressbar"]
+        if processing_label and processing_label.valid then
+            processing_label.caption = {"hextorio-gui.export-complete"}
+        end
+        if processing_progressbar and processing_progressbar.valid then
+            processing_progressbar.value = 1
+            processing_progressbar.visible = false
+        end
+    end
+
+    -- local prof = game.create_profiler()
+    local filename = "all-trades-encoded-json.txt"
+    helpers.write_file(
+        filename,
+        helpers.encode_string(helpers.table_to_json(to_export)),
+        false,
+        player.index
+    )
+    -- log("JSON export completed in:")
+    -- log(prof)
+
+    player.print({"hextorio.trades-exported", "Factorio/script-output/" .. filename})
 end
 
 

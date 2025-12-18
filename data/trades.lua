@@ -67,5 +67,6 @@ return {
     trade_collection_jobs = {}, ---@type TradeCollectionJob[]
     trade_filtering_jobs = {}, ---@type TradeFilteringJob[]
     trade_sorting_jobs = {}, ---@type TradeSortingJob[]
+    trade_export_jobs = {}, ---@type TradeExportJob[]
 }
 

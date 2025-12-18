@@ -261,6 +261,7 @@ script.on_event(defines.events.on_tick, function (event)
     trades.process_trade_collection_jobs()
     trades.process_trade_filtering_jobs()
     trades.process_trade_sorting_jobs()
+    trades.process_trade_export_jobs()
 
     if storage.debug_spider then
         if not storage.debug_spider.valid then
