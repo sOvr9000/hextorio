@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.3.13
+Version: 1.4.0
 Date: 18/12/25
   Minor Features:
     - Notifications about extra trades (bronze star effect), interplanetary trades (silver star effect), and trade recovery (gold star effect) now also show the trade in the text.
