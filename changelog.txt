@@ -1,6 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.1
 Date: 18/12/25
+  Bugfixes:
+    - Fixed that trade productivity updates would overload on visiting new planets (causing lag).
+    - Added missing "raw" items that bypass needing a recipe to determine whether it's been researched: calcite, four asteroid chunk types.
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.0
 Date: 18/12/25

@@ -1377,35 +1377,34 @@ function trades.queue_productivity_update_job(surface)
         total_flat_indices = #flattened_hexes,
     }
 
-    table.insert(storage.trades.productivity_update_jobs, job)
+    storage.trades.productivity_update_jobs[1] = job -- Overwrite previous job if it exists.  Only one job needs to exist for this task.
 end
 
 ---Process trade productivity update jobs. Processes up to 50 hex cores per tick.
 ---Call this function every tick from control.lua.
 function trades.process_trade_productivity_updates()
     local jobs = storage.trades.productivity_update_jobs
+    if #jobs == 0 then return end
 
     local batch_size = 50
 
-    for i = #jobs, 1, -1 do
-        local job = jobs[i]
+    local job = jobs[1]
 
-        local end_index = math.min(job.current_flat_index + batch_size - 1, job.total_flat_indices)
-        local hex_states = hex_state_manager.get_hexes_from_flat_indices(job.surface_id, job.current_flat_index, end_index)
+    local end_index = math.min(job.current_flat_index + batch_size - 1, job.total_flat_indices)
+    local hex_states = hex_state_manager.get_hexes_from_flat_indices(job.surface_id, job.current_flat_index, end_index)
 
-        for _, state in pairs(hex_states) do
-            for _, trade_id in pairs(state.trades or {}) do
-                local trade = trades.get_trade_from_id(trade_id)
-                if trade then
-                    trades.check_productivity(trade)
-                end
+    for _, state in pairs(hex_states) do
+        for _, trade_id in pairs(state.trades or {}) do
+            local trade = trades.get_trade_from_id(trade_id)
+            if trade then
+                trades.check_productivity(trade)
             end
         end
+    end
 
-        job.current_flat_index = end_index + 1
-        if job.current_flat_index > job.total_flat_indices then
-            table.remove(jobs, i)
-        end
+    job.current_flat_index = end_index + 1
+    if job.current_flat_index > job.total_flat_indices then
+        table.remove(jobs, i)
     end
 end
 

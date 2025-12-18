@@ -71,10 +71,15 @@ local raw_items = sets.new {
     "wood",
     "raw-fish",
     "tungsten-ore",
+    "calcite",
     "carbon", -- Just so that coal synthesis isn't needed to be unlocked from Gleba before trading on Vulcanus
     "scrap",
     "yumako",
     "jellynut",
+    "carbonic-asteroid-chunk",
+    "metallic-asteroid-chunk",
+    "oxide-asteroid-chunk",
+    "promethium-asteroid-chunk",
 
     "hex-coin",
     "gravity-coin",
