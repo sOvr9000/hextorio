@@ -568,7 +568,7 @@ function trades.get_productivity_bonus_str(trade, quality)
         if item_ranks.is_item_rank_defined(input_item.name) then
             local rank = item_ranks.get_item_rank(input_item.name)
             if rank >= 2 then
-                table.insert(bonus_strs, "([img=item." .. input_item.name .. "]) [color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, true, true) .. "[.color]")
+                table.insert(bonus_strs, "[img=item." .. input_item.name .. "] [color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, true, true) .. "[.color]")
             end
         end
     end
@@ -576,13 +576,18 @@ function trades.get_productivity_bonus_str(trade, quality)
         if item_ranks.is_item_rank_defined(output_item.name) then
             local rank = item_ranks.get_item_rank(output_item.name)
             if rank >= 2 then
-                table.insert(bonus_strs, "([img=item." .. output_item.name .. "]) [color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, true, true) .. "[.color]")
+                table.insert(bonus_strs, "[img=item." .. output_item.name .. "] [color=green]" .. lib.format_percentage(item_ranks.get_rank_bonus_effect(rank), 0, true, true) .. "[.color]")
             end
+        end
+    end
+    for _, output_item in pairs(trade.output_items) do
+        if not storage.trades.researched_items[output_item.name] then
+            table.insert(bonus_strs, "[img=virtual-signal.signal-science-pack][img=item." .. output_item.name .. "] [color=red]" .. lib.format_percentage(-storage.trades.unresearched_penalty, 0, true, true) .. "[.color]")
         end
     end
 
     if prod_mod ~= 0 then
-        table.insert(bonus_strs, "([img=quality." .. quality .. "]) [color=red]" .. lib.format_percentage(prod_mod, 0, true, true) .. "[.color]")
+        table.insert(bonus_strs, "[img=quality." .. quality .. "] [color=red]" .. lib.format_percentage(prod_mod, 0, true, true) .. "[.color]")
     end
 
     local color
@@ -604,7 +609,7 @@ function trades.get_productivity_bonus_str(trade, quality)
 
     if storage.trades.base_productivity ~= nil and math.abs(storage.trades.base_productivity) > 1e-12 then
         table.insert(str, 3, "\n")
-        table.insert(str, 4, {"", "(", lib.color_localized_string({"hextorio-gui.bonuses"}, "white"), ")"})
+        table.insert(str, 4, {"", lib.color_localized_string({"hextorio-gui.bonuses"}, "white", "default-semibold")})
         table.insert(str, 5, " [color=green]" .. lib.format_percentage(storage.trades.base_productivity, 0, true, true) .. "[.color]")
     end
 
@@ -616,7 +621,7 @@ function trades.get_productivity_bonus_str(trade, quality)
         end
 
         table.insert(str, #str, "\n")
-        table.insert(str, #str, "([planet=" .. trade.surface_name .. "]) [color=" .. color .. "]" .. lib.format_percentage(planet_prod, 0, true, true) .. "[.color]")
+        table.insert(str, #str, "[planet=" .. trade.surface_name .. "] [color=" .. color .. "]" .. lib.format_percentage(planet_prod, 0, true, true) .. "[.color]")
     end
 
     if prod < 0 then
