@@ -1,6 +1,7 @@
 
 local lib = require "api.lib"
 local axial       = require "api.axial"
+local terrain     = require "api.terrain"
 local item_values = require "api.item_values"
 local sets        = require "api.sets"
 local item_ranks  = require "api.item_ranks"
@@ -41,6 +42,20 @@ local trades = {}
 ---@field filter TradeOverviewFilterSettings The filter settings to apply
 ---@field is_favorited {[int]: boolean} Lookup table of favorited status
 ---@field ready_to_complete boolean If true, will trigger completion event on next tick
+
+---@class TradeSortingJob
+---@field player LuaPlayer The player that queued this job
+---@field filtered_trades {[int]: Trade} Lookup table of filtered trades to sort
+---@field is_favorited {[int]: boolean} Lookup table of favorited status
+---@field trade_ids int[] Array of trade IDs to process
+---@field current_index int Current index in the trade_ids array
+---@field total_count int Total number of trades to process
+---@field filter TradeOverviewFilterSettings The filter settings (including max_trades and sorting)
+---@field sorted_top_trades Trade[] Array of top N trades (bounded to max_trades), maintained in sorted order
+---@field sort_keys {[int]: number} Cached sort keys for trades in sorted_top_trades
+---@field min_sort_key number|nil Minimum sort key in sorted_top_trades (worst trade)
+---@field max_sort_key number|nil Maximum sort key in sorted_top_trades (best trade)
+---@field metrics {[int]: number}|nil Cached metrics (like distances, trade volumes, or trade productivities) for sorting
 
 
 
@@ -1486,7 +1501,7 @@ function trades.process_trade_filtering_jobs()
         if job.total_count == 0 then
             -- Handle empty job (no trades to filter)
             table.remove(jobs, i)
-            event_system.trigger("trade-filtering-complete", job.player, job.filtered_trades, job.is_favorited, job.filter)
+            trades.queue_trade_sorting_job(job.player, job.filtered_trades, job.is_favorited, job.filter)
         else
             local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
             local filter = job.filter
@@ -1550,20 +1565,257 @@ function trades.process_trade_filtering_jobs()
             event_system.trigger("trade-filtering-progress", job.player, progress, end_index, job.total_count)
 
             if job.current_index > job.total_count then
-                if not job.ready_to_complete then
-                    event_system.trigger("trade-sorting-starting", job.player, lib.table_length(job.filtered_trades))
-
-                    -- Mark as ready to complete on next tick (allows GUI to update first)
-                    job.ready_to_complete = true
-                else
-                    -- One tick has passed, now trigger completion (which does the sorting)
-                    table.remove(jobs, i)
-                    event_system.trigger("trade-filtering-complete", job.player, job.filtered_trades, job.is_favorited, filter)
-                end
+                -- Filtering complete, now queue the sorting job
+                table.remove(jobs, i)
+                trades.queue_trade_sorting_job(job.player, job.filtered_trades, job.is_favorited, job.filter)
             end
         end
     end
     -- lib.log("Processed trade filtration batch:")
+    -- log(prof)
+end
+
+---Queue a job to sort/select top N trades for the trade overview.
+---@param player LuaPlayer
+---@param filtered_trades {[int]: Trade}
+---@param is_favorited {[int]: boolean}
+---@param filter table The filter settings to apply
+function trades.queue_trade_sorting_job(player, filtered_trades, is_favorited, filter)
+    local trade_ids = {}
+    for trade_id, _ in pairs(filtered_trades) do
+        table.insert(trade_ids, trade_id)
+    end
+
+    ---@type TradeSortingJob
+    local job = {
+        player = player,
+        filtered_trades = filtered_trades,
+        is_favorited = is_favorited,
+        trade_ids = trade_ids,
+        current_index = 1,
+        total_count = #trade_ids,
+        filter = filter,
+        sorted_top_trades = {},  -- Array of trades (bounded to max_trades)
+        sort_keys = {},          -- Cached sort keys for top trades
+        min_sort_key = nil,      -- Minimum sort key in top trades (worst trade)
+        max_sort_key = nil,      -- Maximum sort key in top trades (best trade)
+    }
+
+    table.insert(storage.trades.trade_sorting_jobs, job)
+    event_system.trigger("trade-sorting-starting", player, #trade_ids)
+end
+
+function trades.process_trade_sorting_jobs()
+    local jobs = storage.trades.trade_sorting_jobs
+    if #jobs == 0 then return end
+
+    local batch_size = math.floor(2000 / #jobs) -- Divide by number of jobs for load balancing
+
+    ---@param trade Trade
+    ---@param sorting_method TradeOverviewSortingMethod
+    ---@param metrics {[int]: number}
+    ---@return number
+    local function calculate_sort_key(trade, sorting_method, metrics)
+        if sorting_method == "num-inputs" then
+            return #trade.input_items
+        elseif sorting_method == "num-outputs" then
+            return #trade.output_items
+        else
+            return metrics[trade.id] or 0
+        end
+    end
+
+    ---Binary search to find insertion index in sorted array, with favorites always first.
+    ---@param sorted_array Trade[]
+    ---@param sort_keys {[int]: number}
+    ---@param is_favorited {[int]: boolean}
+    ---@param new_sort_key number
+    ---@param new_is_fav boolean
+    ---@param ascending boolean
+    ---@return number
+    local function get_insertion_index(sorted_array, sort_keys, is_favorited, new_sort_key, new_is_fav, ascending)
+        local low = 1
+        local high = #sorted_array + 1
+
+        while low < high do
+            local mid = math.floor((low + high) / 2)
+            local mid_trade_id = sorted_array[mid].id
+            local mid_key = sort_keys[mid_trade_id]
+            local mid_is_fav = is_favorited[mid_trade_id]
+
+            local after
+
+            -- Favorites always come first
+            if new_is_fav and not mid_is_fav then
+                after = false  -- before non-favorites
+            elseif not new_is_fav and mid_is_fav then
+                after = true   -- after favorites
+            else
+                -- Both favorited or both not favorited, compare by sort key
+                if ascending then
+                    after = mid_key < new_sort_key
+                else
+                    after = mid_key > new_sort_key
+                end
+            end
+
+            if after then
+                low = mid + 1
+            else
+                high = mid
+            end
+        end
+
+        return low
+    end
+
+    -- local prof = game.create_profiler()
+    for i = #jobs, 1, -1 do
+        local job = jobs[i]
+        local player = job.player
+        local filter = job.filter
+
+        local max_trades = filter.max_trades
+        local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+        local ascending = filter.sorting.ascending == true
+        local sorting_method = filter.sorting.method
+
+        ---@param value number
+        local function update_bounds(value)
+            if job.min_sort_key == nil then
+                job.min_sort_key = value
+                job.max_sort_key = value
+            else
+                job.min_sort_key = math.min(job.min_sort_key, value)
+                job.max_sort_key = math.max(job.max_sort_key, value)
+            end
+        end
+
+        if job.total_count == 0 then
+            -- Handle empty job (no trades to sort)
+            table.remove(jobs, i)
+            event_system.trigger("trade-sorting-complete", player, {}, {}, job.is_favorited, filter)
+        else
+            -- Pre-calculate data needed for sorting (only once at start)
+            if not job.metrics and filter.sorting and filter.sorting.method then
+                job.metrics = {}
+
+                if filter.sorting.method == "distance-from-spawn" then
+                    for trade_id, trade in pairs(job.filtered_trades) do
+                        if trade.hex_core_state then
+                            job.metrics[trade_id] = axial.distance(trade.hex_core_state.position, {q=0, r=0})
+                        else
+                            job.metrics[trade_id] = 0
+                        end
+                    end
+                elseif filter.sorting.method == "distance-from-character" and player.character then
+                    local transformation = terrain.get_surface_transformation(player.surface)
+                    local char_pos = axial.get_hex_containing(player.character.position, transformation.scale, transformation.rotation)
+                    for trade_id, trade in pairs(job.filtered_trades) do
+                        if trade.hex_core_state then
+                            job.metrics[trade_id] = axial.distance(trade.hex_core_state.position, char_pos)
+                        else
+                            job.metrics[trade_id] = 0
+                        end
+                    end
+                elseif filter.sorting.method == "total-item-value" then
+                    for trade_id, trade in pairs(job.filtered_trades) do
+                        job.metrics[trade_id] = trades.get_volume_of_trade(trade.surface_name, trade)
+                    end
+                elseif filter.sorting.method == "productivity" then
+                    for trade_id, trade in pairs(job.filtered_trades) do
+                        job.metrics[trade_id] = trades.get_productivity(trade)
+                    end
+                end
+            end
+
+            for idx = job.current_index, end_index do
+                local trade_id = job.trade_ids[idx]
+                local trade = job.filtered_trades[trade_id]
+
+                if trade then
+                    local is_fav = job.is_favorited[trade_id]
+
+                    local sort_key = 0
+                    if sorting_method then
+                        sort_key = calculate_sort_key(trade, sorting_method, job.metrics)
+                    end
+
+                    local current_count = #job.sorted_top_trades
+                    if current_count < max_trades then
+                        local insert_idx = get_insertion_index(job.sorted_top_trades, job.sort_keys, job.is_favorited, sort_key, is_fav, ascending)
+                        table.insert(job.sorted_top_trades, insert_idx, trade)
+                        job.sort_keys[trade_id] = sort_key
+
+                        if not is_fav then
+                            update_bounds(sort_key)
+                        end
+                    else
+                        -- List is full, check if this trade should replace the worst one
+                        -- Favorites always get inserted (displacing a non-favorite if needed)
+                        local worst_trade = job.sorted_top_trades[#job.sorted_top_trades]
+                        local worst_is_fav = job.is_favorited[worst_trade.id]
+
+                        local insert = false
+                        if is_fav and not worst_is_fav then
+                            -- Favorite always displaces non-favorite
+                            insert = true
+                        elseif is_fav == worst_is_fav then
+                            -- Both same favorite status, compare by sort key
+                            local worst_key = job.sort_keys[worst_trade.id]
+                            if ascending then
+                                insert = sort_key < worst_key
+                            else
+                                insert = sort_key > worst_key
+                            end
+                        end
+
+                        -- If new trade is non-favorite and worst is favorite, never insert
+                        if insert then
+                            -- Find insertion point
+                            local insert_idx = get_insertion_index(job.sorted_top_trades, job.sort_keys, job.is_favorited, sort_key, is_fav, ascending)
+
+                            -- Insert new trade
+                            table.insert(job.sorted_top_trades, insert_idx, trade)
+                            job.sort_keys[trade_id] = sort_key
+
+                            -- Remove worst trade (always the last one)
+                            local removed_trade = table.remove(job.sorted_top_trades)
+                            job.sort_keys[removed_trade.id] = nil
+
+                            if not is_fav and not worst_is_fav then
+                                -- Recalculate bounds from the remaining non-favorites
+                                job.min_sort_key = nil
+                                job.max_sort_key = nil
+                                for _, t in ipairs(job.sorted_top_trades) do
+                                    if not job.is_favorited[t.id] then
+                                        update_bounds(job.sort_keys[t.id])
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            job.current_index = end_index + 1
+            local progress = end_index / job.total_count
+
+            event_system.trigger("trade-sorting-progress", player, progress, end_index, job.total_count)
+
+            if job.current_index > job.total_count then
+                -- Convert sorted array to lookup table for compatibility
+                local sorted_lookup = {}
+                for _, trade in ipairs(job.sorted_top_trades) do
+                    sorted_lookup[trade.id] = trade
+                end
+
+                table.remove(jobs, i)
+                event_system.trigger("trade-sorting-complete", player, sorted_lookup, job.sorted_top_trades, job.is_favorited, filter)
+            end
+        end
+    end
+    -- log("Trade sorting batch processed:")
     -- log(prof)
 end
 
@@ -1578,6 +1830,11 @@ function trades.cancel_trade_overview_jobs(player)
     for i = #storage.trades.trade_filtering_jobs, 1, -1 do
         if storage.trades.trade_filtering_jobs[i].player == player then
             table.remove(storage.trades.trade_filtering_jobs, i)
+        end
+    end
+    for i = #storage.trades.trade_sorting_jobs, 1, -1 do
+        if storage.trades.trade_sorting_jobs[i].player == player then
+            table.remove(storage.trades.trade_sorting_jobs, i)
         end
     end
 

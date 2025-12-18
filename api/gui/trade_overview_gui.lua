@@ -72,7 +72,8 @@ function trade_overview_gui.register_events()
     event_system.register("trade-collection-complete", trade_overview_gui.on_trade_collection_complete)
     event_system.register("trade-filtering-progress", trade_overview_gui.on_trade_filtering_progress)
     event_system.register("trade-sorting-starting", trade_overview_gui.on_trade_sorting_starting)
-    event_system.register("trade-filtering-complete", trade_overview_gui.on_trade_filtering_complete)
+    event_system.register("trade-sorting-progress", trade_overview_gui.on_trade_sorting_progress)
+    event_system.register("trade-sorting-complete", trade_overview_gui.on_trade_sorting_complete)
     event_system.register("trade-overview-jobs-cancelled", trade_overview_gui.on_trade_overview_jobs_cancelled)
 
     event_system.register("quest-reward-received", function(reward_type, value)
@@ -571,7 +572,6 @@ function trade_overview_gui.update_trade_overview(player)
     collection_label.style.font = "default-bold"
     local collection_progressbar = collection_flow.add {type = "progressbar", name = "progressbar", value = 0}
     collection_progressbar.style.horizontally_stretchable = true
-    -- collection_progressbar.style.height = 20
 
     -- Filtering progress
     local filtering_flow = progress_flow.add {type = "flow", name = "filtering-flow", direction = "vertical"}
@@ -584,7 +584,18 @@ function trade_overview_gui.update_trade_overview(player)
     filtering_label.style.font_color = {0.5, 0.5, 0.5}
     local filtering_progressbar = filtering_flow.add {type = "progressbar", name = "progressbar", value = 0}
     filtering_progressbar.style.horizontally_stretchable = true
-    -- filtering_progressbar.style.height = 20
+
+    -- Sorting progress
+    local sorting_flow = progress_flow.add {type = "flow", name = "sorting-flow", direction = "vertical"}
+    sorting_flow.style.horizontally_stretchable = true
+    sorting_flow.style.vertical_spacing = 0
+    sorting_flow.style.bottom_padding = 0
+    sorting_flow.style.top_padding = 0
+    local sorting_label = sorting_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sorting-trades", 0, 0}}
+    sorting_label.style.font = "default-bold"
+    sorting_label.style.font_color = {0.5, 0.5, 0.5}
+    local sorting_progressbar = sorting_flow.add {type = "progressbar", name = "progressbar", value = 0}
+    sorting_progressbar.style.horizontally_stretchable = true
 
     -- Queue the trade collection job (which will trigger filtering when complete)
     trades.queue_trade_collection_job(player, trades_set, filter)
@@ -656,30 +667,41 @@ function trade_overview_gui.on_trade_sorting_starting(player, num_trades)
             filtering_flow["progressbar"].value = 1
         end
 
-        -- Add sorting label below the progress bars (don't clear yet)
-        if not progress_flow["sorting-label"] then
-            local sorting_label = progress_flow.add {type = "label", name = "sorting-label", caption = {"hextorio-gui.sorting-trades", num_trades}}
-            sorting_label.style.font = "default-large-bold"
-            sorting_label.style.top_padding = 8
+        -- Enable sorting label (remove greyed out appearance)
+        local sorting_flow = progress_flow["sorting-flow"]
+        if sorting_flow then
+            sorting_flow["label"].style.font_color = {1, 1, 1}
         end
     end
 end
 
-function trade_overview_gui.on_trade_filtering_complete(player, filtered_trades, is_favorited, filter)
+function trade_overview_gui.on_trade_sorting_progress(player, progress, current, total)
     local frame = player.gui.screen["trade-overview"]
     if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
 
-    local trades_list = trades.convert_trades_lookup_to_array(filtered_trades)
+    local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
+    local progress_flow = trade_table["progress-flow"]
+    if not progress_flow then return end
+
+    local sorting_flow = progress_flow["sorting-flow"]
+    if sorting_flow then
+        sorting_flow["label"].caption = {"hextorio-gui.sorting-trades", current, total}
+        sorting_flow["progressbar"].value = progress
+    end
+end
+
+function trade_overview_gui.on_trade_sorting_complete(player, sorted_lookup, sorted_array, is_favorited, filter)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
+
+    -- Use the sorted array directly (already in correct order)
+    local trades_list = sorted_array or {}
 
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
     local progress_flow = trade_table["progress-flow"]
 
     if #trades_list == 0 then
-        if progress_flow then
-            progress_flow.clear()
-        else
-            trade_table.clear()
-        end
+        trade_table.clear()
 
         local has_planet_selected = false
         if filter.planets then
@@ -700,112 +722,6 @@ function trade_overview_gui.on_trade_filtering_complete(player, filtered_trades,
         storage.trade_overview.trades[player.name] = {}
         return
     end
-
-    local sort_func
-    if filter.sorting and filter.sorting.method then
-        if filter.sorting.method == "distance-from-spawn" then
-            local distances = {}
-            for _, trade in pairs(trades_list) do
-                if trade.hex_core_state then
-                    distances[trade.id] = axial.distance(trade.hex_core_state.position, {q=0, r=0})
-                else
-                    distances[trade.id] = 0
-                end
-            end
-            sort_func = function(trade1, trade2)
-                local a = distances[trade1.id]
-                local b = distances[trade2.id]
-                if a == b then
-                    return #trade1.output_items < #trade2.output_items
-                end
-                return a < b
-            end
-        elseif filter.sorting.method == "distance-from-character" then
-            if player.character then
-                local transformation = terrain.get_surface_transformation(player.surface)
-                local char_pos = axial.get_hex_containing(player.character.position, transformation.scale, transformation.rotation)
-                local distances = {}
-                for _, trade in pairs(trades_list) do
-                    if trade.hex_core_state then
-                        distances[trade.id] = axial.distance(trade.hex_core_state.position, char_pos)
-                    else
-                        distances[trade.id] = 0
-                    end
-                end
-                sort_func = function(trade1, trade2)
-                    local a = distances[trade1.id]
-                    local b = distances[trade2.id]
-                    if a == b then
-                        return #trade1.output_items < #trade2.output_items
-                    end
-                    return a < b
-                end
-            end
-        elseif filter.sorting.method == "num-inputs" then
-            sort_func = function(trade1, trade2)
-                local a = #trade1.input_items
-                local b = #trade2.input_items
-                if a == b then
-                    return #trade1.output_items < #trade2.output_items
-                end
-                return a < b
-            end
-        elseif filter.sorting.method == "num-outputs" then
-            sort_func = function(trade1, trade2)
-                local a = #trade1.output_items
-                local b = #trade2.output_items
-                if a == b then
-                    return #trade1.input_items < #trade2.input_items
-                end
-                return a < b
-            end
-        elseif filter.sorting.method == "productivity" then
-            sort_func = function(trade1, trade2)
-                local a = trades.get_productivity(trade1)
-                local b = trades.get_productivity(trade2)
-                if a == b then
-                    return #trade1.output_items < #trade2.output_items
-                end
-                return a < b
-            end
-        elseif filter.sorting.method == "total-item-value" then
-            local trade_volumes = {}
-            for _, trade in pairs(trades_list) do
-                trade_volumes[trade.id] = trades.get_volume_of_trade(trade.surface_name, trade)
-            end
-            sort_func = function(trade1, trade2)
-                return trade_volumes[trade1.id] < trade_volumes[trade2.id]
-            end
-        end
-    end
-
-    if sort_func then
-        local directed_sort_func = sort_func
-        if not filter.sorting.ascending then
-            directed_sort_func = function(a, b) return sort_func(b, a) end
-        end
-
-        -- NOTE: THIS CAUSES FRAME DROPS, but custom sorting implementations take an unreasonably long time, so it's the lesser of two evils. (for now)
-        -- TODO: Switch over to NOT using sorting and instead finding the top `max_trades` trades based on the sorting method (using binary insertion and maintaining lower and upper bounds while iterating over the trades list ONCE).  That "top X" retrieval can be put into another job system in trades.lua for the best results.
-        table.sort(trades_list, function(trade1, trade2)
-            -- Sort by trade favorites first, then the other method if favoritedness is equal
-            local fav1 = is_favorited[trade1.id]
-            local fav2 = is_favorited[trade2.id]
-            if fav1 and not fav2 then
-                return true
-            elseif not fav1 and fav2 then
-                return false
-            end
-
-            return directed_sort_func(trade1, trade2)
-        end)
-    end
-
-    local to_show = {}
-    for i = 1, filter.max_trades do
-        to_show[i] = trades_list[i]
-    end
-    trades_list = to_show
 
     storage.trade_overview.trades[player.name] = trades_list
 
@@ -847,6 +763,12 @@ function trade_overview_gui.on_trade_overview_jobs_cancelled(player)
         if filtering_flow then
             filtering_flow["label"].caption = {"hextorio-gui.filtering-trades", 0, 0}
             filtering_flow["progressbar"].value = 0
+        end
+
+        local sorting_flow = progress_flow["sorting-flow"]
+        if sorting_flow then
+            sorting_flow["label"].caption = {"hextorio-gui.sorting-trades", 0, 0}
+            sorting_flow["progressbar"].value = 0
         end
     end
 

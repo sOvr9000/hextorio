@@ -66,5 +66,6 @@ return {
     productivity_update_jobs = {}, ---@type TradeProductivityUpdateJob[]
     trade_collection_jobs = {}, ---@type TradeCollectionJob[]
     trade_filtering_jobs = {}, ---@type TradeFilteringJob[]
+    trade_sorting_jobs = {}, ---@type TradeSortingJob[]
 }
 
