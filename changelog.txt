@@ -1,6 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.3
 Date: 18/12/25
+  Changes:
+    - The Quantum Bazaar slider now only lets you go up to what you can afford.
+    - The Quantum Bazaar coin display now matches the total cost of buying the currently selected amount.
+  Gui:
+    - Reworked the Quantum Bazaar layout.
   Minor Features:
     - Added "buy max" button in Quantum Bazaar for buying as many items as can fit in your inventory.
   Bugfixes:

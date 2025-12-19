@@ -702,20 +702,7 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         direction = "vertical",
     }
 
-    local top_flow = quantum_bazaar.add {
-        type = "flow",
-        name = "top-flow",
-        direction = "vertical",
-    }
-
-    -- TODO: Potential bug with other mods. If qualities are unlocked in an order such that successive quality "levels" are skipped, then this will not work as expected. Reason: lib.get_quality_tier() will not match what could be listed as unlocked qualities.
-    local quality_dropdown = gui.create_quality_dropdown(top_flow, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality), true)
-    gui.auto_width(quality_dropdown)
-    quality_dropdown.tags = {handlers = {["gui-selection-changed"] = "quantum-bazaar-changed"}}
-
-    local coin_tier = coin_tier_gui.create_coin_tier(top_flow, "coin-tier")
-    local buy_one_coin
-    local sell_inv_coin
+    local sell_inv_coin, buy_one_coin
     if player.character then
         buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
         sell_inv_coin = inventories.get_total_coin_value(player.character.surface.name, lib.get_player_inventory(player), 5)
@@ -723,29 +710,7 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
         sell_inv_coin = inventories.get_total_coin_value("nauvis", lib.get_player_inventory(player), 5)
     end
-
-    local stack_size = lib.get_stack_size(selection.item_name)
-
     buy_one_coin = coin_tiers.ceil(buy_one_coin)
-    coin_tier_gui.update_coin_tier(coin_tier, buy_one_coin)
-
-    catalog_gui.verify_catalog_storage(player)
-    if not selection.bazaar_buy_amount then
-        selection.bazaar_buy_amount = 1
-    end
-
-    local current_amount = selection.bazaar_buy_amount
-    local insertable_count = catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
-    local purchaseable_count = catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
-    local valid_amount = math.max(0, math.min(insertable_count, purchaseable_count, stack_size, current_amount))
-
-    selection.bazaar_buy_amount = valid_amount
-
-    local buy_section = quantum_bazaar.add {
-        type = "flow",
-        name = "buy-section",
-        direction = "vertical",
-    }
 
     local elem_filter_items = sets.new()
     for _, surface in pairs(game.surfaces) do
@@ -763,22 +728,22 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         table.insert(elem_filters, {filter = "name", name = name})
     end
 
-    local item_chooser_flow = buy_section.add {
+    local button_flow = quantum_bazaar.add {
         type = "flow",
-        name = "item-chooser-flow",
+        name = "button-flow",
         direction = "horizontal",
     }
 
-    local selected_item_qb = item_chooser_flow.add {
+    local selected_item_qb = button_flow.add {
         type = "choose-elem-button",
         name = "selected-item-qb",
-        elem_type = "item",
+        elem_type = "item", -- TODO: Convert this to use "item-with-quality" so that the quality dropdown doesn't have to exist
         elem_filters = elem_filters,
         item = selection.item_name,
         tags = {handlers = {["gui-elem-changed"] = "quantum-bazaar-changed"}},
     }
 
-    local sell_in_hand = item_chooser_flow.add {
+    local sell_in_hand = button_flow.add {
         type = "sprite-button",
         name = "sell-in-hand",
         sprite = "hand",
@@ -790,7 +755,7 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         tags = {handlers = {["gui-clicked"] = "quantum-bazaar-sell-in-hand"}},
     }
 
-    local sell_inventory = item_chooser_flow.add {
+    local sell_inventory = button_flow.add {
         type = "sprite-button",
         name = "sell-inventory",
         sprite = "backpack",
@@ -802,48 +767,54 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         tags = {handlers = {["gui-clicked"] = "quantum-bazaar-sell-inventory"}},
     }
 
-    local slider_flow = buy_section.add {
+    -- TODO: Potential bug with other mods. If qualities are unlocked in an order such that successive quality "levels" are skipped, then this will not work as expected. Reason: lib.get_quality_tier() will not match what could be listed as unlocked qualities.
+    local quality_dropdown = gui.create_quality_dropdown(quantum_bazaar, "quality-dropdown", lib.get_quality_tier(selection.bazaar_quality), true)
+    gui.auto_width(quality_dropdown)
+    quality_dropdown.tags = {handlers = {["gui-selection-changed"] = "quantum-bazaar-changed"}}
+
+    local buy_flow = quantum_bazaar.add {
         type = "flow",
-        name = "slider-flow",
+        name = "buy-flow",
         direction = "horizontal",
     }
-    slider_flow.style.horizontally_stretchable = true
+    gui.auto_width(buy_flow)
 
-    local buy_amount_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_amount))
-    local buy_button = slider_flow.add {
+    local buy_button = buy_flow.add {
         type = "button",
         name = "buy-button",
-        caption = {"quantum-bazaar.buy-button-caption", valid_amount},
-        tooltip = {"", lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", valid_amount, coin_tiers.coin_to_text(buy_amount_coin)}, "cyan")},
         tags = {handlers = {["gui-clicked"] = "quantum-bazaar-buy-items"}},
     }
     gui.auto_width(buy_button)
 
-    local amount_slider = slider_flow.add {
+    local buy_max_button = buy_flow.add {
+        type = "button",
+        name = "buy-max-button",
+        tags = {handlers = {["gui-clicked"] = "quantum-bazaar-buy-max"}},
+    }
+    gui.auto_width(buy_max_button)
+
+    local stack_size = lib.get_stack_size(selection.item_name)
+    local amount_slider = quantum_bazaar.add {
         type = "slider",
         name = "amount-slider",
         minimum_value = 1,
         maximum_value = math.max(2, stack_size),
-        value = valid_amount,
+        value = selection.bazaar_buy_amount,
         value_step = 1,
-        discrete_slider = true,
         discrete_values = true,
         enabled = stack_size > 1,
         tags = {handlers = {["gui-slider-changed"] = "quantum-bazaar-slider-changed"}},
     }
-    amount_slider.style.width = 80 / 1.2
-    amount_slider.style.top_margin = 7
+    gui.auto_width(amount_slider)
 
-    valid_amount = math.max(0, math.min(insertable_count, purchaseable_count))
-    local buy_max_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_amount))
-    local buy_max_button = slider_flow.add {
-        type = "button",
-        name = "buy-max-button",
-        caption = {"quantum-bazaar.buy-max"},
-        tooltip = {"", lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", valid_amount, coin_tiers.coin_to_text(buy_max_coin)}, "cyan")},
-        tags = {handlers = {["gui-clicked"] = "quantum-bazaar-buy-max"}},
-    }
-    gui.auto_width(buy_max_button)
+    local coin_tier = coin_tier_gui.create_coin_tier(quantum_bazaar, "coin-tier")
+
+    catalog_gui.verify_catalog_storage(player)
+    if not selection.bazaar_buy_amount then
+        selection.bazaar_buy_amount = 1
+    end
+
+    catalog_gui.update_quantum_bazaar_buy_buttons(player)
 end
 
 function catalog_gui.show_catalog(player)
@@ -964,13 +935,14 @@ function catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
     return purchaseable
 end
 
----Return a count less than or equal to the given count based on the player's available inventory space.
+---Return a count less than or equal to the given count based on the player's available inventory space and available coins.
 ---@param player LuaPlayer
 ---@param count int
 ---@return int
 function catalog_gui.adjust_quantum_bazaar_stack_count(player, count)
     local insertable = catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
-    return math.min(insertable, count)
+    local purchaseable = catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
+    return math.min(insertable, purchaseable, count)
 end
 
 ---Handle the action of the player requesting to purchase a stack of an item from the Quantum Bazaar.
@@ -1075,8 +1047,23 @@ end
 ---@param elem LuaGuiElement
 function catalog_gui.on_quantum_bazaar_slider_changed(player, elem)
     catalog_gui.verify_catalog_storage(player)
+    catalog_gui.update_quantum_bazaar_buy_buttons(player)
+end
 
-    local new_amount = math.floor(elem.slider_value)
+---Set the captions and tooltips of the "buy X" and "buy max" buttons in the Quantum Bazaar.
+---@param player LuaPlayer
+function catalog_gui.update_quantum_bazaar_buy_buttons(player)
+    local frame = player.gui.screen["catalog"]
+    if not frame then return end
+
+    local inspect_frame = frame["flow"]["inspect-frame"]
+    local quantum_bazaar = inspect_frame["quantum-bazaar"]
+    local buy_button = quantum_bazaar["buy-flow"]["buy-button"]
+    local buy_max_button = quantum_bazaar["buy-flow"]["buy-max-button"]
+    local slider = quantum_bazaar["amount-slider"]
+    local coin_tier = quantum_bazaar["coin-tier"]
+
+    local new_amount = math.floor(slider.slider_value)
     new_amount = catalog_gui.adjust_quantum_bazaar_stack_count(player, new_amount)
     if new_amount == -1 then
         new_amount = 1 -- Just so GUI doesn't show -1
@@ -1085,32 +1072,51 @@ function catalog_gui.on_quantum_bazaar_slider_changed(player, elem)
     local selection = catalog_gui.get_catalog_selection(player)
     selection.bazaar_buy_amount = new_amount
 
-    local frame = player.gui.screen["catalog"]
-    if not frame then return end
+    local stack_size = lib.get_stack_size(selection.item_name)
 
-    local inspect_frame = frame["flow"]["inspect-frame"]
-    local quantum_bazaar = inspect_frame["quantum-bazaar"]
-    if not quantum_bazaar then return end
-
-    local buy_section = quantum_bazaar["buy-section"]
-    if not buy_section then return end
-
-    local slider_flow = buy_section["slider-flow"]
-    if slider_flow and slider_flow["buy-button"] then
-        local buy_one_coin
-        if player.character then
-            buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
-        else
-            buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
-        end
-        buy_one_coin = coin_tiers.ceil(buy_one_coin)
-        local buy_amount_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, new_amount))
-
-        slider_flow["buy-button"].caption = {"quantum-bazaar.buy-button-caption", new_amount}
-        slider_flow["buy-button"].tooltip = {"",
-            lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", new_amount, coin_tiers.coin_to_text(buy_amount_coin)}, "cyan"),
-        }
+    local buy_one_coin
+    if player.character then
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+    else
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
     end
+    buy_one_coin = coin_tiers.ceil(buy_one_coin)
+
+    local current_amount = selection.bazaar_buy_amount
+    local insertable_count = catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
+    local purchaseable_count = catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
+    local valid_amount = math.max(0, math.min(insertable_count, purchaseable_count, stack_size, current_amount))
+
+    local buy_amount_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, new_amount))
+
+    valid_amount = math.max(0, math.min(insertable_count, purchaseable_count))
+    local buy_max_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_amount))
+
+    buy_button.caption = {"quantum-bazaar.buy-button-caption", new_amount}
+    buy_button.tooltip = {"",
+        lib.color_localized_string(
+            {"quantum-bazaar.buy-stack",
+                "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]",
+                new_amount,
+                coin_tiers.coin_to_text(buy_amount_coin)
+            },
+            "cyan"
+        ),
+    }
+
+    buy_max_button.caption = {"quantum-bazaar.buy-max"}
+    buy_max_button.tooltip = {"",
+        lib.color_localized_string(
+            {"quantum-bazaar.buy-stack",
+                "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]",
+                valid_amount,
+                coin_tiers.coin_to_text(buy_max_coin)
+            },
+            "cyan"
+        ),
+    }
+
+    coin_tier_gui.update_coin_tier(coin_tier, buy_amount_coin)
 end
 
 ---@param player LuaPlayer
