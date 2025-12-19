@@ -7,12 +7,14 @@ Date: 19/12/25
   Changes:
     - The Quantum Bazaar slider now only lets you go up to what you can afford.
     - The Quantum Bazaar coin display now matches the total cost of buying the currently selected amount.
+    - Trades are now further limited by total number of stacks being purchased across all trade outputs, not just the one that sets the most restrictive limit.
   Gui:
     - Reworked the Quantum Bazaar layout.
     - Progress bars in trade overview no longer show for very fast calculations (like when an item is in the filter, or when a planet isn't fully explored).
   Bugfixes:
     - Fixed that the Quantum Bazaar tries to spill items on ground instead of limiting output if your inventory is full.
     - Fixed that the Quantum Bazaar wouldn't work in remote view.
+    - Fixed that trade output stack size calculations did not consider trade productivity.
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.2
 Date: 18/12/25

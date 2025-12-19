@@ -722,7 +722,7 @@ end
 ---@param quality string|nil
 ---@param quality_cost_mult number|nil
 ---@param max_items_per_output number|nil
----@param inventory_output_size int|nil
+---@param inventory_output_size int|nil Current number of empty slots in the output inventory.
 ---@return number
 function trades.get_num_batches_for_trade(input_items, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
     if not trade.active then return 0 end
@@ -753,6 +753,7 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     end
 
     -- Further limit num_batches according to max_items_per_output
+    local approximate_stacks_output = 0
     for _, output_item in pairs(trade.output_items) do
         if not lib.is_coin(output_item.name) then
             num_batches = math.min(math.floor(max_items_per_output / output_item.count), num_batches)
@@ -761,11 +762,17 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
             if inventory_output_size then
                 local prot = prototypes["item"][output_item.name]
                 if prot then
-                    num_batches = math.min(math.floor(inventory_output_size * prot.stack_size / output_item.count), num_batches)
-                    if num_batches == 0 then return 0 end
+                    approximate_stacks_output = approximate_stacks_output + output_item.count / prot.stack_size -- Allow fractions in the sum
                 end
             end
         end
+    end
+
+    -- Even further limit by total stacks of output if number of empty slots in output inventory is known
+    if inventory_output_size then
+        approximate_stacks_output = trades.scale_value_with_productivity(approximate_stacks_output, trades.get_productivity(trade, quality))
+        num_batches = math.min(math.floor(inventory_output_size / approximate_stacks_output), num_batches)
+        if num_batches == 0 then return 0 end
     end
 
     if trade.has_coins_in_input then
@@ -2447,12 +2454,20 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
         for i, wagon in ipairs(cargo_wagons) do
             if i > storage.item_buffs.train_trading_capacity then break end
 
-            inventory_output_size = inventory_output_size + wagon.prototype.get_inventory_size(defines.inventory.cargo_wagon, wagon.quality)
+            -- inventory_output_size = inventory_output_size + wagon.prototype.get_inventory_size(defines.inventory.cargo_wagon, wagon.quality)
+            local inv = wagon.get_inventory(defines.inventory.cargo_wagon)
+            if inv then
+                inventory_output_size = inventory_output_size + inv.count_empty_stacks(true, false)
+            end
         end
     else
         local hex_core = output_inv.entity_owner
         if hex_core then
-            inventory_output_size = hex_core.prototype.get_inventory_size(defines.inventory.chest, hex_core.quality)
+            -- inventory_output_size = hex_core.prototype.get_inventory_size(defines.inventory.chest, hex_core.quality)
+            local inv = hex_core.get_inventory(defines.inventory.chest)
+            if inv then
+                inventory_output_size = inv.count_empty_stacks(true, false)
+            end
         end
     end
 
