@@ -290,7 +290,6 @@ function catalog_gui.update_catalog_inspect_frame(player)
     local rank_obj = item_ranks.get_rank_obj(selection.item_name)
     if not rank_obj then return end
 
-    -- TODO (IMPORTANT): UNREGISTER CALLBACKS FROM BEFORE
     inspect_frame.clear()
 
     catalog_gui.build_header(player, rank_obj, inspect_frame)
@@ -733,7 +732,13 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
     if not storage.catalog.current_selection[player.name].bazaar_buy_amount then
         storage.catalog.current_selection[player.name].bazaar_buy_amount = 1
     end
+
     local current_amount = storage.catalog.current_selection[player.name].bazaar_buy_amount
+    current_amount = catalog_gui.adjust_quantum_bazaar_stack_count(player, current_amount)
+    if current_amount == -1 then
+        current_amount = 1 -- Just so GUI doesn't show -1
+    end
+
     if current_amount > stack_size then
         current_amount = stack_size
         storage.catalog.current_selection[player.name].bazaar_buy_amount = current_amount
@@ -988,9 +993,14 @@ end
 ---@param elem LuaGuiElement
 function catalog_gui.on_quantum_bazaar_slider_changed(player, elem)
     catalog_gui.verify_catalog_storage(player)
-    local selection = catalog_gui.get_catalog_selection(player)
 
     local new_amount = math.floor(elem.slider_value)
+    new_amount = catalog_gui.adjust_quantum_bazaar_stack_count(player, new_amount)
+    if new_amount == -1 then
+        new_amount = 1 -- Just so GUI doesn't show -1
+    end
+
+    local selection = catalog_gui.get_catalog_selection(player)
     selection.bazaar_buy_amount = new_amount
 
     local frame = player.gui.screen["catalog"]
@@ -1024,12 +1034,41 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function catalog_gui.on_quantum_bazaar_buy_items_clicked(player, elem)
-    local inv = player.get_main_inventory()
+    catalog_gui.verify_catalog_storage(player)
+    local count = storage.catalog.current_selection[player.name].bazaar_buy_amount or 1
+    catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
+end
+
+---Return a count less than or equal to the given count based on the player's available inventory space.
+---@param player LuaPlayer
+---@param count int
+---@return int
+function catalog_gui.adjust_quantum_bazaar_stack_count(player, count)
+    local inv = lib.get_player_inventory(player)
+    if not inv then return -1 end
+
+    local selection = catalog_gui.get_catalog_selection(player)
+
+    local insertable = inv.get_insertable_count {
+        name = selection.item_name,
+        count = count,
+        quality = selection.bazaar_quality,
+    }
+
+    return math.min(insertable, count)
+end
+
+---Handle the action of the player requesting to purchase a stack of an item from the Quantum Bazaar.
+---@param player LuaPlayer
+---@param count int
+function catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
+    local inv = lib.get_player_inventory(player)
     if not inv then return end
 
-    catalog_gui.verify_catalog_storage(player)
+    count = catalog_gui.adjust_quantum_bazaar_stack_count(player, count)
+    if count < 1 then return end
+
     local selection = catalog_gui.get_catalog_selection(player)
-    local count = storage.catalog.current_selection[player.name].bazaar_buy_amount or 1
 
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
     local coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
@@ -1048,7 +1087,7 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, elem)
-    local inv = player.get_main_inventory()
+    local inv = lib.get_player_inventory(player)
     if not inv then return end
 
     local received_coin = coin_tiers.ceil(inventories.get_total_coin_value(player.character.surface.name, inv, 5))
@@ -1061,6 +1100,8 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, elem)
+    if not player.character then return end
+
     local item_stack = player.cursor_stack
     if not item_stack or not item_stack.valid_for_read then
         player.print(lib.color_localized_string({"hextorio.no-item-in-hand"}, "red"))
@@ -1072,7 +1113,7 @@ function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, elem)
         return
     end
 
-    local inv = player.get_main_inventory()
+    local inv = lib.get_player_inventory(player)
     if not inv then return end
 
     local item_value = item_values.get_item_value(player.character.surface.name, item_stack.name, true, item_stack.quality.name) * item_stack.count
