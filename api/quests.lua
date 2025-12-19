@@ -1,5 +1,6 @@
 
 local lib = require "api.lib"
+local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
 
 
@@ -137,6 +138,10 @@ function quests.register_events()
 
     event_system.register("player-favorited-trade", function(player, trade)
         quests.set_progress_for_type("favorite-trade", 1)
+    end)
+
+    event_system.register("player-coins-changed", function(player, coin)
+        quests.set_progress_for_type("coins-in-inventory", coin_tiers.to_base_value(coin))
     end)
 end
 

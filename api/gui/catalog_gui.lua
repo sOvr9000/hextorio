@@ -82,6 +82,10 @@ function catalog_gui.register_events()
     event_system.register("post-import-item-values-command", function(player, params)
         catalog_gui.reinitialize()
     end)
+
+    event_system.register("player-coins-changed", function(player, coin)
+        catalog_gui.update_quantum_bazaar(player)
+    end)
 end
 
 ---Reinitialize the catalog GUI for the given player, or all online players if no player is provided.

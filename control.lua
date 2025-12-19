@@ -286,7 +286,7 @@ script.on_event(defines.events.on_player_main_inventory_changed, function(event)
     local coin = coin_tiers.normalize_inventory(inv)
     if not coin then return end
 
-    quests.set_progress_for_type("coins-in-inventory", coin_tiers.to_base_value(coin))
+    event_system.trigger("player-coins-changed", player, coin)
 end)
 
 script.on_event(defines.events.on_player_trash_inventory_changed, function(event)
