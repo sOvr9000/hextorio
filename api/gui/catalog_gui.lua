@@ -937,7 +937,7 @@ function catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
 
     local inv_coin = coin_tiers.get_coin_from_inventory(inv)
-    local purchaseable = coin_tiers.to_base_value(coin_tiers.floor(coin_tiers.divide(inv_coin, item_value / item_values.get_item_value("nauvis", "hex-coin"))))
+    local purchaseable = math.floor(coin_tiers.divide_coins(inv_coin, coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin"))))
 
     return purchaseable
 end
@@ -1064,7 +1064,11 @@ function catalog_gui.update_quantum_bazaar(player)
     if not frame then return end
 
     local inspect_frame = frame["flow"]["inspect-frame"]
+    if not inspect_frame then return end
+
     local quantum_bazaar = inspect_frame["quantum-bazaar"]
+    if not quantum_bazaar then return end
+
     local buy_button = quantum_bazaar["buy-flow"]["buy-button"]
     local buy_max_button = quantum_bazaar["buy-flow"]["buy-max-button"]
     local slider = quantum_bazaar["amount-slider"]
@@ -1125,7 +1129,12 @@ function catalog_gui.update_quantum_bazaar(player)
     }
 
     capped_amount_label.visible = current_amount > valid_buy_amount
-    no_coins_label.visible = valid_buy_amount < 1
+
+    local inv = lib.get_player_inventory(player)
+    if inv then
+        local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+        no_coins_label.visible = coin_tiers.is_zero(inv_coin)
+    end
 
     coin_tier_gui.update_coin_tier(coin_tier, buy_amount_coin)
 end
