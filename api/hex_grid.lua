@@ -3487,7 +3487,7 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
     local added_trades = {}
     for surface_id, flattened_surface_hexes in pairs(storage.hex_grid.flattened_surface_hexes) do
         local surface = game.get_surface(surface_id)
-        if surface then
+        if surface and not lib.is_space_platform(surface.name) then
             local volume = item_values.get_item_value(surface.name, item_name)
             if not item_values.is_item_interplanetary(surface.name, item_name) then
                 for _, hex_pos in pairs(flattened_surface_hexes) do
