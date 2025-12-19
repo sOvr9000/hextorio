@@ -814,7 +814,10 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
         selection.bazaar_buy_amount = 1
     end
 
-    catalog_gui.update_quantum_bazaar_buy_buttons(player)
+    gui.add_warning(quantum_bazaar, {"quantum-bazaar.capped-amount"}, "capped-amount")
+    gui.add_warning(quantum_bazaar, {"quantum-bazaar.no-coins"}, "no-coins")
+
+    catalog_gui.update_quantum_bazaar(player)
 end
 
 function catalog_gui.show_catalog(player)
@@ -1047,12 +1050,12 @@ end
 ---@param elem LuaGuiElement
 function catalog_gui.on_quantum_bazaar_slider_changed(player, elem)
     catalog_gui.verify_catalog_storage(player)
-    catalog_gui.update_quantum_bazaar_buy_buttons(player)
+    catalog_gui.update_quantum_bazaar(player)
 end
 
----Set the captions and tooltips of the "buy X" and "buy max" buttons in the Quantum Bazaar.
+---Update captions, tooltips, and other attributes in the Quantum Bazaar.
 ---@param player LuaPlayer
-function catalog_gui.update_quantum_bazaar_buy_buttons(player)
+function catalog_gui.update_quantum_bazaar(player)
     local frame = player.gui.screen["catalog"]
     if not frame then return end
 
@@ -1062,16 +1065,16 @@ function catalog_gui.update_quantum_bazaar_buy_buttons(player)
     local buy_max_button = quantum_bazaar["buy-flow"]["buy-max-button"]
     local slider = quantum_bazaar["amount-slider"]
     local coin_tier = quantum_bazaar["coin-tier"]
+    local capped_amount_label = quantum_bazaar["capped-amount"]
+    local no_coins_label = quantum_bazaar["no-coins"]
 
-    local new_amount = math.floor(slider.slider_value)
-    new_amount = catalog_gui.adjust_quantum_bazaar_stack_count(player, new_amount)
-    if new_amount == -1 then
-        new_amount = 1 -- Just so GUI doesn't show -1
-    end
+    -- local new_amount = math.floor(slider.slider_value)
+    -- new_amount = catalog_gui.adjust_quantum_bazaar_stack_count(player, new_amount)
+    -- if new_amount == -1 then
+    --     new_amount = 1 -- Just so GUI doesn't show -1
+    -- end
 
     local selection = catalog_gui.get_catalog_selection(player)
-    selection.bazaar_buy_amount = new_amount
-
     local stack_size = lib.get_stack_size(selection.item_name)
 
     local buy_one_coin
@@ -1082,22 +1085,23 @@ function catalog_gui.update_quantum_bazaar_buy_buttons(player)
     end
     buy_one_coin = coin_tiers.ceil(buy_one_coin)
 
-    local current_amount = selection.bazaar_buy_amount
+    local current_amount = slider.slider_value
     local insertable_count = catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
     local purchaseable_count = catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
-    local valid_amount = math.max(0, math.min(insertable_count, purchaseable_count, stack_size, current_amount))
+    local valid_buy_amount = math.max(0, math.min(insertable_count, purchaseable_count, stack_size, current_amount))
+    selection.bazaar_buy_amount = valid_buy_amount
 
-    local buy_amount_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, new_amount))
+    local buy_amount_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_buy_amount))
 
-    valid_amount = math.max(0, math.min(insertable_count, purchaseable_count))
-    local buy_max_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_amount))
+    local valid_max_amount = math.max(0, math.min(insertable_count, purchaseable_count))
+    local buy_max_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_max_amount))
 
-    buy_button.caption = {"quantum-bazaar.buy-button-caption", new_amount}
+    buy_button.caption = {"quantum-bazaar.buy-button-caption", valid_buy_amount}
     buy_button.tooltip = {"",
         lib.color_localized_string(
             {"quantum-bazaar.buy-stack",
                 "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]",
-                new_amount,
+                valid_buy_amount,
                 coin_tiers.coin_to_text(buy_amount_coin)
             },
             "cyan"
@@ -1109,12 +1113,15 @@ function catalog_gui.update_quantum_bazaar_buy_buttons(player)
         lib.color_localized_string(
             {"quantum-bazaar.buy-stack",
                 "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]",
-                valid_amount,
+                valid_max_amount,
                 coin_tiers.coin_to_text(buy_max_coin)
             },
             "cyan"
         ),
     }
+
+    capped_amount_label.visible = current_amount > valid_buy_amount
+    no_coins_label.visible = valid_buy_amount < 1
 
     coin_tier_gui.update_coin_tier(coin_tier, buy_amount_coin)
 end
