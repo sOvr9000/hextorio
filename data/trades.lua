@@ -68,5 +68,10 @@ return {
     trade_filtering_jobs = {}, ---@type TradeFilteringJob[]
     trade_sorting_jobs = {}, ---@type TradeSortingJob[]
     trade_export_jobs = {}, ---@type TradeExportJob[]
+
+    batch_processing_threshold = 3000,
+    collection_batch_size = 2000,
+    filtering_batch_size = 500,
+    sorting_batch_size = 2000,
 }
 

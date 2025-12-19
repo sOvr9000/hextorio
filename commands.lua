@@ -122,6 +122,30 @@ local all_commands = {
         params = {"string"},
     },
     {
+        name = "trade-batching-threshold",
+        usage = "/trade-batching-threshold [threshold]",
+        params = {"number?"},
+        examples = {"/trade-batching-threshold", "/trade-batching-threshold 3000"},
+    },
+    {
+        name = "trade-collection-batch-size",
+        usage = "/trade-collection-batch-size [size]",
+        params = {"number?"},
+        examples = {"/trade-collection-batch-size", "/trade-collection-batch-size 2000"},
+    },
+    {
+        name = "trade-filtering-batch-size",
+        usage = "/trade-filtering-batch-size [size]",
+        params = {"number?"},
+        examples = {"/trade-filtering-batch-size", "/trade-filtering-batch-size 500"},
+    },
+    {
+        name = "trade-sorting-batch-size",
+        usage = "/trade-sorting-batch-size [size]",
+        params = {"number?"},
+        examples = {"/trade-sorting-batch-size", "/trade-sorting-batch-size 2000"},
+    },
+    {
         name = "get-item-value",
         usage = "/get-item-value <item_name> <planet> [quality]",
         params = {"string", "string", "string?"},

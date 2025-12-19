@@ -31,6 +31,7 @@ local trades = {}
 ---@field total_count int Total number of trades to collect
 ---@field collected_trades {[int]: Trade} Lookup table of collected trade objects
 ---@field filter TradeOverviewFilterSettings The filter settings to use after collection
+---@field process_immediately boolean If true, process all trades in a single tick without progress events
 
 ---@class TradeFilteringJob
 ---@field player LuaPlayer The player that queued this job
@@ -42,6 +43,7 @@ local trades = {}
 ---@field filter TradeOverviewFilterSettings The filter settings to apply
 ---@field is_favorited {[int]: boolean} Lookup table of favorited status
 ---@field ready_to_complete boolean If true, will trigger completion event on next tick
+---@field process_immediately boolean If true, process all trades in a single tick without progress events
 
 ---@class TradeSortingJob
 ---@field player LuaPlayer The player that queued this job
@@ -56,6 +58,7 @@ local trades = {}
 ---@field min_sort_key number|nil Minimum sort key in sorted_top_trades (worst trade)
 ---@field max_sort_key number|nil Maximum sort key in sorted_top_trades (best trade)
 ---@field metrics {[int]: number}|nil Cached metrics (like distances, trade volumes, or trade productivities) for sorting
+---@field process_immediately boolean If true, process all trades in a single tick without progress events
 
 ---@class TradeExportJob
 ---@field player LuaPlayer The player that queued this job
@@ -185,6 +188,42 @@ function trades.register_events()
         trades.recalculate_researched_items()
         trades.fetch_base_trade_productivity_settings()
         trades.queue_productivity_update_job()
+    end)
+
+    event_system.register("command-trade-batching-threshold", function(player, params)
+        if not params[1] then
+            player.print({"hextorio.current-trade-batching-threshold", storage.trades.batch_processing_threshold})
+            return
+        end
+        storage.trades.batch_processing_threshold = params[1]
+        player.print({"hextorio.set-trade-batching-threshold", storage.trades.batch_processing_threshold})
+    end)
+
+    event_system.register("command-trade-collection-batch-size", function(player, params)
+        if not params[1] then
+            player.print({"hextorio.current-trade-collection-batch-size", storage.trades.collection_batch_size})
+            return
+        end
+        storage.trades.collection_batch_size = params[1]
+        player.print({"hextorio.set-trade-collection-batch-size", storage.trades.collection_batch_size})
+    end)
+
+    event_system.register("command-trade-filtering-batch-size", function(player, params)
+        if not params[1] then
+            player.print({"hextorio.current-trade-filtering-batch-size", storage.trades.filtering_batch_size})
+            return
+        end
+        storage.trades.filtering_batch_size = params[1]
+        player.print({"hextorio.set-trade-filtering-batch-size", storage.trades.filtering_batch_size})
+    end)
+
+    event_system.register("command-trade-sorting-batch-size", function(player, params)
+        if not params[1] then
+            player.print({"hextorio.current-trade-sorting-batch-size", storage.trades.sorting_batch_size})
+            return
+        end
+        storage.trades.sorting_batch_size = params[1]
+        player.print({"hextorio.set-trade-sorting-batch-size", storage.trades.sorting_batch_size})
     end)
 
     local function fetch_and_queue_update(surface_name)
@@ -1423,7 +1462,8 @@ end
 ---@param player LuaPlayer
 ---@param trade_ids_set {[int]: boolean} Set of trade IDs to collect
 ---@param filter table The filter settings to apply after collection
-function trades.queue_trade_collection_job(player, trade_ids_set, filter)
+---@param process_immediately boolean If true, process all trades in a single tick without progress events
+function trades.queue_trade_collection_job(player, trade_ids_set, filter, process_immediately)
     trades.cancel_trade_overview_jobs(player)
 
     local trade_ids = {}
@@ -1439,6 +1479,7 @@ function trades.queue_trade_collection_job(player, trade_ids_set, filter)
         total_count = #trade_ids,
         collected_trades = {},
         filter = filter,
+        process_immediately = process_immediately,
     }
 
     table.insert(storage.trades.trade_collection_jobs, job)
@@ -1449,19 +1490,22 @@ function trades.process_trade_collection_jobs()
     local jobs = storage.trades.trade_collection_jobs
     if #jobs == 0 then return end
 
-    local batch_size = math.floor(2000 / #jobs) -- Divide by number of jobs so that multiple players using the trade overview simultaneously is load balanced.
+    local batch_size = math.floor(storage.trades.collection_batch_size / #jobs)
     local lookup = trades.get_trades_lookup()
 
-    -- local prof = game.create_profiler()
     for i = #jobs, 1, -1 do
         local job = jobs[i]
 
         if job.total_count == 0 then
-            -- Handle empty job (no trades to collect)
             table.remove(jobs, i)
-            event_system.trigger("trade-collection-complete", job.player, job.collected_trades, job.filter)
+            event_system.trigger("trade-collection-complete", job.player, job.collected_trades, job.filter, job.process_immediately)
         else
-            local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+            local end_index
+            if job.process_immediately then
+                end_index = job.total_count
+            else
+                end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+            end
 
             for idx = job.current_index, end_index do
                 local trade_id = job.trade_ids[idx]
@@ -1474,23 +1518,24 @@ function trades.process_trade_collection_jobs()
             job.current_index = end_index + 1
             local progress = end_index / job.total_count
 
-            event_system.trigger("trade-collection-progress", job.player, progress, end_index, job.total_count)
+            if not job.process_immediately then
+                event_system.trigger("trade-collection-progress", job.player, progress, end_index, job.total_count)
+            end
 
             if job.current_index > job.total_count then
                 table.remove(jobs, i)
-                event_system.trigger("trade-collection-complete", job.player, job.collected_trades, job.filter)
+                event_system.trigger("trade-collection-complete", job.player, job.collected_trades, job.filter, job.process_immediately)
             end
         end
     end
-    -- lib.log("Processed trade collection batch:")
-    -- log(prof)
 end
 
 ---Queue a job to filter trades for the trade overview.
 ---@param player LuaPlayer
 ---@param trades_lookup {[int]: Trade}
 ---@param filter table The filter settings to apply
-function trades.queue_trade_filtering_job(player, trades_lookup, filter)
+---@param process_immediately boolean If true, process all trades in a single tick without progress events
+function trades.queue_trade_filtering_job(player, trades_lookup, filter, process_immediately)
     local trade_ids = {}
     for trade_id, _ in pairs(trades_lookup) do
         table.insert(trade_ids, trade_id)
@@ -1507,6 +1552,7 @@ function trades.queue_trade_filtering_job(player, trades_lookup, filter)
         filter = filter,
         is_favorited = {},
         ready_to_complete = false,
+        process_immediately = process_immediately,
     }
 
     table.insert(storage.trades.trade_filtering_jobs, job)
@@ -1516,19 +1562,22 @@ function trades.process_trade_filtering_jobs()
     local jobs = storage.trades.trade_filtering_jobs
     if #jobs == 0 then return end
 
-    local batch_size = math.floor(750 / #jobs) -- Divide by number of jobs so that multiple players using the trade overview simultaneously is load balanced.
+    local batch_size = math.floor(storage.trades.filtering_batch_size / #jobs)
 
-    -- local prof = game.create_profiler()
     for i = #jobs, 1, -1 do
         local job = jobs[i]
         local player = job.player
         if job.total_count == 0 then
-            -- Handle empty job (no trades to filter)
             table.remove(jobs, i)
-            trades.queue_trade_sorting_job(job.player, job.filtered_trades, job.is_favorited, job.filter)
+            trades.queue_trade_sorting_job(job.player, job.filtered_trades, job.is_favorited, job.filter, job.process_immediately)
         else
-            local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
             local filter = job.filter
+            local end_index
+            if job.process_immediately then
+                end_index = job.total_count
+            else
+                end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+            end
 
             for idx = job.current_index, end_index do
                 local trade_id = job.trade_ids[idx]
@@ -1586,17 +1635,16 @@ function trades.process_trade_filtering_jobs()
             job.current_index = end_index + 1
             local progress = end_index / job.total_count
 
-            event_system.trigger("trade-filtering-progress", job.player, progress, end_index, job.total_count)
+            if not job.process_immediately then
+                event_system.trigger("trade-filtering-progress", job.player, progress, end_index, job.total_count)
+            end
 
             if job.current_index > job.total_count then
-                -- Filtering complete, now queue the sorting job
                 table.remove(jobs, i)
-                trades.queue_trade_sorting_job(job.player, job.filtered_trades, job.is_favorited, job.filter)
+                trades.queue_trade_sorting_job(job.player, job.filtered_trades, job.is_favorited, job.filter, job.process_immediately)
             end
         end
     end
-    -- lib.log("Processed trade filtration batch:")
-    -- log(prof)
 end
 
 ---Queue a job to sort/select top N trades for the trade overview.
@@ -1604,7 +1652,8 @@ end
 ---@param filtered_trades {[int]: Trade}
 ---@param is_favorited {[int]: boolean}
 ---@param filter table The filter settings to apply
-function trades.queue_trade_sorting_job(player, filtered_trades, is_favorited, filter)
+---@param process_immediately boolean If true, process all trades in a single tick without progress events
+function trades.queue_trade_sorting_job(player, filtered_trades, is_favorited, filter, process_immediately)
     local trade_ids = {}
     for trade_id, _ in pairs(filtered_trades) do
         table.insert(trade_ids, trade_id)
@@ -1619,21 +1668,24 @@ function trades.queue_trade_sorting_job(player, filtered_trades, is_favorited, f
         current_index = 1,
         total_count = #trade_ids,
         filter = filter,
-        sorted_top_trades = {},  -- Array of trades (bounded to max_trades)
-        sort_keys = {},          -- Cached sort keys for top trades
-        min_sort_key = nil,      -- Minimum sort key in top trades (worst trade)
-        max_sort_key = nil,      -- Maximum sort key in top trades (best trade)
+        sorted_top_trades = {},
+        sort_keys = {},
+        min_sort_key = nil,
+        max_sort_key = nil,
+        process_immediately = process_immediately,
     }
 
     table.insert(storage.trades.trade_sorting_jobs, job)
-    event_system.trigger("trade-sorting-starting", player, #trade_ids)
+    if not process_immediately then
+        event_system.trigger("trade-sorting-starting", player, #trade_ids)
+    end
 end
 
 function trades.process_trade_sorting_jobs()
     local jobs = storage.trades.trade_sorting_jobs
     if #jobs == 0 then return end
 
-    local batch_size = math.floor(2000 / #jobs) -- Divide by number of jobs for load balancing
+    local batch_size = math.floor(storage.trades.sorting_batch_size / #jobs)
 
     ---@param trade Trade
     ---@param sorting_method TradeOverviewSortingMethod
@@ -1693,14 +1745,18 @@ function trades.process_trade_sorting_jobs()
         return low
     end
 
-    -- local prof = game.create_profiler()
     for i = #jobs, 1, -1 do
         local job = jobs[i]
         local player = job.player
         local filter = job.filter
 
         local max_trades = filter.max_trades
-        local end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+        local end_index
+        if job.process_immediately then
+            end_index = job.total_count
+        else
+            end_index = math.min(job.current_index + batch_size - 1, job.total_count)
+        end
         local ascending = filter.sorting.ascending == true
         local sorting_method = filter.sorting.method
 
@@ -1825,10 +1881,11 @@ function trades.process_trade_sorting_jobs()
             job.current_index = end_index + 1
             local progress = end_index / job.total_count
 
-            event_system.trigger("trade-sorting-progress", player, progress, end_index, job.total_count)
+            if not job.process_immediately then
+                event_system.trigger("trade-sorting-progress", player, progress, end_index, job.total_count)
+            end
 
             if job.current_index > job.total_count then
-                -- Convert sorted array to lookup table for compatibility
                 local sorted_lookup = {}
                 for _, trade in ipairs(job.sorted_top_trades) do
                     sorted_lookup[trade.id] = trade
@@ -1839,8 +1896,6 @@ function trades.process_trade_sorting_jobs()
             end
         end
     end
-    -- log("Trade sorting batch processed:")
-    -- log(prof)
 end
 
 ---Cancel all trade overview jobs for a player.
@@ -2714,6 +2769,42 @@ function trades.fetch_base_trade_productivity_settings(surface_name)
     ---@cast prod number
 
     storage.trades.base_trade_productivity[surface_name] = prod
+end
+
+---Return whether the heuristic upper bound for total number of trades on the selected planets exceeds the current batch processing threshold.
+---@param filter TradeOverviewFilterSettings
+---@return boolean
+function trades.should_use_batch_processing(filter)
+    local count = 0
+
+    local threshold = storage.trades.batch_processing_threshold
+
+    -- Repeated code because these heuristic validations need to be as FAST as possible, as they will always be executed in a single tick.
+    if filter.input_items and filter.input_items[1] then
+        -- Don't quite need to check for surface matching because item filtering vastly reduces the number of trades already.  So this is faster for that.
+        for _ in pairs(trades.get_trades_by_input(filter.input_items[1])) do
+            count = count + 1
+            if count > threshold then return true end
+        end
+    elseif filter.output_items and filter.output_items[1] then
+        for _ in pairs(trades.get_trades_by_input(filter.output_items[1])) do
+            count = count + 1
+            if count > threshold then return true end
+        end
+    else
+        if filter.planets then
+            for surface_name, allow in pairs(filter.planets) do
+                if allow then
+                    for _ in pairs(trades.get_trades_by_surface(surface_name)) do
+                        count = count + 1
+                        if count > threshold then return true end
+                    end
+                end
+            end
+        end
+    end
+
+    return false
 end
 
 

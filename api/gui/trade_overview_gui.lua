@@ -556,51 +556,50 @@ function trade_overview_gui.update_trade_overview(player)
     trades.cancel_trade_overview_jobs(player)
     storage.trade_overview.trades[player.name] = {}
 
-    -- Update GUI with loading message and progress bars
     local trade_table = frame["trade-table-frame"]["scroll-pane"]["table"]
     trade_table.clear()
 
-    local progress_flow = trade_table.add {type = "flow", name = "progress-flow", direction = "vertical"}
-    progress_flow.style.horizontally_stretchable = true
-    progress_flow.style.vertical_spacing = 8
+    local use_batch_processing = trades.should_use_batch_processing(filter)
 
-    -- Collection progress
-    local collection_flow = progress_flow.add {type = "flow", name = "collection-flow", direction = "vertical"}
-    collection_flow.style.horizontally_stretchable = true
-    collection_flow.style.vertical_spacing = 0
-    collection_flow.style.bottom_padding = 0
-    collection_flow.style.top_padding = 0
-    local collection_label = collection_flow.add {type = "label", name = "label", caption = {"hextorio-gui.collecting-trades", 0, 0}}
-    collection_label.style.font = "default-bold"
-    local collection_progressbar = collection_flow.add {type = "progressbar", name = "progressbar", value = 0}
-    collection_progressbar.style.horizontally_stretchable = true
+    if use_batch_processing then
+        local progress_flow = trade_table.add {type = "flow", name = "progress-flow", direction = "vertical"}
+        progress_flow.style.horizontally_stretchable = true
+        progress_flow.style.vertical_spacing = 8
 
-    -- Filtering progress
-    local filtering_flow = progress_flow.add {type = "flow", name = "filtering-flow", direction = "vertical"}
-    filtering_flow.style.horizontally_stretchable = true
-    filtering_flow.style.vertical_spacing = 0
-    filtering_flow.style.bottom_padding = 0
-    filtering_flow.style.top_padding = 0
-    local filtering_label = filtering_flow.add {type = "label", name = "label", caption = {"hextorio-gui.filtering-trades", 0, 0}}
-    filtering_label.style.font = "default-bold"
-    filtering_label.style.font_color = {0.5, 0.5, 0.5}
-    local filtering_progressbar = filtering_flow.add {type = "progressbar", name = "progressbar", value = 0}
-    filtering_progressbar.style.horizontally_stretchable = true
+        local collection_flow = progress_flow.add {type = "flow", name = "collection-flow", direction = "vertical"}
+        collection_flow.style.horizontally_stretchable = true
+        collection_flow.style.vertical_spacing = 0
+        collection_flow.style.bottom_padding = 0
+        collection_flow.style.top_padding = 0
+        local collection_label = collection_flow.add {type = "label", name = "label", caption = {"hextorio-gui.collecting-trades", 0, 0}}
+        collection_label.style.font = "default-bold"
+        local collection_progressbar = collection_flow.add {type = "progressbar", name = "progressbar", value = 0}
+        collection_progressbar.style.horizontally_stretchable = true
 
-    -- Sorting progress
-    local sorting_flow = progress_flow.add {type = "flow", name = "sorting-flow", direction = "vertical"}
-    sorting_flow.style.horizontally_stretchable = true
-    sorting_flow.style.vertical_spacing = 0
-    sorting_flow.style.bottom_padding = 0
-    sorting_flow.style.top_padding = 0
-    local sorting_label = sorting_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sorting-trades", 0, 0}}
-    sorting_label.style.font = "default-bold"
-    sorting_label.style.font_color = {0.5, 0.5, 0.5}
-    local sorting_progressbar = sorting_flow.add {type = "progressbar", name = "progressbar", value = 0}
-    sorting_progressbar.style.horizontally_stretchable = true
+        local filtering_flow = progress_flow.add {type = "flow", name = "filtering-flow", direction = "vertical"}
+        filtering_flow.style.horizontally_stretchable = true
+        filtering_flow.style.vertical_spacing = 0
+        filtering_flow.style.bottom_padding = 0
+        filtering_flow.style.top_padding = 0
+        local filtering_label = filtering_flow.add {type = "label", name = "label", caption = {"hextorio-gui.filtering-trades", 0, 0}}
+        filtering_label.style.font = "default-bold"
+        filtering_label.style.font_color = {0.5, 0.5, 0.5}
+        local filtering_progressbar = filtering_flow.add {type = "progressbar", name = "progressbar", value = 0}
+        filtering_progressbar.style.horizontally_stretchable = true
 
-    -- Queue the trade collection job (which will trigger filtering when complete)
-    trades.queue_trade_collection_job(player, trades_set, filter)
+        local sorting_flow = progress_flow.add {type = "flow", name = "sorting-flow", direction = "vertical"}
+        sorting_flow.style.horizontally_stretchable = true
+        sorting_flow.style.vertical_spacing = 0
+        sorting_flow.style.bottom_padding = 0
+        sorting_flow.style.top_padding = 0
+        local sorting_label = sorting_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sorting-trades", 0, 0}}
+        sorting_label.style.font = "default-bold"
+        sorting_label.style.font_color = {0.5, 0.5, 0.5}
+        local sorting_progressbar = sorting_flow.add {type = "progressbar", name = "progressbar", value = 0}
+        sorting_progressbar.style.horizontally_stretchable = true
+    end
+
+    trades.queue_trade_collection_job(player, trades_set, filter, not use_batch_processing)
 end
 
 function trade_overview_gui.on_trade_collection_progress(player, progress, current, total)
@@ -618,7 +617,7 @@ function trade_overview_gui.on_trade_collection_progress(player, progress, curre
     end
 end
 
-function trade_overview_gui.on_trade_collection_complete(player, collected_trades, filter)
+function trade_overview_gui.on_trade_collection_complete(player, collected_trades, filter, process_immediately)
     local frame = player.gui.screen["trade-overview"]
     if not frame or not core_gui.is_frame_open(player, "trade-overview") then return end
 
@@ -630,15 +629,13 @@ function trade_overview_gui.on_trade_collection_complete(player, collected_trade
             collection_flow["progressbar"].value = 1
         end
 
-        -- Enable filtering label (remove greyed out appearance)
         local filtering_flow = progress_flow["filtering-flow"]
         if filtering_flow then
             filtering_flow["label"].style.font_color = {1, 1, 1}
         end
     end
 
-    -- Queue the filtering job
-    trades.queue_trade_filtering_job(player, collected_trades, filter)
+    trades.queue_trade_filtering_job(player, collected_trades, filter, process_immediately)
 end
 
 function trade_overview_gui.on_trade_filtering_progress(player, progress, current, total)
