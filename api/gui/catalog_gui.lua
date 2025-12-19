@@ -32,6 +32,7 @@ function catalog_gui.register_events()
     event_system.register_gui("gui-clicked", "quantum-bazaar-sell-in-hand", catalog_gui.on_quantum_bazaar_sell_in_hand_clicked)
     event_system.register_gui("gui-clicked", "quantum-bazaar-sell-inventory", catalog_gui.on_quantum_bazaar_sell_inventory_clicked)
     event_system.register_gui("gui-clicked", "quantum-bazaar-buy-items", catalog_gui.on_quantum_bazaar_buy_items_clicked)
+    event_system.register_gui("gui-clicked", "quantum-bazaar-buy-max", catalog_gui.on_quantum_bazaar_buy_max_clicked)
     event_system.register_gui("gui-elem-changed", "quantum-bazaar-changed", catalog_gui.on_quantum_bazaar_changed)
     event_system.register_gui("gui-slider-changed", "quantum-bazaar-slider-changed", catalog_gui.on_quantum_bazaar_slider_changed)
 
@@ -729,20 +730,16 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
     coin_tier_gui.update_coin_tier(coin_tier, buy_one_coin)
 
     catalog_gui.verify_catalog_storage(player)
-    if not storage.catalog.current_selection[player.name].bazaar_buy_amount then
-        storage.catalog.current_selection[player.name].bazaar_buy_amount = 1
+    if not selection.bazaar_buy_amount then
+        selection.bazaar_buy_amount = 1
     end
 
-    local current_amount = storage.catalog.current_selection[player.name].bazaar_buy_amount
-    current_amount = catalog_gui.adjust_quantum_bazaar_stack_count(player, current_amount)
-    if current_amount == -1 then
-        current_amount = 1 -- Just so GUI doesn't show -1
-    end
+    local current_amount = selection.bazaar_buy_amount
+    local insertable_count = catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
+    local purchaseable_count = catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
+    local valid_amount = math.max(0, math.min(insertable_count, purchaseable_count, stack_size, current_amount))
 
-    if current_amount > stack_size then
-        current_amount = stack_size
-        storage.catalog.current_selection[player.name].bazaar_buy_amount = current_amount
-    end
+    selection.bazaar_buy_amount = valid_amount
 
     local buy_section = quantum_bazaar.add {
         type = "flow",
@@ -812,29 +809,41 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
     }
     slider_flow.style.horizontally_stretchable = true
 
-    local buy_amount_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, current_amount))
+    local buy_amount_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_amount))
     local buy_button = slider_flow.add {
         type = "button",
         name = "buy-button",
-        caption = {"quantum-bazaar.buy-button-caption", current_amount},
-        tooltip = {"", lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", current_amount, coin_tiers.coin_to_text(buy_amount_coin)}, "cyan")},
+        caption = {"quantum-bazaar.buy-button-caption", valid_amount},
+        tooltip = {"", lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", valid_amount, coin_tiers.coin_to_text(buy_amount_coin)}, "cyan")},
         tags = {handlers = {["gui-clicked"] = "quantum-bazaar-buy-items"}},
     }
+    gui.auto_width(buy_button)
 
     local amount_slider = slider_flow.add {
         type = "slider",
         name = "amount-slider",
         minimum_value = 1,
         maximum_value = math.max(2, stack_size),
-        value = current_amount,
+        value = valid_amount,
         value_step = 1,
         discrete_slider = true,
         discrete_values = true,
         enabled = stack_size > 1,
         tags = {handlers = {["gui-slider-changed"] = "quantum-bazaar-slider-changed"}},
     }
+    amount_slider.style.width = 80 / 1.2
     amount_slider.style.top_margin = 7
-    gui.auto_width(amount_slider)
+
+    valid_amount = math.max(0, math.min(insertable_count, purchaseable_count))
+    local buy_max_coin = coin_tiers.ceil(coin_tiers.multiply(buy_one_coin, valid_amount))
+    local buy_max_button = slider_flow.add {
+        type = "button",
+        name = "buy-max-button",
+        caption = {"quantum-bazaar.buy-max"},
+        tooltip = {"", lib.color_localized_string({"quantum-bazaar.buy-stack", "[item=" .. selection.item_name .. ",quality=" .. selection.bazaar_quality .. "]", valid_amount, coin_tiers.coin_to_text(buy_max_coin)}, "cyan")},
+        tags = {handlers = {["gui-clicked"] = "quantum-bazaar-buy-max"}},
+    }
+    gui.auto_width(buy_max_button)
 end
 
 function catalog_gui.show_catalog(player)
@@ -917,6 +926,79 @@ function catalog_gui.get_expected_trade_overview_filter_side(item_name)
         return true
     end
     return true
+end
+
+---Get the maximum insertable items given the current Quantum Bazaar item selected and the available inventory space of the player.
+---@param player LuaPlayer
+---@return int
+function catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
+    local inv = lib.get_player_inventory(player)
+    if not inv then return -1 end
+
+    catalog_gui.verify_catalog_storage(player)
+    local selection = catalog_gui.get_catalog_selection(player)
+
+    local insertable = inv.get_insertable_count {
+        name = selection.item_name,
+        quality = selection.bazaar_quality,
+    }
+
+    return insertable
+end
+
+---Get the maximum purchaseable items given the current Quantum Bazaar item selected and the available inventory coins of the player.
+---@param player LuaPlayer
+---@return int
+function catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
+    local inv = lib.get_player_inventory(player)
+    if not inv then return -1 end
+
+    catalog_gui.verify_catalog_storage(player)
+    local selection = catalog_gui.get_catalog_selection(player)
+
+    local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
+
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    local purchaseable = coin_tiers.to_base_value(coin_tiers.floor(coin_tiers.divide(inv_coin, item_value / item_values.get_item_value("nauvis", "hex-coin"))))
+
+    return purchaseable
+end
+
+---Return a count less than or equal to the given count based on the player's available inventory space.
+---@param player LuaPlayer
+---@param count int
+---@return int
+function catalog_gui.adjust_quantum_bazaar_stack_count(player, count)
+    local insertable = catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
+    return math.min(insertable, count)
+end
+
+---Handle the action of the player requesting to purchase a stack of an item from the Quantum Bazaar.
+---@param player LuaPlayer
+---@param count int
+function catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
+    local inv = lib.get_player_inventory(player)
+    if not inv then return end
+
+    count = catalog_gui.adjust_quantum_bazaar_stack_count(player, count)
+    if count < 1 then return end
+
+    local selection = catalog_gui.get_catalog_selection(player)
+
+    local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
+    local total_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
+
+    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    if coin_tiers.gt(total_coin, inv_coin) then
+        -- This should no longer happen, but it's here just in case.
+        player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(total_coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
+        return
+    end
+
+    coin_tiers.remove_coin_from_inventory(inv, total_coin)
+    lib.safe_insert(player, {name = selection.item_name, count = count, quality = selection.bazaar_quality})
+
+    catalog_gui.update_catalog_inspect_frame(player)
 end
 
 ---@param player LuaPlayer
@@ -1039,49 +1121,13 @@ function catalog_gui.on_quantum_bazaar_buy_items_clicked(player, elem)
     catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
 end
 
----Return a count less than or equal to the given count based on the player's available inventory space.
 ---@param player LuaPlayer
----@param count int
----@return int
-function catalog_gui.adjust_quantum_bazaar_stack_count(player, count)
-    local inv = lib.get_player_inventory(player)
-    if not inv then return -1 end
-
-    local selection = catalog_gui.get_catalog_selection(player)
-
-    local insertable = inv.get_insertable_count {
-        name = selection.item_name,
-        count = count,
-        quality = selection.bazaar_quality,
-    }
-
-    return math.min(insertable, count)
-end
-
----Handle the action of the player requesting to purchase a stack of an item from the Quantum Bazaar.
----@param player LuaPlayer
----@param count int
-function catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
-    local inv = lib.get_player_inventory(player)
-    if not inv then return end
-
-    count = catalog_gui.adjust_quantum_bazaar_stack_count(player, count)
-    if count < 1 then return end
-
-    local selection = catalog_gui.get_catalog_selection(player)
-
-    local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
-    local coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
-    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
-    if coin_tiers.gt(coin, inv_coin) then
-        player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
-        return
-    end
-
-    coin_tiers.remove_coin_from_inventory(inv, coin)
-    lib.safe_insert(player, {name = selection.item_name, count = count, quality = selection.bazaar_quality})
-
-    catalog_gui.update_catalog_inspect_frame(player)
+---@param elem LuaGuiElement
+function catalog_gui.on_quantum_bazaar_buy_max_clicked(player, elem)
+    local insertable = catalog_gui.get_max_insertable_quantum_bazaar_stack(player)
+    local purchaseable = catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
+    local count = math.max(0, math.min(insertable, purchaseable))
+    catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
 end
 
 ---@param player LuaPlayer

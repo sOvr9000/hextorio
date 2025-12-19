@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.3
 Date: 18/12/25
+  Minor Features:
+    - Added "buy max" button in Quantum Bazaar for buying as many items as can fit in your inventory.
   Bugfixes:
     - Fixed that the Quantum Bazaar tries to spill items on ground instead of limiting output if your inventory is full.
     - Fixed that the Quantum Bazaar wouldn't work in remote view.
