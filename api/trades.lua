@@ -1374,13 +1374,21 @@ end
 
 ---Return whether the given trade is receiving a productivity penalty for giving unresearched items.
 ---@param trade Trade
+---@param is_mod_setting_enabled boolean|nil
 ---@return boolean
-function trades.has_unresearched_penalty(trade)
+function trades.has_unresearched_penalty(trade, is_mod_setting_enabled)
+    if is_mod_setting_enabled == nil then
+        is_mod_setting_enabled = lib.runtime_setting_value "unresearched-penalty" > 0
+    end
+
+    if not is_mod_setting_enabled then return false end
+
     for _, item in pairs(trade.output_items) do
         if not storage.trades.researched_items[item.name] then
             return true
         end
     end
+
     return false
 end
 

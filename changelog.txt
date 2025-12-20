@@ -19,6 +19,7 @@ Date: 19/12/25
     - Fixed that the Quantum Bazaar tries to spill items on ground instead of limiting output if your inventory is full.
     - Fixed that the Quantum Bazaar wouldn't work in remote view.
     - Fixed that trade output stack size calculations did not consider trade productivity.
+    - Fixed that the "unresearched penalty" warning in the hex core GUI would still show even when the mod setting for unresearched penalties is zero or negative.
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.2
 Date: 18/12/25

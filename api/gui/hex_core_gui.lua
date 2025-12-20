@@ -289,9 +289,10 @@ function hex_core_gui.update_hex_core(player)
     frame["trades-header"]["info"].visible = quality_unlocked
 
     local has_penalties = false
+    local is_unresearched_penalty_enabled = lib.runtime_setting_value "unresearched-penalty" > 0
     for _, trade_id in pairs(state.trades or {}) do
         local trade = trades.get_trade_from_id(trade_id)
-        if trade and trades.has_unresearched_penalty(trade) then
+        if trade and trades.has_unresearched_penalty(trade, is_unresearched_penalty_enabled) then
             has_penalties = true
             break
         end
