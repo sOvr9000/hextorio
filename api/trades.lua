@@ -190,42 +190,6 @@ function trades.register_events()
         trades.queue_productivity_update_job()
     end)
 
-    event_system.register("command-trade-batching-threshold", function(player, params)
-        if not params[1] then
-            player.print({"hextorio.current-trade-batching-threshold", storage.trades.batch_processing_threshold})
-            return
-        end
-        storage.trades.batch_processing_threshold = params[1]
-        player.print({"hextorio.set-trade-batching-threshold", storage.trades.batch_processing_threshold})
-    end)
-
-    event_system.register("command-trade-collection-batch-size", function(player, params)
-        if not params[1] then
-            player.print({"hextorio.current-trade-collection-batch-size", storage.trades.collection_batch_size})
-            return
-        end
-        storage.trades.collection_batch_size = params[1]
-        player.print({"hextorio.set-trade-collection-batch-size", storage.trades.collection_batch_size})
-    end)
-
-    event_system.register("command-trade-filtering-batch-size", function(player, params)
-        if not params[1] then
-            player.print({"hextorio.current-trade-filtering-batch-size", storage.trades.filtering_batch_size})
-            return
-        end
-        storage.trades.filtering_batch_size = params[1]
-        player.print({"hextorio.set-trade-filtering-batch-size", storage.trades.filtering_batch_size})
-    end)
-
-    event_system.register("command-trade-sorting-batch-size", function(player, params)
-        if not params[1] then
-            player.print({"hextorio.current-trade-sorting-batch-size", storage.trades.sorting_batch_size})
-            return
-        end
-        storage.trades.sorting_batch_size = params[1]
-        player.print({"hextorio.set-trade-sorting-batch-size", storage.trades.sorting_batch_size})
-    end)
-
     local function fetch_and_queue_update(surface_name)
         trades.fetch_base_trade_productivity_settings(surface_name)
         trades.queue_productivity_update_job(surface_name)
@@ -236,6 +200,22 @@ function trades.register_events()
     event_system.register("runtime-setting-changed-base-trade-prod-fulgora", function() fetch_and_queue_update "fulgora" end)
     event_system.register("runtime-setting-changed-base-trade-prod-gleba", function() fetch_and_queue_update "gleba" end)
     event_system.register("runtime-setting-changed-base-trade-prod-aquilo", function() fetch_and_queue_update "aquilo" end)
+
+    event_system.register("runtime-setting-changed-trade-batching-threshold", function()
+        storage.trades.batch_processing_threshold = lib.runtime_setting_value "trade-batching-threshold"
+    end)
+
+    event_system.register("runtime-setting-changed-trade-collection-batch-size", function()
+        storage.trades.collection_batch_size = lib.runtime_setting_value "trade-collection-batch-size"
+    end)
+
+    event_system.register("runtime-setting-changed-trade-filtering-batch-size", function()
+        storage.trades.filtering_batch_size = lib.runtime_setting_value "trade-filtering-batch-size"
+    end)
+
+    event_system.register("runtime-setting-changed-trade-sorting-batch-size", function()
+        storage.trades.sorting_batch_size = lib.runtime_setting_value "trade-sorting-batch-size"
+    end)
 end
 
 function trades.init()

@@ -207,13 +207,6 @@ function hex_grid.register_events()
         hex_grid.claim_hexes_range(player.surface.name, hex_pos, params[1] or 0, nil, true) -- claim by server
     end)
 
-    event_system.register("command-hex-pool-size", function(player, params)
-        if not params[1] then
-            player.print({"hextorio.current-hex-pool-size", hex_grid.get_pool_size()})
-            return
-        end
-        hex_grid.set_pool_size(params[1])
-    end)
 
     event_system.register("command-tp-to-edge", function(player, params)
         local planet_size = lib.startup_setting_value("planet-size-" .. player.surface.name)
@@ -334,6 +327,12 @@ function hex_grid.register_events()
 
     event_system.register("runtime-setting-changed-dungeon-hexlight-color", function()
         hex_grid.update_hexlight_default_colors()
+    end)
+
+    event_system.register("runtime-setting-changed-hex-pool-size", function()
+        local size = lib.runtime_setting_value "hex-pool-size"
+        ---@cast size number
+        hex_grid.set_pool_size(size)
     end)
 
     event_system.register("train-arrived-at-stop", hex_grid.on_train_arrived_at_stop)

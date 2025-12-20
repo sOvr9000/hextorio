@@ -97,7 +97,13 @@ script.on_init(function()
     ---@cast penalty number
 
     storage.trades.unresearched_penalty = penalty
+    storage.trades.batch_processing_threshold = lib.runtime_setting_value "trade-batching-threshold"
+    storage.trades.collection_batch_size = lib.runtime_setting_value "trade-collection-batch-size"
+    storage.trades.filtering_batch_size = lib.runtime_setting_value "trade-filtering-batch-size"
+    storage.trades.sorting_batch_size = lib.runtime_setting_value "trade-sorting-batch-size"
     trades.recalculate_researched_items()
+
+    storage.hex_grid.pool_size = lib.runtime_setting_value "hex-pool-size"
 
     storage.ammo_type_per_entity = {
         ["gun-turret"] = "bullet_type",

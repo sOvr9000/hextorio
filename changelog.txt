@@ -5,11 +5,12 @@ Date: 19/12/25
     - Unlocked from the "First Silver Star" quest, you can now make single-batch trades within your inventory at the press of a button in the hex core GUI.
   Minor Features:
     - Added "buy max" button in Quantum Bazaar for buying as many items as can fit in your inventory.
-    - Added commands for managing trade overview processing rates: /trade-batching-threshold, /trade-collection-batch-size, /trade-filtering-batch-size, /trade-sorting-batch-size.
+    - Added mod settings for managing trade overview processing rates: "Trade Batching Threshold", "Trade Collection Batch Size", "Trade Filtering Batch Size", "Trade Sorting Batch Size".
   Changes:
     - The Quantum Bazaar slider now only lets you go up to what you can afford.
     - The Quantum Bazaar coin display now matches the total cost of buying the currently selected amount.
     - Trades are now further limited by total number of stacks being purchased across all trade outputs, not just the one that sets the most restrictive limit.
+    - Converted the /hex-pool-size command to a mod setting.
   Gui:
     - Reworked the Quantum Bazaar layout.
     - Progress bars in trade overview no longer show for very fast calculations (like when an item is in the filter, or when a planet isn't fully explored).

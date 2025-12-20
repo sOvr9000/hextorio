@@ -133,4 +133,37 @@ data:extend({
         default_value = "lowest",
         order = "m[trades]-w[default-trade-quality]",
     },
+
+    {
+        type = "int-setting",
+        name = "hextorio-trade-batching-threshold",
+        setting_type = "runtime-global",
+        default_value = 3000,
+        minimum_value = 100,
+        order = "z[trades]-x[batching-threshold]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-trade-collection-batch-size",
+        setting_type = "runtime-global",
+        default_value = 2000,
+        minimum_value = 1,
+        order = "z[trades]-x[collection-batch-size]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-trade-filtering-batch-size",
+        setting_type = "runtime-global",
+        default_value = 500,
+        minimum_value = 1,
+        order = "z[trades]-x[filtering-batch-size]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-trade-sorting-batch-size",
+        setting_type = "runtime-global",
+        default_value = 2000,
+        minimum_value = 1,
+        order = "z[trades]-x[sorting-batch-size]",
+    },
 })

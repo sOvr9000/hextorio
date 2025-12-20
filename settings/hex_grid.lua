@@ -330,4 +330,12 @@ data:extend({
         default_value = false,
         order = "a[deathworld]-f[nauvis-grace]",
     },
+    {
+        type = "int-setting",
+        name = "hextorio-hex-pool-size",
+        setting_type = "runtime-global",
+        default_value = 25,
+        minimum_value = 1,
+        order = "z[hex-pool]-a[pool-size]",
+    },
 })
