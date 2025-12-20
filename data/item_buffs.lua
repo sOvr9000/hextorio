@@ -162,10 +162,10 @@ return {
                 level_scaling = 1.08,
             },
         },
-        ["logistics-science-pack"] = {
+        ["logistic-science-pack"] = {
             {
                 type = "recipe-productivity",
-                values = {"logistics-science-pack", 5},
+                values = {"logistic-science-pack", 5},
                 level_scaling = 1.08,
             },
         },

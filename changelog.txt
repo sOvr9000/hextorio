@@ -6,6 +6,7 @@ Date: 19/12/25
   Minor Features:
     - Added "buy max" button in Quantum Bazaar for buying as many items as can fit in your inventory.
     - Added mod settings for managing trade overview processing rates: "Trade Batching Threshold", "Trade Collection Batch Size", "Trade Filtering Batch Size", "Trade Sorting Batch Size".
+    - Added the missing item buff for logistic science packs.
   Changes:
     - The Quantum Bazaar slider now only lets you go up to what you can afford.
     - The Quantum Bazaar coin display now matches the total cost of buying the currently selected amount.
