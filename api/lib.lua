@@ -501,12 +501,14 @@ function lib.teleport_player(player, position, surface, allow_vehicle)
     end
 
     if player.character.vehicle then
+        local zoom = player.zoom
         player.character.vehicle.teleport(non_colliding_position, surface)
         player.set_controller {
             type = defines.controllers.character,
             character = player.character,
         }
         player.set_driving(true)
+        player.zoom = zoom
     else
         player.teleport(non_colliding_position, surface)
     end
