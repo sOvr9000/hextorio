@@ -514,6 +514,7 @@ function hex_core_gui.is_quick_trade_valid(player, state)
     if not quests.is_feature_unlocked "quick-trading" then return false end
     if not state.hex_core or not state.hex_core.valid or not state.trades or not next(state.trades) then return false end
     if not player.can_reach_entity(state.hex_core) then return false end
+    if not player.character.can_reach_entity(state.hex_core) then return false end
     return true
 end
 
