@@ -45,7 +45,7 @@
 ---@alias QuestReward {type: QuestRewardType, value: QuestRewardValue|nil, notes: string[]|nil}
 ---@alias QuestIdentification Quest|int|string
 ---@alias Quest {id: int, name: string, conditions: QuestCondition[], rewards: QuestReward[], notes: string[]|nil, unlocks: string[]|nil, prerequisites: string[]|nil, has_img: boolean|nil, order: int, revealed: boolean|nil, complete: boolean|nil}
----@alias FeatureName "trade-overview"|"catalog"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"
+---@alias FeatureName "trade-overview"|"catalog"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"|"quick-trading"
 
 ---@alias SpiderClientAIMode "build"|"hunt"|"claim"|"trade"
 ---@alias SpiderClientAI {current_mode: SpiderClientAIMode}

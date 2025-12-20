@@ -182,6 +182,7 @@ return {
             name = "first-silver-star",
             conditions = {{type = "items-at-rank", value = 3, progress_requirement = 1}},
             rewards = {
+                {type = "unlock-feature", value = "quick-trading"},
                 {
                     type = "receive-items",
                     value = {

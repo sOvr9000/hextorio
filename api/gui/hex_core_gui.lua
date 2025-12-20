@@ -19,6 +19,7 @@ local hex_core_gui = {}
 function hex_core_gui.register_events()
     event_system.register_gui("gui-clicked", "claim-hex", hex_core_gui.on_claim_hex_button_click)
     event_system.register_gui("gui-clicked", "teleport", hex_core_gui.on_teleport_button_click)
+    event_system.register_gui("gui-clicked", "quick-trade", hex_core_gui.on_quick_trade_button_click)
     event_system.register_gui("gui-clicked", "toggle-hexport", hex_core_gui.on_toggle_hexport_button_click)
     event_system.register_gui("gui-clicked", "supercharge", hex_core_gui.on_supercharge_button_click)
     event_system.register_gui("gui-clicked", "hex-mode", hex_core_gui.on_hex_mode_button_click)
@@ -139,6 +140,14 @@ function hex_core_gui.init_hex_core(player)
         tags = {handlers = {["gui-clicked"] = "teleport"}},
     }
     teleport.tooltip = {"hex-core-gui.teleport-tooltip"}
+
+    local quick_trade = hex_control_flow.add {
+        type = "sprite-button",
+        name = "quick-trade",
+        sprite = "virtual-signal/signal-rightwards-leftwards-arrow",
+        tags = {handlers = {["gui-clicked"] = "quick-trade"}},
+    }
+    quick_trade.tooltip = {"hex-core-gui.quick-trade-tooltip"}
 
     local toggle_hexport = hex_control_flow.add {
         type = "sprite-button",
@@ -271,6 +280,7 @@ function hex_core_gui.update_hex_core(player)
     if not state then return end
 
     frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion"
+    frame["hex-control-flow"]["quick-trade"].visible = hex_core_gui.is_quick_trade_valid(player, state)
     frame["sink-mode-confirmation"].visible = false
     frame["generator-mode-confirmation"].visible = false
 
@@ -492,6 +502,19 @@ function hex_core_gui.hide_hex_core(player)
     local frame = player.gui.relative["hex-core"]
     if not frame or not frame.valid then return end
     frame.visible = false
+end
+
+---Return whether the player can legally make a "quick trade" from their current position with the given hex state.
+---@param player LuaPlayer
+---@param state HexState
+---@return boolean
+function hex_core_gui.is_quick_trade_valid(player, state)
+    if not state.claimed then return false end
+    if not player.character then return false end
+    if not quests.is_feature_unlocked "quick-trading" then return false end
+    if not state.hex_core or not state.hex_core.valid or not state.trades or not next(state.trades) then return false end
+    if not player.can_reach_entity(state.hex_core) then return false end
+    return true
 end
 
 function hex_core_gui.on_toggle_trade_button_click(player, element)
@@ -841,6 +864,42 @@ function hex_core_gui.on_send_outputs_to_cargo_wagons_button_click(player, elem)
     if not state then return end
 
     state.send_outputs_to_cargo_wagons = not elem.toggled
+    hex_core_gui.update_hex_core(player)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function hex_core_gui.on_quick_trade_button_click(player, elem)
+    local hex_core = lib.get_player_opened_entity(player)
+    if not hex_core then return end
+
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    if not hex_core_gui.is_quick_trade_valid(player, state) then
+        elem.visible = false
+        return
+    end
+
+    local inv = lib.get_player_inventory(player)
+    if not inv then return end
+
+    local max_output_batches_per_trade = 1 -- Make exactly one output batch's worth of trade per trade in this hex core.
+    local check_output_buffer = false -- Don't let output buffers confuse people about why their quick trading isn't working
+
+    local quality_cost_multipliers = lib.get_quality_cost_multipliers()
+    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.name, inv, inv, state.trades, quality_cost_multipliers, check_output_buffer, nil, max_output_batches_per_trade, nil)
+
+    for quality_name, counts in pairs(remaining_to_insert) do
+        for item_name, count in pairs(counts) do
+            lib.safe_insert(player, {
+                name = item_name,
+                count = count,
+                quality = quality_name,
+            })
+        end
+    end
+
     hex_core_gui.update_hex_core(player)
 end
 

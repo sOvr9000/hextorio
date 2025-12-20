@@ -1134,13 +1134,31 @@ function lib.safe_insert(player, item_stack)
         return true
     end
 
-    if item_stack.quality then
-        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. ",quality=" .. item_stack.quality .. "]", inserted, item_stack.count}
+    local position, surface
+    if player.character then
+        position = player.character.position
+        surface = player.character.surface
     else
-        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. "]", inserted, item_stack.count}
+        position = {0, 0}
+        surface = game.surfaces.nauvis
     end
 
-    player.surface.spill_item_stack{position=player.position, stack={name = item_stack.name, count = item_stack.count - inserted, quality = item_stack.quality}}
+    local gps_str = "[gps=" .. (position.x or position[1]) .. "," .. (position.y or position[2]) .. "," .. surface.name .. "]"
+
+    if item_stack.quality then
+        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. ",quality=" .. item_stack.quality .. "]", item_stack.count, gps_str}
+    else
+        player.print {"hextorio.no-room-for-item", "[item=" .. item_stack.name .. "]", item_stack.count, gps_str}
+    end
+
+    surface.spill_item_stack {
+        position = position,
+        stack = {
+            name = item_stack.name,
+            count = item_stack.count - inserted,
+            quality = item_stack.quality
+        },
+    }
 
     return false
 end

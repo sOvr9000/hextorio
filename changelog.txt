@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.3
 Date: 19/12/25
+  Features:
+    - Unlocked from the "First Silver Star" quest, you can now quickly transfer from your inventory all matching items of enabled trades in the opened hex core.
   Minor Features:
     - Added "buy max" button in Quantum Bazaar for buying as many items as can fit in your inventory.
     - Added commands for managing trade overview processing rates: /trade-batching-threshold, /trade-collection-batch-size, /trade-filtering-batch-size, /trade-sorting-batch-size.

@@ -721,16 +721,19 @@ end
 ---@param trade Trade
 ---@param quality string|nil
 ---@param quality_cost_mult number|nil
----@param max_items_per_output number|nil
+---@param check_output_buffer boolean|nil Whether to prevent making this trade if its hex core's output buffer contains any amount of at least one of the output items.
+---@param max_items_per_output int|nil
+---@param max_output_batches int|nil Maximum number of output batches allowed, where an output batch is counted only if the trade is actually outputting items.
 ---@param inventory_output_size int|nil Current number of empty slots in the output inventory.
 ---@return number
-function trades.get_num_batches_for_trade(input_items, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
+function trades.get_num_batches_for_trade(input_items, input_coin, trade, quality, quality_cost_mult, check_output_buffer, max_items_per_output, max_output_batches, inventory_output_size)
     if not trade.active then return 0 end
+    if check_output_buffer == nil then check_output_buffer = true end
 
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
 
-    if trade.hex_core_state.output_buffer then
+    if check_output_buffer and trade.hex_core_state.output_buffer then
         -- Ensure that if the output buffer has any of the output items, it does not process.
         for _, outp in pairs(trade.output_items) do
             if ((trade.hex_core_state.output_buffer[quality] or {})[outp.name] or 0) > 0 then
@@ -744,12 +747,34 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     end
     if max_items_per_output < 1 then return 0 end -- Probably won't ever happen, but if it ever does, it's an optimization.
 
+    -- Initial calculation by comparing item counts in input inventory and trade inputs.
     local num_batches = math.huge
     for _, input_item in pairs(trade.input_items) do
         if not lib.is_coin(input_item.name) then
             num_batches = math.min(math.floor(((input_items[quality] or {})[input_item.name] or 0) / input_item.count), num_batches)
             if num_batches == 0 then return 0 end
         end
+    end
+
+    -- Limit by max output batches
+    if max_output_batches then
+        max_output_batches = math.max(0, max_output_batches) -- Probably not needed, but doesn't hurt to have this.
+        if max_output_batches == 0 then
+            num_batches = 0
+        else
+            local for_max_batches = trades.get_num_batches_to_fill_productivity_bar(trade, max_output_batches, quality) or max_output_batches
+
+            local total_prod = trades.get_productivity(trade, quality)
+            if total_prod > 0 then
+                -- for_max_batches needs to be adjusted because total output batches is incremented by total input batches (when total prod is positive)
+                for_max_batches = math.max(1, math.ceil((max_output_batches - for_max_batches) * total_prod / (1 + total_prod)))
+                -- TODO: THIS CALCULATION IS NOT TESTED AND MIGHT CAUSE BUGS IF MAX_OUTPUT_BATCHES > 1
+            end
+
+            num_batches = math.min(for_max_batches, num_batches)
+        end
+
+        if num_batches == 0 then return 0 end
     end
 
     -- Further limit num_batches according to max_items_per_output
@@ -1268,47 +1293,61 @@ function trades.set_current_prod_value(trade, value, quality)
     trade.current_prod_value[quality] = value
 end
 
+---Return how many input batches to the given trade are needed to increment its current productivity value just enough times to get `fill_times` more output batches.
+---@param trade Trade
+---@param fill_times int The number of times the productivity bar is to be filled.
+---@param quality string
+---@return int|nil num_batches How many batches of the trade are needed to fill the productivity bar `fill_times` times.  Is only nil if trade prod = 0 because that means the (nonexistent) productivity bar can never fill.
+function trades.get_num_batches_to_fill_productivity_bar(trade, fill_times, quality)
+    if fill_times < 1 then return 0 end
+
+    local total_prod = trades.get_productivity(trade, quality)
+    if total_prod == 0 then return end
+
+    local current_prod_value = trades.get_current_prod_value(trade, quality)
+    local remaining_prod_value = fill_times - current_prod_value
+
+    local prod_increment = trades.get_productivity_increment(total_prod)
+    return math.ceil(remaining_prod_value / prod_increment)
+end
+
+---Get the increment that is made to a trade's current productivity value (the red or purple progress bar) when it has `prod` trade productivity.
+---@param prod number
+---@return number
+function trades.get_productivity_increment(prod)
+    if prod < 0 then
+        return 1 / (1 - prod)
+    end
+    return prod
+end
+
 ---Increment a trade's current progress toward filling the productivity bar, returning how many times the bar has been filled.
 ---@param trade Trade
----@param times int The number of times the trade was made.
+---@param num_batches int The number of times the trade was made.
 ---@param quality string
 ---@return int
-function trades.increment_current_prod_value(trade, times, quality)
+function trades.increment_current_prod_value(trade, num_batches, quality)
     local total_prod = trades.get_productivity(trade, quality)
-    local prod_amount
+    local current_prod_value = trades.get_current_prod_value(trade, quality)
 
-    if not trade.current_prod_value then
-        trade.current_prod_value = {}
+    local prod_inc = trades.get_productivity_increment(total_prod)
+    local new_prod_value = current_prod_value + num_batches * prod_inc
+    local rounded = math.floor(0.5 + new_prod_value)
+
+    if math.abs(new_prod_value - rounded) < 1e-12 then
+        -- This value came very close to a whole number, and likely a floating point rounding error is what threw it off.
+        -- Snapping to the expected value like this keeps situations from happening where -500% prod results in having to make 7 trades instead of 6.
+        new_prod_value = rounded
     end
+
+    local f = math.floor(new_prod_value)
+    trades.set_current_prod_value(trade, new_prod_value - f)
 
     if total_prod < 0 then
-        local new_value = (trade.current_prod_value[quality] or 0) + times / (1 - total_prod)
-        local rounded = math.floor(0.5 + new_value)
-        if math.abs(new_value - rounded) < 1e-12 then
-            -- This value came very close to a whole number, and likely a floating point rounding error is what threw it off.
-            -- Snapping to the expected value like this keeps situations from happening where -500% prod results in having to make 7 trades instead of 6.
-            new_value = rounded
-        end
-
-        trade.current_prod_value[quality] = new_value
-        local f = math.floor(trade.current_prod_value[quality])
-        prod_amount = f - times
-        trade.current_prod_value[quality] = trade.current_prod_value[quality] - f
-    else
-        local new_value = (trade.current_prod_value[quality] or 0) + total_prod * (times or 1)
-        local rounded = math.floor(0.5 + new_value)
-        if math.abs(new_value - rounded) < 1e-12 then
-            -- This value came very close to a whole number, and likely a floating point rounding error is what threw it off.
-            -- Snapping to the expected value like this keeps situations from happening where -500% prod results in having to make 7 trades instead of 6.
-            new_value = rounded
-        end
-
-        trade.current_prod_value[quality] = new_value
-        prod_amount = math.floor(trade.current_prod_value[quality])
-        trade.current_prod_value[quality] = trade.current_prod_value[quality] - prod_amount
+        return f - num_batches
     end
 
-    return prod_amount
+    return f
 end
 
 ---Get the current base productivity bonus for all trades.
@@ -2403,10 +2442,13 @@ end
 ---@param output_inv LuaInventory|LuaTrain
 ---@param trade_ids int[]
 ---@param quality_cost_multipliers StringAmounts|nil
+---@param check_output_buffer boolean|nil Whether to prevent making a trade if the trade's hex core's output buffer contains any amount of at least one of the trade's output items.
 ---@param max_items_per_output int|nil
+---@param max_output_batches_per_trade int|nil How many output batches (successful outputs if negative productivity) are allowed per trade.
 ---@param cargo_wagons LuaEntity[]|nil If either the input or output inventory is a LuaTrain, then these are its cargo wagons closest to train stop.
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, table, table
-function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, max_items_per_output, cargo_wagons)
+function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, check_output_buffer, max_items_per_output, max_output_batches_per_trade, cargo_wagons)
+    if check_output_buffer == nil then check_output_buffer = true end
     quality_cost_multipliers = quality_cost_multipliers or {}
 
     local is_output_train = output_inv.object_name == "LuaTrain"
@@ -2478,7 +2520,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
             for _, quality in pairs(trade.allowed_qualities or {"normal"}) do
                 local all_items_quality = all_items_lookup[quality] or {}
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
-                local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, max_items_per_output, inventory_output_size)
+                local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, check_output_buffer, max_items_per_output, max_output_batches_per_trade, inventory_output_size)
                 if num_batches >= 1 then
                     quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + 1
