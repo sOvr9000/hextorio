@@ -1,14 +1,23 @@
 
 data:extend({
     {
+        type = "string-setting",
+        name = "hextorio-ore-generation-mode",
+        setting_type = "runtime-global",
+        allowed_values = {"single-hex", "along-edges", "center-square"},
+        default_value = "along-edges",
+        order = "w[resources]-b[ore-generation-mode]",
+    },
+    {
         type = "double-setting",
         name = "hextorio-base-resource-richness",
         setting_type = "runtime-global",
         default_value = 1.0,
         minimum_value = 0.01,
         maximum_value = 100.0,
-        order = "da",
+        order = "w[resources]-c[base-resource-richness]",
     },
+
     {
         type = "double-setting",
         name = "hextorio-resource-richness-per-dist-nauvis",
@@ -16,7 +25,7 @@ data:extend({
         default_value = 50.0,
         minimum_value = -1000.0,
         maximum_value = 1000.0,
-        order = "dba",
+        order = "w[resources]-i[richness-per-dist]-p[nauvis]",
     },
     {
         type = "double-setting",
@@ -25,7 +34,7 @@ data:extend({
         default_value = 75.0,
         minimum_value = -1000.0,
         maximum_value = 1000.0,
-        order = "dbb",
+        order = "w[resources]-i[richness-per-dist]-p[vulcanus]",
     },
     {
         type = "double-setting",
@@ -34,7 +43,7 @@ data:extend({
         default_value = 100.0,
         minimum_value = -1000.0,
         maximum_value = 1000.0,
-        order = "dbc",
+        order = "w[resources]-i[richness-per-dist]-q[fulgora]",
     },
     {
         type = "double-setting",
@@ -43,7 +52,7 @@ data:extend({
         default_value = 25.0,
         minimum_value = -1000.0,
         maximum_value = 1000.0,
-        order = "dbd",
+        order = "w[resources]-i[richness-per-dist]-q[gleba]",
     },
     {
         type = "double-setting",
@@ -52,7 +61,7 @@ data:extend({
         default_value = 50.0,
         minimum_value = -1000.0,
         maximum_value = 1000.0,
-        order = "dbe",
+        order = "w[resources]-i[richness-per-dist]-r[aquilo]",
     },
 
     {
@@ -62,7 +71,7 @@ data:extend({
         default_value = 6.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "ga",
+        order = "w[resources]-k[frequency]-p[nauvis]-t[iron-ore]",
     },
     {
         type = "double-setting",
@@ -71,7 +80,7 @@ data:extend({
         default_value = 4.5,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gb",
+        order = "w[resources]-k[frequency]-p[nauvis]-u[copper-ore]",
     },
     {
         type = "double-setting",
@@ -80,7 +89,7 @@ data:extend({
         default_value = 2.5,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gc",
+        order = "w[resources]-k[frequency]-p[nauvis]-v[coal]",
     },
     {
         type = "double-setting",
@@ -89,7 +98,7 @@ data:extend({
         default_value = 2.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gd",
+        order = "w[resources]-k[frequency]-p[nauvis]-v[stone]",
     },
     {
         type = "double-setting",
@@ -98,7 +107,7 @@ data:extend({
         default_value = 1.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "ge",
+        order = "w[resources]-k[frequency]-p[nauvis]-w[crude-oil]",
     },
     {
         type = "double-setting",
@@ -107,7 +116,7 @@ data:extend({
         default_value = 1.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gf",
+        order = "w[resources]-k[frequency]-p[nauvis]-w[uranium-ore]",
     },
     {
         type = "double-setting",
@@ -116,7 +125,7 @@ data:extend({
         default_value = 3.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gg",
+        order = "w[resources]-k[frequency]-p[vulcanus]-t[coal]",
     },
     {
         type = "double-setting",
@@ -125,7 +134,7 @@ data:extend({
         default_value = 0.5,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gh",
+        order = "w[resources]-k[frequency]-p[vulcanus]-u[calcite]",
     },
     {
         type = "double-setting",
@@ -134,7 +143,7 @@ data:extend({
         default_value = 0.5,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gi",
+        order = "w[resources]-k[frequency]-p[vulcanus]-u[tungsten]",
     },
     {
         type = "double-setting",
@@ -143,7 +152,7 @@ data:extend({
         default_value = 0.1,
         minimum_value = 0.0,
         maximum_value = 1.0,
-        order = "gia",
+        order = "w[resources]-k[frequency]-p[vulcanus]-u[tungsten-bias-chance]",
     },
     {
         type = "double-setting",
@@ -152,7 +161,7 @@ data:extend({
         default_value = 1.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gj",
+        order = "w[resources]-k[frequency]-r[aquilo]-t[crude-oil]",
     },
     {
         type = "double-setting",
@@ -161,7 +170,7 @@ data:extend({
         default_value = 3.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gk",
+        order = "w[resources]-k[frequency]-r[aquilo]-t[lithium-brine]",
     },
     {
         type = "double-setting",
@@ -170,7 +179,43 @@ data:extend({
         default_value = 3.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
-        order = "gl",
+        order = "w[resources]-k[frequency]-r[aquilo]-u[fluorine-vent]",
+    },
+
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-nauvis",
+        setting_type = "runtime-global",
+        default_value = 0.075,
+        order = "w[resources]-l[frequency-dropoff]-p[nauvis]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-vulcanus",
+        setting_type = "runtime-global",
+        default_value = 0.075,
+        order = "w[resources]-l[frequency-dropoff]-p[vulcanus]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-fulgora",
+        setting_type = "runtime-global",
+        default_value = 0.05,
+        order = "w[resources]-l[frequency-dropoff]-q[fulgora]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-gleba",
+        setting_type = "runtime-global",
+        default_value = 0.1,
+        order = "w[resources]-l[frequency-dropoff]-q[gleba]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-frequency-dropoff-aquilo",
+        setting_type = "runtime-global",
+        default_value = 0.15,
+        order = "w[resources]-l[frequency-dropoff]-r[aquilo]",
     },
 
     {
@@ -180,7 +225,7 @@ data:extend({
         default_value = 4,
         minimum_value = 1,
         maximum_value = 100,
-        order = "ia",
+        order = "w[resources]-m[min-dist]-p[nauvis]-t[uranium-ore]",
     },
     {
         type = "int-setting",
@@ -189,58 +234,7 @@ data:extend({
         default_value = 6,
         minimum_value = 1,
         maximum_value = 100,
-        order = "ia",
-    },
-
-    {
-        type = "double-setting",
-        name = "hextorio-resource-bias",
-        setting_type = "runtime-global",
-        default_value = 2.0,
-        order = "ja",
-    },
-    {
-        type = "bool-setting",
-        name = "hextorio-resource-bias-variation",
-        setting_type = "runtime-global",
-        default_value = true,
-        order = "jb",
-    },
-
-    {
-        type = "double-setting",
-        name = "hextorio-resource-frequency-dropoff-nauvis",
-        setting_type = "runtime-global",
-        default_value = 0.075,
-        order = "k_aa",
-    },
-    {
-        type = "double-setting",
-        name = "hextorio-resource-frequency-dropoff-vulcanus",
-        setting_type = "runtime-global",
-        default_value = 0.075,
-        order = "k_ab",
-    },
-    {
-        type = "double-setting",
-        name = "hextorio-resource-frequency-dropoff-fulgora",
-        setting_type = "runtime-global",
-        default_value = 0.05,
-        order = "k_ac",
-    },
-    {
-        type = "double-setting",
-        name = "hextorio-resource-frequency-dropoff-gleba",
-        setting_type = "runtime-global",
-        default_value = 0.1,
-        order = "k_ad",
-    },
-    {
-        type = "double-setting",
-        name = "hextorio-resource-frequency-dropoff-aquilo",
-        setting_type = "runtime-global",
-        default_value = 0.15,
-        order = "k_ae",
+        order = "w[resources]-m[min-dist]-p[vulcanus]-t[tungsten-ore]",
     },
 
     {
@@ -250,7 +244,7 @@ data:extend({
         default_value = 2.0,
         minimum_value = 1.0,
         maximum_value = 10.0,
-        order = "kaa",
+        order = "w[resources]-o[stroke-width]-a[starting]-p[nauvis]",
     },
     {
         type = "double-setting",
@@ -259,7 +253,7 @@ data:extend({
         default_value = 7.0,
         minimum_value = 1.0,
         maximum_value = 10.0,
-        order = "kab",
+        order = "w[resources]-o[stroke-width]-a[starting]-p[vulcanus]",
     },
     {
         type = "double-setting",
@@ -268,7 +262,7 @@ data:extend({
         default_value = 3.0,
         minimum_value = 1.0,
         maximum_value = 10.0,
-        order = "kac",
+        order = "w[resources]-o[stroke-width]-a[starting]-q[fulgora]",
     },
     {
         type = "double-setting",
@@ -277,7 +271,7 @@ data:extend({
         default_value = 4.0,
         minimum_value = 1.0,
         maximum_value = 10.0,
-        order = "kad",
+        order = "w[resources]-o[stroke-width]-a[starting]-q[gleba]",
     },
     {
         type = "double-setting",
@@ -285,7 +279,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 1,
         minimum_value = 1,
-        order = "kba",
+        order = "w[resources]-o[stroke-width]-b[base]-p[nauvis]",
     },
     {
         type = "double-setting",
@@ -293,7 +287,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 4,
         minimum_value = 1,
-        order = "kbb",
+        order = "w[resources]-o[stroke-width]-b[base]-p[vulcanus]",
     },
     {
         type = "double-setting",
@@ -301,7 +295,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 3,
         minimum_value = 1,
-        order = "kbc",
+        order = "w[resources]-o[stroke-width]-b[base]-q[fulgora]",
     },
     {
         type = "double-setting",
@@ -309,35 +303,35 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 4,
         minimum_value = 1,
-        order = "kbd",
+        order = "w[resources]-o[stroke-width]-b[base]-q[gleba]",
     },
     {
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-nauvis",
         setting_type = "runtime-global",
         default_value = 0.125,
-        order = "kca",
+        order = "w[resources]-o[stroke-width]-b[increment]-p[nauvis]",
     },
     {
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-vulcanus",
         setting_type = "runtime-global",
         default_value = 0.375,
-        order = "kcb",
+        order = "w[resources]-o[stroke-width]-b[increment]-p[vulcanus]",
     },
     {
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-fulgora",
         setting_type = "runtime-global",
         default_value = 0.125,
-        order = "kcc",
+        order = "w[resources]-o[stroke-width]-b[increment]-q[fulgora]",
     },
     {
         type = "double-setting",
         name = "hextorio-resource-width-per-dist-gleba",
         setting_type = "runtime-global",
         default_value = 0.125,
-        order = "kcd", -- just missing an "x" lol
+        order = "w[resources]-o[stroke-width]-b[increment]-q[gleba]",
     },
     {
         type = "double-setting",
@@ -345,7 +339,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 1,
         default_value = 8,
-        order = "kda",
+        order = "w[resources]-o[stroke-width]-b[max]-p[nauvis]",
     },
     {
         type = "double-setting",
@@ -353,7 +347,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 1,
         default_value = 16,
-        order = "kdb",
+        order = "w[resources]-o[stroke-width]-b[max]-p[vulcanus]",
     },
     {
         type = "double-setting",
@@ -361,7 +355,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 1,
         default_value = 6,
-        order = "kdc",
+        order = "w[resources]-o[stroke-width]-b[max]-q[fulgora]",
     },
     {
         type = "double-setting",
@@ -369,7 +363,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 12,
         minimum_value = 1,
-        order = "kdd",
+        order = "w[resources]-o[stroke-width]-b[max]-q[gleba]",
     },
 
     {
@@ -377,14 +371,28 @@ data:extend({
         name = "hextorio-starting-resources-mixed",
         setting_type = "runtime-global",
         default_value = true,
-        order = "ma",
+        order = "w[resources]-q[starting-resources-mixed]",
     },
     {
         type = "bool-setting",
         name = "hextorio-default-resources-mixed",
         setting_type = "runtime-global",
         default_value = true,
-        order = "mb",
+        order = "w[resources]-r[default-resources-mixed]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-resource-bias",
+        setting_type = "runtime-global",
+        default_value = 2.0,
+        order = "w[resources]-r[resource-bias]",
+    },
+    {
+        type = "bool-setting",
+        name = "hextorio-resource-bias-variation",
+        setting_type = "runtime-global",
+        default_value = true,
+        order = "w[resources]-s[resource-bias-variation]",
     },
 
     {
@@ -393,7 +401,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 0,
         default_value = 50,
-        order = "pa",
+        order = "w[resources]-t[costs]-s[supercharge]-g[per-tile]",
     },
     {
         type = "double-setting",
@@ -401,7 +409,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 0,
         default_value = 400000,
-        order = "pb",
+        order = "w[resources]-t[costs]-s[supercharge]-g[per-well]",
     },
     {
         type = "double-setting",
@@ -409,7 +417,7 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 0,
         default_value = 0.005,
-        order = "pc",
+        order = "w[resources]-t[costs]-s[supercharge]-h[multiplier]",
     },
     {
         type = "double-setting",
@@ -417,15 +425,6 @@ data:extend({
         setting_type = "runtime-global",
         minimum_value = 0,
         default_value = 100,
-        order = "pd",
-    },
-
-    {
-        type = "string-setting",
-        name = "hextorio-ore-generation-mode",
-        setting_type = "runtime-global",
-        allowed_values = {"single-hex", "along-edges", "center-square"},
-        default_value = "along-edges",
-        order = "a[resources]-g[ore-generation-mode]",
+        order = "w[resources]-t[costs]-t[conversion]-h[multiplier]",
     },
 })

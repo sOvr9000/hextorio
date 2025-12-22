@@ -16,7 +16,7 @@ data:extend({
         default_value = 0.016,
         minimum_value = 0,
         maximum_value = 1,
-        order = "l[dungeons]-p[nauvis]-c[chance]",
+        order = "l[dungeons]-c[chance]-p[nauvis]",
     },
     {
         type = "double-setting",
@@ -25,7 +25,7 @@ data:extend({
         default_value = 0.025,
         minimum_value = 0,
         maximum_value = 1,
-        order = "l[dungeons]-p[vulcanus]-c[chance]",
+        order = "l[dungeons]-c[chance]-p[vulcanus]",
     },
     {
         type = "double-setting",
@@ -34,7 +34,7 @@ data:extend({
         default_value = 0.015,
         minimum_value = 0,
         maximum_value = 1,
-        order = "l[dungeons]-p[fulgora]-c[chance]",
+        order = "l[dungeons]-c[chance]-q[fulgora]",
     },
     {
         type = "double-setting",
@@ -43,7 +43,7 @@ data:extend({
         default_value = 0.025,
         minimum_value = 0,
         maximum_value = 1,
-        order = "l[dungeons]-p[gleba]-c[chance]",
+        order = "l[dungeons]-c[chance]-q[gleba]",
     },
     {
         type = "double-setting",
@@ -52,7 +52,7 @@ data:extend({
         default_value = 0.015,
         minimum_value = 0,
         maximum_value = 1,
-        order = "l[dungeons]-p[aquilo]-c[chance]",
+        order = "l[dungeons]-c[chance]-r[aquilo]",
     },
 
     {
@@ -61,7 +61,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 1,
         minimum_value = 0.01,
-        order = "l[dungeons]-p[nauvis]-c[loot-scale]",
+        order = "l[dungeons]-r[loot-scale]-p[nauvis]",
     },
     {
         type = "double-setting",
@@ -69,7 +69,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 1,
         minimum_value = 0.01,
-        order = "l[dungeons]-p[vulcanus]-c[loot-scale]",
+        order = "l[dungeons]-r[loot-scale]-p[vulcanus]",
     },
     {
         type = "double-setting",
@@ -77,7 +77,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 1,
         minimum_value = 0.01,
-        order = "l[dungeons]-p[fulgora]-c[loot-scale]",
+        order = "l[dungeons]-r[loot-scale]-q[fulgora]",
     },
     {
         type = "double-setting",
@@ -85,7 +85,7 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 1,
         minimum_value = 0.01,
-        order = "l[dungeons]-p[gleba]-c[loot-scale]",
+        order = "l[dungeons]-r[loot-scale]-q[gleba]",
     },
     {
         type = "double-setting",
@@ -93,6 +93,6 @@ data:extend({
         setting_type = "runtime-global",
         default_value = 1,
         minimum_value = 0.01,
-        order = "l[dungeons]-p[aquilo]-c[loot-scale]",
+        order = "l[dungeons]-r[loot-scale]-r[aquilo]",
     },
 })

@@ -7,6 +7,7 @@ data:extend({
         default_value = 5,
         minimum_value = 0.001,
         maximum_value = 1000,
+        order = "v[item-values]-s[interplanetary-multiplier]-p[other]",
     },
     {
         type = "double-setting",
@@ -15,5 +16,6 @@ data:extend({
         default_value = 10,
         minimum_value = 0.001,
         maximum_value = 1000,
+        order = "v[item-values]-s[interplanetary-multiplier]-r[aquilo]",
     },
 })
