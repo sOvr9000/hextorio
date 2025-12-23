@@ -313,24 +313,17 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         prod_bar.style.horizontally_stretchable = true
     end
 
-    local prod_str = "[font=count-font]" .. lib.format_percentage(prod, 1, true, true) .. "[.font]"
-    if prod < 0 then
-        prod_str = "[color=red]" .. prod_str .. "[.color]"
-    elseif prod > 0 then
-        prod_str = "[color=green]" .. prod_str .. "[.color]"
-    else
-        prod_str = ""
-    end
-
     local prod_label = trade_table.add {
         type = "label",
         name = "productivity",
-        caption = prod_str,
+        caption = "", -- Gets set by trades_gui.update_trade_elements()
         tags = {handlers = {["gui-clicked"] = "trade-arrow"}},
         raise_hover_events = true,
     }
-    prod_label.style.left_margin = -32 / 1.2
+    prod_label.style.width = size / 1.2 + 10
+    prod_label.style.left_margin = -size / 1.2 - 10
     prod_label.style.top_margin = 24 / 1.2
+    prod_label.style.horizontal_align = "right"
 
     for i = 1, 3 do
         local j = 4 - i
@@ -364,13 +357,14 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         end
     end
 
-    trades_gui.update_trade_elements(player, trade_flow, trade)
+    trades_gui.update_trade_elements(player, trade_flow, trade, quality_to_show)
 end
 
 ---@param player LuaPlayer
 ---@param trade_flow LuaGuiElement
 ---@param trade Trade
-function trades_gui.update_trade_elements(player, trade_flow, trade)
+---@param quality string|nil
+function trades_gui.update_trade_elements(player, trade_flow, trade, quality)
     local sprite_name = "trade-arrow"
 
     if trades.is_trade_favorited(player, trade) then
@@ -382,6 +376,17 @@ function trades_gui.update_trade_elements(player, trade_flow, trade)
     end
 
     trade_flow["frame"]["trade-table"]["trade-arrow"].sprite = sprite_name
+
+    if quality then
+        local prod = trades.get_productivity(trade, quality)
+        local prod_str = trades_gui.get_productivity_number_label(prod, true)
+        trade_flow["frame"]["trade-table"]["productivity"].caption = prod_str
+
+        local control_flow = trade_flow["frame"]["trade-control-flow"]
+        if control_flow then
+            core_gui.give_productivity_tooltip(control_flow["productivity-info"], trade, quality, lib.get_quality_cost_multiplier(quality))
+        end
+    end
 end
 
 function trades_gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
@@ -412,6 +417,24 @@ function trades_gui.update_trades_scroll_pane(player, trades_scroll_pane, trades
         process.immediate = true
     end
     storage.gui.trades_scroll_pane_update[player.name] = process
+end
+
+---Get the rich text formatted string for a label that shows the productivity percentage.
+---@param productivity number
+---@param empty_for_zero boolean Whether to return an empty string when `productivity == 0`.
+---@return string
+function trades_gui.get_productivity_number_label(productivity, empty_for_zero)
+    local prod_str = "[font=count-font]" .. lib.format_percentage(productivity, 0, true, true) .. "[.font]"
+
+    if productivity < 0 then
+        prod_str = "[color=red]" .. prod_str .. "[.color]"
+    elseif productivity > 0 or (not empty_for_zero and productivity == 0) then
+        prod_str = "[color=green]" .. prod_str .. "[.color]"
+    else
+        prod_str = ""
+    end
+
+    return prod_str
 end
 
 ---@param player LuaPlayer
@@ -519,7 +542,7 @@ function trades_gui.on_trade_arrow_clicked(player, elem)
 
     -- TODO: Bad practice below.  Instead of separately calling the GUI update here, the trades.favorite_trade() should trigger an event which causes this GUI manager to update sprites.
     -- But I'm cutting corners here for now because it saves a lot more time than it would initially seem.
-    trades_gui.update_trade_elements(player, flow, trade)
+    trades_gui.update_trade_elements(player, flow, trade, nil)
 end
 
 

@@ -18,6 +18,31 @@ local hex_state_manager = require "api.hex_state_manager"
 local trades = {}
 
 
+---@alias TradeSide "give"|"receive"
+---@alias TradeItem {name: string, count: int}
+---@alias TentativeTradeItem {name: string, count: int|nil}
+---@alias TentativeTrade {id: int, input_items: TradeItem[], output_items: TentativeTradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil}
+---@alias TradeGenerationParameters {target_efficiency: number|nil}
+---@alias TradeItemSamplingParameters StringFilters
+---@alias TradeInputMap {[string]: int[]}
+
+---@alias SurfaceItemSupplyValues {[string]: {[string]: number}}
+
+---@class Trade
+---@field id int Unique ID given to this trade.
+---@field surface_name string
+---@field active boolean Whether this trade is currently allowed to be executed when possible.
+---@field hex_core_state HexState|nil The hex core state to which this trade belongs.
+---@field allowed_qualities string[]|nil The current list of qualities allowed to be used by this trade.
+---@field productivity number|nil The base productivity of this trade to be used in calculating the productivity for each quality.
+---@field dynamic_productivity number|nil The fluctuating productivity added to the base productivity of this trade, only non-nil and nonzero when supply-and-demand (S/D) mode is enabled.
+---@field current_prod_value StringAmounts|nil Indexed by quality name, the current progress towards filling the productivity bar (red or purple).
+---@field max_items_per_output number|nil The maximum number of items to be output by this trade, per output item type.
+---@field is_interplanetary boolean|nil Cached flag for quickly checking whether this trade contains an interplanetary item in either its inputs or outputs.
+---@field has_coins_in_input boolean|nil Cached flag for quickly checking whether this trade contains coins in its inputs.
+---@field has_coins_in_output boolean|nil Cached flag for quickly checking whether this trade contains coins in its outputs.
+---@field input_items TradeItem[] List of item names and counts representing the inputs of the trade.
+---@field output_items TradeItem[] List of item names and counts representing the outputs of the trade.
 
 ---@class TradeProductivityUpdateJob
 ---@field surface_id int The surface ID to update trades on

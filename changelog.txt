@@ -1,6 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.0
-Date: 20/12/25
+Date: 24/12/25
+  Gui:
+    - Improved horizontal alignment of productivity labels on trade arrows.
+  Locale:
+    - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.3
 Date: 19/12/25
