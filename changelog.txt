@@ -11,6 +11,7 @@ Date: 15/1/26
     - Coin amounts for "Stack Value (Total)" in item tooltips are now rounded to four significant figures instead of zero digits after the decimal.
   Bugfixes:
     - Fixed that sink/generator mode did not reliably create trades with a 10:1 input-to-output efficiency.
+    - Fixed missing locale for electric damage / shooting speed.
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:
