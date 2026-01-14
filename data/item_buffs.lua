@@ -561,6 +561,11 @@ return {
                 values = {"atomic-bomb", 5},
                 level_scaling = 1.05,
             },
+            {
+                type = "rocket-damage",
+                value = 0.08,
+                level_scaling = 1.1,
+            },
         },
         ["plague-rocket"] = {
             {
@@ -605,6 +610,13 @@ return {
         ["submachine-gun"] = {
             {
                 type = "bullet-shooting-speed",
+                value = 0.04,
+                level_scaling = 1.1,
+            },
+        },
+        ["rocket-launcher"] = {
+            {
+                type = "rocket-shooting-speed",
                 value = 0.04,
                 level_scaling = 1.1,
             },
