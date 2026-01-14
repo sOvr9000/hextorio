@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.0
-Date: 24/12/25
+Date: 15/1/26
   Major Features:
     - Added mod setting for controlling the efficiency of trades (which is the average ratio of the trade's total output-to-input value).
   Changes:
@@ -10,7 +10,7 @@ Date: 24/12/25
     - Improved horizontal alignment of productivity labels on trade arrows.
     - Coin amounts for "Stack Value (Total)" in item tooltips are now rounded to four significant figures instead of zero digits after the decimal.
   Bugfixes:
-    - Fixed that sink/generator mode did not reliably create trades with a 10:1 input-to-output efficiency
+    - Fixed that sink/generator mode did not reliably create trades with a 10:1 input-to-output efficiency.
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:
