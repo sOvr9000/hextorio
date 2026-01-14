@@ -92,6 +92,7 @@ script.on_init(function()
 
     hex_grid.update_hexlight_default_colors()
     trades.fetch_base_trade_productivity_settings()
+    trades.fetch_base_trade_efficiency_settings()
 
     local penalty = lib.runtime_setting_value "unresearched-penalty"
     ---@cast penalty number
@@ -103,7 +104,7 @@ script.on_init(function()
     storage.trades.sorting_batch_size = lib.runtime_setting_value "trade-sorting-batch-size"
     trades.recalculate_researched_items()
 
-    storage.hex_grid.pool_size = lib.runtime_setting_value "hex-pool-size"
+    storage.hex_grid.pool_size = lib.runtime_setting_value_as_int "hex-pool-size"
 
     storage.ammo_type_per_entity = {
         ["gun-turret"] = "bullet_type",
@@ -181,6 +182,18 @@ script.on_init(function()
 
     -- Set enemy force color.
     game.forces.enemy.custom_color = {0.6, 0.1, 0.6}
+
+    -- Testing lib functions
+    -- for _, t in pairs {
+    --     {0.427, 1000, 1000},
+    --     {0.429, 1000, 1000},
+    --     {0.6180339887},
+    --     {0.6180339887, 128, 128},
+    --     {0.25, 5000, 5000},
+    -- } do
+    --     local num, den = lib.get_rational_approximation(t[1], 1.0001, t[2], t[3])
+    --     log(t[1] .. " = " .. num .. " / " .. den)
+    -- end
 end)
 
 script.on_event(defines.events.on_chunk_generated, function(event)

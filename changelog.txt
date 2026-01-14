@@ -1,10 +1,20 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.0
 Date: 24/12/25
+  Major Features:
+    - Added mod setting for controlling the efficiency of trades (which is the average ratio of the trade's total output-to-input value).
+  Changes:
+    - Item counts in trades no longer exceed 100 or two total stacks (whichever is smaller).
+    - Item counts in trades are now more varied, where lower-valued items are generally in higher quanities than the higher-valued items on the same side of the trade.
   Gui:
     - Improved horizontal alignment of productivity labels on trade arrows.
+    - Coin amounts for "Stack Value (Total)" in item tooltips are now rounded to four significant figures instead of zero digits after the decimal.
+  Bugfixes:
+    - Fixed that sink/generator mode did not reliably create trades with a 10:1 input-to-output efficiency
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
+  Optimizations:
+    - Optimized trade item count selection: O(n) -> O(logn).
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.3
 Date: 19/12/25

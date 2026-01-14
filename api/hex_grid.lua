@@ -105,11 +105,13 @@ function hex_grid.register_events()
             end
         end
 
-        local trade = trades.from_item_names(hex_core.surface.name, params[1], params[2])
-        if not trade then
-            player.print {"hextorio.command-trade-generation-failed"}
-            return
-        end
+        local trade = trades.from_item_names(hex_core.surface.name, params[1], params[2], {target_efficiency = storage.trades.base_trade_efficiency, allow_nil_return = false})
+        ---@cast trade Trade
+
+        -- if not trade then
+        --     player.print {"hextorio.command-trade-generation-failed"}
+        --     return
+        -- end
 
         hex_grid.add_trade(state, trade)
     end)
@@ -141,7 +143,7 @@ function hex_grid.register_events()
             for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
                 if state.trades then
                     for i = #state.trades, 1, -1 do
-                        local trade_id = state.trades[i]
+                        -- local trade_id = state.trades[i]
                         -- local trade = trades.get_trade_from_id(trade_id)
                         -- if trade then
                         --     trades.remove_trade_from_tree(trade, false)
@@ -330,8 +332,7 @@ function hex_grid.register_events()
     end)
 
     event_system.register("runtime-setting-changed-hex-pool-size", function()
-        local size = lib.runtime_setting_value "hex-pool-size"
-        ---@cast size number
+        local size = lib.runtime_setting_value_as_int "hex-pool-size"
         hex_grid.set_pool_size(size)
     end)
 
@@ -389,8 +390,10 @@ function hex_grid.generate_random_trade(hex_core_state, volume, is_interplanetar
     local cur_trades = trades.convert_trade_id_array_to_trade_array(hex_core_state.trades)
     local idx = #cur_trades + 1
 
-    for _ = 1, 10 do
-        local trade = trades.random(hex_core_state.hex_core.surface.name, volume, is_interplanetary, include_item)
+    local attempts = 10
+    for _ = 1, attempts do
+        local params = {target_efficiency = storage.trades.base_trade_efficiency}
+        local trade = trades.random(hex_core_state.hex_core.surface.name, volume, params, is_interplanetary, include_item)
         if trade then
             cur_trades[idx] = trade -- Overwrite previously generated trades if they failed.
             local loops = trade_loop_finder.find_simple_loops(cur_trades)
@@ -404,6 +407,7 @@ function hex_grid.generate_random_trade(hex_core_state, volume, is_interplanetar
     end
 
     -- Failed to generate trade. Return nil.
+    lib.log_error("hex_grid.generate_random_trade: A trade failed to generate within " .. attempts .. " attempts.")
 end
 
 ---Add a trade to a hex core.
@@ -412,10 +416,6 @@ end
 function hex_grid.add_trade(hex_core_state, trade)
     if not hex_core_state then
         lib.log_error("hex_grid.add_trade: hex core state is nil")
-        return
-    end
-    if not trades.is_trade_valid(trade) then
-        lib.log_error("hex_grid.add_trade: trade is invalid")
         return
     end
     local hex_core = hex_core_state.hex_core
@@ -575,41 +575,44 @@ function hex_grid.switch_hex_core_mode(state, mode)
     end
     if not state or not state.trades or state.mode then return false end
 
+    local list, reverse
     if mode == "generator" then
-        local all_outputs = sets.new()
-        for i = #state.trades, 1, -1 do
-            for _, output in pairs(trades.get_trade_from_id(state.trades[i]).output_items) do
-                if not lib.is_coin(output.name) then
-                    sets.add(all_outputs, output.name)
-                end
-            end
-            hex_grid.remove_trade_by_index(state, i, false)
-        end
-        for item_name, _ in pairs(all_outputs) do
-            local trade = trades.from_item_names(state.hex_core.surface.name, {"hex-coin"}, {item_name}, {target_efficiency = 0.1})
-            if trade then
-                hex_grid.add_trade(state, trade)
-            end
-        end
+        list = "output_items"
+        reverse = true
     elseif mode == "sink" then
-        local all_inputs = sets.new()
-        for i = #state.trades, 1, -1 do
-            for _, input in pairs(trades.get_trade_from_id(state.trades[i]).input_items) do
-                if not lib.is_coin(input.name) then
-                    sets.add(all_inputs, input.name)
-                end
-            end
-            hex_grid.remove_trade_by_index(state, i, false)
-        end
-        for item_name, _ in pairs(all_inputs) do
-            local trade = trades.from_item_names(state.hex_core.surface.name, {item_name}, {"hex-coin"}, {target_efficiency = 0.1})
-            if trade then
-                hex_grid.add_trade(state, trade)
-            end
-        end
+        list = "input_items"
+        reverse = false
     else
         lib.log_error("hex_grid.switch_hex_core_mode: Unrecognized mode: " .. mode)
         return false
+    end
+
+    local all_item_names = sets.new()
+    for i = #state.trades, 1, -1 do
+        for _, item in pairs(trades.get_trade_from_id(state.trades[i])[list]) do
+            if not lib.is_coin(item.name) then
+                sets.add(all_item_names, item.name)
+            end
+        end
+        hex_grid.remove_trade_by_index(state, i, false)
+    end
+
+    for item_name, _ in pairs(all_item_names) do
+        local input_names, output_names
+        if reverse then
+            input_names = {"hex-coin"}
+            output_names = {item_name}
+        else
+            input_names = {item_name}
+            output_names = {"hex-coin"}
+        end
+
+        local params = {target_efficiency = storage.trades.base_trade_efficiency * 0.1, allow_nil_return = false}
+        local trade = trades.from_item_names(state.hex_core.surface.name, input_names, output_names, params)
+        ---@cast trade Trade
+        -- trade cannot be nil because params.allow_nil_return = false
+
+        hex_grid.add_trade(state, trade)
     end
 
     if state.mode then
@@ -2155,8 +2158,16 @@ function hex_grid.add_initial_trades(state)
     local is_starting_hex = dist == 0
 
     if is_starting_hex then
-        for _, trade in pairs(storage.trades.starting_trades[state.hex_core.surface.name]) do
-            hex_grid.add_trade(state, trades.from_item_names(state.hex_core.surface.name, table.unpack(trade)))
+        for _, trade_items in pairs(storage.trades.starting_trades[state.hex_core.surface.name]) do
+            local input_names = trade_items[1]
+            local output_names = trade_items[2]
+            local params = {target_efficiency = storage.trades.base_trade_efficiency}
+            local trade = trades.from_item_names(state.hex_core.surface.name, input_names, output_names, params)
+            if trade then
+                hex_grid.add_trade(state, trade)
+            else
+                lib.log_error("hex_grid.add_initial_trades: Failed to generate trade from item names: " .. serpent.line(input_names) .. " -> " .. serpent.line(output_names) .. " -- Is target_efficiency too high or low (see below)?\nparams = " .. serpent.block(params))
+            end
         end
     else
         local planet_size = lib.startup_setting_value("planet-size-" .. state.hex_core.surface.name)
@@ -3532,7 +3543,7 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
     local trade
     local rank = item_ranks.get_item_rank(item_name)
     if rank >= 3 then
-        trade = trades.new_coin_trade(surface_name, item_name)
+        trade = trades.new_coin_trade(surface_name, item_name, storage.trades.base_trade_efficiency)
         if trade then
             -- Avoid interfering with currently active trading lines by deactivating the new trade.
             trades.set_trade_active(trade, false)

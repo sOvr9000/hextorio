@@ -125,6 +125,76 @@ function lib.manhattan_distance(pos1, pos2)
     return math.abs(dx) + math.abs(dy)
 end
 
+---Return integers `num` and `den` such that `num / den` is approximately equal to `x`. Computes in O(n) time where n corresponds to desired precision.
+---@param x number
+---@param epsilon number Minimal value of `num / (x * den)` or `x * den / num` (whichever is bigger, representing the proportional error). Should always be greater than 1.
+---@param max_numerator int|nil Maximum allowed numerator to be returned. Defaults to largest integer before precision is lost (2^53).
+---@param max_denominator int|nil Maximum allowed denominator to be returned. Defaults to largest integer before precision is lost (2^53).
+---@return int num If `x == 0`, then this is always zero. Only negative when `x < 0`.
+---@return int den If `x == 0`, then this is always one. Always positive, never zero.
+function lib.get_rational_approximation(x, epsilon, max_numerator, max_denominator)
+    if x == 0 then
+        -- log("returning 0 / 1")
+        return 0, 1
+    end
+
+    if epsilon < 1 then
+        return lib.get_rational_approximation(x, 1 / epsilon, max_numerator, max_denominator)
+    end
+
+    if not max_numerator then max_numerator = 9007199254740992 end -- 2^53 (max value of "number" type with full integer precision)
+    if not max_denominator then max_denominator = 9007199254740992 end
+
+    local epsilon_inv = 1 / epsilon
+    local abs_x = math.abs(x)
+    local val = abs_x
+
+    local num_prev2, num_prev1 = 1, 0
+    local den_prev2, den_prev1 = 0, 1
+    local num, den = 0, 1
+
+    for _ = 1, 1000 do
+        local coef = math.floor(val)
+
+        num = coef * num_prev1 + num_prev2
+        den = coef * den_prev1 + den_prev2
+
+        if num > max_numerator or den > max_denominator then
+            num, den = num_prev1, den_prev1
+            break
+        end
+
+        if coef == val then
+            -- log("break: " .. coef .. " == " .. val)
+            break
+        end
+
+        local ratio = abs_x * den / num
+        if ratio >= epsilon_inv and ratio <= epsilon then
+            -- log("break: " .. ratio .. " >= " .. epsilon_inv .. " and " .. ratio .. " <= " .. epsilon)
+            break
+        end
+
+        val = 1 / (val - coef)
+
+        num_prev2, num_prev1 = num_prev1, num
+        den_prev2, den_prev1 = den_prev1, den
+    end
+
+    num, den = den, num
+    if den == 0 then
+        -- log("setting num=0, den=1")
+        num = 0
+        den = 1
+    end
+
+    if x < 0 then
+        num = -num
+    end
+
+    return num, den
+end
+
 ---@param surface LuaSurface|SurfaceIdentification|int|string
 ---@return int
 function lib.get_surface_id(surface)
@@ -175,55 +245,167 @@ function lib.rounded_position(pos, offset_by_half)
     return {x = math.floor(0.5 + (pos.x or pos[1])), y = math.floor(0.5 + (pos.y or pos[2]))}
 end
 
+---@param name string
+---@return boolean|string|number|Color.0|{ [1]: number, [2]: number, [3]: number, [4]: number }
 function lib.startup_setting_value(name)
-    if not name then
-        lib.log_error("Name not specified")
-        return
-    end
     local prefixedName = "hextorio-" .. name
     local v = settings.startup[prefixedName]
     if not v then
         lib.log_error("Startup setting " .. name .. " (" .. prefixedName .. ") not found")
-        return
+        return 0
     end
     return v.value
 end
 
+---@param name string
+---@return number
+function lib.startup_setting_value_as_number(name)
+    local value = lib.startup_setting_value(name)
+    ---@cast value number
+    return value
+end
+
+---@param name string
+---@return int
+function lib.startup_setting_value_as_int(name)
+    local value = lib.startup_setting_value(name)
+    ---@cast value int
+    return value
+end
+
+---@param name string
+---@return boolean
+function lib.startup_setting_value_as_boolean(name)
+    local value = lib.startup_setting_value(name)
+    ---@cast value boolean
+    return value
+end
+
+---@param name string
+---@return string
+function lib.startup_setting_value_as_string(name)
+    local value = lib.startup_setting_value(name)
+    ---@cast value string
+    return value
+end
+
+---@param name string
+---@return Color
+function lib.startup_setting_value_as_color(name)
+    local value = lib.startup_setting_value(name)
+    ---@cast value Color
+    return value
+end
+
+---@param name string
+---@return boolean|string|number|Color.0|{ [1]: number, [2]: number, [3]: number, [4]: number }
 function lib.runtime_setting_value(name)
-    if not name then
-        lib.log_error("Name not specified")
-        return
-    end
     local prefixedName = "hextorio-" .. name
     local v = settings.global[prefixedName]
     if not v then
         lib.log_error("Runtime setting " .. name .. " (" .. prefixedName .. ") not found")
-        return
+        return 0
     end
     return v.value
 end
 
+---@param name string
+---@return number
+function lib.runtime_setting_value_as_number(name)
+    local value = lib.runtime_setting_value(name)
+    ---@cast value number
+    return value
+end
+
+---@param name string
+---@return int
+function lib.runtime_setting_value_as_int(name)
+    local value = lib.runtime_setting_value(name)
+    ---@cast value int
+    return value
+end
+
+---@param name string
+---@return boolean
+function lib.runtime_setting_value_as_boolean(name)
+    local value = lib.runtime_setting_value(name)
+    ---@cast value boolean
+    return value
+end
+
+---@param name string
+---@return string
+function lib.runtime_setting_value_as_string(name)
+    local value = lib.runtime_setting_value(name)
+    ---@cast value string
+    return value
+end
+
+---@param name string
+---@return Color
+function lib.runtime_setting_value_as_color(name)
+    local value = lib.runtime_setting_value(name)
+    ---@cast value Color
+    return value
+end
+
+---@param player LuaPlayer
+---@param name string
+---@return boolean|string|number|Color.0|{ [1]: number, [2]: number, [3]: number, [4]: number }
 function lib.player_setting_value(player, name)
-    if not player then
-        lib.log_error("Player not specified")
-        return
-    end
-    if not name then
-        lib.log_error("Name not specified")
-        return
-    end
     local s = settings.get_player_settings(player)
-    if not s then
-        lib.log_error("Player " .. player.name .. " has no settings. Is the player invalid?")
-        return
-    end
     local prefixedName = "hextorio-" .. name
     local v = s[prefixedName]
     if not v then
         lib.log_error("Player setting " .. name .. " (" .. prefixedName .. ") not found for player " .. player.name)
-        return
+        return 0
     end
     return v.value
+end
+
+---@param player LuaPlayer
+---@param name string
+---@return number
+function lib.player_setting_value_as_number(player, name)
+    local value = lib.player_setting_value(player, name)
+    ---@cast value number
+    return value
+end
+
+---@param player LuaPlayer
+---@param name string
+---@return int
+function lib.player_setting_value_as_int(player, name)
+    local value = lib.player_setting_value(player, name)
+    ---@cast value int
+    return value
+end
+
+---@param player LuaPlayer
+---@param name string
+---@return boolean
+function lib.player_setting_value_as_boolean(player, name)
+    local value = lib.player_setting_value(player, name)
+    ---@cast value boolean
+    return value
+end
+
+---@param player LuaPlayer
+---@param name string
+---@return string
+function lib.player_setting_value_as_string(player, name)
+    local value = lib.player_setting_value(player, name)
+    ---@cast value string
+    return value
+end
+
+---@param player LuaPlayer
+---@param name string
+---@return Color
+function lib.player_setting_value_as_color(player, name)
+    local value = lib.player_setting_value(player, name)
+    ---@cast value Color
+    return value
 end
 
 function lib.table_length(t)

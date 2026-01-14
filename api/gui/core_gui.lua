@@ -146,7 +146,7 @@ function core_gui.give_item_tooltip(player, surface_name, element)
         "\n\n" .. location_rich_text .. " [font=heading-2][color=yellow]",
         {"hextorio-gui.stack-value-total"},
         "[.color][.font]\n" .. item_img_rich_text .. "x" .. item_count .. " = ",
-        coin_tiers.base_coin_value_to_text(item_count * scaled_value, false, nil)
+        coin_tiers.base_coin_value_to_text(item_count * scaled_value, false, 4)
     }
 end
 

@@ -18,31 +18,49 @@ local hex_state_manager = require "api.hex_state_manager"
 local trades = {}
 
 
----@alias TradeSide "give"|"receive"
----@alias TradeItem {name: string, count: int}
----@alias TentativeTradeItem {name: string, count: int|nil}
----@alias TentativeTrade {id: int, input_items: TradeItem[], output_items: TentativeTradeItem[], surface_name: string, active: boolean, hex_core_state: HexState|nil, max_items_per_output: number|nil, productivity: number|nil, current_prod_value: StringAmounts|nil, allowed_qualities: string[]|nil}
----@alias TradeGenerationParameters {target_efficiency: number|nil}
+
+---@alias TradeSide
+---| "give" The left side
+---| "receive" The right side
+
 ---@alias TradeItemSamplingParameters StringFilters
 ---@alias TradeInputMap {[string]: int[]}
 
----@alias SurfaceItemSupplyValues {[string]: {[string]: number}}
-
 ---@class Trade
----@field id int Unique ID given to this trade.
+---@field id int Unique ID (serial number) given to this trade.
 ---@field surface_name string
 ---@field active boolean Whether this trade is currently allowed to be executed when possible.
 ---@field hex_core_state HexState|nil The hex core state to which this trade belongs.
----@field allowed_qualities string[]|nil The current list of qualities allowed to be used by this trade.
----@field productivity number|nil The base productivity of this trade to be used in calculating the productivity for each quality.
----@field dynamic_productivity number|nil The fluctuating productivity added to the base productivity of this trade, only non-nil and nonzero when supply-and-demand (S/D) mode is enabled.
----@field current_prod_value StringAmounts|nil Indexed by quality name, the current progress towards filling the productivity bar (red or purple).
+---@field allowed_qualities string[] The current list of qualities allowed to be used by this trade.
+---@field productivity number The base productivity of this trade to be used in calculating the productivity for each quality.
+---@field current_prod_value StringAmounts Indexed by quality name, the current progress towards filling the productivity bar (red or purple).
 ---@field max_items_per_output number|nil The maximum number of items to be output by this trade, per output item type.
----@field is_interplanetary boolean|nil Cached flag for quickly checking whether this trade contains an interplanetary item in either its inputs or outputs.
----@field has_coins_in_input boolean|nil Cached flag for quickly checking whether this trade contains coins in its inputs.
----@field has_coins_in_output boolean|nil Cached flag for quickly checking whether this trade contains coins in its outputs.
+---@field is_interplanetary boolean Cached flag for quickly checking whether this trade contains an interplanetary item in either its inputs or outputs.
+---@field has_coins_in_input boolean Cached flag for quickly checking whether this trade contains coins in its inputs.
+---@field has_coins_in_output boolean Cached flag for quickly checking whether this trade contains coins in its outputs.
 ---@field input_items TradeItem[] List of item names and counts representing the inputs of the trade.
 ---@field output_items TradeItem[] List of item names and counts representing the outputs of the trade.
+
+---@class TentativeTrade Similar to a Trade, but during the process of its generation and before state initialization. Particularly, output item counts are nil until determined by the generator.
+---@field surface_name string
+---@field input_items TentativeTradeItem[]
+---@field output_items TentativeTradeItem[]
+
+---@class TradeItem
+---@field name string
+---@field count int
+
+---@class TentativeTradeItem
+---@field name string
+---@field count int|nil Can be nil until determined by the generator.
+
+---@class TradeGenerationParameters
+---@field target_efficiency number|nil The requested ratio of item values from outputs to inputs in the generated trade.
+---@field target_efficiency_epsilon number|nil The allowed error in the actual ratio of items values from outputs to inputs in the generated trade. Set to 1 to request a perfect efficiency/ratio match. Set to a number close to but above 1.0 like 1.1 to allow for ratios close to the target efficiency/ratio.
+---@field item_sampling_filters TradeItemSamplingParameters|nil The item names to forcefully include (by whitelist) or exclude (by blacklist) in the item name candidates for the random trade generator, allowing the generator to select from more or fewer items, where the blacklist enforces exclusion but the whitelist does not enforce inclusion.
+---@field max_stacks_per_item number|nil The maximum number of stacks allowed per item in the generated trade.  For example, if this is 2, then item count for beacons would not exceed 2*20 = 40. Can be a non-integer.
+---@field max_count_per_item int|nil The maximum amount of each item allowed in the generated trade.  This feels reasonable at around 100, preventing from (e.g.) having to feed an egregious amount of items for a small return.
+---@field allow_nil_return boolean|nil Whether to allow a nil trade if the generator cannot solve the item counts from a given set of items and item count constraints. If the generator fails to approximate target_efficiency and allow_nil_return = false, then a trade with the closest possible ratio is returned. Defaults to true.
 
 ---@class TradeProductivityUpdateJob
 ---@field surface_id int The surface ID to update trades on
@@ -227,19 +245,23 @@ function trades.register_events()
     event_system.register("runtime-setting-changed-base-trade-prod-aquilo", function() fetch_and_queue_update "aquilo" end)
 
     event_system.register("runtime-setting-changed-trade-batching-threshold", function()
-        storage.trades.batch_processing_threshold = lib.runtime_setting_value "trade-batching-threshold"
+        storage.trades.batch_processing_threshold = lib.runtime_setting_value_as_int "trade-batching-threshold"
     end)
 
     event_system.register("runtime-setting-changed-trade-collection-batch-size", function()
-        storage.trades.collection_batch_size = lib.runtime_setting_value "trade-collection-batch-size"
+        storage.trades.collection_batch_size = lib.runtime_setting_value_as_int "trade-collection-batch-size"
     end)
 
     event_system.register("runtime-setting-changed-trade-filtering-batch-size", function()
-        storage.trades.filtering_batch_size = lib.runtime_setting_value "trade-filtering-batch-size"
+        storage.trades.filtering_batch_size = lib.runtime_setting_value_as_int "trade-filtering-batch-size"
     end)
 
     event_system.register("runtime-setting-changed-trade-sorting-batch-size", function()
-        storage.trades.sorting_batch_size = lib.runtime_setting_value "trade-sorting-batch-size"
+        storage.trades.sorting_batch_size = lib.runtime_setting_value_as_int "trade-sorting-batch-size"
+    end)
+
+    event_system.register("runtime-setting-changed-base-trade-efficiency", function()
+        storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
     end)
 end
 
@@ -247,8 +269,15 @@ function trades.init()
     for surface_name, surrounding_trades in pairs(storage.trades.surrounding_trades) do
         local ring = axial.ring({q=0, r=0}, 1)
         for _, trade_items in pairs(surrounding_trades) do
-            local trade = trades.from_item_names(surface_name, table.unpack(trade_items))
-            trades.add_guaranteed_trade(trade, ring[math.random(1, #ring)])
+            local input_names = trade_items[1]
+            local output_names = trade_items[2]
+            local params = {target_efficiency = storage.trades.base_trade_efficiency}
+            local trade = trades.from_item_names(surface_name, input_names, output_names, params)
+            if trade then
+                trades.add_guaranteed_trade(trade, ring[math.random(1, #ring)])
+            else
+                lib.log_error("trades.init: Failed to generate trade from item names: " .. serpent.line(input_names) .. " -> " .. serpent.line(output_names) .. " -- Is target_efficiency too high or low (see below)?\nparams = " .. serpent.block(params))
+            end
         end
     end
 end
@@ -282,69 +311,82 @@ end
 ---@param input_items TradeItem[]
 ---@param output_items TradeItem[]
 ---@param surface_name string
----@return Trade
+---@return TentativeTrade
 function trades.new(input_items, output_items, surface_name)
-    storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
+    ---@type TentativeTrade
     local trade = {
-        id = storage.trades.trade_id_ctr,
-        input_items = {},
-        output_items = {},
         surface_name = surface_name,
-        active = true,
+        input_items = table.deepcopy(input_items),
+        output_items = table.deepcopy(output_items),
     }
-    for _, input_item in pairs(input_items) do
-        table.insert(trade.input_items, {
-            name = input_item.name,
-            count = input_item.count,
-        })
-        if lib.is_coin(input_item.name) then
-            trade.has_coins_in_input = true
-        end
-    end
-    for _, output_item in pairs(output_items) do
-        table.insert(trade.output_items, {
-            name = output_item.name,
-            count = output_item.count,
-        })
-        if lib.is_coin(output_item.name) then
-            trade.has_coins_in_output = true
-        end
-    end
-    trades.check_productivity(trade)
+
     return trade
 end
 
----Return a copy of a trade, copying the id but not copying the hex core state if it exists (the returned trade will reference the same object).
----@param trade Trade
+---Return a Trade object from a TentativeTrade object, initializing state.
+---@param trade TentativeTrade
 ---@return Trade
-function trades.copy(trade)
-    local prev_ctr = storage.trades.trade_id_ctr
-    local t = trades.new(
-        table.deepcopy(trade.input_items),
-        table.deepcopy(trade.output_items),
-        trade.surface_name
-    )
+function trades.initialize_trade_state(trade)
+    storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
 
-    t.id = trade.id
-    if trade.active ~= nil then
-        t.active = trade.active
+    local input_items = trade.input_items
+    local output_items = trade.output_items
+
+    -- Item counts will be have been set by the generator.
+    ---@cast input_items TradeItem[]
+    ---@cast output_items TradeItem[]
+
+    local is_interplanetary = false
+    local has_coins_in_input = false
+    for _, input_item in pairs(input_items) do
+        if lib.is_coin(input_item.name) then
+            has_coins_in_input = true
+        end
+        if item_values.is_item_interplanetary(trade.surface_name, input_item.name) then
+            is_interplanetary = true
+        end
     end
-    t.hex_core_state = trade.hex_core_state
 
-    storage.trades.trade_id_ctr = prev_ctr
-    return t
+    local has_coins_in_output = false
+    for _, output_item in pairs(output_items) do
+        if lib.is_coin(output_item.name) then
+            has_coins_in_output = true
+            break
+        end
+        if item_values.is_item_interplanetary(trade.surface_name, output_item.name) then
+            is_interplanetary = true
+        end
+    end
+
+    ---@type Trade
+    local new = {
+        id = storage.trades.trade_id_ctr,
+        surface_name = trade.surface_name,
+        input_items = input_items,
+        output_items = output_items,
+        active = true,
+        has_coins_in_input = has_coins_in_input,
+        has_coins_in_output = has_coins_in_output,
+        allowed_qualities = {"normal"},
+        productivity = 0,
+        current_prod_value = {},
+        is_interplanetary = is_interplanetary,
+    }
+
+    trades.check_productivity(new)
+
+    return new
 end
 
----Generate a trade object from item names, using item values to determine best input and output counts and normalizing tiered coins to the lowest tier.
+---Generate a trade object from item names, using item values to determine best input and output counts and normalizing tiered coins to the lowest tier.  Can return nil if the given `params.target_efficiency` is impossible to achieve with the input and output item names while respecting item count constraints.
 ---@param surface_name string
 ---@param input_item_names string[]
 ---@param output_item_names string[]
 ---@param params TradeGenerationParameters|nil
----@return Trade
+---@return Trade|nil
 function trades.from_item_names(surface_name, input_item_names, output_item_names, params)
-    if not params then
-        params = {}
-    end
+    if not params then params = {} end
+    trades.set_trade_generation_parameter_defaults(params)
 
     if lib.is_space_platform(surface_name) then
         lib.log_error("trades.from_item_names: Attempting to create a trade for a space platform (illegal) with input_item_names = " .. serpent.line(input_item_names) .. ", output_item_names = " .. serpent.line(output_item_names))
@@ -376,17 +418,10 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
         max_value = math.max(max_value, item_values.get_item_value(surface_name, item_name))
     end
 
-    local value_budget = (3 + math.random() * 7) * max_value
-    local value_per_input = value_budget / #input_item_names
-
     local input_items = {}
     for _, item_name in pairs(input_item_names) do
-        local value = item_values.get_item_value(surface_name, item_name)
-        local mean_count = value_per_input / value
-        local count = math.max(1, math.floor(0.5 + mean_count * (0.75 + 0.5 * math.random())))
         local input_item = {
             name = item_name,
-            count = count,
         }
         table.insert(input_items, input_item)
     end
@@ -400,120 +435,251 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
         table.insert(output_items, output_item)
     end
 
-    local trade = trades.new(input_items, output_items, surface_name)
-    trades.determine_best_output_counts(surface_name, trade, params)
-    return trade
-end
+    local tentative = trades.new(input_items, output_items, surface_name)
+    local solved = trades.generator_solve_item_counts(surface_name, tentative, params)
 
----Given a trade with unset output item counts, set the output counts to the values which best preserve a value ratio of 1:1, turning it into a properly formed trade object.
----@param surface_name string
----@param trade TentativeTrade
----@param params TradeGenerationParameters|nil
-function trades.determine_best_output_counts(surface_name, trade, params)
-    if not params then params = {} end
-    trades._try_set_output_counts(surface_name, trade, params)
-end
-
-function trades._try_set_output_counts(surface_name, trade, params)
-    if not params.target_efficiency then
-        params.target_efficiency = 1
-    end
-
-    local total_input_value = trades.get_input_value(surface_name, trade) * params.target_efficiency
-    local output_items_value = {}
-
-    -- Temporarily convert hex coin to proper coin tier
-    local coin_name = coin_tiers.get_name_of_tier(coin_tiers.get_tier_for_display(coin_tiers.from_base_value(total_input_value)))
-    for i, output_item in ipairs(trade.output_items) do
-        if lib.is_coin(output_item.name) then
-            trade.output_items[i].name = coin_name
-        end
-    end
-
-    -- Initialize with values and minimal counts
-    for i, output_item in ipairs(trade.output_items) do
-        output_items_value[i] = item_values.get_item_value(surface_name, output_item.name)
-        output_item.count = output_item.count or 1  -- Initialize with count 1 if not set
-    end
-
-    -- Handle single output item case specially
-    if #trade.output_items == 1 then
-        local output_item = trade.output_items[1]
-        if lib.is_coin(trade.output_items[1].name) then
-            output_item.name = "hex-coin"
-            output_item.count = math.max(1, math.floor(0.5 + total_input_value / item_values.get_item_value("nauvis", "hex-coin")))
-        else
-            local item_value = output_items_value[1]
-            output_item.count = math.max(1, math.floor((total_input_value / item_value) + 0.5))
-        end
+    if params.allow_nil_return and not solved then
         return
     end
 
-    -- Initial distribution based on proportional values
-    local total_output_value_per_item = 0
-    for i = 1, #output_items_value do
-        total_output_value_per_item = total_output_value_per_item + output_items_value[i]
+    return trades.initialize_trade_state(tentative)
+end
+
+---Given a trade with undefined output item counts, attempt to set the output counts to the values which best preserve a value ratio of the given `params.target_efficiency`.  If the solver fails (returning false), item counts are left undefined.
+---@param surface_name string
+---@param trade TentativeTrade
+---@param params TradeGenerationParameters|nil
+---@return boolean solved Whether the target_efficiency could be approximated with item counts while respecting item count constraints.
+function trades.generator_solve_item_counts(surface_name, trade, params)
+    if not params then params = {} end
+    trades.set_trade_generation_parameter_defaults(params)
+
+    -- log("")
+    -- log("")
+
+    -- log("INIT ITEM COUNT SOLVER")
+    -- log("inputs: " .. serpent.line(trade.input_items))
+    -- log("outputs: " .. serpent.line(trade.output_items))
+    -- log("params: " .. serpent.line(params))
+
+    -- Convert coins to lowest tier
+    for _, input_item in pairs(trade.input_items) do
+        if lib.is_coin(input_item.name) then
+            input_item.name = "hex-coin"
+            break
+        end
     end
 
+    for _, output_item in pairs(trade.output_items) do
+        if lib.is_coin(output_item.name) then
+            output_item.name = "hex-coin"
+            break
+        end
+    end
+
+    -- Obtain numerator/denominator for target efficiency
+    -- TODO: cache the result for reuse when the target efficiency is known to be unchanged
+    local num, den = lib.get_rational_approximation(params.target_efficiency, 1.04, 50, 50)
+
+    -- Initialize item counts based on num / den, and create lookup tables for item values (better performance), and fetch item stack sizes
+    local total_input_value = 0
+    local input_item_values = {}
+    local input_stack_sizes = {}
+    for i, input_item in ipairs(trade.input_items) do
+        local val = item_values.get_item_value(surface_name, input_item.name)
+        total_input_value = total_input_value + val
+        input_item_values[i] = val
+        input_item.count = den
+
+        local prot = prototypes.item[input_item.name]
+        if prot then
+            input_stack_sizes[i] = prot.stack_size
+        end
+    end
+
+    local total_output_value = 0
+    local output_item_values = {}
+    local output_stack_sizes = {}
     for i, output_item in ipairs(trade.output_items) do
-        local proportion = output_items_value[i] / total_output_value_per_item
-        local target_value = total_input_value * proportion
-        local target_count = target_value / output_items_value[i]
-        output_item.count = math.max(1, math.floor(target_count + 0.5))
+        local val = item_values.get_item_value(surface_name, output_item.name)
+        total_output_value = total_output_value + val
+        output_item_values[i] = val
+        output_item.count = num
+
+        local prot = prototypes.item[output_item.name]
+        if prot then
+            output_stack_sizes[i] = prot.stack_size
+        end
     end
 
-    -- Hill climbing optimization to get closer to target ratio
-    local iterations = 0
-    local max_iterations = 50
-    local best_error = math.abs(trades.get_trade_value_ratio(surface_name, trade) - 1)
+    -- log("Initial item counts:")
+    -- log("inputs: " .. serpent.line(trade.input_items))
+    -- log("outputs: " .. serpent.line(trade.output_items))
 
-    while iterations < max_iterations and best_error > 0.01 do
-        iterations = iterations + 1
-        local improved = false
+    -- log("initial total_input_value = " .. (total_input_value * den) .. " (" .. den .. " * " .. total_input_value .. ")")
+    -- log("initial total_output_value = " .. (total_output_value * den) .. " (" .. num .. " * " .. total_output_value .. ")")
 
-        -- For each output item, try incrementing and decrementing
-        for i, output_item in ipairs(trade.output_items) do
-            -- Try incrementing
-            output_item.count = output_item.count + 1
-            local new_ratio = trades.get_trade_value_ratio(surface_name, trade)
-            local new_error = math.abs(new_ratio - params.target_efficiency)
+    total_input_value = total_input_value * den
+    total_output_value = total_output_value * num
 
-            if new_error < best_error then
-                best_error = new_error
-                improved = true
-            else
-                -- Revert increment
-                output_item.count = output_item.count - 1
+    -- Scale up if total values are under one hex coin
+    local min_total_value = item_values.get_item_value("nauvis", "hex-coin")
+    if total_input_value < min_total_value or total_output_value < min_total_value then
+        local scale = math.max(math.ceil(min_total_value / total_input_value), math.ceil(min_total_value / total_output_value))
 
-                -- Try decrementing if count > 1
-                if output_item.count > 1 then
-                    output_item.count = output_item.count - 1
-                    new_ratio = trades.get_trade_value_ratio(surface_name, trade)
-                    new_error = math.abs(new_ratio - params.target_efficiency)
+        for _, input_item in pairs(trade.input_items) do
+            input_item.count = input_item.count * scale
+        end
 
-                    if new_error < best_error then
-                        best_error = new_error
-                        improved = true
-                    else
-                        -- Revert decrement
-                        output_item.count = output_item.count + 1
+        for _, output_item in pairs(trade.output_items) do
+            output_item.count = output_item.count * scale
+        end
+
+        -- log("scaled up total_input_value = " .. total_input_value .. " by " .. scale .. "x to total_input_value = " .. (total_input_value * scale))
+        -- log("scaled up total_output_value = " .. total_output_value .. " by " .. scale .. "x to total_output_value = " .. (total_output_value * scale))
+
+        total_input_value = total_input_value * scale
+        total_output_value = total_output_value * scale
+    end
+
+    -- Increment lower-valued items, decrement higher-valued items, with some randomness
+    local randomness = 0.125 -- How much to vary the item counts from the initial num : den counts
+    local new_total_input_value = 0
+    for i, input_item in ipairs(trade.input_items) do
+        local item_value = input_item_values[i]
+        local value_contribution = item_value * input_item.count / total_input_value
+
+        -- Apply random offset to contribution
+        value_contribution = math.min(1, value_contribution * (math.random() * 0.4 + 0.8))
+
+        local new_count = input_item.count
+        if value_contribution > 0.5 then
+            new_count = new_count * (1 - randomness + 2 * randomness * value_contribution)
+        else
+            new_count = new_count / (1 + randomness - 2 * randomness * value_contribution)
+        end
+        new_count = math.max(1, math.floor(0.5 + new_count))
+
+        new_total_input_value = new_total_input_value + new_count * item_value
+        input_item.count = new_count
+    end
+    -- log("New input counts: " .. serpent.line(trade.input_items))
+    -- log("Updating total_input_value = " .. total_input_value .. ": new_total_input_value = " .. new_total_input_value)
+    total_input_value = new_total_input_value
+
+    local new_total_output_value = 0
+    for i, output_item in ipairs(trade.output_items) do
+        local item_value = output_item_values[i]
+        local value_contribution = item_value * output_item.count / total_output_value
+
+        -- Apply random offset to contribution
+        value_contribution = math.min(1, value_contribution * (math.random() * 0.4 + 0.8))
+
+        local new_count = output_item.count
+        if value_contribution > 0.5 then
+            new_count = new_count * (1 - randomness + 2 * randomness * value_contribution)
+        else
+            new_count = new_count / (1 + randomness - 2 * randomness * value_contribution)
+        end
+        new_count = math.max(1, math.floor(0.5 + new_count))
+
+        new_total_output_value = new_total_output_value + new_count * item_value
+        output_item.count = new_count
+    end
+    -- log("New output counts: " .. serpent.line(trade.output_items))
+    -- log("Updating total_output_value = " .. total_output_value .. ": new_total_output_value = " .. new_total_output_value)
+    total_output_value = new_total_output_value
+
+    -- Start iterative search
+    -- Make small adjustments to each input or output count if it better approximates target efficiency
+    local working_inputs = table.deepcopy(trade.input_items)
+    local working_outputs = table.deepcopy(trade.output_items)
+    local target_ratio = math.sqrt(params.target_efficiency)
+    local epsilon = params.target_efficiency_epsilon
+    local epsilon_inv = 1 / epsilon
+
+    -- log("START SOLVER")
+    -- log(serpent.line(working_inputs) .. " -> " .. serpent.line(working_outputs))
+    -- log("target_ratio = " .. target_ratio .. " (sqrt of " .. params.target_efficiency .. ")")
+    -- log("epsilon = " .. epsilon)
+    -- log("epsilon_inv = " .. epsilon_inv)
+    -- log("initial total_input_value = " .. total_input_value)
+    -- log("initial total_output_value = " .. total_output_value)
+
+    local solved = false
+    for iteration = 1, 100 do
+        local current_efficiency = total_output_value / total_input_value
+
+        local ratio = current_efficiency / params.target_efficiency
+        if ratio <= epsilon and ratio >= epsilon_inv then
+            -- log("finished after " .. iteration .. " iterations")
+            solved = true
+            break
+        end
+
+        local geo_mean = math.sqrt(total_input_value * total_output_value)
+        local target_total_input_value = geo_mean / target_ratio
+        local target_total_output_value = geo_mean * target_ratio
+
+        local changed = false
+        for j, t in ipairs {
+            {working_inputs, input_item_values, input_stack_sizes, total_input_value, target_total_input_value},
+            {working_outputs, output_item_values, output_stack_sizes, total_output_value, target_total_output_value},
+        } do
+            local working_items = t[1]
+            local item_vals = t[2]
+            local item_stack_sizes = t[3]
+            local total_value = t[4]
+            local target_total_value = t[5]
+
+            for cur_index = 1, #working_items do
+                local item = working_items[cur_index]
+                local item_value = item_vals[cur_index]
+                local stack_size = item_stack_sizes[cur_index]
+
+                local sum_of_other_values = total_value - item_value * item.count
+                local new_count = math.max(1, math.floor(0.5 + (target_total_value - sum_of_other_values) / item_value))
+
+                -- TODO: Don't repeatedly call lib.is_coin() here because it performs string operations (which are slow)
+                if not lib.is_coin(item.name) then
+                    ---@diagnostic disable-next-line: cast-local-type
+                    new_count = math.min(params.max_count_per_item, new_count)
+
+                    if stack_size then
+                        ---@diagnostic disable-next-line: cast-local-type
+                        new_count = math.min(params.max_stacks_per_item * stack_size, new_count)
                     end
+                end
+
+                if new_count ~= item.count then
+                    changed = true
+
+                    if j == 1 then
+                        total_input_value = total_value + (new_count - item.count) * item_value
+                    else
+                        total_output_value = total_value + (new_count - item.count) * item_value
+                    end
+                    item.count = new_count
+
+                    break
                 end
             end
         end
 
-        -- Exit if no improvements in this iteration
-        if not improved then break end
-    end
+        -- log("current item counts: " .. serpent.line(working_inputs) .. " | " .. serpent.line(working_outputs))
 
-    -- Convert any coins back down to lowest tier
-    for i, output_item in ipairs(trade.output_items) do
-        if lib.is_coin(output_item.name) then
-            local tier = lib.get_tier_of_coin_name(output_item.name)
-            trade.output_items[i].name = "hex-coin"
-            trade.output_items[i].count = trade.output_items[i].count * coin_tiers.get_scale_of_tier(tier)
+        if not changed then
+            -- log("finished after " .. iteration .. " iterations")
+            break
         end
     end
+
+    -- log("finished iteration with final ratio: " .. total_output_value .. " / " .. total_input_value .. " = " .. (total_output_value / total_input_value))
+
+    trade.input_items = working_inputs
+    trade.output_items = working_outputs
+
+    return solved
 end
 
 ---Return the value of the trade's inputs on a given surface.
@@ -929,7 +1095,7 @@ end
 ---Sample random item names for inputs and outputs of a trade based on a central value for each item.
 ---@param surface_name string
 ---@param volume number
----@param params TradeItemSamplingParameters|nil
+---@param params TradeGenerationParameters|nil
 ---@param allow_interplanetary boolean|nil
 ---@param include_item string|nil An item name to be forcefully included in the returned input or output items.
 ---@return string[], string[]
@@ -937,20 +1103,28 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
     if not params then params = {} end
     if allow_interplanetary == nil then allow_interplanetary = false end
 
-    local ratio = 10
+    trades.set_trade_generation_parameter_defaults(params)
+
+    local ratio
+    if params.target_efficiency >= 1 then
+        ratio = 10 * params.target_efficiency
+    else
+        ratio = 10 / params.target_efficiency
+    end
+
     local possible_items = item_values.get_items_near_value(surface_name, volume, ratio, true, false, allow_interplanetary)
 
     -- Apply whitelist filter
-    if params.whitelist then
+    if params.item_sampling_filters.whitelist then
         possible_items = lib.filter_whitelist(possible_items, function(item_name)
-            return params.whitelist[item_name]
+            return params.item_sampling_filters.whitelist[item_name]
         end)
     end
 
     -- Apply blacklist filter
-    if params.blacklist then
+    if params.item_sampling_filters.blacklist then
         possible_items = lib.filter_blacklist(possible_items, function(item_name)
-            return params.blacklist[item_name]
+            return params.item_sampling_filters.blacklist[item_name]
         end)
     end
 
@@ -1025,21 +1199,30 @@ end
 ---@param target_efficiency number|nil Defaults to 1.0
 ---@return Trade
 function trades.new_coin_trade(surface_name, item_name, target_efficiency)
-    if target_efficiency == nil then target_efficiency = 1 end
+    if target_efficiency == nil then
+        target_efficiency = storage.trades.base_trade_efficiency
+    end
+
     if math.random() < lib.runtime_setting_value "sell-trade-chance" then
+        ---@diagnostic disable-next-line: return-type-mismatch
         return trades.from_item_names(surface_name, {item_name}, {"hex-coin"}, {target_efficiency = target_efficiency})
     end
+
+    ---@diagnostic disable-next-line: return-type-mismatch
     return trades.from_item_names(surface_name, {"hex-coin"}, {item_name}, {target_efficiency = target_efficiency})
+
+    -- Note: nil is impossible to be returned for coin trades, assuming target_efficiency isn't extremely large or small (which should never happen since the mod setting has min and max values)
 end
 
 ---Generate a random trade on a given surface with a central value for input and output items.
 ---@param surface_name string
 ---@param volume number
+---@param params TradeGenerationParameters
 ---@param allow_interplanetary boolean|nil
 ---@param include_item string|nil
 ---@return Trade|nil
-function trades.random(surface_name, volume, allow_interplanetary, include_item)
-    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, nil, allow_interplanetary, include_item)
+function trades.random(surface_name, volume, params, allow_interplanetary, include_item)
+    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary, include_item)
 
     if not next(output_item_names) and not next(input_item_names) then
         lib.log("trades.random: Not enough items centered around the value " .. volume)
@@ -1085,35 +1268,7 @@ function trades.random(surface_name, volume, allow_interplanetary, include_item)
         end
     end
 
-    return trades.from_item_names(surface_name, input_item_names, output_item_names)
-end
-
----Return whether a trade object has a valid structure.
----@param trade table
----@return boolean
-function trades.is_trade_valid(trade)
-    if not trade then return false end
-    if not trade.id then return false end
-    if not trade.input_items then return false end
-    if not trade.output_items then return false end
-    if not trade.surface_name then return false end
-    if type(trade.surface_name) ~= "string" then return false end
-    if type(trade.input_items) ~= "table" then return false end
-    if type(trade.output_items) ~= "table" then return false end
-    local all_items = table.pack(table.unpack(trade.input_items), table.unpack(trade.output_items))
-    all_items.n = nil -- weird thing from Lua idk
-    for _, item in pairs(all_items) do
-        if type(item) ~= "table" then return false end
-        if not item.name then return false end
-        if type(item.name) ~= "string" then return false end
-        if not item.count then return false end
-        if type(item.count) ~= "number" then return false end
-        if item.count <= 0 then return false end
-
-        -- This does not need to be checked since items are allowed to have interplanetary values.
-        -- if not item_values.has_item_value(trade.surface_name, item.name) then return false end
-    end
-    return true
+    return trades.from_item_names(surface_name, input_item_names, output_item_names, params)
 end
 
 ---Return whether the item is now discovered if it wasn't previously.
@@ -1452,6 +1607,34 @@ function trades.check_productivity(trade)
             end
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) - penalty_prod)
         end
+    end
+end
+
+---Replace nil values with default values in `params`, modifying the table in place.
+---@param params TradeGenerationParameters
+function trades.set_trade_generation_parameter_defaults(params)
+    if not params.target_efficiency then
+        params.target_efficiency = 1
+    end
+
+    if not params.target_efficiency_epsilon then
+        params.target_efficiency_epsilon = 1.05
+    end
+
+    if not params.item_sampling_filters then
+        params.item_sampling_filters = {}
+    end
+
+    if not params.max_stacks_per_item then
+        params.max_stacks_per_item = 5
+    end
+
+    if not params.max_count_per_item then
+        params.max_count_per_item = 100
+    end
+
+    if params.allow_nil_return == nil then
+        params.allow_nil_return = true
     end
 end
 
@@ -2835,10 +3018,13 @@ function trades.fetch_base_trade_productivity_settings(surface_name)
         return
     end
 
-    local prod = lib.runtime_setting_value("base-trade-prod-" .. surface_name)
-    ---@cast prod number
-
+    local prod = lib.runtime_setting_value_as_number("base-trade-prod-" .. surface_name)
     storage.trades.base_trade_productivity[surface_name] = prod
+end
+
+function trades.fetch_base_trade_efficiency_settings()
+    local eff = lib.runtime_setting_value_as_number "base-trade-efficiency"
+    storage.trades.base_trade_efficiency = eff
 end
 
 ---Return whether the heuristic upper bound for total number of trades on the selected planets exceeds the current batch processing threshold.

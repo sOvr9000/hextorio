@@ -1,11 +1,13 @@
 
 data:extend({
     {
-        type = "bool-setting",
-        name = "hextorio-supply-and-demand",
+        type = "double-setting",
+        name = "hextorio-base-trade-efficiency",
         setting_type = "runtime-global",
-        default_value = false,
-        order = "a[important]-a[balancing]-s[supply-and-demand]",
+        default_value = 1.0,
+        minimum_value = 0.1,
+        maximum_value = 10,
+        order = "a[important]-a[balancing]-s[base-trade-efficiency]",
     },
     {
         type = "double-setting",
