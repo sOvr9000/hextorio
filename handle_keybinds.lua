@@ -8,7 +8,7 @@ local event_system = require "api.event_system"
 
 
 script.on_event("toggle-questbook", function(event)
-    ---@cast event {player_index: int}]]
+    ---@cast event {player_index: int}
     local player = game.get_player(event.player_index)
     if not player then return end
 
@@ -20,7 +20,7 @@ script.on_event("toggle-questbook", function(event)
 end)
 
 script.on_event("toggle-catalog", function(event)
-    ---@cast event {player_index: int}]]
+    ---@cast event {player_index: int}
     local player = game.get_player(event.player_index)
     if not player then return end
 
@@ -34,7 +34,7 @@ script.on_event("toggle-catalog", function(event)
 end)
 
 script.on_event("toggle-trade-overview", function(event)
-    ---@cast event {player_index: int}]]
+    ---@cast event {player_index: int}
     local player = game.get_player(event.player_index)
     if not player then return end
 
@@ -48,14 +48,13 @@ script.on_event("toggle-trade-overview", function(event)
 end)
 
 script.on_event("teleport-to-hex-core", function(event)
-    event = event--[[@as {player_index: int}]] -- suppress warnings
+    ---@cast event {player_index: int}
     local player = game.get_player(event.player_index)
     if not player then return end
     if not player.character then return end
 
-    local target = player.opened or player.selected
-    if not target or not target.surface then return end
-    ---@cast target LuaEntity
+    local target = lib.get_player_opened_or_selected_entity(player)
+    if not target then return end
 
     local hex_core = lib.get_hex_core_from_entity(target)
     if not hex_core then return end
@@ -92,7 +91,7 @@ script.on_event("teleport-to-hex-core", function(event)
 end)
 
 script.on_event("claim-hex-core", function(event)
-    event = event--[[@as {player_index: int}]] -- suppress warnings
+    ---@cast event {player_index: int}
     local player = game.get_player(event.player_index)
     if not player then return end
 

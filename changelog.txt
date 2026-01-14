@@ -14,6 +14,7 @@ Date: 15/1/26
   Bugfixes:
     - Fixed that sink/generator mode did not reliably create trades with a 10:1 input-to-output efficiency.
     - Fixed missing locale for electric damage / shooting speed.
+    - Fixed crash on teleporting to a hex core by hotkey while you have an equipment grid open.
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:

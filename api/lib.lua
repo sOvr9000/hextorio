@@ -2048,6 +2048,20 @@ function lib.get_player_opened_entity(player)
     return entity
 end
 
+---Get an entity that is either opened by or moused over by a player.  Opened entities take precedence over moused over entities.
+---@param player LuaPlayer
+---@return LuaEntity|nil
+function lib.get_player_opened_or_selected_entity(player)
+    local e = player.opened
+    if e and e.object_name == "LuaEntity" then
+        return e
+    end
+    e = player.selected
+    if e and e.object_name == "LuaEntity" then
+        return e
+    end
+end
+
 -- ---Get the required tiles for placement of an entity prototype.
 -- ---@param prot LuaEntityPrototype
 -- function lib.entity_required_tiles(prot)
