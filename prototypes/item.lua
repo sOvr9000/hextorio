@@ -3,7 +3,7 @@
 local hex_coin = table.deepcopy(data.raw["item"]["coin"])
 hex_coin.name = "hex-coin"
 hex_coin.icon = "__hextorio__/graphics/icons/hex-coin.png"
-hex_coin.order = "ya"
+hex_coin.order = "y[coins]-a[hex]"
 hex_coin.stack_size = 99999
 hex_coin.auto_recycle = false
 hex_coin.subgroup = "other"
@@ -13,7 +13,7 @@ hex_coin.weight = 1000000 / hex_coin.stack_size
 local gravity_coin = table.deepcopy(hex_coin)
 gravity_coin.name = "gravity-coin"
 gravity_coin.icon = "__hextorio__/graphics/icons/gravity-coin.png"
-gravity_coin.order = "yb"
+gravity_coin.order = "y[coins]-b[gravity]"
 gravity_coin.auto_recycle = false
 gravity_coin.subgroup = "other"
 gravity_coin.hidden = false
@@ -22,7 +22,7 @@ gravity_coin.weight = 1000000 / gravity_coin.stack_size
 local meteor_coin = table.deepcopy(hex_coin)
 meteor_coin.name = "meteor-coin"
 meteor_coin.icon = "__hextorio__/graphics/icons/meteor-coin.png"
-meteor_coin.order = "yc"
+meteor_coin.order = "y[coins]-b[meteor]"
 meteor_coin.auto_recycle = false
 meteor_coin.subgroup = "other"
 meteor_coin.hidden = false
@@ -31,12 +31,21 @@ meteor_coin.weight = 1000000 / meteor_coin.stack_size
 local hexaprism_coin = table.deepcopy(hex_coin)
 hexaprism_coin.name = "hexaprism-coin"
 hexaprism_coin.icon = "__hextorio__/graphics/icons/hexaprism-coin.png"
-hexaprism_coin.order = "yd"
-hexaprism_coin.stack_size = 100000
+hexaprism_coin.order = "y[coins]-c[hexaprism]"
 hexaprism_coin.auto_recycle = false
 hexaprism_coin.subgroup = "other"
 hexaprism_coin.hidden = false
 hexaprism_coin.weight = 1000000 / hexaprism_coin.stack_size
+
+local black_hole_coin = table.deepcopy(hex_coin)
+black_hole_coin.name = "black-hole-coin"
+black_hole_coin.icon = "__hextorio__/graphics/icons/black-hole-coin.png"
+black_hole_coin.order = "y[coins]-d[black-hole]"
+black_hole_coin.stack_size = 100000
+black_hole_coin.auto_recycle = false
+black_hole_coin.subgroup = "other"
+black_hole_coin.hidden = false
+black_hole_coin.weight = 1000000 / black_hole_coin.stack_size
 
 
 -- BELTS
@@ -151,6 +160,7 @@ data:extend({
     gravity_coin,
     meteor_coin,
     hexaprism_coin,
+    black_hole_coin,
     hexic_transport_belt,
     hexic_underground_belt,
     hexic_splitter,
