@@ -18,6 +18,7 @@ Date: 15/1/26
     - Fixed missing locale for electric damage / shooting speed.
     - Fixed crash on teleporting to a hex core by hotkey while you have an equipment grid open.
     - Fixed rare crash when enhancing item buffs.
+    - Fixed that trading at higher qualities was using the wrong productivity progress bar.
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:

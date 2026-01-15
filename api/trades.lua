@@ -1576,7 +1576,7 @@ function trades.increment_current_prod_value(trade, num_batches, quality)
     end
 
     local f = math.floor(new_prod_value)
-    trades.set_current_prod_value(trade, new_prod_value - f)
+    trades.set_current_prod_value(trade, new_prod_value - f, quality)
 
     if total_prod < 0 then
         return f - num_batches
