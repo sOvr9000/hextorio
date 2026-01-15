@@ -309,22 +309,27 @@ function hex_grid.register_events()
 
     event_system.register("runtime-setting-changed-hex-claim-cost-mult-nauvis", function()
         hex_grid.fetch_claim_cost_multiplier_settings "nauvis"
+        hex_grid.update_all_hex_claim_costs "nauvis"
     end)
 
     event_system.register("runtime-setting-changed-hex-claim-cost-mult-vulcanus", function()
         hex_grid.fetch_claim_cost_multiplier_settings "vulcanus"
+        hex_grid.update_all_hex_claim_costs "vulcanus"
     end)
 
     event_system.register("runtime-setting-changed-hex-claim-cost-mult-fulgora", function()
         hex_grid.fetch_claim_cost_multiplier_settings "fulgora"
+        hex_grid.update_all_hex_claim_costs "fulgora"
     end)
 
     event_system.register("runtime-setting-changed-hex-claim-cost-mult-gleba", function()
         hex_grid.fetch_claim_cost_multiplier_settings "gleba"
+        hex_grid.update_all_hex_claim_costs "gleba"
     end)
 
     event_system.register("runtime-setting-changed-hex-claim-cost-mult-aquilo", function()
         hex_grid.fetch_claim_cost_multiplier_settings "aquilo"
+        hex_grid.update_all_hex_claim_costs "aquilo"
     end)
 
     event_system.register("runtime-setting-changed-default-nauvis-hexlight-color", function()
@@ -3776,6 +3781,18 @@ function hex_grid.fetch_claim_cost_multiplier_settings(surface_name)
 
     local val = lib.runtime_setting_value_as_number("hex-claim-cost-mult-" .. surface_name)
     storage.hex_grid.claim_cost_multiplier[surface_name] = val
+end
+
+---@param surface_name string
+function hex_grid.update_all_hex_claim_costs(surface_name)
+    local surface = game.get_surface(surface_name)
+    if not surface then return end
+    for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
+        if state.hex_core then
+            -- Claim cost affects delete core cost, so also check claimed hexes
+            state.claim_price = hex_grid.calculate_hex_claim_price(surface, axial.distance(state.position, {q=0, r=0}))
+        end
+    end
 end
 
 ---@param train LuaTrain
