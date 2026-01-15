@@ -3299,7 +3299,7 @@ function hex_grid.process_flying_text(state, total_removed, total_inserted, tota
     end
 
     if not any_output then
-        str = {"", str, lib.color_localized_string({"hextorio.negative-productivity"}, "red", "heading-2")} ---@diagnostic disable-line
+        str = {"", str, "[img=virtual-signal.signal-deny]"} ---@diagnostic disable-line
     end
 
     for _, player in pairs(game.connected_players) do
