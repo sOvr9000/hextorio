@@ -77,7 +77,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-copper-ore-frequency",
         setting_type = "runtime-global",
-        default_value = 4.5,
+        default_value = 4.0,
         minimum_value = 0.0,
         maximum_value = 24.0,
         order = "w[resources]-k[frequency]-p[nauvis]-u[copper-ore]",
