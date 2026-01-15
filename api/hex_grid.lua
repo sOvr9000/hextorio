@@ -3740,15 +3740,19 @@ end
 function hex_grid.calculate_hex_claim_price(surface, dist)
     local claim_price = (dist + 1) * (dist + 1)
 
-    local mult = hex_grid.get_claim_cost_multiplier(surface.name)
-    claim_price = math.max(1, math.floor(0.5 + claim_price * mult))
-
     local coin = coin_tiers.from_base_value(claim_price)
 
     if lib.is_t2_planet(surface.name) then -- vulcanus, fulgora, gleba
         coin = coin_tiers.shift_tier(coin, 1)
     elseif lib.is_t3_planet(surface.name) then -- aquilo
         coin = coin_tiers.floor(coin_tiers.multiply(coin, coin.tier_scaling ^ 1.5))
+    end
+
+    local mult = hex_grid.get_claim_cost_multiplier(surface.name)
+    coin = coin_tiers.floor(coin_tiers.multiply(coin, mult))
+
+    if coin_tiers.is_negative(coin) or coin_tiers.is_zero(coin) then
+        coin = coin_tiers.from_base_value(1)
     end
 
     return coin
