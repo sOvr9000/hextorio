@@ -26,4 +26,6 @@ return {
     pool_size = 25,
     chunk_generation_range_per_player = 7,
     show_trade_flying_text = {},
+
+    claim_cost_multiplier = {}, ---@type {[string]: number}
 }

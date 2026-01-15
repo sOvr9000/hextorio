@@ -91,6 +91,7 @@ script.on_init(function()
     storage.item_buffs = data_item_buffs
 
     hex_grid.update_hexlight_default_colors()
+    hex_grid.fetch_claim_cost_multiplier_settings()
     trades.fetch_base_trade_productivity_settings()
     trades.fetch_base_trade_efficiency_settings()
 

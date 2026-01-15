@@ -220,6 +220,51 @@ data:extend({
 
     -- RUNTIME SETTINGS
     {
+        type = "double-setting",
+        name = "hextorio-hex-claim-cost-mult-nauvis",
+        setting_type = "runtime-global",
+        default_value = 1.0,
+        minimum_value = 0.01,
+        maximum_value = 100,
+        order="h[hex-grid]-a[hex-claim-cost]-p[nauvis]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-hex-claim-cost-mult-vulcanus",
+        setting_type = "runtime-global",
+        default_value = 1.0,
+        minimum_value = 0.01,
+        maximum_value = 100,
+        order="h[hex-grid]-a[hex-claim-cost]-p[vulcanus]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-hex-claim-cost-mult-fulgora",
+        setting_type = "runtime-global",
+        default_value = 1.0,
+        minimum_value = 0.01,
+        maximum_value = 100,
+        order="h[hex-grid]-a[hex-claim-cost]-q[fulgora]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-hex-claim-cost-mult-gleba",
+        setting_type = "runtime-global",
+        default_value = 1.0,
+        minimum_value = 0.01,
+        maximum_value = 100,
+        order="h[hex-grid]-a[hex-claim-cost]-q[gleba]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-hex-claim-cost-mult-aquilo",
+        setting_type = "runtime-global",
+        default_value = 1.0,
+        minimum_value = 0.01,
+        maximum_value = 100,
+        order="h[hex-grid]-a[hex-claim-cost]-r[aquilo]",
+    },
+    {
         type = "color-setting",
         name = "hextorio-dungeon-hexlight-color",
         setting_type = "runtime-global",
@@ -268,7 +313,7 @@ data:extend({
         default_value = 0.02,
         minimum_value = 0,
         maximum_value = 1.0,
-        order="h[hex-grid]-b[fulgora-misc]-s[vault-chance]",
+        order="h[hex-grid]-c[fulgora-misc]-s[vault-chance]",
     },
     {
         type = "double-setting",
@@ -277,7 +322,7 @@ data:extend({
         default_value = 0.25,
         minimum_value = 0,
         maximum_value = 1.0,
-        order="h[hex-grid]-b[fulgora-misc]-t[attractor-chance]",
+        order="h[hex-grid]-c[fulgora-misc]-t[attractor-chance]",
     },
     {
         type = "double-setting",
@@ -286,7 +331,7 @@ data:extend({
         default_value = 0.25,
         minimum_value = 0,
         maximum_value = 1.0,
-        order="h[hex-grid]-b[gleba-misc]-s[small-egg-raft-chance]",
+        order="h[hex-grid]-c[gleba-misc]-s[small-egg-raft-chance]",
     },
 
     {

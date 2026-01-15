@@ -3,6 +3,8 @@ Version: 1.5.0
 Date: 15/1/26
   Major Features:
     - Added mod setting for controlling the efficiency of trades (which is the average ratio of the trade's total output-to-input value).
+  Features:
+    - Added mod setting for controlling the hex claim costs, intended to be lowered when lowering the trade efficiency setting to the point where infinite loops are impossible.
   Minor Features:
     - Added more item buffs: rocket turret, rocket launcher
   Changes:

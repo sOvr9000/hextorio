@@ -307,6 +307,26 @@ function hex_grid.register_events()
         end
     end)
 
+    event_system.register("runtime-setting-changed-hex-claim-cost-mult-nauvis", function()
+        hex_grid.fetch_claim_cost_multiplier_settings "nauvis"
+    end)
+
+    event_system.register("runtime-setting-changed-hex-claim-cost-mult-vulcanus", function()
+        hex_grid.fetch_claim_cost_multiplier_settings "vulcanus"
+    end)
+
+    event_system.register("runtime-setting-changed-hex-claim-cost-mult-fulgora", function()
+        hex_grid.fetch_claim_cost_multiplier_settings "fulgora"
+    end)
+
+    event_system.register("runtime-setting-changed-hex-claim-cost-mult-gleba", function()
+        hex_grid.fetch_claim_cost_multiplier_settings "gleba"
+    end)
+
+    event_system.register("runtime-setting-changed-hex-claim-cost-mult-aquilo", function()
+        hex_grid.fetch_claim_cost_multiplier_settings "aquilo"
+    end)
+
     event_system.register("runtime-setting-changed-default-nauvis-hexlight-color", function()
         hex_grid.update_hexlight_default_colors "nauvis"
     end)
@@ -2036,20 +2056,12 @@ function hex_grid.spawn_hex_core(surface, position)
         end
     end
 
-    local claim_price = dist + 1
-    claim_price = claim_price * claim_price
-
     state.hex_core = hex_core
     state.hex_core_input_inventory = hex_core.get_inventory(defines.inventory.chest)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory
-    state.claim_price = coin_tiers.from_base_value(claim_price)
 
-    if lib.is_t2_planet(surface.name) then -- vulcanus, fulgora, gleba
-        state.claim_price = coin_tiers.shift_tier(state.claim_price, 1)
-    elseif lib.is_t3_planet(surface.name) then -- aquilo
-        state.claim_price = coin_tiers.floor(coin_tiers.multiply(state.claim_price, state.claim_price.tier_scaling ^ 1.5))
-    end
+    state.claim_price = hex_grid.calculate_hex_claim_price(surface, dist)
 
     hex_grid.generate_loaders(state)
     hex_grid.spawn_hexlight(state)
@@ -3714,6 +3726,56 @@ function hex_grid.get_hex_core_stats(state)
     }
 
     return stats
+end
+
+---Calculate the claim cost for a hex at some position on a given surface.
+---@param surface LuaSurface
+---@param dist int
+---@return Coin
+function hex_grid.calculate_hex_claim_price(surface, dist)
+    local claim_price = (dist + 1) * (dist + 1)
+
+    local mult = hex_grid.get_claim_cost_multiplier(surface.name)
+    claim_price = math.max(1, math.floor(0.5 + claim_price * mult))
+
+    local coin = coin_tiers.from_base_value(claim_price)
+
+    if lib.is_t2_planet(surface.name) then -- vulcanus, fulgora, gleba
+        coin = coin_tiers.shift_tier(coin, 1)
+    elseif lib.is_t3_planet(surface.name) then -- aquilo
+        coin = coin_tiers.floor(coin_tiers.multiply(coin, coin.tier_scaling ^ 1.5))
+    end
+
+    return coin
+end
+
+---Get the multiplier of the cost of hex claims for a given surface.
+---@param surface_name string
+---@return number
+function hex_grid.get_claim_cost_multiplier(surface_name)
+    local mult = storage.hex_grid.claim_cost_multiplier[surface_name]
+    if not mult then
+        mult = 1
+        lib.log_error("hex_grid.get_claim_cost_multiplier: Multiplier not found for surface " .. surface_name)
+    end
+    return mult
+end
+
+---@param surface_name string|nil
+function hex_grid.fetch_claim_cost_multiplier_settings(surface_name)
+    if not surface_name then
+        for _surface_name, _ in pairs(storage.item_values.values) do
+            hex_grid.fetch_claim_cost_multiplier_settings(_surface_name)
+        end
+        return
+    end
+
+    if not storage.hex_grid.claim_cost_multiplier then
+        storage.hex_grid.claim_cost_multiplier = {}
+    end
+
+    local val = lib.runtime_setting_value_as_number("hex-claim-cost-mult-" .. surface_name)
+    storage.hex_grid.claim_cost_multiplier[surface_name] = val
 end
 
 ---@param train LuaTrain

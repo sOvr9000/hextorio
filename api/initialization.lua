@@ -1,5 +1,7 @@
 
 local lib = require "api.lib"
+local hex_grid = require "api.hex_grid"
+local coin_tiers        = require "api.coin_tiers"
 
 local initialization = {}
 
@@ -26,7 +28,9 @@ function initialization.on_game_started()
         end
 
         -- Give starting items
-        player.insert{name = "hex-coin", count = 5}
+        local cost_of_first_hexes = coin_tiers.to_base_value(hex_grid.calculate_hex_claim_price(game.surfaces.nauvis, 0)) + coin_tiers.to_base_value(hex_grid.calculate_hex_claim_price(game.surfaces.nauvis, 1))
+        if cost_of_first_hexes <= 0 then cost_of_first_hexes = 5 end
+        player.insert{name = "hex-coin", count = cost_of_first_hexes}
 
         -- And whatever other items the player should have from other mods
         for _, item in pairs(storage.initialization.player_starter_inv) do
