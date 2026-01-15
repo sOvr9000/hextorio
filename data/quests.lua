@@ -155,7 +155,7 @@ return {
                         {name = "solar-panel-equipment", count = 15},
                         {name = "personal-roboport-equipment", count = 2},
                         {name = "battery-equipment", count = 5},
-                        {name = "construction-robot", count = 10},
+                        {name = "construction-robot", count = 20},
                     },
                 },
                 {type = "claim-free-hexes", value = {"nauvis", 3}},
