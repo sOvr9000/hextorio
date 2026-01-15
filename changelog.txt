@@ -5,6 +5,7 @@ Date: 15/1/26
     - Added mod setting for controlling the efficiency of trades (which is the average ratio of the trade's total output-to-input value).
   Features:
     - Added mod setting for controlling the hex claim costs, intended to be lowered when lowering the trade efficiency setting to the point where infinite loops are impossible.
+    - Added a fifth coin tier, black hole coins.
   Minor Features:
     - Added more item buffs: rocket turret, rocket launcher
   Changes:
@@ -17,6 +18,7 @@ Date: 15/1/26
   Gui:
     - Improved horizontal alignment of productivity labels on trade arrows.
     - Coin amounts for "Stack Value (Total)" in item tooltips are now rounded to four significant figures instead of zero digits after the decimal.
+    - Added custom sprites for hexa modules, courtesy Steb GlitchyFishy.
   Bugfixes:
     - Fixed that sink/generator mode did not reliably create trades with a 10:1 input-to-output efficiency.
     - Fixed missing locale for electric damage / shooting speed.

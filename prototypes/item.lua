@@ -89,6 +89,7 @@ local modules = {}
 for _, module_type in pairs {{"a", "speed"}, {"c", "productivity"}, {"c", "efficiency"}, {"d", "quality"}} do
     local m = table.deepcopy(data.raw["module"][module_type[2] .. "-module-3"])
     m.name = "hexa-" .. module_type[2] .. "-module"
+    m.icon = "__hextorio__/graphics/icons/" .. m.name .. ".png"
     -- m.icon = "__hextorio__/graphics/icons/hexa-" .. module_type[2] .. "-module.png"
     m.order = module_type[1] .. "[" .. module_type[2] .. "]-c[" .. module_type[2] .. "-module-4]"
     m.tier = 4
