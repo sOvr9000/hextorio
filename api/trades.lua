@@ -590,6 +590,25 @@ function trades.generator_solve_item_counts(surface_name, trade, params)
     -- log("Updating total_output_value = " .. total_output_value .. ": new_total_output_value = " .. new_total_output_value)
     total_output_value = new_total_output_value
 
+    -- Special case: One of the sides of the trade consists of only coins (then this is a fast, exact calculation).
+    if #trade.input_items == 1 and trade.input_items[1].name == "hex-coin" then
+        -- Normally +0.5 to round, but this is +random() so that it chooses the closer value more often but sometimes the farther value to add variation.
+        trade.input_items[1].count = math.max(1, math.floor(math.random() + total_output_value / (params.target_efficiency * input_item_values[1])))
+        return true
+    elseif #trade.output_items == 1 and trade.output_items[1].name == "hex-coin" then
+        trade.output_items[1].count = math.max(1, math.floor(math.random() + total_input_value * params.target_efficiency / output_item_values[1]))
+        return true
+    end
+
+    local PERMUTATIONS = {
+        {1, 2, 3},
+        {1, 3, 2},
+        {2, 1, 3},
+        {2, 3, 1},
+        {3, 1, 2},
+        {3, 2, 1},
+    }
+
     -- Start iterative search
     -- Make small adjustments to each input or output count if it better approximates target efficiency
     local working_inputs = table.deepcopy(trade.input_items)
@@ -607,7 +626,8 @@ function trades.generator_solve_item_counts(surface_name, trade, params)
     -- log("initial total_output_value = " .. total_output_value)
 
     local solved = false
-    for iteration = 1, 100 do
+    local max_iterations = 100
+    for iteration = 1, max_iterations do
         local current_efficiency = total_output_value / total_input_value
 
         local ratio = current_efficiency / params.target_efficiency
@@ -623,45 +643,98 @@ function trades.generator_solve_item_counts(surface_name, trade, params)
 
         local changed = false
         for j, t in ipairs {
-            {working_inputs, input_item_values, input_stack_sizes, total_input_value, target_total_input_value},
-            {working_outputs, output_item_values, output_stack_sizes, total_output_value, target_total_output_value},
+            {working_inputs, input_item_values, input_stack_sizes, total_input_value, target_total_input_value, working_outputs, target_total_output_value},
+            {working_outputs, output_item_values, output_stack_sizes, total_output_value, target_total_output_value, working_inputs, target_total_input_value},
         } do
             local working_items = t[1]
+            local other_working_items = t[6]
             local item_vals = t[2]
             local item_stack_sizes = t[3]
             local total_value = t[4]
             local target_total_value = t[5]
+            local other_total_value = t[7]
 
-            for cur_index = 1, #working_items do
-                local item = working_items[cur_index]
-                local item_value = item_vals[cur_index]
-                local stack_size = item_stack_sizes[cur_index]
+            -- log("side = " .. j)
+            -- log("total_value = " .. total_value)
+            -- log("other_total_value = " .. other_total_value)
+            -- log("target_total_value = " .. target_total_value)
 
-                local sum_of_other_values = total_value - item_value * item.count
-                local new_count = math.max(1, math.floor(0.5 + (target_total_value - sum_of_other_values) / item_value))
-
-                -- TODO: Don't repeatedly call lib.is_coin() here because it performs string operations (which are slow)
-                if not lib.is_coin(item.name) then
-                    ---@diagnostic disable-next-line: cast-local-type
-                    new_count = math.min(params.max_count_per_item, new_count)
-
-                    if stack_size then
-                        ---@diagnostic disable-next-line: cast-local-type
-                        new_count = math.min(params.max_stacks_per_item * stack_size, new_count)
-                    end
+            local is_other_side_minimal = true
+            for _, item in pairs(other_working_items) do
+                if item.count > 1 then
+                    is_other_side_minimal = false
+                    break
                 end
+            end
 
-                if new_count ~= item.count then
+            if is_other_side_minimal then
+                if j == 1 then
+                    target_total_value = other_total_value / params.target_efficiency
+                else
+                    target_total_value = other_total_value * params.target_efficiency
+                end
+                -- log("set new target_total_value = " .. target_total_value)
+
+                local cur_ratio = total_output_value / total_input_value
+                if (cur_ratio <= epsilon and cur_ratio >= epsilon_inv) or math.random() < 0.666667 then
+                    -- This final scaling can help escape local minima typically found with when it gets stuck at 1x of anything
+                    local scale = math.random(2, 3)
+
+                    for _, item in pairs(working_items) do
+                        item.count = item.count * scale
+                    end
+                    for _, item in pairs(other_working_items) do
+                        item.count = item.count * scale
+                    end
+
+                    total_input_value = total_input_value * scale
+                    total_output_value = total_output_value * scale
+
                     changed = true
 
-                    if j == 1 then
-                        total_input_value = total_value + (new_count - item.count) * item_value
-                    else
-                        total_output_value = total_value + (new_count - item.count) * item_value
-                    end
-                    item.count = new_count
-
+                    -- log("scaled up from 1x")
                     break
+                end
+            end
+
+            local perm = PERMUTATIONS[math.random(1, #PERMUTATIONS)]
+            for _, cur_index in pairs(perm) do
+                if cur_index <= #working_items then
+                    local item = working_items[cur_index]
+                    local item_value = item_vals[cur_index]
+                    local stack_size = item_stack_sizes[cur_index]
+
+                    -- log("cur item = " .. item.name .. ", count = " .. item.count)
+
+                    local sum_of_other_values = total_value - item_value * item.count
+                    -- log("sum of other values = " .. sum_of_other_values)
+
+                    local new_count = math.max(1, math.floor(0.5 + (target_total_value - sum_of_other_values) / item_value))
+                    -- log("new count = " .. new_count)
+
+                    -- TODO: Don't repeatedly call lib.is_coin() here because it performs string operations (which are slow)
+                    if not lib.is_coin(item.name) then
+                        ---@diagnostic disable-next-line: cast-local-type
+                        new_count = math.min(params.max_count_per_item, new_count)
+
+                        if stack_size then
+                            ---@diagnostic disable-next-line: cast-local-type
+                            new_count = math.min(params.max_stacks_per_item * stack_size, new_count)
+                        end
+                    end
+
+                    if new_count ~= item.count then
+                        changed = true
+
+                        if j == 1 then
+                            total_input_value = total_value + (new_count - item.count) * item_value
+                        else
+                            total_output_value = total_value + (new_count - item.count) * item_value
+                        end
+                        item.count = new_count
+
+                        break
+                    end
                 end
             end
         end
@@ -669,7 +742,9 @@ function trades.generator_solve_item_counts(surface_name, trade, params)
         -- log("current item counts: " .. serpent.line(working_inputs) .. " | " .. serpent.line(working_outputs))
 
         if not changed then
-            -- log("finished after " .. iteration .. " iterations")
+            solved = iteration < max_iterations
+            -- log("terminated early after " .. iteration .. " iterations")
+            -- log("solved = " .. tostring(solved))
             break
         end
     end
