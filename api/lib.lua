@@ -76,6 +76,7 @@ local raw_items = sets.new {
     "scrap",
     "yumako",
     "jellynut",
+    "hexaprism",
     "carbonic-asteroid-chunk",
     "metallic-asteroid-chunk",
     "oxide-asteroid-chunk",
