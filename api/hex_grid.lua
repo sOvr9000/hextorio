@@ -510,7 +510,8 @@ end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.mode == "sink" or state.mode == "generator" then return end
-    if state.hex_core and item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
+    if not state.hex_core or not state.hex_core.valid then return end
+    if item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
     if math.random() > storage.item_ranks.bronze_rank_bonus_effect then return end
 
     local trade = hex_grid.generate_random_trade(state, volume, false, item_name)
