@@ -479,7 +479,39 @@ function trades.generator_solve_item_counts(surface_name, trade, params)
 
     -- Obtain numerator/denominator for target efficiency
     -- TODO: cache the result for reuse when the target efficiency is known to be unchanged
-    local num, den = lib.get_rational_approximation(params.target_efficiency, 1.04, 50, 50)
+    local max_num_den = 50
+    local num, den = lib.get_rational_approximation(params.target_efficiency, 1.04, max_num_den, max_num_den)
+
+    -- Apply upscale to num : den ratio
+    -- This helps break monotony in item counts, tending to frequently settle around 1
+    local max_scale = math.min(8, math.floor(max_num_den / math.max(num, den)))
+
+    -- Ensure that the upscale does not exceed item count constraints (mainly stack counts)
+    for _, input_item in pairs(trade.input_items) do
+        if not lib.is_coin(input_item.name) then
+            max_scale = math.min(max_scale, math.floor(params.max_count_per_item / den))
+
+            local stack_size = (prototypes.item[input_item.name] or {}).stack_size
+            if stack_size then
+                max_scale = math.min(max_scale, math.floor(stack_size * params.max_stacks_per_item / den))
+            end
+        end
+    end
+
+    for _, output_item in pairs(trade.output_items) do
+        if not lib.is_coin(output_item.name) then
+            max_scale = math.min(max_scale, math.floor(params.max_count_per_item / num))
+
+            local stack_size = (prototypes.item[output_item.name] or {}).stack_size
+            if stack_size then
+                max_scale = math.min(max_scale, math.floor(stack_size * params.max_stacks_per_item / num))
+            end
+        end
+    end
+
+    local num_den_upscale = math.random(1, max_scale)
+    num = num * num_den_upscale
+    den = den * num_den_upscale
 
     -- Initialize item counts based on num / den, and create lookup tables for item values (better performance), and fetch item stack sizes
     local total_input_value = 0

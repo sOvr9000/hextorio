@@ -10,7 +10,7 @@ Date: 15/1/26
     - Added more item buffs: rocket turret, rocket launcher
   Changes:
     - Item counts in trades no longer exceed 100 or five total stacks (whichever is smaller).
-    - Item counts in trades are now more varied, where lower-valued items are generally in higher quanities than the higher-valued items on the same side of the trade.
+    - Item counts in trades are now more varied, where lower-valued items are generally in higher quantities than the higher-valued items on the same side of the trade.
     - Added 10x construction robots, 1x personal roboport, and 2x personal batteries to the quest reward that gives early bots + modular armor.
     - Changed the "(NEGATIVE PRODUCTIVITY)" flying text from trades to [img=virtual-signal.signal-deny].
   Balancing:
