@@ -48,11 +48,13 @@ function inventories.remove_items_of_rank(inv, min_rank)
     local contents = inv.get_contents()
     local removed = {}
     for _, item_stack in pairs(contents) do
-        local rank = item_ranks.get_item_rank(item_stack.name)
-        if rank >= min_rank then
-            local stack = {name = item_stack.name, count = item_stack.count, quality = item_stack.quality}
-            table.insert(removed, stack)
-            inv.remove(stack)
+        if not lib.is_coin(item_stack.name) then
+            local rank = item_ranks.get_item_rank(item_stack.name)
+            if rank >= min_rank then
+                local stack = {name = item_stack.name, count = item_stack.count, quality = item_stack.quality}
+                table.insert(removed, stack)
+                inv.remove(stack)
+            end
         end
     end
 
