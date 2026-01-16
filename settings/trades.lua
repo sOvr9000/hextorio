@@ -77,7 +77,7 @@ data:extend({
         type = "int-setting",
         name = "hextorio-trades-per-hex-aquilo",
         setting_type = "runtime-global",
-        default_value = 6,
+        default_value = 2,
         minimum_value = 0,
         maximum_value = 10,
         order = "t[trades]-d[trades-per-hex]-r[aquilo]",

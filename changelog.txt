@@ -15,6 +15,7 @@ Date: 15/1/26
     - Changed the "(NEGATIVE PRODUCTIVITY)" flying text from trades to [img=virtual-signal.signal-deny].
   Balancing:
     - Lowered the default setting value for frequency of copper ore from 4.5 to 4.0, giving slightly more iron ore, coal, and stone in mixed patches but slightly less copper ore.
+    - Lowered the default setting value for number of trades per hex core on Aquilo from 6 to 2.
   Gui:
     - Improved horizontal alignment of productivity labels on trade arrows.
     - Coin amounts for "Stack Value (Total)" in item tooltips are now rounded to four significant figures instead of zero digits after the decimal.
