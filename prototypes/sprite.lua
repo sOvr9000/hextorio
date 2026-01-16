@@ -30,6 +30,13 @@ data:extend{
     },
     {
         type = "sprite",
+        name = "black-hole-coin",
+        filename = "__hextorio__/graphics/icons/black-hole-coin.png",
+        width = 64,
+        height = 64,
+    },
+    {
+        type = "sprite",
         name = "trade-arrow",
         filename = "__hextorio__/graphics/icons/trade-arrow.png",
         width = 150,
