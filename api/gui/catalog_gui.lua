@@ -84,6 +84,7 @@ function catalog_gui.register_events()
     end)
 
     event_system.register("player-coins-changed", function(player, coin)
+        if not catalog_gui.is_catalog_open(player) then return end
         catalog_gui.update_quantum_bazaar(player)
     end)
 end
@@ -839,6 +840,13 @@ function catalog_gui.hide_catalog(player)
     local frame = player.gui.screen["catalog"]
     if not frame or not frame.valid then return end
     gui_stack.pop(player, gui_stack.index_of(player, frame))
+end
+
+---@param player LuaPlayer
+---@return boolean
+function catalog_gui.is_catalog_open(player)
+    local frame = player.gui.screen["catalog"]
+    return frame ~= nil and frame.visible
 end
 
 ---Verify the catalog storage is set up correctly.

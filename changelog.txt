@@ -31,6 +31,7 @@ Date: 15/1/26
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:
     - Optimized trade item count selection: O(n) -> O(logn).
+    - Made the catalog GUI stop trying to refresh when player inventories change if the player doesn't have the catalog GUI open (small optimization).
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.3
 Date: 19/12/25
