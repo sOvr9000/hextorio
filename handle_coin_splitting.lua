@@ -96,7 +96,7 @@ script.on_event(defines.events.on_player_fast_transferred, function(event)
 
         -- local inv = entity.get_inventory(defines.inventory.chest)
         -- if inv then
-        --     coin_tiers.normalize_inventory(inv)
+        --     inventories.normalize_inventory(inv)
         -- end
     else
         -- This was a transfer of items from entity to player.
@@ -118,11 +118,11 @@ script.on_event(defines.events.on_player_fast_transferred, function(event)
             end
         end
 
-        coin_tiers.add_coin_to_inventory(player_inv, coin_to_offset)
-        -- coin_tiers.normalize_inventory(player_inv)
+        inventories.add_coin_to_inventory(player_inv, coin_to_offset)
+        -- inventories.normalize_inventory(player_inv)
 
-        coin_tiers.remove_coin_from_inventory(chest_inv, coin_to_offset)
-        -- coin_tiers.normalize_inventory(chest_inv)
+        inventories.remove_coin_from_inventory(chest_inv, coin_to_offset)
+        -- inventories.normalize_inventory(chest_inv)
     end
 end)
 ]]

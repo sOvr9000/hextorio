@@ -11,6 +11,7 @@ local event_system = require "api.event_system"
 local quests = require "api.quests"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
 local trades_gui = require "api.gui.trades_gui"
+local inventories = require "api.inventories"
 
 local hex_core_gui = {}
 
@@ -611,13 +612,13 @@ function hex_core_gui.on_convert_resources_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_convert_resources_cost(hex_core)
-    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    local inv_coin = inventories.get_coin_from_inventory(inv)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    coin_tiers.remove_coin_from_inventory(inv, coin)
+    inventories.remove_coin_from_inventory(inv, coin)
 
     hex_grid.convert_resources(hex_core)
     hex_core_gui.update_hex_core(player)
@@ -631,13 +632,13 @@ function hex_core_gui.on_upgrade_quality_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_quality_upgrade_cost(hex_core)
-    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    local inv_coin = inventories.get_coin_from_inventory(inv)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    coin_tiers.remove_coin_from_inventory(inv, coin)
+    inventories.remove_coin_from_inventory(inv, coin)
 
     hex_grid.upgrade_quality(hex_core)
     hex_core_gui.update_hex_core(player)
@@ -656,13 +657,13 @@ function hex_core_gui.on_supercharge_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_supercharge_cost(hex_core)
-    local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+    local inv_coin = inventories.get_coin_from_inventory(inv)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    coin_tiers.remove_coin_from_inventory(inv, coin)
+    inventories.remove_coin_from_inventory(inv, coin)
 
     hex_grid.supercharge_resources(hex_core)
     hex_core_gui.update_hex_core(player)
@@ -751,13 +752,13 @@ function hex_core_gui.on_confirmation_button_click(player, element)
         if not inv then return end
 
         local coin = hex_grid.get_delete_core_cost(hex_core)
-        local inv_coin = coin_tiers.get_coin_from_inventory(inv)
+        local inv_coin = inventories.get_coin_from_inventory(inv)
         if coin_tiers.gt(coin, inv_coin) then
             player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
             return
         end
 
-        coin_tiers.remove_coin_from_inventory(inv, coin)
+        inventories.remove_coin_from_inventory(inv, coin)
 
         hex_grid.delete_hex_core(hex_core)
         hex_core_gui.hide_hex_core(player)

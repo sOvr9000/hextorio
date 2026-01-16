@@ -10,6 +10,7 @@ local hex_maze = require "api.hex_maze"
 local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
 local coin_tiers = require "api.coin_tiers"
+local inventories = require "api.inventories"
 
 local TURRET_RELOAD_INTERVAL = 3600
 
@@ -673,7 +674,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
                     end
 
                     local coin = coin_tiers.from_base_value(total_coin_value / (10 * item_values.get_item_value("nauvis", "hex-coin")))
-                    coin_tiers.add_coin_to_inventory(inv, coin)
+                    inventories.add_coin_to_inventory(inv, coin)
 
                     inv.sort_and_merge()
                 end

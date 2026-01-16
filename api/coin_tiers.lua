@@ -7,59 +7,74 @@ local coin_tiers = {}
 
 
 
+---@alias CoinName "hex-coin"|"gravity-coin"|"meteor-coin"|"hexaprism-coin"|"black-hole-coin"
+---@alias CoinValues {[1]: number, [2]: number, [3]: number, [4]: number, [5]: number}
+---@alias CoinValuesByName {[CoinName]: number}
+
+---@class Coin
+---@field tier_scaling number
+---@field max_coin_tier int
+---@field values CoinValues
+
+
+
+function coin_tiers.init()
+    storage.coin_tiers.COIN_TIERS_BY_NAME = {} ---@type {[CoinName]: int}
+    for tier, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
+        storage.coin_tiers.COIN_TIERS_BY_NAME[coin_name] = tier
+    end
+end
+
+---Return an array of zeroes for better optimized coin value aggregation, not as a formal Coin object.
+---@return CoinValues
+function coin_tiers.new_coin_values()
+    return {0, 0, 0, 0, 0}
+end
+
 ---Initialize a new coin object
 ---@param values CoinValues|nil
 ---@return Coin
 function coin_tiers.new(values)
     if not values or not next(values) then
-        values = {0, 0, 0, 0}
-    end
-
-    -- If the values are indexed by coin names, then update values
-    if values["hex-coin"] or values["gravity-coin"] or values["meteor-coin"] or values["hexaprism-coin"] then
-        values = {values["hex-coin"] or 0, values["gravity-coin"] or 0, values["meteor-coin"] or 0, values["hexaprism-coin"] or 0}
+        values = coin_tiers.new_coin_values()
     end
 
     -- Create the coin object with configuration
     local coin = {
-        tier_scaling = 100000,
+        tier_scaling = storage.coin_tiers.TIER_SCALING,
         max_coin_tier = #values,
         values = values,
     }
 
-    -- coin_tiers.verify_coin_object_structure(coin)
-
     return coin
 end
 
----Verify that the given coin object has a valid structure.
----@param coin Coin
-function coin_tiers.verify_coin_object_structure(coin)
-    if #coin.values ~= coin.max_coin_tier then
-        lib.log_error("coin_tiers.verify_coin_object_structure: coin values array does not have " .. coin.max_coin_tier .. " values")
+---Create a Coin object from amounts per coin name.
+---@param coin_values_by_name CoinValuesByName
+---@return Coin
+function coin_tiers.from_coin_values_by_name(coin_values_by_name)
+    local values = {}
+    for i, coin_name in ipairs(storage.coin_tiers.COIN_NAMES) do
+        values[i] = coin_values_by_name[coin_name] or 0
     end
-    for k, v in pairs(coin.values) do
-        if type(k) ~= "number" or type(v) ~= "number" then
-            lib.log_error("coin_tiers.verify_coin_object_structure: coin values array has an invalid key-value pair: [" .. k .. "] = " .. v)
-        end
-    end
-    if coin.max_coin_tier == 0 then
-        lib.log_error("coin_tiers.verify_coin_object_structure: max coin tier is zero")
-    end
+    return coin_tiers.new(values)
 end
 
 ---Make a copy of a coin object.
 ---@param coin Coin
 ---@return Coin
 function coin_tiers.copy(coin)
-    local new_coin = coin_tiers.new()
-    new_coin.tier_scaling = coin.tier_scaling
-    new_coin.max_coin_tier = coin.max_coin_tier
+    local values = {}
+
     for i = 1, coin.max_coin_tier do
-        new_coin.values[i] = coin.values[i]
+        values[i] = coin.values[i]
     end
 
-    -- coin_tiers.verify_coin_object_structure(new_coin)
+    local new_coin = {
+        tier_scaling = coin.tier_scaling,
+        max_coin_tier = coin.max_coin_tier,
+        values = values,
+    }
 
     return new_coin
 end
@@ -130,10 +145,9 @@ end
 ---@param coin Coin
 function coin_tiers.accumulate(accumulator, coin)
     local values = coin.values
-    accumulator[1] = accumulator[1] + values[1]
-    accumulator[2] = accumulator[2] + values[2]
-    accumulator[3] = accumulator[3] + values[3]
-    accumulator[4] = accumulator[4] + values[4]
+    for i, v in pairs(accumulator) do
+        accumulator[i] = v + values[i]
+    end
 end
 
 ---Add two coin objects, returning a new coin object.
@@ -141,11 +155,6 @@ end
 ---@param coin2 Coin
 ---@return Coin
 function coin_tiers.add(coin1, coin2)
-    -- Ensure configurations match
-    if coin1.tier_scaling ~= coin2.tier_scaling or coin1.max_coin_tier ~= coin2.max_coin_tier then
-        lib.log_error("Cannot add coins with different configurations")
-    end
-
     -- Cache locals and create result values directly
     local max_coin_tier = coin1.max_coin_tier
     local values1 = coin1.values
@@ -156,11 +165,13 @@ function coin_tiers.add(coin1, coin2)
         result_values[i] = values1[i] + values2[i]
     end
 
-    return coin_tiers.normalized({
+    local result = {
         tier_scaling = coin1.tier_scaling,
         max_coin_tier = max_coin_tier,
         values = result_values
-    })
+    }
+
+    return coin_tiers.normalized(result)
 end
 
 ---Subtract coin2 from coin1, returning a new coin object.
@@ -168,11 +179,6 @@ end
 ---@param coin2 Coin
 ---@return Coin
 function coin_tiers.subtract(coin1, coin2)
-    -- Ensure configurations match
-    if coin1.tier_scaling ~= coin2.tier_scaling or coin1.max_coin_tier ~= coin2.max_coin_tier then
-        lib.log_error("Cannot subtract coins with different configurations")
-    end
-
     -- Cache locals and create result values directly
     local max_coin_tier = coin1.max_coin_tier
     local values1 = coin1.values
@@ -183,11 +189,13 @@ function coin_tiers.subtract(coin1, coin2)
         result_values[i] = values1[i] - values2[i]
     end
 
-    return coin_tiers.normalized({
+    local result = {
         tier_scaling = coin1.tier_scaling,
         max_coin_tier = max_coin_tier,
         values = result_values
-    })
+    }
+
+    return coin_tiers.normalized(result)
 end
 
 ---Multiply a coin value by a scalar value, returning a new coin object.
@@ -204,11 +212,13 @@ function coin_tiers.multiply(coin, factor)
         result_values[i] = values[i] * factor
     end
 
-    return coin_tiers.normalized({
+    local result = {
         tier_scaling = coin.tier_scaling,
         max_coin_tier = max_coin_tier,
         values = result_values
-    })
+    }
+
+    return coin_tiers.normalized(result)
 end
 
 ---Divide a coin value by a scalar value, returning a new coin object.
@@ -267,14 +277,6 @@ end
 ---@param coin2 Coin
 ---@return int
 function coin_tiers.compare(coin1, coin2)
-    -- Ensure configurations match
-    -- This could technically be handled correctly by converting the tier scaling, but it is not needed for Hextorio.
-    -- It can be handled easily by comparing base values (coin_tiers.to_base_value() comparison),
-    -- but that involves multiplcation, whereas this method does not.
-    if coin1.tier_scaling ~= coin2.tier_scaling or coin1.max_coin_tier ~= coin2.max_coin_tier then
-        lib.log_error("Cannot compare coins with different configurations")
-    end
-
     for i = coin1.max_coin_tier, 1, -1 do
         if coin1.values[i] < coin2.values[i] then
             return -1
@@ -282,8 +284,7 @@ function coin_tiers.compare(coin1, coin2)
             return 1
         end
     end
-
-    return 0  -- They are equal
+    return 0
 end
 
 ---@param coin1 Coin
@@ -371,8 +372,8 @@ end
 ---@return Coin
 function coin_tiers.from_base_value(value, tier_scaling, max_coin_tier)
     -- Cache locals
-    local scaling = tier_scaling or 100000
-    local max_tier = max_coin_tier or 4
+    local scaling = tier_scaling or storage.coin_tiers.TIER_SCALING
+    local max_tier = max_coin_tier or #storage.coin_tiers.COIN_NAMES
     local values = {}
     local remaining = value
 
@@ -417,90 +418,6 @@ function coin_tiers.floor(coin)
         norm.values[1] = floor_val
     end
     return norm
-end
-
----Get a coin object from the given inventory.
----@param inventory LuaInventory|LuaTrain
----@param cargo_wagons LuaEntity[]|nil
----@return Coin
-function coin_tiers.get_coin_from_inventory(inventory, cargo_wagons)
-    if cargo_wagons then
-        local coin_values = {0, 0, 0, 0}
-        for i, wagon in ipairs(cargo_wagons) do
-            if i > storage.item_buffs.train_trading_capacity then break end
-            coin_values = coin_tiers.accumulate(coin_values, coin_tiers.new {wagon.get_item_count "hex-coin", wagon.get_item_count "gravity-coin", wagon.get_item_count "meteor-coin", wagon.get_item_count "hexaprism-coin"})
-        end
-        return coin_tiers.normalized(coin_tiers.new(coin_values))
-    end
-    return coin_tiers.new {inventory.get_item_count "hex-coin", inventory.get_item_count "gravity-coin", inventory.get_item_count "meteor-coin", inventory.get_item_count "hexaprism-coin"}
-end
-
----Update the inventory contents such that it contains the given coin.
----@param inventory LuaInventory|LuaTrain
----@param current_coin Coin
----@param new_coin Coin
----@param cargo_wagons LuaEntity[]|nil
-function coin_tiers.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
-    storage.coin_tiers.is_processing[inventory] = true
-
-    local is_train = inventory.object_name == "LuaTrain"
-
-    for tier = 1, 4 do
-        local coin_name = lib.get_coin_name_of_tier(tier)
-        local new_amount = new_coin.values[tier]
-        local current_amount = current_coin.values[tier]
-
-        if new_amount > current_amount then
-            if is_train then
-                lib.insert_into_train(cargo_wagons or {}, {name = coin_name, count = new_amount - current_amount}, storage.item_buffs.train_trading_capacity)
-            else
-                inventory.insert {name = coin_name, count = new_amount - current_amount}
-            end
-        elseif new_amount < current_amount then
-            if is_train then
-                lib.remove_from_train(cargo_wagons or {}, {name = coin_name, count = current_amount - new_amount}, storage.item_buffs.train_trading_capacity)
-            else
-                inventory.remove {name = coin_name, count = current_amount - new_amount}
-            end
-        end
-    end
-
-    storage.coin_tiers.is_processing[inventory] = nil
-end
-
----Normalize the inventory, combining multiple stacks of coins into their next tiers.
----@param inventory LuaInventory|LuaTrain
----@return Coin|nil
-function coin_tiers.normalize_inventory(inventory)
-    if storage.coin_tiers.is_processing[inventory] then return end
-    storage.coin_tiers.is_processing[inventory] = true
-
-    local coin = coin_tiers.get_coin_from_inventory(inventory)
-    local normalized_coin = coin_tiers.normalized(coin)
-    coin_tiers.update_inventory(inventory, coin, normalized_coin)
-    storage.coin_tiers.is_processing[inventory] = nil
-
-    return normalized_coin
-end
-
----Add coins to the inventory.
----@param inventory LuaInventory|LuaTrain
----@param coin Coin
----@param cargo_wagons LuaEntity[]|nil
-function coin_tiers.add_coin_to_inventory(inventory, coin, cargo_wagons)
-    local current_coin = coin_tiers.get_coin_from_inventory(inventory)
-    local new_coin = coin_tiers.add(current_coin, coin)
-    coin_tiers.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
-end
-
----Remove coins from the inventory
----@param inventory LuaInventory|LuaTrain
----@param coin Coin
----@param cargo_wagons LuaEntity[]|nil
-function coin_tiers.remove_coin_from_inventory(inventory, coin, cargo_wagons)
-    local current_coin = coin_tiers.get_coin_from_inventory(inventory)
-    local new_coin = coin_tiers.subtract(current_coin, coin)
-    coin_tiers.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
 end
 
 ---Convert a coin object to a human-readable string which represents its value.
@@ -567,15 +484,7 @@ end
 ---@param tier int
 ---@return string
 function coin_tiers.get_name_of_tier(tier)
-    if tier <= 1 then
-        return "hex-coin"
-    elseif tier == 2 then
-        return "gravity-coin"
-    elseif tier == 3 then
-        return "meteor-coin"
-    else
-        return "hexaprism-coin"
-    end
+    return lib.get_coin_name_of_tier(tier)
 end
 
 ---Shift the tier of the given coin, returning a new coin object.
@@ -602,7 +511,7 @@ function coin_tiers.shift_tier(coin, shift)
     local max_coin_tier = coin.max_coin_tier
     local tier_scaling = coin.tier_scaling
     local old_values = coin.values
-    local new_values = {0, 0, 0, 0}  -- Initialize with zeros
+    local new_values = coin_tiers.new_coin_values()
 
     if shift > 0 then
         for i = 2, max_coin_tier do
@@ -624,6 +533,19 @@ function coin_tiers.shift_tier(coin, shift)
             values = new_values
         }, shift + 1)
     end
+end
+
+---Convert any older version of a coin object to the newest version.
+---@param coin table
+---@return Coin
+function coin_tiers.migrate_coin(coin)
+    local values = coin_tiers.new_coin_values()
+
+    for i = 1, #values do
+        values[i] = coin.values[i] or 0
+    end
+
+    return coin_tiers.new(values)
 end
 
 

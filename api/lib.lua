@@ -1152,12 +1152,11 @@ function lib.get_trade_img_str(trade, is_interplanetary)
     return s
 end
 
+---Return whether an item name is a Hextorio coin.  Does not return true for coins from other mods.
+---@param item_name string
+---@return boolean
 function lib.is_coin(item_name)
-    if type(item_name) ~= "string" then
-        lib.log_error("lib.is_coin: item_name is not a string, received type: " .. type(item_name))
-        return false
-    end
-    return item_name:sub(-5) == "-coin"
+    return storage.coin_tiers.COIN_TIERS_BY_NAME[item_name] ~= nil
 end
 
 function lib.is_fluid(item_name)
@@ -1623,34 +1622,14 @@ function lib.reservoir_sample(t)
 end
 
 function lib.get_tier_of_coin_name(coin_name)
-    if coin_name == "hex-coin" then
-        return 1
-    elseif coin_name == "gravity-coin" then
-        return 2
-    elseif coin_name == "meteor-coin" then
-        return 3
-    elseif coin_name == "hexaprism-coin" then
-        return 4
-    end
-    lib.log_error("lib.get_tier_of_coin_name: Cannot determine the tier of " .. coin_name)
-    return  1
+    return storage.coin_tiers.COIN_TIERS_BY_NAME[coin_name] or 1
 end
 
 ---Get the name of a coin from its tier, defaulting to the lowest tier name if the tier is unrecognized.
 ---@param coin_tier int
 ---@return string
 function lib.get_coin_name_of_tier(coin_tier)
-    if coin_tier == 1 then
-        return "hex-coin"
-    elseif coin_tier == 2 then
-        return "gravity-coin"
-    elseif coin_tier == 3 then
-        return "meteor-coin"
-    elseif coin_tier == 4 then
-        return "hexaprism-coin"
-    else
-        return "hex-coin"
-    end
+    return storage.coin_tiers.COIN_NAMES[coin_tier] or "hex-coin"
 end
 
 ---@param quality string
@@ -1861,11 +1840,12 @@ function lib.get_str_from_hex_core_stats(stats)
 end
 
 ---@param coin table
----@param show_leading_zeros boolean|nil
+---@param show_leading_zeros boolean|nil DEPRECATED, DO NOT USE
 ---@param sigfigs int|nil
 ---@return string
 function lib.get_str_from_coin(coin, show_leading_zeros, sigfigs)
-    if show_leading_zeros == nil then show_leading_zeros = false end
+    -- if show_leading_zeros == nil then show_leading_zeros = false end
+
     local p = 10 ^ (sigfigs or 4)
     local function format(value)
         if not sigfigs then
@@ -1880,33 +1860,32 @@ function lib.get_str_from_coin(coin, show_leading_zeros, sigfigs)
         return tostring(value)
     end
 
-    if show_leading_zeros then
-        return "[img=hex-coin]x" .. format(coin.values[1]) .. " [img=gravity-coin]x" .. format(coin.values[2]) .. " [img=meteor-coin]x" .. format(coin.values[3]) .. " [img=hexaprism-coin]x" .. format(coin.values[4])
-    end
+    -- deprecated
+    -- if show_leading_zeros then
+    --     local s = 0
+    --     for i, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
+            
+    --     end
+    --     return "[img=hex-coin]x" .. format(coin.values[1]) .. " [img=gravity-coin]x" .. format(coin.values[2]) .. " [img=meteor-coin]x" .. format(coin.values[3]) .. " [img=hexaprism-coin]x" .. format(coin.values[4])
+    -- end
 
     local text = ""
     local visible = false
-    if coin.values[4] > 0 then visible = true end
-    if visible then
-        if text ~= "" then text = text .. " " end
-        text = text .. "[img=hexaprism-coin]x" .. format(coin.values[4])
-    end
 
-    if coin.values[3] > 0 then visible = true end
-    if visible then
-        if text ~= "" then text = text .. " " end
-        text = text .. "[img=meteor-coin]x" .. format(coin.values[3])
-    end
+    local num_tiers = #storage.coin_tiers.COIN_NAMES
+    for i = num_tiers, 1, -1 do
+        local coin_name = storage.coin_tiers.COIN_NAMES[i]
+        local value = coin.values[i]
 
-    if coin.values[2] > 0 then visible = true end
-    if visible then
-        if text ~= "" then text = text .. " " end
-        text = text .. "[img=gravity-coin]x" .. format(coin.values[2])
-    end
+        visible = visible or value > 0 or i == 1
+        if visible then
+            if i < num_tiers then
+                text = text .. " "
+            end
 
-    -- Don't show leading zeroes, but show intermediate zeroes, and always show hex coin even if total cost is zero.
-    if text ~= "" then text = text .. " " end
-    text = text .. "[img=hex-coin]x" .. format(coin.values[1])
+            text = text .. "[img=" .. coin_name .. "]x" .. format(value)
+        end
+    end
 
     return text
 end

@@ -936,7 +936,7 @@ function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
             values[input_item.name] = input_item.count
         end
     end
-    local coin = coin_tiers.new(values)
+    local coin = coin_tiers.from_coin_values_by_name(values)
     local mult = lib.get_quality_value_scale(quality) * quality_cost_mult
     coin = coin_tiers.multiply(coin, mult)
     coin = coin_tiers.floor(coin)
@@ -955,7 +955,7 @@ function trades.get_output_coins_of_trade(trade, quality)
             values[output_item.name] = output_item.count
         end
     end
-    local coin = coin_tiers.new(values)
+    local coin = coin_tiers.from_coin_values_by_name(values)
     coin = coin_tiers.multiply(coin, lib.get_quality_value_scale(quality))
     coin = coin_tiers.floor(coin)
     return coin
@@ -1113,7 +1113,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
         local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
         remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
-        coin_tiers.remove_coin_from_inventory(inventory_input, coins_removed, cargo_wagons)
+        inventories.remove_coin_from_inventory(inventory_input, coins_removed, cargo_wagons)
         flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
     else
         remaining_coin = input_coin
@@ -1125,7 +1125,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     if trade.has_coins_in_output and total_output_batches >= 1 then
         local trade_coin = trades.get_output_coins_of_trade(trade, quality)
         coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
-        coin_tiers.add_coin_to_inventory(inventory_output, coins_added, cargo_wagons)
+        inventories.add_coin_to_inventory(inventory_output, coins_added, cargo_wagons)
         flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
     else
         coins_added = coin_tiers.new()
@@ -2703,7 +2703,7 @@ function trades.get_coins_and_items_of_inventory(inv)
             all_items_lookup[quality][stack.name] = stack.count
         end
     end
-    local input_coin = coin_tiers.normalized(coin_tiers.new(input_coin_values))
+    local input_coin = coin_tiers.normalized(coin_tiers.from_coin_values_by_name(input_coin_values))
     return input_coin, all_items_lookup
 end
 
@@ -2745,8 +2745,9 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     local _total_removed = {}
     local _total_inserted = {}
     local _remaining_to_insert = {}
+
     -- Use raw array for accumulation to avoid repeated normalization (performance optimization)
-    local total_coins_added_values = {0, 0, 0, 0}
+    local total_coins_added_values = coin_tiers.new_coin_values()
 
     local function handle_item_in_trade(trade_id, quality, item_name, amount, trade_side)
         local rank = item_ranks.get_item_rank(item_name)
@@ -2831,11 +2832,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     quests.increment_progress_for_type("make-trades", total_batches)
 
     -- Only NOW does it normalize, skipping all unnecessary normalizations mid-processing.
-    local total_coins_added = coin_tiers.normalized({
-        tier_scaling = 100000,
-        max_coin_tier = 4,
-        values = total_coins_added_values
-    })
+    local total_coins_added = coin_tiers.normalized(coin_tiers.new(total_coins_added_values))
 
     return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
 end

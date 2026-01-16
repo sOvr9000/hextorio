@@ -3,6 +3,7 @@ local event_system = require "api.event_system"
 local space_platforms = require "api.space_platforms"
 local sets = require "api.sets"
 local coin_tiers = require "api.coin_tiers"
+local inventories = require "api.inventories"
 
 
 
@@ -409,7 +410,7 @@ function on_command(player, command, params)
     elseif command == "add-coins" then
         local inv = lib.get_player_inventory(player)
         if inv then
-            coin_tiers.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1] or 100000000000000000000))
+            inventories.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1] or 100000000000000000000))
         end
     elseif command == "summon" then
         local entity_name = params[1]

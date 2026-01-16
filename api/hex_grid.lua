@@ -14,6 +14,7 @@ local quests = require "api.quests"
 local trades = require "api.trades"
 local item_ranks  = require "api.item_ranks"
 local dungeons = require "api.dungeons"
+local inventories = require "api.inventories"
 
 
 
@@ -1631,7 +1632,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
                 return false
             end
 
-            player_inventory_coins = coin_tiers.get_coin_from_inventory(inv)
+            player_inventory_coins = inventories.get_coin_from_inventory(inv)
         end
 
         if coin_tiers.lt(player_inventory_coins, coin) then
@@ -1701,7 +1702,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         if hex_grid.get_free_hex_claims(surface_name) == 0 and not lib.is_player_editor_like(by_player) then
             local inv = lib.get_player_inventory(by_player)
             if inv then
-                coin_tiers.remove_coin_from_inventory(inv, state.claim_price)
+                inventories.remove_coin_from_inventory(inv, state.claim_price)
             end
         end
     end

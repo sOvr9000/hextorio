@@ -23,6 +23,7 @@ local dungeons = require "api.dungeons"
 local spiders = require "api.spiders"
 local hex_island = require "api.hex_island"
 local train_trading = require "api.train_trading"
+local inventories = require "api.inventories"
 
 migrations.load_handlers()
 
@@ -156,6 +157,7 @@ script.on_init(function()
     local temp = game.create_surface("hextorio-temp", mgs)
     temp.request_to_generate_chunks({0, 0}, 0)
 
+    coin_tiers.init()
     item_values.init()
     item_ranks.init()
     quests.init()
@@ -303,7 +305,7 @@ script.on_event(defines.events.on_player_main_inventory_changed, function(event)
     local inv = player.get_inventory(defines.inventory.character_main)
     if not inv then return end
 
-    local coin = coin_tiers.normalize_inventory(inv)
+    local coin = inventories.normalize_inventory(inv)
     if not coin then return end
 
     event_system.trigger("player-coins-changed", player, coin)
@@ -316,14 +318,14 @@ script.on_event(defines.events.on_player_trash_inventory_changed, function(event
     local inv = player.get_inventory(defines.inventory.character_trash)
     if not inv then return end
 
-    coin_tiers.normalize_inventory(inv)
+    inventories.normalize_inventory(inv)
 end)
 
 script.on_event(defines.events.on_player_dropped_item_into_entity, function(event)
     local inv = event.entity.get_inventory(defines.inventory.chest)
     if not inv then return end
 
-    coin_tiers.normalize_inventory(inv)
+    inventories.normalize_inventory(inv)
 end)
 
 script.on_event(defines.events.on_player_respawned, function(event)

@@ -178,6 +178,19 @@ function item_values.init()
     -- log(serpent.block(spoilable))
 end
 
+---Automatically calculate item values for coins on a given surface.
+---@param surface_vals {[string]: number}
+function item_values.init_coin_values(surface_vals)
+    local base_coin_name = storage.coin_tiers.COIN_NAMES[1] -- Should always be "hex-coin", but for algorithmic correctness, this is used.
+    surface_vals[base_coin_name] = 10
+    local coin_val = surface_vals[base_coin_name]
+    for i = 2, #storage.coin_tiers.COIN_NAMES do
+        local coin_name = storage.coin_tiers.COIN_NAMES[i]
+        coin_val = coin_val * storage.coin_tiers.TIER_SCALING
+        surface_vals[coin_name] = coin_val
+    end
+end
+
 function item_values.get_item_value(surface_name, item_name, allow_interplanetary, quality_name)
     if not surface_name then
         lib.log_error("item_values.get_item_value: surface_name is nil, defaulting to 1")
@@ -218,10 +231,7 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
     local val = surface_vals[item_name]
     if not val then
         if lib.is_coin(item_name) then
-            surface_vals["hex-coin"] = 10
-            surface_vals["gravity-coin"] = surface_vals["hex-coin"] * 100000
-            surface_vals["meteor-coin"] = surface_vals["gravity-coin"] * 100000
-            surface_vals["hexaprism-coin"] = surface_vals["meteor-coin"] * 100000 -- TODO: these valuse are too large for floating point precision, so coin_tiers will have to replace it eventually
+            item_values.init_coin_values(surface_vals)
             return surface_vals[item_name] * quality_mult
         end
         if allow_interplanetary then
@@ -493,14 +503,14 @@ function item_values.get_all_items_with_value(include_coins)
         end
     end
 
+    local coin_set = sets.new(storage.coin_tiers.COIN_NAMES)
     if include_coins then
-        all_item_names = sets.union(all_item_names, sets.new {lib.get_coin_name_of_tier(1), lib.get_coin_name_of_tier(2), lib.get_coin_name_of_tier(3), lib.get_coin_name_of_tier(4)})
+        all_item_names = sets.union(all_item_names, coin_set)
     else
-        all_item_names = sets.difference(all_item_names, sets.new {lib.get_coin_name_of_tier(1), lib.get_coin_name_of_tier(2), lib.get_coin_name_of_tier(3), lib.get_coin_name_of_tier(4)})
+        all_item_names = sets.difference(all_item_names, coin_set)
     end
 
     local item_names = sets.to_array(all_item_names)
-
     if include_coins then
         storage.item_values.all_items_with_value_include_coins = item_names
     else

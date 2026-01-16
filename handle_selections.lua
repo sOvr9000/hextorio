@@ -5,6 +5,7 @@ local terrain = require "api.terrain"
 local hex_grid = require "api.hex_grid"
 local coin_tiers = require "api.coin_tiers"
 local quests = require "api.quests"
+local inventories = require "api.inventories"
 
 
 
@@ -22,7 +23,7 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
     if not reverse then
         local inv = lib.get_player_inventory(player)
         if inv then
-            player_inventory_coins = coin_tiers.get_coin_from_inventory(inv)
+            player_inventory_coins = inventories.get_coin_from_inventory(inv)
         end
     end
 
@@ -71,12 +72,12 @@ local function on_delete_core_tool_used(player, entities)
     for _, e in pairs(entities) do
         if e.name == "hex-core" then
             local cost = hex_grid.get_delete_core_cost(e)
-            local current_coin = coin_tiers.get_coin_from_inventory(inv)
+            local current_coin = inventories.get_coin_from_inventory(inv)
             if coin_tiers.ge(current_coin, cost) then
                 if not hex_grid.delete_hex_core(e) then
                     failed = true
                 end
-                coin_tiers.remove_coin_from_inventory(inv, cost)
+                inventories.remove_coin_from_inventory(inv, cost)
             else
                 failed = true
             end

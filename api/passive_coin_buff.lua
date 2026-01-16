@@ -1,5 +1,6 @@
 
 local coin_tiers = require "api.coin_tiers"
+local inventories = require "api.inventories"
 
 local passive_coin_buff = {}
 
@@ -24,7 +25,7 @@ function passive_coin_buff.process_accumulation()
     for _, player in pairs(game.players) do
         local inv = player.get_main_inventory()
         if inv then
-            coin_tiers.add_coin_to_inventory(inv, coin)
+            inventories.add_coin_to_inventory(inv, coin)
         end
     end
 end

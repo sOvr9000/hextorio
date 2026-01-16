@@ -5,9 +5,6 @@
 ---@alias AxialDirection 1|2|3|4|5|6
 ---@alias AxialDirectionSet {[AxialDirection]: boolean}
 
----@alias CoinValues number[]
----@alias Coin {tier_scaling: number, max_coin_tier: int, values: CoinValues}
-
 ---@alias IndexMap {[int]: {[int]: int}}
 ---@alias EntityRadii {[string]: number[]}
 ---@alias AmmoReloadParameters {bullet_type: string|nil, flamethrower_type: string|nil, rocket_type: string|nil, railgun_type: string|nil, bullet_count: int|nil, flamethrower_count: int|nil, rocket_count: int|nil, railgun_count: int|nil}
