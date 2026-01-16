@@ -299,18 +299,33 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
 
     local prod = trades.get_productivity(trade, quality_to_show)
     if params.show_productivity_bar and prod ~= 0 then
+        local current_prod_value = trades.get_current_prod_value(trade, quality_to_show)
+
         local prod_bar = trade_frame.add {
             type = "progressbar",
             name = "prod-bar",
-            value = trades.get_current_prod_value(trade, quality_to_show),
+            value = current_prod_value,
             style = "bonus_progressbar",
             raise_hover_events = true,
         }
+        core_gui.auto_width(prod_bar)
+
+        local desc
+        if prod > 0 then
+            desc = {"hextorio-gui.positive-prod-description"}
+        else
+            desc = {"hextorio-gui.negative-prod-description"}
+        end
+
+        prod_bar.tooltip = {"",
+            {"hextorio-gui.productivity-meter", lib.format_percentage(current_prod_value, 1, true, false), "purple", "heading-2"},
+            "\n\n",
+            desc,
+        }
+
         if prod < 0 then
             prod_bar.style.color = {1, 0, 0}
         end
-        prod_bar.style.horizontally_squashable = true
-        prod_bar.style.horizontally_stretchable = true
     end
 
     local prod_label = trade_table.add {

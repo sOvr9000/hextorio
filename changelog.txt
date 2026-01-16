@@ -20,6 +20,7 @@ Date: 15/1/26
     - Improved horizontal alignment of productivity labels on trade arrows.
     - Coin amounts for "Stack Value (Total)" in item tooltips are now rounded to four significant figures instead of zero digits after the decimal.
     - Added custom sprites for hexa modules, courtesy Steb GlitchyFishy.
+    - Added a tooltip to the productivity meters under trades, helping to explain the difference between positive and negative productivity.
   Bugfixes:
     - Fixed that sink/generator mode did not reliably create trades with a 10:1 input-to-output efficiency.
     - Fixed missing locale for electric damage / shooting speed.
