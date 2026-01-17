@@ -244,14 +244,14 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.05,
-                level_scaling = 1.15,
+                level_scaling = 0.025,
             },
         },
         ["pentapod-egg"] = {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.05,
-                level_scaling = 1.15,
+                level_scaling = 0.025,
             },
         },
         ["lab"] = {
@@ -731,7 +731,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.02,
-                level_scaling = 1.04,
+                level_scaling = 0.02,
             },
         },
         ["efficiency-module-2"] = {
@@ -742,8 +742,8 @@ return {
             },
             {
                 type = "all-buffs-cost-reduced",
-                value = 0.02,
-                level_scaling = 1.04,
+                value = 0.03,
+                level_scaling = 0.03,
             },
         },
         ["efficiency-module-3"] = {
@@ -754,8 +754,8 @@ return {
             },
             {
                 type = "all-buffs-cost-reduced",
-                value = 0.03,
-                level_scaling = 1.04,
+                value = 0.05,
+                level_scaling = 0.05,
             },
         },
         ["hexa-efficiency-module"] = {
@@ -766,8 +766,8 @@ return {
             },
             {
                 type = "all-buffs-cost-reduced",
-                value = 0.05,
-                level_scaling = 1.04,
+                value = 0.1,
+                level_scaling = 0.1,
             },
         },
         ["logistic-robot"] = {
@@ -808,15 +808,15 @@ return {
         ["advanced-circuit"] = {
             {
                 type = "all-buffs-cost-reduced",
-                value = 0.03,
-                level_scaling = 1.04,
+                value = 0.02,
+                level_scaling = 0.02,
             },
         },
         ["processing-unit"] = {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.03,
-                level_scaling = 1.04,
+                level_scaling = 0.03,
             },
         },
         ["lithium-plate"] = {
@@ -826,23 +826,30 @@ return {
                 level_scaling = 1.15,
             },
         },
+        ["raw-fish"] = {
+            {
+                type = "all-buffs-level",
+                value = 1,
+                level_scaling = 0.25,
+            },
+        },
         ["hexaprism"] = {
             {
                 type = "all-buffs-level",
                 value = 1,
-                level_scaling = 1.12,
+                level_scaling = 0.25,
             },
         },
         ["sentient-spider"] = {
             {
                 type = "all-buffs-level",
                 value = 1,
-                level_scaling = 1.12,
+                level_scaling = 0.25,
             },
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.25,
-                level_scaling = 1.05,
+                level_scaling = 0.25,
             },
         },
         ["locomotive"] = {
@@ -947,7 +954,7 @@ return {
             {
                 type = "all-buffs-cost-reduced",
                 value = 0.1,
-                level_scaling = 1.05,
+                level_scaling = 0.1,
             },
         },
         ["foundry"] = {
@@ -966,7 +973,7 @@ return {
             {
                 type = "all-buffs-level",
                 value = 1,
-                level_scaling = 1.12,
+                level_scaling = 0.25,
             },
         },
         ["biochamber"] = {
@@ -978,7 +985,7 @@ return {
         },
     },
 
-    show_as_linear = { -- Numbers aren't percentages for these buff types
+    show_as_linear = { -- Numbers aren't displayed as percentages for these buff types
         ["reach-distance"] = true,
         ["build-distance"] = true,
         ["inventory-size"] = true,
@@ -1015,6 +1022,11 @@ return {
     },
 
     is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.
+        ["all-buffs-cost-reduced"] = true,
+    },
+
+    has_linear_effect_scaling = {
+        ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
     },
 

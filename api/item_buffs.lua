@@ -201,7 +201,11 @@ function item_buffs.get_scaled_buff_values(buff, level)
     -- Scale the modifiers by the level
     for i, v in ipairs(modifiers) do
         if type(v) == "number" then
-            modifiers[i] = v * level_scalings[i] ^ (level - 1)
+            if storage.item_buffs.has_linear_effect_scaling[buff.type] then
+                modifiers[i] = v + level_scalings[i] * (level - 1)
+            else
+                modifiers[i] = v * level_scalings[i] ^ (level - 1)
+            end
         end
     end
 
@@ -377,7 +381,7 @@ function item_buffs.set_item_buff_level(item_name, level, trigger_event)
     end
 
     local dec = 0
-    if prev_level == 0 then
+    if prev_level == 0 and not item_buffs.gives_buff_of_type(item_name, "all-buffs-level") then
         dec = storage.item_buffs.level_bonus
         level = level + dec
     end
@@ -615,12 +619,38 @@ function item_buffs.migrate_buff_changes(new_data)
     storage.item_buffs.has_description = new_data.has_description
     storage.item_buffs.is_nonlinear = new_data.is_nonlinear
 
+    local prev_linear_scaling = storage.item_buffs.has_linear_effect_scaling or {}
+    storage.item_buffs.has_linear_effect_scaling = new_data.has_linear_effect_scaling
+
     for item_name, buffs in pairs(new_data.item_buffs) do
         if not lib.tables_equal(storage.item_buffs.item_buffs[item_name], buffs) then
             local level = item_buffs.get_item_buff_level(item_name)
-            item_buffs.set_item_buff_level(item_name, 0) -- Remove current effects
+
+            -- Migrate exponential effect scaling to linear.  When level is set to 0 to remove the effect, trigger it to use exponential scaling.  Then re-apply the effect with linear scaling.
+            local cur_buffs = item_buffs.get_buffs(item_name)
+            local migrating_exponential_to_linear = {}
+            for _, buff in pairs(cur_buffs) do
+                if not prev_linear_scaling[buff.type] and storage.item_buffs.has_linear_effect_scaling[buff.type] then
+                    migrating_exponential_to_linear[buff.type] = true
+                    storage.item_buffs.has_linear_effect_scaling[buff.type] = false
+                end
+            end
+
+            -- Remove current effects
+            item_buffs.set_item_buff_level(item_name, 0)
+
+            -- Update item buff data for this item specifically
             storage.item_buffs.item_buffs[item_name] = buffs
-            item_buffs.set_item_buff_level(item_name, level) -- Apply with new effects
+
+            -- And re-mark all linear buffs as linear again
+            for _, buff in pairs(cur_buffs) do
+                if migrating_exponential_to_linear[buff.type] then
+                    storage.item_buffs.has_linear_effect_scaling[buff.type] = true
+                end
+            end
+
+            -- Apply with new effects
+            item_buffs.set_item_buff_level(item_name, level)
         end
     end
 end

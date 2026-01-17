@@ -8,13 +8,14 @@ Date: 15/1/26
     - Added a fifth coin tier, black hole coins.
     - Added a GUI for viewing and managing the total array of item buffs you have unlocked.
   Minor Features:
-    - Added more item buffs: rocket turret, rocket launcher
+    - Added more item buffs: rocket turret, rocket launcher, raw fish
   Changes:
     - Item counts in trades no longer exceed 100 or five total stacks (whichever is smaller).
     - Item counts in trades are now more varied, where lower-valued items are generally in higher quantities than the higher-valued items on the same side of the trade.
     - Added 10x construction robots, 1x personal roboport, and 2x personal batteries to the quest reward that gives early bots + modular armor.
     - Changed the "(NEGATIVE PRODUCTIVITY)" flying text from trades to [img=virtual-signal.signal-deny].
   Balancing:
+    - Changed the effects of "All Buffs Level" and "All Buffs Cost Reduced" item buffs to scale linearly instead of exponential.
     - Lowered the default setting value for frequency of copper ore from 4.5 to 4.0, giving slightly more iron ore, coal, and stone in mixed patches but slightly less copper ore.
     - Lowered the default setting value for number of trades per hex core on Aquilo from 6 to 2.
   Gui:
@@ -29,6 +30,7 @@ Date: 15/1/26
     - Fixed rare crash when enhancing item buffs.
     - Fixed that trading at higher qualities was using the wrong productivity progress bar.
     - Fixed that hexaprisms weren't registered as raw items, where the "unresearched productivity penalty" was always being applied to it.
+    - Fixed infinite item buff enhancement caused by stacking "All Buffs Level" with "All Buffs Cost Reduced" endlessly.
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:
