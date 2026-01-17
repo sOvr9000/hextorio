@@ -152,6 +152,16 @@ local public_commands = sets.new {
 
 
 
+local function add_cheat_coins(inv)
+    local values = coin_tiers.new_coin_values()
+    for i = 1, #values - 1 do
+        values[i] = 1000
+    end
+    values[#values] = 100000
+
+    inventories.add_coin_to_inventory(inv, coin_tiers.new(values))
+end
+
 -- Type checking functions
 local function get_type(value)
     if type(value) == "table" then
@@ -256,13 +266,6 @@ function on_command(player, command, params)
     elseif command == "hextorio-debug" then
         storage.debug_mode = true
 
-        for _, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
-            player.insert {
-                name = coin_name,
-                count = (prototypes.item[coin_name] or {}).stack_size or 99999,
-            }
-        end
-
         -- Get legendary mech armor
         lib.insert_endgame_armor(player)
 
@@ -304,6 +307,12 @@ function on_command(player, command, params)
         player.cheat_mode = true
         player.clear_recipe_notifications()
 
+        -- Give a disgusting amount of coins
+        local player_inv = player.get_main_inventory()
+        if player_inv then
+            add_cheat_coins(player_inv)
+        end
+
         -- Spawn Sentient Spider
         local character = player.character
         if character then
@@ -314,23 +323,25 @@ function on_command(player, command, params)
                 quality = "hextreme",
                 force = "player",
             }
+
             if spider then
                 player.set_driving(true)
                 storage.debug_spider = spider
                 spider.vehicle_automatic_targeting_parameters = {auto_target_with_gunner = true, auto_target_without_gunner = true}
-                local main_inv = spider.get_inventory(defines.inventory.spider_trunk)
-                if main_inv then
-                    main_inv.insert {name = "construction-robot", quality = "hextreme", count = 680}
-                    main_inv.insert {name = "repair-pack", quality = "hextreme", count = 100}
-                    main_inv.insert {name = "hex-coin", count = 99999}
-                    main_inv.insert {name = "gravity-coin", count = 99999}
-                    main_inv.insert {name = "meteor-coin", count = 99999}
-                    main_inv.insert {name = "hexaprism-coin", count = 100000}
+
+                local trunk_inv = spider.get_inventory(defines.inventory.spider_trunk)
+                if trunk_inv then
+                    trunk_inv.insert {name = "construction-robot", quality = "hextreme", count = 680}
+                    trunk_inv.insert {name = "repair-pack", quality = "hextreme", count = 100}
+
+                    add_cheat_coins(trunk_inv)
                 end
+
                 local ammo_inv = spider.get_inventory(defines.inventory.spider_ammo)
                 if ammo_inv then
                     ammo_inv.insert {name = "electromagnetic-penetrator-cell", quality = "hextreme", count = 6}
                 end
+
                 local grid = spider.grid
                 if grid then
                     for _ = 1, 4 do
@@ -403,13 +414,7 @@ function on_command(player, command, params)
             if params[1] then
                 inventories.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1]))
             else
-                local values = coin_tiers.new_coin_values()
-                for i = 1, #values - 1 do
-                    values[i] = 1000
-                end
-                values[#values] = 100000
-
-                inventories.add_coin_to_inventory(inv, coin_tiers.new(values))
+                add_cheat_coins()
             end
         end
     elseif command == "summon" then
