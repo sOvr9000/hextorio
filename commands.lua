@@ -256,22 +256,12 @@ function on_command(player, command, params)
     elseif command == "hextorio-debug" then
         storage.debug_mode = true
 
-        player.insert {
-            name = "hex-coin",
-            count = 99999,
-        }
-        player.insert {
-            name = "gravity-coin",
-            count = 99999,
-        }
-        player.insert {
-            name = "meteor-coin",
-            count = 99999,
-        }
-        player.insert {
-            name = "hexaprism-coin",
-            count = 100000,
-        }
+        for _, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
+            player.insert {
+                name = coin_name,
+                count = (prototypes.item[coin_name] or {}).stack_size or 99999,
+            }
+        end
 
         -- Get legendary mech armor
         lib.insert_endgame_armor(player)
@@ -410,7 +400,17 @@ function on_command(player, command, params)
     elseif command == "add-coins" then
         local inv = lib.get_player_inventory(player)
         if inv then
-            inventories.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1] or 100000000000000000000))
+            if params[1] then
+                inventories.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1]))
+            else
+                local values = coin_tiers.new_coin_values()
+                for i = 1, #values - 1 do
+                    values[i] = 1000
+                end
+                values[#values] = 100000
+
+                inventories.add_coin_to_inventory(inv, coin_tiers.new(values))
+            end
         end
     elseif command == "summon" then
         local entity_name = params[1]
