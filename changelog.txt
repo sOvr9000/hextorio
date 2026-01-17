@@ -18,10 +18,11 @@ Date: 17/1/26
     - Changed the effects of "All Buffs Level" and "All Buffs Cost Reduced" item buffs to scale linearly instead of exponential.
     - Lowered the default setting value for frequency of copper ore from 4.5 to 4.0, giving slightly more iron ore, coal, and stone in mixed patches but slightly less copper ore.
     - Lowered the default setting value for number of trades per hex core on Aquilo from 6 to 2.
+  Graphics:
+    - Added custom sprites for hexa modules, courtesy Steb GlitchyFishy.
   Gui:
     - Improved horizontal alignment of productivity labels on trade arrows.
     - Coin amounts for "Stack Value (Total)" in item tooltips are now rounded to four significant figures instead of zero digits after the decimal.
-    - Added custom sprites for hexa modules, courtesy Steb GlitchyFishy.
     - Added a tooltip to the productivity meters under trades, helping to explain the difference between positive and negative productivity.
     - Improved the description for "All Buffs Cost Reduced" buffs, now showing the total cost reduction from all buffs combined.
   Bugfixes:
