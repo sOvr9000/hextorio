@@ -6,43 +6,37 @@ local coin_tier_gui = {}
 
 
 
+---Create a flow containing sprite buttons for the different tiers of coins.
+---@param parent LuaGuiElement
+---@param name string|nil The name of the created and returned flow element containing sprite buttons for coins. Defaults to "coins" if not provided.
+---@return LuaGuiElement
 function coin_tier_gui.create_coin_tier(parent, name)
     local flow = parent.add {type = "flow", direction = "horizontal"}
     flow.style.horizontal_spacing = 8
     flow.name = name or "coins"
 
-    local hex_coin_sprite = flow.add {type = "sprite-button", sprite = "hex-coin"}
-    hex_coin_sprite.name = "hex-coin"
-    hex_coin_sprite.style.width = 40
-    hex_coin_sprite.style.height = 40
-    hex_coin_sprite.number = 1
+    for i, coin_name in ipairs(storage.coin_tiers.COIN_NAMES) do
+        local coin_sprite = flow.add {type = "sprite-button", sprite = coin_name}
+        coin_sprite.name = coin_name
+        coin_sprite.style.width = 40
+        coin_sprite.style.height = 40
 
-    local gravity_coin_sprite = flow.add {type = "sprite-button", sprite = "gravity-coin"}
-    gravity_coin_sprite.name = "gravity-coin"
-    gravity_coin_sprite.style.width = 40
-    gravity_coin_sprite.style.height = 40
-    gravity_coin_sprite.number = 0
-
-    local meteor_coin_sprite = flow.add {type = "sprite-button", sprite = "meteor-coin"}
-    meteor_coin_sprite.name = "meteor-coin"
-    meteor_coin_sprite.style.width = 40
-    meteor_coin_sprite.style.height = 40
-    meteor_coin_sprite.number = 0
-
-    local hexaprism_coin_sprite = flow.add {type = "sprite-button", sprite = "hexaprism-coin"}
-    hexaprism_coin_sprite.name = "hexaprism-coin"
-    hexaprism_coin_sprite.style.width = 40
-    hexaprism_coin_sprite.style.height = 40
-    hexaprism_coin_sprite.number = 0
+        if i == 1 then
+            coin_sprite.number = 1
+        else
+            coin_sprite.number = 0
+        end
+    end
 
     return flow
 end
 
+---Update a coin tier flow's sprite buttons to show numbers matching the Coin object's values.
+---@param flow LuaGuiElement
+---@param coin Coin
 function coin_tier_gui.update_coin_tier(flow, coin)
-    -- Don't show any zeros unless it's a total of zero coins.
-    local coin_names = {"hex-coin", "gravity-coin", "meteor-coin", "hexaprism-coin"}
-    for i = 1, 4 do
-        local coin_sprite = flow[coin_names[i]]
+    for i, coin_name in ipairs(storage.coin_tiers.COIN_NAMES) do
+        local coin_sprite = flow[coin_name]
         if coin.values[i] > 0 then
             coin_sprite.number = coin.values[i]
             coin_sprite.visible = true
@@ -53,8 +47,8 @@ function coin_tier_gui.update_coin_tier(flow, coin)
     end
 
     if coin_tiers.is_zero(coin) then
-        flow['hex-coin'].visible = true
-        flow['hex-coin'].number = 0
+        flow["hex-coin"].visible = true
+        flow["hex-coin"].number = 0
     end
 end
 
