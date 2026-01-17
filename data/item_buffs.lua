@@ -562,7 +562,7 @@ return {
                 level_scaling = 1.05,
             },
             {
-                type = "rocket-damage",
+                type = "explosion-damage",
                 value = 0.08,
                 level_scaling = 1.1,
             },
