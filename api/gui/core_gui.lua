@@ -467,7 +467,7 @@ function core_gui.get_buff_description_tooltip(buff_type)
     elseif buff_type == "train-trading-capacity" then
         return {"item-buff-description." .. buff_type, "[font=heading-2][color=green]" .. storage.item_buffs.train_trading_capacity .. "[.color][.font]"}
     elseif buff_type == "all-buffs-cost-reduced" then
-        return {"item-buff-description." .. buff_type, "[font=heading-2][color=green]" .. (math.floor(100 / storage.item_buffs.cost_multiplier) * 0.01) .. "[.color][.font]"}
+        return {"item-buff-description." .. buff_type, "[font=heading-2][color=green]" .. (math.floor(0.5 + 100 / storage.item_buffs.cost_multiplier) * 0.01) .. "[.color][.font]"}
     else
         return {"item-buff-description." .. buff_type}
     end
