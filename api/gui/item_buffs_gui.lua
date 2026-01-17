@@ -84,9 +84,6 @@ function item_buffs_gui.init_item_buffs_frame(player)
 
     left_frame.add {type = "line", direction = "horizontal"}
 
-    local filter_label = left_frame.add {type = "label", name = "filter-label", caption = {"hextorio-gui.filters"}}
-    filter_label.style.font = "heading-2"
-
     -- Placeholder for filters
     local filter_placeholder = left_frame.add {type = "label", name = "filter-placeholder", caption = "Filters coming soon!"}
     filter_placeholder.style.font_color = {128, 128, 128}
