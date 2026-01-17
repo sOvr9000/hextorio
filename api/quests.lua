@@ -143,6 +143,10 @@ function quests.register_events()
     event_system.register("player-coins-changed", function(player, coin)
         quests.set_progress_for_type("coins-in-inventory", coin_tiers.to_base_value(coin))
     end)
+
+    event_system.register("command-hextorio-debug", function(player, params)
+        quests.complete_quest "ground-zero"
+    end)
 end
 
 function quests.reinitialize_everything()
