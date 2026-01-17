@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.0
-Date: 15/1/26
+Date: 17/1/26
   Major Features:
     - Added mod setting for controlling the efficiency of trades (which is the average ratio of the trade's total output-to-input value).
   Features:
