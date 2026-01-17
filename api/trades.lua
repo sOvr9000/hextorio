@@ -233,6 +233,8 @@ function trades.register_events()
         trades.queue_productivity_update_job()
     end)
 
+    event_system.register("item-buff-changed-trade-productivity", function() trades.queue_productivity_update_job() end)
+
     local function fetch_and_queue_update(surface_name)
         trades.fetch_base_trade_productivity_settings(surface_name)
         trades.queue_productivity_update_job(surface_name)

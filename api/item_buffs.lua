@@ -103,6 +103,7 @@ local buff_type_actions = {
     end,
     ["trade-productivity"] = function(value)
         storage.trades.base_productivity = storage.trades.base_productivity + value
+        event_system.trigger "item-buff-changed-trade-productivity"
     end,
     ["passive-coins"] = function(value)
         storage.item_buffs.passive_coins_rate = storage.item_buffs.passive_coins_rate + value

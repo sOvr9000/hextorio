@@ -31,6 +31,7 @@ Date: 15/1/26
     - Fixed that trading at higher qualities was using the wrong productivity progress bar.
     - Fixed that hexaprisms weren't registered as raw items, where the "unresearched productivity penalty" was always being applied to it.
     - Fixed infinite item buff enhancement caused by stacking "All Buffs Level" with "All Buffs Cost Reduced" endlessly.
+    - Fixed that upgrading trade productivity through item buffs wasn't applying the effect to existing trades immediately.
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:
