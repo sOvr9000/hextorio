@@ -8,7 +8,7 @@ Date: 15/1/26
     - Added a fifth coin tier, black hole coins.
     - Added a GUI for viewing and managing the total array of item buffs you have unlocked.
   Minor Features:
-    - Added more item buffs: rocket turret, rocket launcher, raw fish
+    - Added more item buffs: rocket turret, rocket launcher, raw fish.
   Changes:
     - Item counts in trades no longer exceed 100 or five total stacks (whichever is smaller).
     - Item counts in trades are now more varied, where lower-valued items are generally in higher quantities than the higher-valued items on the same side of the trade.
@@ -35,7 +35,7 @@ Date: 15/1/26
   Locale:
     - Added additional info to the mod settings for "Base Trade Productivity" to help explain what "trade productivity" is.
   Optimizations:
-    - Optimized trade item count selection: O(n) -> O(logn).
+    - Optimized trade item count selection in random trade generation: O(n) -> O(logn).
     - Made the catalog GUI stop trying to refresh when player inventories change if the player doesn't have the catalog GUI open (small optimization).
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.3
