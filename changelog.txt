@@ -6,6 +6,7 @@ Date: 15/1/26
   Features:
     - Added mod setting for controlling the hex claim costs, intended to be lowered when lowering the trade efficiency setting to the point where infinite loops are impossible.
     - Added a fifth coin tier, black hole coins.
+    - Added a GUI for viewing and managing the total array of item buffs you have unlocked.
   Minor Features:
     - Added more item buffs: rocket turret, rocket launcher
   Changes:

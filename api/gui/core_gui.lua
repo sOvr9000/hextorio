@@ -6,6 +6,8 @@ local coin_tiers = require "api.coin_tiers"
 local item_ranks = require "api.item_ranks"
 local item_values = require "api.item_values"
 local event_system  = require "api.event_system"
+local item_buffs = require "api.item_buffs"
+local passive_coin_buff = require "api.passive_coin_buff"
 
 local core_gui = {}
 
@@ -438,6 +440,35 @@ function core_gui.get_trade_from_trade_flow(player, flow)
     if not trade_id then return end
 
     return trades.get_trade_from_id(trade_id)
+end
+
+---Generate a buff description tooltip based on buff type.
+---@param buff_type ItemBuffType
+---@return LocalisedString|nil
+function core_gui.get_buff_description_tooltip(buff_type)
+    if not storage.item_buffs.has_description[buff_type] then
+        return nil
+    end
+
+    if buff_type == "passive-coins" then
+        local interval = storage.item_buffs.passive_coins_interval
+        local calculation_steps = passive_coin_buff.get_passive_gain_calculation_steps(interval * 60)
+
+        local breakdown_str = {"",
+            coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + (calculation_steps[#calculation_steps] or 0)))),
+            "\n\n[color=128,128,128][font=heading-2]", {"hextorio-gui.calculation-breakdown"}, "[.font]",
+            "\n", {"hextorio-gui.net-coins-per-hour", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + (calculation_steps[1] or 0))))},
+            "\n\n", {"hextorio-gui.normalize-to-interval", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + (calculation_steps[2] or 0)))), interval},
+            "\n\n", {"hextorio-gui.buff-effect", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + (calculation_steps[3] or 0)))), "[color=green]" .. lib.format_percentage(storage.item_buffs.passive_coins_rate, 1, true, true) .. "[.color]"},
+            "[.color]",
+        }
+
+        return {"item-buff-description." .. buff_type, breakdown_str, interval}
+    elseif buff_type == "train-trading-capacity" then
+        return {"item-buff-description." .. buff_type, "[font=heading-2][color=green]" .. storage.item_buffs.train_trading_capacity .. "[.color][.font]"}
+    else
+        return {"item-buff-description." .. buff_type}
+    end
 end
 
 

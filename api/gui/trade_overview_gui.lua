@@ -115,7 +115,7 @@ function trade_overview_gui.register_events()
     end)
 end
 
----Reinitialize the hex core GUI for the given player, or all online players if no player is provided.
+---Reinitialize the trade overview GUI for the given player, or all online players if no player is provided.
 ---@param player LuaPlayer|nil
 function trade_overview_gui.reinitialize(player)
     if not player then

@@ -22,11 +22,11 @@ function catalog_gui.register_events()
     event_system.register_gui("gui-clicked", "catalog-button", catalog_gui.on_catalog_button_click)
     event_system.register_gui("gui-closed", "catalog", catalog_gui.hide_catalog)
     event_system.register_gui("gui-clicked", "catalog-item", catalog_gui.on_catalog_item_click)
-    event_system.register_gui("gui-clicked", "item-buff-enhance-all", catalog_gui.on_item_buff_all_button_click)
     event_system.register_gui("gui-clicked", "open-in-factoriopedia", catalog_gui.on_open_factoriopedia_button_click)
     event_system.register_gui("gui-clicked", "open-in-trade-overview", catalog_gui.on_open_trade_overview_button_click)
     event_system.register_gui("gui-elem-changed", "selected-item-view", catalog_gui.on_catalog_search_item_selected)
     event_system.register_gui("gui-clicked", "item-buff-button", catalog_gui.on_item_buff_button_click)
+    event_system.register_gui("gui-clicked", "open-item-buffs-button", catalog_gui.on_open_item_buffs_button_click)
 
     event_system.register_gui("gui-selection-changed", "quantum-bazaar-changed", catalog_gui.on_quantum_bazaar_changed)
     event_system.register_gui("gui-clicked", "quantum-bazaar-sell-in-hand", catalog_gui.on_quantum_bazaar_sell_in_hand_clicked)
@@ -69,10 +69,6 @@ function catalog_gui.register_events()
                 end
             end
         end
-    end)
-
-    event_system.register("item-buffs-enhance-all-finished", function(player, total_cost, enhanced_items)
-        catalog_gui.update_catalog_inspect_frame(player)
     end)
 
     event_system.register("post-set-item-value-command", function(player, params)
@@ -393,18 +389,16 @@ function catalog_gui.build_header(player, rank_obj, frame)
         tags = {handlers = {["gui-clicked"] = "open-in-factoriopedia"}},
     }
 
-    local tooltip = {"hextorio-gui.obfuscated-text"}
-    if show_buffs then
-        tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"}
-    end
-    local item_buff_enhance_all = control_flow.add {
+    local open_item_buffs = control_flow.add {
         type = "sprite-button",
-        name = "item-buff-enhance-all",
-        sprite = "item-buff-enhance-all",
-        tooltip = tooltip,
-        tags = {handlers = {["gui-clicked"] = "item-buff-enhance-all"}},
+        name = "open-item-buffs-button",
+        sprite = "utility/side_menu_bonus_icon",
+        tags = {handlers = {["gui-clicked"] = "open-item-buffs-button"}},
     }
-    item_buff_enhance_all.enabled = show_buffs
+    open_item_buffs.enabled = show_buffs
+    if show_buffs then
+        open_item_buffs.tooltip = {"hextorio-gui.open-item-buffs-button-tooltip"}
+    end
 
     frame.add {type = "line", direction = "horizontal"}
 end
@@ -515,25 +509,10 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
                 caption = value_caption,
             }
 
-            if is_buff_unlocked and storage.item_buffs.has_description[buff.type] then
-                if buff.type == "passive-coins" then
-                    local interval = storage.item_buffs.passive_coins_interval
-                    local calculation_steps = passive_coin_buff.get_passive_gain_calculation_steps(interval * 60)
-
-                    local breakdown_str = {"",
-                        coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[#calculation_steps]))),
-                        "\n\n[color=128,128,128][font=heading-2]", {"hextorio-gui.calculation-breakdown"}, "[.font]",
-                        "\n", {"hextorio-gui.net-coins-per-hour", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[1])))},
-                        "\n\n", {"hextorio-gui.normalize-to-interval", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[2]))), interval},
-                        "\n\n", {"hextorio-gui.buff-effect", "\n" .. coin_tiers.coin_to_text(coin_tiers.from_base_value(math.floor(0.5 + calculation_steps[3]))), "[color=green]" .. lib.format_percentage(storage.item_buffs.passive_coins_rate, 1, true, true) .. "[.color]"},
-                        "[.color]",
-                    }
-
-                    buff_label.tooltip = {"item-buff-description." .. buff.type, breakdown_str, interval}
-                elseif buff.type == "train-trading-capacity" then
-                    buff_label.tooltip = {"item-buff-description." .. buff.type, "[font=heading-2][color=green]" .. storage.item_buffs.train_trading_capacity .. "[.color][.font]"}
-                else
-                    buff_label.tooltip = {"item-buff-description." .. buff.type}
+            if is_buff_unlocked then
+                local tooltip = gui.get_buff_description_tooltip(buff.type)
+                if tooltip then
+                    buff_label.tooltip = tooltip
                 end
             end
         elseif buff.values then
@@ -1038,10 +1017,9 @@ end
 
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
-function catalog_gui.on_item_buff_all_button_click(player, elem)
-    item_buffs.enhance_all_item_buffs {
-        player = player,
-    }
+function catalog_gui.on_open_item_buffs_button_click(player, elem)
+    catalog_gui.hide_catalog(player)
+    event_system.trigger("catalog-item-buffs-button-clicked", player, elem)
 end
 
 ---@param player LuaPlayer
