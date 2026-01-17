@@ -164,6 +164,14 @@ function item_values.register_events()
 end
 
 function item_values.init()
+    for _, surface_vals in pairs(storage.item_values.values) do
+        item_values.init_coin_values(surface_vals)
+    end
+
+
+
+    -- FOR EXTRANEOUS TOOLS
+
     -- storage.item_values.recipe_tree = lib.get_recipe_tree()
     -- storage.item_values.recipe_graph = lib.get_recipe_graph(storage.item_values.recipe_tree)
     -- log(serpent.block(storage.item_values.recipe_tree))
@@ -538,6 +546,14 @@ function item_values.reset_storage()
     storage.item_values.interplanetary_values = {}
     storage.item_values.minimal_values = {}
     storage.item_values.all_items_with_value = nil
+end
+
+function item_values.migrate_old_data()
+    if not storage.item_values.minimal_values then
+        item_values.reset_storage()
+    end
+
+    item_values.init()
 end
 
 

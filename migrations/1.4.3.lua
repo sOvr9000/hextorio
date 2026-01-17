@@ -13,11 +13,6 @@ return function()
     trades.fetch_base_trade_efficiency_settings()
     hex_grid.fetch_claim_cost_multiplier_settings()
 
-    storage.coin_tiers.COIN_NAMES = data_coin_tiers.COIN_NAMES
-    storage.coin_tiers.TIER_SCALING = data_coin_tiers.TIER_SCALING
-
-    coin_tiers.init()
-
     for surface_name, _ in pairs(storage.item_values.values) do
         for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
             if state.claim_price then

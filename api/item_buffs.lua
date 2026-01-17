@@ -39,7 +39,10 @@ local buff_type_actions = {
         game.forces.player.mining_drill_productivity_bonus = game.forces.player.mining_drill_productivity_bonus + value
     end,
     ["inventory-size"] = function(value)
+        log("before: " .. game.forces.player.character_inventory_slots_bonus)
+        log("to add: " .. value)
         game.forces.player.character_inventory_slots_bonus = game.forces.player.character_inventory_slots_bonus + value
+        log("after: " .. game.forces.player.character_inventory_slots_bonus)
     end,
     ["beacon-efficiency"] = function(value)
         game.forces.player.beacon_distribution_modifier = game.forces.player.beacon_distribution_modifier + value

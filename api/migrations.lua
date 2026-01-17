@@ -2,8 +2,12 @@
 local lib = require "api.lib"
 local gui = require "api.gui"
 local quests = require "api.quests"
+local item_values = require "api.item_values"
+local coin_tiers  = require "api.coin_tiers"
+local trades = require "api.trades"
 
 local data_quests = require "data.quests"
+local data_coin_tiers = require "data.coin_tiers"
 
 local migrations = {}
 
@@ -90,6 +94,15 @@ end
 
 function migrations.on_mod_updated(old_version, new_version)
     lib.log("Starting version migrations")
+
+    -- Handle coin updates for ALL versions. These are central to almost everything in the mod, so it gets to be updated on each release without instruction.
+    storage.coin_tiers.COIN_NAMES = data_coin_tiers.COIN_NAMES
+    storage.coin_tiers.TIER_SCALING = data_coin_tiers.TIER_SCALING
+    coin_tiers.init()
+    item_values.migrate_old_data() -- Update coin values and some other things. (should never change)
+
+    -- And trade data as well
+    trades.migrate_old_data()
 
     -- Reinitialize quests
     lib.log("Reloading quests")

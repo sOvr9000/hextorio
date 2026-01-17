@@ -2949,6 +2949,11 @@ function trades.generate_interplanetary_trade_locations(surface_name, trades_per
     local land_hexes = hex_island.get_land_hex_list(surface_name)
     local total_land_hexes = #land_hexes
 
+    if total_land_hexes == 0 then
+        -- Old saves won't have any interplanetary locations.
+        return
+    end
+
     local item_vals = item_values.get_interplanetary_item_values(surface_name, true, false, "normal")
     local planet_size = lib.startup_setting_value("planet-size-" .. surface_name)
     for item_name, _ in pairs(item_vals) do
@@ -3124,6 +3129,10 @@ function trades.fetch_base_trade_productivity_settings(surface_name)
         return
     end
 
+    if not storage.trades.base_trade_productivity then
+        storage.trades.base_trade_productivity = {}
+    end
+
     local prod = lib.runtime_setting_value_as_number("base-trade-prod-" .. surface_name)
     storage.trades.base_trade_productivity[surface_name] = prod
 end
@@ -3167,6 +3176,29 @@ function trades.should_use_batch_processing(filter)
     end
 
     return false
+end
+
+function trades.migrate_old_data()
+    if not storage.trades.base_trade_efficiency then
+        trades.fetch_base_trade_efficiency_settings()
+    end
+
+    if not storage.trades.productivity_update_jobs then
+        storage.trades.productivity_update_jobs = {}
+        storage.trades.trade_collection_jobs = {}
+        storage.trades.trade_filtering_jobs = {}
+        storage.trades.trade_sorting_jobs = {}
+        storage.trades.trade_export_jobs = {}
+        storage.trades.researched_items = {}
+        storage.trades.base_trade_productivity = {}
+
+        local penalty = lib.runtime_setting_value "unresearched-penalty"
+        ---@cast penalty number
+
+        storage.trades.unresearched_penalty = penalty
+        trades.recalculate_researched_items()
+        trades.fetch_base_trade_productivity_settings()
+    end
 end
 
 
