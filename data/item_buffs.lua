@@ -1025,7 +1025,7 @@ return {
         ["all-buffs-cost-reduced"] = true,
     },
 
-    has_linear_effect_scaling = {
+    has_linear_effect_scaling = { -- These buff types give buffs that scale linearly rather than exponentially.
         ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
     },
