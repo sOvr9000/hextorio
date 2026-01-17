@@ -264,7 +264,7 @@ function item_buffs_gui.create_buff_card(player, parent, group)
         direction = "vertical",
         style = "inside_shallow_frame",
     }
-    card_frame.style.width = 312
+    card_frame.style.width = 307
     card_frame.style.height = 270
     card_frame.style.padding = 10
     -- core_gui.auto_width(card_frame)
