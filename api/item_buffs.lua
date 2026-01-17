@@ -39,10 +39,7 @@ local buff_type_actions = {
         game.forces.player.mining_drill_productivity_bonus = game.forces.player.mining_drill_productivity_bonus + value
     end,
     ["inventory-size"] = function(value)
-        log("before: " .. game.forces.player.character_inventory_slots_bonus)
-        log("to add: " .. value)
         game.forces.player.character_inventory_slots_bonus = game.forces.player.character_inventory_slots_bonus + value
-        log("after: " .. game.forces.player.character_inventory_slots_bonus)
     end,
     ["beacon-efficiency"] = function(value)
         game.forces.player.beacon_distribution_modifier = game.forces.player.beacon_distribution_modifier + value
@@ -416,8 +413,18 @@ function item_buffs.set_item_buff_level(item_name, level, trigger_event)
             if storage.item_buffs.is_nonlinear[buff.type] then
                 item_buffs.apply_buff_modifiers(buff, level, false)
             else
-                -- Apply a "level one" version of the increment from the previous level to the new level, skipping some calculations to achieve the same thing.
-                item_buffs.apply_buff_modifiers(item_buffs.get_incremental_buff(buff, level - 1 - dec), 1, false)
+                -- For linear buffs, apply or remove incremental changes based on level difference
+                if level > prev_level then
+                    -- Apply incremental buffs for each level increase
+                    for i = prev_level, level - 1 do
+                        item_buffs.apply_buff_modifiers(item_buffs.get_incremental_buff(buff, i), 1, false)
+                    end
+                elseif level < prev_level then
+                    -- Remove incremental buffs for each level decrease
+                    for i = level, prev_level - 1 do
+                        item_buffs.apply_buff_modifiers(item_buffs.get_incremental_buff(buff, i), 1, true)
+                    end
+                end
             end
         end
     end
