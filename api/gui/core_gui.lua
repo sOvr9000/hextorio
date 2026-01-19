@@ -468,6 +468,8 @@ function core_gui.get_buff_description_tooltip(buff_type)
         return {"item-buff-description." .. buff_type, "[font=heading-2][color=green]" .. storage.item_buffs.train_trading_capacity .. "[.color][.font]"}
     elseif buff_type == "all-buffs-cost-reduced" then
         return {"item-buff-description." .. buff_type, "[font=heading-2][color=green]" .. (math.floor(0.5 + 100 / storage.item_buffs.cost_multiplier) * 0.01) .. "[.color][.font]"}
+    elseif buff_type == "strongbox-loot" then
+        return {"item-buff-description." .. buff_type, (math.floor(0.5 + 100 * storage.item_buffs.strongbox_loot) * 0.01)}
     else
         return {"item-buff-description." .. buff_type}
     end
