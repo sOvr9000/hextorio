@@ -308,6 +308,7 @@ function hex_core_gui.update_hex_core(player)
     frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion"
     frame["hex-control-flow"]["quick-trade"].visible = hex_core_gui.is_quick_trade_valid(player, state)
     frame["hex-control-flow"]["delete-strongbox-button"].visible = state.strongboxes ~= nil and #state.strongboxes > 0
+    frame["hex-control-flow"]["delete-strongbox-button"].enabled = true
     frame["sink-mode-confirmation"].visible = false
     frame["generator-mode-confirmation"].visible = false
 
