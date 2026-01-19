@@ -7,6 +7,8 @@ Date: 19/1/26
     - Added item buffs: all vanilla chest types (8 new buffs).
   Changes:
     - Modified mod description to list strongboxes as a notable, interesting feature: "scaling DPS boss fights".
+  Graphics:
+    - Added image for hexa module technology, courtesy Steb GlitchyFishy.
   Gui:
     - Closing the item buffs GUI now brings you back to the catalog GUI.
   Bugfixes:

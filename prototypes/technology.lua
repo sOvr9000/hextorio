@@ -257,7 +257,7 @@ data:extend({
         type = "technology",
         name = "hexa-modules",
         icon = "__hextorio__/graphics/technology/hexa-modules.png",
-        icon_size = 256,
+        icon_size = 128,
         prerequisites = {"promethium-science-pack", "productivity-module-3", "speed-module-3", "efficiency-module-3", "quality-module-3"},
         unit = {
             count = 5000,
