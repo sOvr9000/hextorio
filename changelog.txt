@@ -1,12 +1,14 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
-Date: 18/1/26
+Date: 19/1/26
   Major Features:
     - Added tough strongboxes in random hexes on all planets, giving loot on each successful breaking.
   Features:
     - Added item buffs: all vanilla chest types (8 new buffs).
   Changes:
     - Modified mod description to list strongboxes as a notable, interesting feature: "scaling DPS boss fights".
+  Gui:
+    - Closing the item buffs GUI now brings you back to the catalog GUI.
   Bugfixes:
     - Fixed train trading crashes when coins are involved.
 ---------------------------------------------------------------------------------------------------

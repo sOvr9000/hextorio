@@ -83,6 +83,10 @@ function catalog_gui.register_events()
         if not catalog_gui.is_catalog_open(player) then return end
         catalog_gui.update_quantum_bazaar(player)
     end)
+
+    event_system.register("item-buffs-gui-closed", function(player)
+        catalog_gui.show_catalog(player)
+    end)
 end
 
 ---Reinitialize the catalog GUI for the given player, or all online players if no player is provided.

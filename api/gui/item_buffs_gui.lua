@@ -243,6 +243,8 @@ function item_buffs_gui.hide_item_buffs_frame(player)
     local frame = player.gui.screen["item-buffs"]
     if not frame or not frame.valid then return end
     gui_stack.pop(player, gui_stack.index_of(player, frame))
+
+    event_system.trigger("item-buffs-gui-closed", player)
 end
 
 ---Create a buff card for a specific buff type
