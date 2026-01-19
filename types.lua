@@ -65,3 +65,4 @@
 ---| "extra-trade"
 ---| "interplanetary-trade"
 ---| "trade-recovered"
+---| "strongbox-located"

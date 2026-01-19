@@ -1,6 +1,12 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
-Date: 17/01/26
+Date: 18/1/26
+  Major Features:
+    - Added tough strongboxes in random hexes on all planets, giving loot on each successful breaking.
+  Features:
+    - Added item buffs: all vanilla chest types (8 new buffs).
+  Changes:
+    - Modified mod description to list strongboxes as a notable, interesting feature: "scaling DPS boss fights".
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.1
 Date: 17/1/26

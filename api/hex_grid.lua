@@ -15,6 +15,7 @@ local trades = require "api.trades"
 local item_ranks  = require "api.item_ranks"
 local dungeons = require "api.dungeons"
 local inventories = require "api.inventories"
+local strongboxes = require "api.strongboxes"
 
 
 
@@ -306,6 +307,11 @@ function hex_grid.register_events()
                 end
             end
         end
+    end)
+
+    event_system.register("entity-died", function(entity)
+        if entity.name:sub(1, 15) ~= "strongbox-tier-" then return end
+        hex_grid.on_strongbox_killed(entity)
     end)
 
     event_system.register("runtime-setting-changed-hex-claim-cost-mult-nauvis", function()
@@ -1514,6 +1520,72 @@ function hex_grid.spawn_enemy_base(surface, center, max_radius, num_spawners, nu
     return any_spawned
 end
 
+---Attempt to spawn a strongbox in the given hex.
+---@param state HexState
+function hex_grid.try_generate_strongbox(state)
+    if not state.hex_core or not state.hex_core.valid or not state.claimed then return end
+
+    local surface = state.hex_core.surface
+    local pos = state.hex_core.position
+    local offset = lib.random_unit_vector(math.random(8, 16))
+    pos = {x = pos.x + offset.x, y = pos.y + offset.y}
+
+    local clear_pos = surface.find_non_colliding_position("strongbox-tier-1", pos, 10, 1, true)
+    if not clear_pos then return end
+
+    local loot_scale = hex_grid.get_planet_coin_scaling(surface.name)
+    local sb_entity = strongboxes.try_spawn(surface, clear_pos, loot_scale)
+    if not sb_entity or not sb_entity.valid then return end
+
+    if not state.strongboxes then
+        state.strongboxes = {}
+    end
+
+    hex_state_manager.map_entity_to_hex_state(sb_entity.unit_number, surface.name, state.position)
+    hex_grid.update_strongbox_entity(state, sb_entity)
+
+    lib.print_notification("strongbox-located", {"",
+        lib.color_localized_string({"hextorio.strongbox-located"}, "orange", "heading-1"),
+        " ",
+        sb_entity.gps_tag,
+    })
+end
+
+---Update the reference to the strongbox entity that the given hex state holds.
+---@param state HexState
+---@param sb_entity LuaEntity
+function hex_grid.update_strongbox_entity(state, sb_entity)
+    if not state.strongboxes then state.strongboxes = {} end
+    for i = #state.strongboxes, 1, -1 do
+        local sb = state.strongboxes[i]
+        if sb then
+            if not sb.valid or lib.tables_equal(sb.position, sb_entity.position) then
+                table.remove(state.strongboxes, i)
+                if sb.valid then
+                    sb.destroy()
+                end
+            end
+        end
+    end
+    table.insert(state.strongboxes, sb_entity)
+end
+
+---Remove all strongboxes from this hex core, destroying the entities.
+---@param state HexState
+function hex_grid.remove_strongboxes(state)
+    if not state.strongboxes then return end
+
+    for i = #state.strongboxes, 1, -1 do
+        local sb_entity = state.strongboxes[i]
+        if sb_entity.valid then
+            hex_state_manager.unmap_entity(sb_entity.unit_number)
+            sb_entity.destroy()
+        end
+
+        state.strongboxes[i] = nil
+    end
+end
+
 ---@param dist number
 ---@return LuaQualityPrototype
 function hex_grid.get_quality_from_distance(surface_name, dist)
@@ -1743,6 +1815,8 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     -- Fil the edges between claimed hexes
     hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, fill_tile_name)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
+
+    hex_grid.try_generate_strongbox(state)
 
     -- Add trade items to catalog list
     trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
@@ -2787,6 +2861,7 @@ function hex_grid.process_hex_core_pool()
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
         if state then
             hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
+            hex_grid.process_strongboxes(state)
             hex_grid.process_hexlight(state)
         end
     end
@@ -3315,6 +3390,19 @@ function hex_grid.process_flying_text(state, total_removed, total_inserted, tota
     end
 end
 
+---Keep the loot in the strongboxes update to date with the current item buffs.
+---@param state HexState
+function hex_grid.process_strongboxes(state)
+    if not state.hex_core or not state.strongboxes or not next(state.strongboxes) then return end
+
+    local planet_loot_scale = hex_grid.get_planet_coin_scaling(state.hex_core.surface.name)
+    for _, sb_entity in pairs(state.strongboxes) do
+        if sb_entity.valid then
+            strongboxes.insert_loot(sb_entity, planet_loot_scale)
+        end
+    end
+end
+
 function hex_grid.process_hexlight(state)
     local hex_core = state.hex_core
     if not state.hexlight or not hex_core then return end
@@ -3734,21 +3822,26 @@ function hex_grid.get_hex_core_stats(state)
     return stats
 end
 
+---Get the mutiplier of the strongbox loot value and claim costs on a given surface.
+---@param surface_name string
+function hex_grid.get_planet_coin_scaling(surface_name)
+    --TODO: optimize this function (cache results, they are constant)
+    if lib.is_t2_planet(surface_name) then
+        return storage.coin_tiers.TIER_SCALING
+    elseif lib.is_t3_planet(surface_name) then
+        return storage.coin_tiers.TIER_SCALING ^ 1.5
+    end
+    return 1
+end
+
 ---Calculate the claim cost for a hex at some position on a given surface.
 ---@param surface LuaSurface
 ---@param dist int
 ---@return Coin
 function hex_grid.calculate_hex_claim_price(surface, dist)
-    local claim_price = (dist + 1) * (dist + 1)
+    local claim_price = (dist + 1) * (dist + 1) * hex_grid.get_planet_coin_scaling(surface.name)
 
     local coin = coin_tiers.from_base_value(claim_price)
-
-    if lib.is_t2_planet(surface.name) then -- vulcanus, fulgora, gleba
-        coin = coin_tiers.shift_tier(coin, 1)
-    elseif lib.is_t3_planet(surface.name) then -- aquilo
-        coin = coin_tiers.floor(coin_tiers.multiply(coin, coin.tier_scaling ^ 1.5))
-    end
-
     local mult = hex_grid.get_claim_cost_multiplier(surface.name)
     coin = coin_tiers.floor(coin_tiers.multiply(coin, mult))
 
@@ -3759,7 +3852,7 @@ function hex_grid.calculate_hex_claim_price(surface, dist)
     return coin
 end
 
----Get the multiplier of the cost of hex claims for a given surface.
+---Get the multiplier of the cost of hex claims for a given surface, from the mod settings.
 ---@param surface_name string
 ---@return number
 function hex_grid.get_claim_cost_multiplier(surface_name)
@@ -3840,6 +3933,42 @@ function hex_grid.on_setting_changed_unresearched_penalty()
 
     storage.trades.unresearched_penalty = penalty
     trades.queue_productivity_update_job()
+end
+
+---@param sb_entity LuaEntity
+function hex_grid.on_strongbox_killed(sb_entity)
+    local cur_tier = strongboxes.get_tier_of_strongbox(sb_entity)
+    if not cur_tier then return end
+
+    local inv = sb_entity.get_inventory(defines.inventory.chest)
+    if not inv then return end
+
+    local next_tier = math.min(storage.strongboxes.max_tier, cur_tier + 1)
+    local coin_loot = inventories.get_coin_from_inventory(inv)
+
+    storage.strongboxes.total_coins_earned = coin_tiers.add(storage.strongboxes.total_coins_earned, coin_loot)
+
+    -- Include offline players
+    for _, player in pairs(game.players) do
+        local player_inv = player.get_main_inventory()
+        if player_inv then
+            inventories.add_coin_to_inventory(player_inv, coin_loot)
+        end
+    end
+
+    local state = hex_state_manager.get_hex_state_from_entity(sb_entity.unit_number)
+    if not state then return end
+
+    hex_state_manager.unmap_entity(sb_entity.unit_number)
+
+    -- Respawn chest :D
+    local planet_loot_scale = hex_grid.get_planet_coin_scaling(sb_entity.surface.name)
+    local new_sb_entity = strongboxes.spawn(sb_entity.surface, sb_entity.position, next_tier, planet_loot_scale)
+
+    if new_sb_entity and new_sb_entity.valid then
+        hex_state_manager.map_entity_to_hex_state(new_sb_entity.unit_number, new_sb_entity.surface.name, state.position)
+        hex_grid.update_strongbox_entity(state, new_sb_entity)
+    end
 end
 
 

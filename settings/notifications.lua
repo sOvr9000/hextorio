@@ -42,4 +42,11 @@ data:extend({
         default_value = true,
         order = "n[notifications]-i[trade-recovered]",
     },
+    {
+        type = "bool-setting",
+        name = "hextorio-notifications-strongbox-located",
+        setting_type = "runtime-per-user",
+        default_value = true,
+        order = "n[notifications]-j[strongbox-located]",
+    },
 })

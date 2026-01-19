@@ -24,6 +24,7 @@ local spiders = require "api.spiders"
 local hex_island = require "api.hex_island"
 local train_trading = require "api.train_trading"
 local inventories = require "api.inventories"
+local strongboxes = require "api.strongboxes"
 
 migrations.load_handlers()
 
@@ -37,6 +38,7 @@ spiders.register_events()
 hex_island.register_events()
 space_platforms.register_events()
 train_trading.register_events()
+strongboxes.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -60,6 +62,7 @@ local data_dungeons = require "data.dungeons"
 local data_spiders = require "data.spiders"
 local data_hex_island = require "data.hex_island"
 local data_item_buffs = require "data.item_buffs"
+local data_strongboxes = require "data.strongboxes"
 
 
 
@@ -90,6 +93,7 @@ script.on_init(function()
     storage.spiders = data_spiders
     storage.hex_island = data_hex_island
     storage.item_buffs = data_item_buffs
+    storage.strongboxes = data_strongboxes
 
     hex_grid.update_hexlight_default_colors()
     hex_grid.fetch_claim_cost_multiplier_settings()
@@ -168,6 +172,7 @@ script.on_init(function()
     spiders.init()
     hex_island.init()
     train_trading.init()
+    strongboxes.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -458,6 +463,8 @@ script.on_event(defines.events.on_entity_died, function (event)
             end
         end
     end
+
+    event_system.trigger("entity-died", event.entity)
 end)
 
 script.on_event(defines.events.on_surface_created, function (event)

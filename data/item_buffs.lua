@@ -282,6 +282,62 @@ return {
                 level_scaling = 1.08,
             },
         },
+        ["wooden-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.05,
+                level_scaling = 0.05,
+            },
+        },
+        ["iron-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.1,
+                level_scaling = 0.1,
+            },
+        },
+        ["steel-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.15,
+                level_scaling = 0.15,
+            },
+        },
+        ["requester-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.05,
+                level_scaling = 0.05,
+            },
+        },
+        ["buffer-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.05,
+                level_scaling = 0.05,
+            },
+        },
+        ["storage-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.05,
+                level_scaling = 0.05,
+            },
+        },
+        ["passive-provider-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.05,
+                level_scaling = 0.05,
+            },
+        },
+        ["active-provider-chest"] = {
+            {
+                type = "strongbox-loot",
+                value = 0.05,
+                level_scaling = 0.05,
+            },
+        },
         ["defender-capsule"] = {
             {
                 type = "combat-robot-count",
@@ -1004,6 +1060,7 @@ return {
         ["all-buffs-cost-reduced"] = true,
         ["passive-coins"] = true,
         ["train-trading-capacity"] = true,
+        ["strongbox-loot"] = true,
     },
 
     is_fractional = { -- Some bonuses like inventory slots must be integers, so the fractional bonuses are combined here to then be rounded before applying.
@@ -1023,11 +1080,13 @@ return {
 
     is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.
         ["all-buffs-cost-reduced"] = true,
+        ["strongbox-loot"] = true,
     },
 
     has_linear_effect_scaling = { -- These buff types give buffs that scale linearly rather than exponentially.
         ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
+        ["strongbox-loot"] = true,
     },
 
     unlocked = {},
@@ -1040,6 +1099,7 @@ return {
     fractional_bonuses = {},
     enhance_all = {processing = false}, -- Cross-tick data for enhancing all item buffs
 
+    strongbox_loot= 1,
     cost_multiplier = 1,
     level_bonus = 0,
     passive_coins_rate = 0,

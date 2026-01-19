@@ -26,6 +26,7 @@ function hex_core_gui.register_events()
     event_system.register_gui("gui-clicked", "hex-mode", hex_core_gui.on_hex_mode_button_click)
     event_system.register_gui("gui-clicked", "hex-mode-confirmation", hex_core_gui.on_hex_mode_confirmation_button_click)
     event_system.register_gui("gui-clicked", "delete-core", hex_core_gui.on_delete_core_button_click)
+    event_system.register_gui("gui-clicked", "delete-strongbox", hex_core_gui.on_delete_strongbox_button_click)
     event_system.register_gui("gui-clicked", "upgrade-quality", hex_core_gui.on_upgrade_quality_button_click)
     event_system.register_gui("gui-clicked", "convert-resources", hex_core_gui.on_convert_resources_button_click)
     event_system.register_gui("gui-clicked", "confirmation-button", hex_core_gui.on_confirmation_button_click)
@@ -131,7 +132,7 @@ function hex_core_gui.init_hex_core(player)
     local claimed_by = frame.add {type = "label", name = "claimed-by", caption = {"hex-core-gui.claimed-by"}}
     claimed_by.style.font = "heading-2"
 
-    local hex_control_flow = frame.add {type = "table", name = "hex-control-flow", column_count = 6}
+    local hex_control_flow = frame.add {type = "table", name = "hex-control-flow", column_count = 7}
     hex_control_flow.visible = false
 
     local teleport = hex_control_flow.add {
@@ -206,6 +207,13 @@ function hex_core_gui.init_hex_core(player)
 
     local stats = hex_control_flow.add {type = "sprite-button", name = "stats", sprite = "utility/side_menu_production_icon"}
 
+    local upgrade_quality = hex_control_flow.add {
+        type = "sprite-button",
+        name = "upgrade-quality",
+        sprite = "quality/uncommon",
+        tags = {handlers = {["gui-clicked"] = "upgrade-quality"}},
+    }
+
     local allow_locomotive_trading = hex_control_flow.add {
         type = "sprite-button",
         name = "allow-locomotive-trading",
@@ -222,13 +230,6 @@ function hex_core_gui.init_hex_core(player)
         tooltip = {"hex-core-gui.send-outputs-to-cargo-wagons-tooltip"},
     }
 
-    local upgrade_quality = hex_control_flow.add {
-        type = "sprite-button",
-        name = "upgrade-quality",
-        sprite = "quality/uncommon",
-        tags = {handlers = {["gui-clicked"] = "upgrade-quality"}},
-    }
-
     local convert_resources = hex_control_flow.add {
         type = "sprite-button",
         name = "convert-resources",
@@ -236,6 +237,18 @@ function hex_core_gui.init_hex_core(player)
         tags = {handlers = {["gui-clicked"] = "convert-resources"}},
     }
     convert_resources.tooltip = {"", lib.color_localized_string({"hex-core-gui.convert-resources-tooltip-header"}, "blue", "heading-2"), "\n", {"hex-core-gui.convert-resources-tooltip-body"}}
+
+    local delete_strongbox_button = hex_control_flow.add {
+        type = "sprite-button",
+        name = "delete-strongbox-button",
+        sprite = "entity/strongbox-tier-1",
+        tags = {handlers = {["gui-clicked"] = "delete-strongbox"}},
+        tooltip = {"",
+            lib.color_localized_string({"hex-core-gui.delete-strongbox-tooltip-header"}, "red", "heading-2"),
+            "\n",
+            {"hex-core-gui.delete-strongbox-tooltip-body"},
+        },
+    }
 
     local delete_core_confirmation = frame.add {type = "flow", name = "delete-core-confirmation", direction = "horizontal"}
     delete_core_confirmation.visible = false
@@ -248,6 +261,18 @@ function hex_core_gui.init_hex_core(player)
     }
     local delete_core_confirmation_label = delete_core_confirmation.add {type = "label", name = "confirmation-label", caption = lib.color_localized_string({"hex-core-gui.delete-core-confirmation"}, "red")}
     delete_core_confirmation_label.style.font = "heading-1"
+
+    local delete_strongbox_confirmation = frame.add {type = "flow", name = "delete-strongbox-confirmation", direction = "horizontal"}
+    delete_strongbox_confirmation.visible = false
+
+    local delete_strongbox_confirmation_button = delete_strongbox_confirmation.add {
+        type = "sprite-button",
+        name = "confirmation-button",
+        sprite = "check-mark-green",
+        tags = {handlers = {["gui-clicked"] = "confirmation-button"}},
+    }
+    local delete_strongbox_confirmation_label = delete_strongbox_confirmation.add {type = "label", name = "confirmation-label", caption = lib.color_localized_string({"hex-core-gui.delete-strongbox-confirmation"}, "red")}
+    delete_strongbox_confirmation_label.style.font = "heading-1"
 
     frame.add {type = "line", direction = "horizontal"}
 
@@ -282,6 +307,7 @@ function hex_core_gui.update_hex_core(player)
 
     frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion"
     frame["hex-control-flow"]["quick-trade"].visible = hex_core_gui.is_quick_trade_valid(player, state)
+    frame["hex-control-flow"]["delete-strongbox-button"].visible = state.strongboxes ~= nil and #state.strongboxes > 0
     frame["sink-mode-confirmation"].visible = false
     frame["generator-mode-confirmation"].visible = false
 
@@ -404,11 +430,14 @@ function hex_core_gui.update_hex_core(player)
         else
             frame["claim-flow"]["free-hexes-remaining"].visible = false
             local coin = state.claim_price
-            coin_tier_gui.update_coin_tier(frame["claim-flow"]["claim-price"], coin)
+            if coin then
+                coin_tier_gui.update_coin_tier(frame["claim-flow"]["claim-price"], coin)
+            end
         end
     end
 
     frame["delete-core-confirmation"].visible = false
+    frame["delete-strongbox-confirmation"].visible = false
     -- frame["unloader-filters-flow"].visible = false
 
     local quality_dropdown = frame["trades-header"]["quality-dropdown"]
@@ -762,6 +791,15 @@ function hex_core_gui.on_confirmation_button_click(player, element)
 
         hex_grid.delete_hex_core(hex_core)
         hex_core_gui.hide_hex_core(player)
+    elseif element.parent.name == "delete-strongbox-confirmation" then
+        local hex_core = lib.get_player_opened_entity(player)
+        if not hex_core then return end
+
+        local state = hex_grid.get_hex_state_from_core(hex_core)
+        if not state then return end
+
+        hex_grid.remove_strongboxes(state)
+        hex_core_gui.update_hex_core(player)
     end
 end
 
@@ -904,6 +942,13 @@ function hex_core_gui.on_quick_trade_button_click(player, elem)
     end
 
     hex_core_gui.update_hex_core(player)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function hex_core_gui.on_delete_strongbox_button_click(player, elem)
+    elem.parent.parent["delete-strongbox-confirmation"].visible = true
+    elem.enabled = false
 end
 
 

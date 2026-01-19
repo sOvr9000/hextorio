@@ -62,6 +62,7 @@ local hex_state_manager = {}
 ---@field send_outputs_to_cargo_wagons boolean|nil Whether trains keep the results of their trading in their cargo wagons.
 ---@field allow_locomotive_trading boolean|nil Whether trains are currently allowed to make trades with this hex state's hex core by stopping at train stops in the same hex.
 ---@field tags_created int|nil The number of tags created on the map for trades at this hex state's hex core. Starts counting at 0, so 0 means 1 tag has been created, etc.
+---@field strongboxes LuaEntity[]|nil Array of strongbox entities assigned to this hex.
 
 
 
@@ -185,6 +186,49 @@ function hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_p
     end
 
     return state
+end
+
+---Given an entity's unit number, return the hex state to which the entity is mapped, if any.
+---@param unit_number int
+---@return HexState|nil
+function hex_state_manager.get_hex_state_from_entity(unit_number)
+    local entity_map = storage.hex_grid.entity_map
+    if not entity_map then
+        entity_map = {}
+        storage.hex_grid.entity_map = entity_map
+    end
+
+    local t = entity_map[unit_number]
+    if not t then return end
+
+    return hex_state_manager.get_hex_state(t.surface_name, t.hex_pos)
+end
+
+---@param unit_number int
+---@param surface_name string
+---@param hex_pos HexPos
+function hex_state_manager.map_entity_to_hex_state(unit_number, surface_name, hex_pos)
+    local entity_map = storage.hex_grid.entity_map
+    if not entity_map then
+        entity_map = {}
+        storage.hex_grid.entity_map = entity_map
+    end
+
+    entity_map[unit_number] = {
+        surface_name = surface_name,
+        hex_pos = hex_pos,
+    }
+end
+
+---@param unit_number int
+function hex_state_manager.unmap_entity(unit_number)
+    local entity_map = storage.hex_grid.entity_map
+    if not entity_map then
+        entity_map = {}
+        storage.hex_grid.entity_map = entity_map
+    end
+
+    entity_map[unit_number] = nil
 end
 
 

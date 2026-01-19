@@ -10,6 +10,19 @@ local item_buffs = {}
 
 
 
+---Apply buff effect
+---@param key string Key in storage.item_buffs
+---@param value number
+local function apply_nonlinear_buff(key, value)
+    if value < 0 then
+        storage.item_buffs[key] = storage.item_buffs[key] * (1 - value)
+    else
+        storage.item_buffs[key] = storage.item_buffs[key] / (1 + value)
+    end
+end
+
+
+
 local buff_type_actions = {
     ["mining-speed"] = function(value)
         game.forces.player.manual_mining_speed_modifier = game.forces.player.manual_mining_speed_modifier + value
@@ -123,11 +136,10 @@ local buff_type_actions = {
         end
     end,
     ["all-buffs-cost-reduced"] = function(value)
-        if value < 0 then
-            storage.item_buffs.cost_multiplier = storage.item_buffs.cost_multiplier * (1 - value)
-        else
-            storage.item_buffs.cost_multiplier = storage.item_buffs.cost_multiplier / (1 + value)
-        end
+        apply_nonlinear_buff("cost_multiplier", value)
+    end,
+    ["strongbox-loot"] = function(value)
+        apply_nonlinear_buff("strongbox_loot", -value)
     end,
 
     ["recipe-productivity"] = function(recipe_name, value)
