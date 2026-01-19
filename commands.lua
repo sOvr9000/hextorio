@@ -414,7 +414,7 @@ function on_command(player, command, params)
             if params[1] then
                 inventories.add_coin_to_inventory(inv, coin_tiers.from_base_value(params[1]))
             else
-                add_cheat_coins()
+                add_cheat_coins(inv)
             end
         end
     elseif command == "summon" then

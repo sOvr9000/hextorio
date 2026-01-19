@@ -13,6 +13,7 @@ Date: 19/1/26
     - Closing the item buffs GUI now brings you back to the catalog GUI.
   Bugfixes:
     - Fixed train trading crashes when coins are involved.
+    - Fixed that the command /add-coins was crashing the game when not given a coin amount.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.1
 Date: 17/1/26
