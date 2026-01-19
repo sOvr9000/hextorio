@@ -87,7 +87,7 @@ function inventories.get_coins_and_items_on_train(cargo_wagons, wagon_limit)
         end
     end
 
-    local input_coin = coin_tiers.normalized(coin_tiers.new(input_coin_values))
+    local input_coin = coin_tiers.normalized(coin_tiers.from_coin_values_by_name(input_coin_values))
     return input_coin, all_items_lookup
 end
 

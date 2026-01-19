@@ -7,6 +7,8 @@ Date: 18/1/26
     - Added item buffs: all vanilla chest types (8 new buffs).
   Changes:
     - Modified mod description to list strongboxes as a notable, interesting feature: "scaling DPS boss fights".
+  Bugfixes:
+    - Fixed train trading crashes when coins are involved.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.1
 Date: 17/1/26
