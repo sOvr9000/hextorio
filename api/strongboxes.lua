@@ -78,13 +78,6 @@ function strongboxes.get_loot(sb_entity, loot_scale)
     return coin_tiers.from_base_value(coin_value)
 end
 
----Get the tier of a strongbox.
----@param sb_entity LuaEntity
----@return int|nil
-function strongboxes.get_tier_of_strongbox(sb_entity)
-    return tonumber(sb_entity.name:sub(16))
-end
-
 ---Insert loot into a strongbox, clearing whatever it had before.
 ---@param sb_entity LuaEntity
 ---@param loot_scale number

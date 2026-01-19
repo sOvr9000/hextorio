@@ -2,10 +2,53 @@
 local lib = require "api.lib"
 local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
-
-
+local entity_util  = require "api.entity_util"
 
 local quests = {}
+
+
+
+---@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"
+---@alias QuestRewardType "unlock-feature"|"receive-items"|"claim-free-hexes"|"reduce-biters"|"all-trades-productivity"|"receive-spaceship"
+---@alias FeatureName "trade-overview"|"catalog"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"|"quick-trading"|"item-buff-enhancement"|"enhance-all"
+
+---@alias SingleQuestConditionValue string|number
+---@alias SingleQuestRewardValue string|number|ItemStackIdentification
+---@alias QuestConditionValue SingleQuestConditionValue|SingleQuestConditionValue[]
+---@alias QuestRewardValue SingleQuestRewardValue|SingleQuestRewardValue[]
+
+---@alias QuestConditionTypeValuePair {[1]: QuestConditionType, [2]: QuestConditionValue}
+
+---@alias QuestIdentification Quest|int|string
+
+---@class Quest
+---@field id int
+---@field name string
+---@field conditions QuestCondition[]
+---@field rewards QuestReward[]
+---@field notes string[]|nil
+---@field unlocks string[]|nil
+---@field prerequisites string[]|nil
+---@field has_img boolean|nil
+---@field order int
+---@field revealed boolean|nil
+---@field complete boolean|nil
+
+---@class QuestCondition
+---@field type QuestConditionType
+---@field value QuestConditionValue
+---@field value_is_table boolean
+---@field progress_requirement int
+---@field progress int
+---@field show_progress_bar boolean
+---@field notes string[]|nil}
+
+---@class QuestReward
+---@field type QuestRewardType
+---@field value QuestRewardValue|nil
+---@field notes string[]|nil}
+
+
 
 local quest_condition_progress_recalculators = {} ---@as {[QuestConditionType]: fun(condition_value: QuestConditionValue): int}
 
@@ -72,6 +115,22 @@ define_progress_recalculator("claimed-hexes", function(condition_value)
         end
     end
     return total
+end)
+
+define_progress_recalculator("total-strongbox-level", function(condition_value)
+    local total_level = 0
+    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
+        for _, Q in pairs(hexes) do
+            for _, state in pairs(Q) do
+                if state.strongboxes then
+                    for _, sb_entity in pairs(state.strongboxes) do
+                        total_level = total_level + (entity_util.get_tier_of_strongbox(sb_entity) or 1) - 1
+                    end
+                end
+            end
+        end
+    end
+    return total_level
 end)
 
 
@@ -1015,7 +1074,7 @@ function quests.recalculate_all_condition_progress()
 end
 
 ---@param condition_type QuestConditionType
----@param condition_value QuestConditionValue
+---@param condition_value QuestConditionValue|nil
 function quests.recalculate_condition_progress_of_type(condition_type, condition_value)
     local func = quest_condition_progress_recalculators[condition_type]
     if not func then
@@ -1027,7 +1086,7 @@ function quests.recalculate_condition_progress_of_type(condition_type, condition
     local progress = func(condition_value)
     quests.set_progress_for_type(condition_type, progress, condition_value)
 
-    lib.log("quests.recalculate_condition_progress_of_type: Recalculated progress for all quests of type " .. condition_type .. " with value " .. serpent.line(condition_value) .. ". New progress value: " .. progress)
+    lib.log("quests.recalculate_condition_progress_of_type: Recalculated progress for all quests of type " .. condition_type .. " with value " .. serpent.line(condition_value or {}) .. ". New progress value: " .. progress)
 end
 
 

@@ -76,9 +76,8 @@ function item_buffs_gui.init_item_buffs_frame(player)
 
     local enhance_all_button = button_flow.add {
         type = "sprite-button",
-        name = "item-buff-enhance-all",
+        name = "enhance-all",
         sprite = "item-buff-enhance-all",
-        tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"},
         tags = {handlers = {["gui-clicked"] = "item-buff-enhance-all"}},
     }
 
@@ -100,6 +99,8 @@ function item_buffs_gui.init_item_buffs_frame(player)
 
     local buff_table = scroll_pane.add {type = "table", name = "buff-table", column_count = 3}
     -- core_gui.auto_width_height(buff_table)
+
+    item_buffs_gui.update_item_buffs_frame(player)
 end
 
 ---Regenerate all item buff cards.
@@ -107,11 +108,19 @@ end
 function item_buffs_gui.update_item_buffs_frame(player)
     local frame = player.gui.screen["item-buffs"]
     if not frame then return end
+    if not quests.is_feature_unlocked "item-buffs" then return end
 
     local buff_table = frame["main-flow"]["right-frame"]["scroll-pane"]["buff-table"]
     buff_table.clear()
 
-    if not quests.is_feature_unlocked "item-buffs" then return end
+    local enhance_all = frame["main-flow"]["left-frame"]["button-flow"]["enhance-all"]
+    enhance_all.enabled = quests.is_feature_unlocked "enhance-all"
+
+    if enhance_all.enabled then
+        enhance_all.tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"}
+    else
+        enhance_all.tooltip = nil
+    end
 
     -- Group items by buff type (only include unlocked items)
     local buff_groups = {}

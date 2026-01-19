@@ -1,6 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.3
 Date: 19/1/26
+  Features:
+    - Added 3 new quests.
+  Changes:
+    - Item buff enhancement (upgrading) is now gated behind the new "Cracking the Vault" quest.
+    - "Enhance All" feature for item buffs is now gated behind the new "Lockbreaker" quest.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 19/1/26

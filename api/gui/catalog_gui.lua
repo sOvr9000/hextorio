@@ -12,7 +12,6 @@ local quests = require "api.quests"
 local item_buffs = require "api.item_buffs"
 local gui_stack = require "api.gui.gui_stack"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
-local passive_coin_buff = require "api.passive_coin_buff"
 
 local catalog_gui = {}
 
@@ -428,14 +427,22 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
     }
 
     local is_buff_unlocked = item_buffs.is_unlocked(selection.item_name)
+    local is_enhancement_unlocked = quests.is_feature_unlocked "item-buff-enhancement"
     local item_buff_level = item_buffs.get_item_buff_level(selection.item_name)
     local cost = item_buffs.get_item_buff_cost(selection.item_name)
 
     local buff_button_type = "item-buff-unlock"
     local buff_button_sprite = buff_button_type
+    local enabled = true
+    local tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
     if is_buff_unlocked then
         buff_button_type = "item-buff-enhance"
         buff_button_sprite = "utility/side_menu_bonus_icon"
+        tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
+        if not is_enhancement_unlocked then
+            enabled = false
+            tooltip = nil
+        end
     end
 
     local buff_button = item_buff_flow.add {
@@ -443,8 +450,9 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
         name = buff_button_type,
         sprite = buff_button_sprite,
         tags = {handlers = {["gui-clicked"] = "item-buff-button"}},
+        enabled = enabled,
+        tooltip = tooltip,
     }
-    buff_button.tooltip = {"hextorio-gui." .. buff_button_type .. "-tooltip"}
 
     local coin_tier_flow = coin_tier_gui.create_coin_tier(item_buff_flow, "cost")
     coin_tier_gui.update_coin_tier(coin_tier_flow, cost)
@@ -466,19 +474,34 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
 
         if #values == 1 then
             if storage.item_buffs.show_as_linear[buff.type] then
-                return {"", "[color=green]+" .. (math.floor(values[1] * 10 + 0.5) * 0.1) .. "[.color] [color=gray](+" .. (math.floor((incremental_buff.value or incremental_buff.values[1]) * 100 + 0.5) * 0.01) .. ")[.color]"}
+                local str = {"", "[color=green]+" .. (math.floor(values[1] * 10 + 0.5) * 0.1) .. "[.color]"}
+                if is_enhancement_unlocked then
+                    table.insert(str, " [color=gray](+" .. (math.floor((incremental_buff.value or incremental_buff.values[1]) * 100 + 0.5) * 0.01) .. ")[.color]")
+                end
+                return str
             end
-            return {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.value or incremental_buff.values[1], 2, true, true) .. ")[.color]"}
+            local str = {"", "[color=green]" .. lib.format_percentage(values[1], 1, true, true) .. "[.color]"}
+            if is_enhancement_unlocked then
+                table.insert(str, " [color=gray](" .. lib.format_percentage(incremental_buff.value or incremental_buff.values[1], 2, true, true) .. ")[.color]")
+            end
+            return str
         end
 
         if buff.type == "recipe-productivity" then
-            return {"", "[color=green]" .. lib.format_percentage(values[2] * 0.01, 1, true, true) .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[2] * 0.01, 2, true, true) .. ")[.color]"}
+            local str = {"", "[color=green]" .. lib.format_percentage(values[2] * 0.01, 1, true, true) .. "[.color]"}
+            if is_enhancement_unlocked then
+                table.insert(str, " [color=gray](" .. lib.format_percentage(incremental_buff.values[2] * 0.01, 2, true, true) .. ")[.color]")
+            end
+            return str
         end
 
         for i, v in pairs(values) do
             if type(v) == "number" then
                 ---@diagnostic disable-next-line: assign-type-mismatch
-                values[i] = "[color=green]" .. v .. "[.color] [color=gray](" .. lib.format_percentage(incremental_buff.values[i], 2, true, true) .. ")[.color]"
+                values[i] = "[color=green]" .. v .. "[.color]"
+                if is_enhancement_unlocked then
+                    values[i] = values[i] .. " [color=gray](" .. lib.format_percentage(incremental_buff.values[i], 2, true, true) .. ")[.color]"
+                end
             end
         end
 
@@ -514,10 +537,7 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
             }
 
             if is_buff_unlocked then
-                local tooltip = gui.get_buff_description_tooltip(buff.type)
-                if tooltip then
-                    buff_label.tooltip = tooltip
-                end
+                buff_label.tooltip = gui.get_buff_description_tooltip(buff.type)
             end
         elseif buff.values then
             local caption = lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "gray")

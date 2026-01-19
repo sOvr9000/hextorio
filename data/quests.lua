@@ -227,6 +227,25 @@ return {
             prerequisites = {"exploration"},
         },
         {
+            name = "cracking-the-vault",
+            conditions = {{type = "total-strongbox-level", progress_requirement = 10}, {type = "items-at-rank", value = 2, progress_requirement = 5}},
+            rewards = {{type = "unlock-feature", value = "item-buff-enhancement"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
+            prerequisites = {"exploration", "first-bronze-star"},
+            notes = {"strongbox-chance"},
+        },
+        {
+            name = "lockbreaker",
+            conditions = {{type = "total-strongbox-level", progress_requirement = 50}, {type = "items-at-rank", value = 2, progress_requirement = 30}},
+            rewards = {{type = "unlock-feature", value = "enhance-all"}, {type = "claim-free-hexes", value = {"nauvis", 5}}},
+            prerequisites = {"cracking-the-vault"},
+        },
+        {
+            name = "automated-clearing",
+            conditions = {{type = "total-strongbox-level", progress_requirement = 150}, {type = "visit-planet", value = "vulcanus", show_progress_bar = false}, {type = "visit-planet", value = "fulgora", show_progress_bar = false}, {type = "visit-planet", value = "gleba", show_progress_bar = false}},
+            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 5}}, {type = "claim-free-hexes", value = {"fulgora", 5}}, {type = "claim-free-hexes", value = {"gleba", 5}}},
+            prerequisites = {"lockbreaker"},
+        },
+        {
             name = "half-a-gravity",
             conditions = {{type = "coins-in-inventory", progress_requirement = 50000}},
             rewards = {{type = "claim-free-hexes", value = {"nauvis", 3}}},

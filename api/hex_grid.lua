@@ -16,6 +16,7 @@ local item_ranks  = require "api.item_ranks"
 local dungeons = require "api.dungeons"
 local inventories = require "api.inventories"
 local strongboxes = require "api.strongboxes"
+local entity_util = require "api.entity_util"
 
 
 
@@ -3937,7 +3938,7 @@ end
 
 ---@param sb_entity LuaEntity
 function hex_grid.on_strongbox_killed(sb_entity)
-    local cur_tier = strongboxes.get_tier_of_strongbox(sb_entity)
+    local cur_tier = entity_util.get_tier_of_strongbox(sb_entity)
     if not cur_tier then return end
 
     local inv = sb_entity.get_inventory(defines.inventory.chest)
@@ -3969,6 +3970,8 @@ function hex_grid.on_strongbox_killed(sb_entity)
         hex_state_manager.map_entity_to_hex_state(new_sb_entity.unit_number, new_sb_entity.surface.name, state.position)
         hex_grid.update_strongbox_entity(state, new_sb_entity)
     end
+
+    quests.increment_progress_for_type "total-strongbox-level"
 end
 
 
