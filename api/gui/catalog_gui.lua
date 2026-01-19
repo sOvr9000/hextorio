@@ -500,6 +500,7 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
                 ---@diagnostic disable-next-line: assign-type-mismatch
                 values[i] = "[color=green]" .. v .. "[.color]"
                 if is_enhancement_unlocked then
+                    ---@diagnostic disable-next-line: assign-type-mismatch
                     values[i] = values[i] .. " [color=gray](" .. lib.format_percentage(incremental_buff.values[i], 2, true, true) .. ")[.color]"
                 end
             end
