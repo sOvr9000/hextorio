@@ -1,4 +1,13 @@
 
+local BASE_HEX_RES_CHANCE = {
+    NAUVIS = 0.5,
+    VULCANUS = 0.7,
+    FULGORA = 0.8,
+    GLEBA = 0.9,
+    AQUILO = 1.5,
+}
+local VULCANUS
+
 return {
     queued_reloads = {},
     queued_reload_dungeon_indices = {},
@@ -23,6 +32,12 @@ return {
                 bullet_type = "uranium-rounds-magazine",
                 flamethrower_type = "light-oil",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-1"] = BASE_HEX_RES_CHANCE.NAUVIS,
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.5,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.25,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.125,
+            },
         },
         { -- Medium
             surface_name = "nauvis",
@@ -40,6 +55,12 @@ return {
             ammo = {
                 bullet_type = "piercing-rounds-magazine",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-1"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.5,
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.25,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.125,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.0625,
+            },
         },
         { -- Easy
             surface_name = "nauvis",
@@ -54,6 +75,12 @@ return {
             qualities = {"normal"},
             tile_type = "brown-refined-concrete",
             ammo = {},
+            item_rolls = {
+                ["hexadic-resonator-tier-1"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.25,
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.125,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.0625,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.NAUVIS * 0.03625,
+            },
         },
 
         -- Vulcanus
@@ -75,6 +102,12 @@ return {
                 bullet_type = "magmatic-rounds-magazine",
                 flamethrower_type = "light-oil",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.VULCANUS,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.5,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.25,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.125,
+            },
         },
         { -- Medium
             surface_name = "vulcanus",
@@ -93,6 +126,12 @@ return {
                 bullet_type = "magmatic-rounds-magazine",
                 flamethrower_type = "light-oil",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.5,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.25,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.125,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.0625,
+            },
         },
         { -- Easy
             surface_name = "vulcanus",
@@ -108,6 +147,12 @@ return {
             tile_type = "black-refined-concrete",
             ammo = {
                 bullet_type = "uranium-rounds-magazine",
+            },
+            item_rolls = {
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.25,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.125,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.0625,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.VULCANUS * 0.03625,
             },
         },
 
@@ -129,6 +174,13 @@ return {
             ammo = {
                 bullet_type = "uranium-rounds-magazine",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.FULGORA,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.FULGORA * 0.5,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.FULGORA * 0.25,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.FULGORA * 0.125,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.FULGORA * 0.0625,
+            },
         },
         { -- Medium
             surface_name = "fulgora",
@@ -146,6 +198,13 @@ return {
             ammo = {
                 bullet_type = "piercing-rounds-magazine",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.FULGORA * 0.5,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.FULGORA * 0.25,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.FULGORA * 0.125,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.FULGORA * 0.0625,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.FULGORA * 0.03625,
+            },
         },
         { -- Easy
             surface_name = "fulgora",
@@ -162,6 +221,13 @@ return {
             tile_type = "red-refined-concrete",
             ammo = {
                 bullet_type = "piercing-rounds-magazine",
+            },
+            item_rolls = {
+                ["hexadic-resonator-tier-2"] = BASE_HEX_RES_CHANCE.FULGORA * 0.5,
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.FULGORA * 0.25,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.FULGORA * 0.125,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.FULGORA * 0.0625,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.FULGORA * 0.03625,
             },
         },
 
@@ -184,6 +250,12 @@ return {
                 rocket_type = "plague-rocket",
                 bullet_type = "uranium-rounds-magazine",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.GLEBA,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.GLEBA * 0.5,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.GLEBA * 0.25,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.GLEBA * 0.125,
+            },
         },
         { -- Medium
             surface_name = "gleba",
@@ -202,6 +274,12 @@ return {
                 rocket_type = "rocket",
                 bullet_type = "uranium-rounds-magazine",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.GLEBA * 0.5,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.GLEBA * 0.25,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.GLEBA * 0.125,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.GLEBA * 0.0625,
+            },
         },
         { -- Easy
             surface_name = "gleba",
@@ -219,6 +297,12 @@ return {
             ammo = {
                 rocket_type = "explosive-rocket",
                 bullet_type = "piercing-rounds-magazine",
+            },
+            item_rolls = {
+                ["hexadic-resonator-tier-3"] = BASE_HEX_RES_CHANCE.GLEBA * 0.25,
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.GLEBA * 0.125,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.GLEBA * 0.0625,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.GLEBA * 0.03625,
             },
         },
 
@@ -242,6 +326,11 @@ return {
                 rocket_type = "plague-rocket",
                 railgun_type = "railgun-ammo",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.AQUILO,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.AQUILO * 0.5,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.AQUILO * 0.25,
+            },
         },
         { -- Medium
             surface_name = "aquilo",
@@ -260,6 +349,11 @@ return {
                 bullet_type = "magmatic-rounds-magazine",
                 rocket_type = "plague-rocket",
             },
+            item_rolls = {
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.AQUILO * 0.5,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.AQUILO * 0.25,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.AQUILO * 0.125,
+            },
         },
         { -- Easy
             surface_name = "aquilo",
@@ -277,6 +371,11 @@ return {
             ammo = {
                 bullet_type = "uranium-rounds-magazine",
                 rocket_type = "rocket",
+            },
+            item_rolls = {
+                ["hexadic-resonator-tier-4"] = BASE_HEX_RES_CHANCE.AQUILO * 0.25,
+                ["hexadic-resonator-tier-5"] = BASE_HEX_RES_CHANCE.AQUILO * 0.125,
+                ["hexadic-resonator-tier-6"] = BASE_HEX_RES_CHANCE.AQUILO * 0.0625,
             },
         },
     },

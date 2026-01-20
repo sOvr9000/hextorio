@@ -158,6 +158,26 @@ local buff_type_actions = {
 
 
 
+local function format_enhanced_items(enhanced_items)
+    local str = "[font=heading-2][color=green]"
+    for _item_name, levels in pairs(enhanced_items) do
+        str = str .. " [img=item." .. _item_name .. "]+" .. levels
+    end
+    str = str .. "[.color][.font]"
+    return str
+end
+
+
+
+function item_buffs.register_events()
+    event_system.register("player-used-capsule", function(player, capsule_name)
+        if capsule_name:sub(1, 23) ~= "hexadic-resonator-tier-" then return end
+        local tier = capsule_name:sub(24)
+
+        item_buffs.add_free_buffs(2 ^ (tier - 1))
+    end)
+end
+
 ---Get the item buff values scaled by the given level.
 ---@param buff ItemBuff
 ---@param level int
@@ -556,21 +576,48 @@ function item_buffs.enhance_all_item_buffs(config)
 
     item_buffs.fetch_settings()
 
+
+    player.print({"hextorio.checking-for-enhancements"})
+
+    storage.item_buffs.enhance_all.player = player
+    storage.item_buffs.enhance_all.inventory = inv
+    storage.item_buffs.enhance_all.item_names = item_buffs.get_buffable_items()
+    storage.item_buffs.enhance_all.enhanced_items = {}
+    storage.item_buffs.enhance_all.total_cost = coin_tiers.new()
+    storage.item_buffs.enhance_all.processing = true
+end
+
+---Get the cheapest item to buff out of the given list of item names. Return the item name and its cost.
+---@param item_names string[]
+---@param budget_coin Coin|nil
+---@return string|nil, Coin|nil
+function item_buffs.get_cheapest_item_buff(item_names, budget_coin)
+    local item_name
+    local cost
+
+    for _, _item_name in pairs(item_names) do
+        local _cost = item_buffs.get_item_buff_cost(_item_name)
+        if not budget_coin or coin_tiers.lt(_cost, budget_coin) then
+            if not item_name or coin_tiers.lt(_cost, cost) then
+                item_name = _item_name
+                cost = _cost
+            end
+        end
+    end
+
+    return item_name, cost
+end
+
+---Get a list of item names that are ranked up to at least bronze and have available item buffs.
+---@return string[]
+function item_buffs.get_buffable_items()
     local item_names = {}
     for item_name, _ in pairs(storage.trades.discovered_items) do
         if item_ranks.get_item_rank(item_name) >= 2 and next(item_buffs.get_buffs(item_name)) then
             table.insert(item_names, item_name)
         end
     end
-
-    player.print({"hextorio.checking-for-enhancements"})
-
-    storage.item_buffs.enhance_all.player = player
-    storage.item_buffs.enhance_all.inventory = inv
-    storage.item_buffs.enhance_all.item_names = item_names
-    storage.item_buffs.enhance_all.enhanced_items = {}
-    storage.item_buffs.enhance_all.total_cost = coin_tiers.new()
-    storage.item_buffs.enhance_all.processing = true
+    return item_names
 end
 
 function item_buffs._enhance_all_item_buffs_tick()
@@ -583,23 +630,10 @@ function item_buffs._enhance_all_item_buffs_tick()
     local enhanced_items = storage.item_buffs.enhance_all.enhanced_items
 
     -- Find the cheapest item buff
-    local item_name
-    local cost
-    for i = #item_names, 1, -1 do
-        local _item_name = item_names[i]
-        local _cost = item_buffs.get_item_buff_cost(_item_name)
-        if coin_tiers.gt(_cost, inv_coin) then
-            table.remove(item_names, i)
-        else
-            if not item_name or coin_tiers.lt(_cost, cost) then
-                item_name = _item_name
-                cost = _cost
-            end
-        end
-    end
+    local item_name, cost = item_buffs.get_cheapest_item_buff(item_names, inv_coin)
 
     -- If found, the process should enhance it and continue on the next tick
-    if item_name then
+    if item_name and cost then
         storage.item_buffs.enhance_all.total_cost = coin_tiers.add(storage.item_buffs.enhance_all.total_cost, cost)
         enhanced_items[item_name] = (enhanced_items[item_name] or 0) + 1
         inventories.remove_coin_from_inventory(inv, cost)
@@ -616,24 +650,73 @@ function item_buffs._enhance_all_item_buffs_tick()
     storage.item_buffs.enhance_all.processing = false
 
     if next(enhanced_items) then
-        local str = "[font=heading-2][color=green]"
-        for _item_name, levels in pairs(enhanced_items) do
-            str = str .. " [img=item." .. _item_name .. "]+" .. levels
-        end
-        str = str .. "[.color][.font]"
+        local str = format_enhanced_items(enhanced_items)
 
-        player.print {
+        ---@diagnostic disable-next-line: cast-local-type
+        str = {
             "",
             lib.color_localized_string({"hextorio.item-buffs-enhanced"}, "yellow", "heading-2"),
             str,
             "\n",
             {"hextorio-gui.cost", coin_tiers.coin_to_text(storage.item_buffs.enhance_all.total_cost)},
         }
+
+        player.print(str)
     else
         player.print {"hextorio.none-enhanced"}
     end
 
     event_system.trigger("item-buffs-enhance-all-finished", player, storage.item_buffs.enhance_all.total_cost, enhanced_items)
+end
+
+---Queue up a number of cheapest item buffs to upgrade for free.
+---@param amount int
+function item_buffs.add_free_buffs(amount)
+    storage.item_buffs.free_buffs_remaining = storage.item_buffs.free_buffs_remaining + amount
+end
+
+function item_buffs.process_free_buffs()
+    if storage.item_buffs.free_buffs_remaining <= 0 then return end
+
+    if not storage.item_buffs.free_buffs_list then
+        storage.item_buffs.free_buffs_list = item_buffs.get_buffable_items()
+    end
+
+    if not storage.item_buffs.free_buffs_enhanced_items then
+        storage.item_buffs.free_buffs_enhanced_items = {}
+    end
+
+    local item_name, _ = item_buffs.get_cheapest_item_buff(storage.item_buffs.free_buffs_list)
+    if item_name then
+        storage.item_buffs.free_buffs_enhanced_items[item_name] = (storage.item_buffs.free_buffs_enhanced_items[item_name] or 0) + 1
+        item_buffs.set_item_buff_level(
+            item_name,
+            item_buffs.get_item_buff_level(item_name) + 1
+        )
+    else
+        lib.log_error("item_buffs.process_free_buffs: No items able to be buffed")
+    end
+
+    storage.item_buffs.free_buffs_remaining = storage.item_buffs.free_buffs_remaining - 1
+    if storage.item_buffs.free_buffs_remaining <= 0 then
+        if next(storage.item_buffs.free_buffs_enhanced_items) then
+            local str = format_enhanced_items(storage.item_buffs.free_buffs_enhanced_items)
+
+            ---@diagnostic disable-next-line: cast-local-type
+            str = {
+                "",
+                lib.color_localized_string({"hextorio.item-buffs-enhanced"}, "yellow", "heading-2"),
+                str,
+            }
+
+            game.print(str)
+        else
+            -- TODO: maybe give the hexadic resonator back to the player
+        end
+
+        storage.item_buffs.free_buffs_list = nil
+        storage.item_buffs.free_buffs_enhanced_items = nil
+    end
 end
 
 function item_buffs.migrate_buff_changes(new_data)

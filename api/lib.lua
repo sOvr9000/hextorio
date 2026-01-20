@@ -2167,6 +2167,14 @@ function lib.get_raw_items()
     return raw_items
 end
 
+---Given a probability (especially one that's over 100%), return the integer part plus either 0 or 1 depending on the non-integer part.
+---@param chance number
+---@return int
+function lib.multi_roll(chance)
+    local floor = math.floor(chance)
+    return floor + math.floor(chance - floor + math.random())
+end
+
 
 
 return lib

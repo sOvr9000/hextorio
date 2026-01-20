@@ -65,7 +65,7 @@ function dungeons.init()
     storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
 
     for _, def in pairs(storage.dungeons.defs) do
-        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.chests, def.amount_scaling, def.qualities, def.tile_type, def.ammo)
+        local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.chests, def.amount_scaling, def.qualities, def.tile_type, def.ammo, def.item_rolls)
         if not storage.dungeons.prototypes[def.surface_name] then
             storage.dungeons.prototypes[def.surface_name] = {}
         end
@@ -80,8 +80,9 @@ end
 ---@param qualities string[]
 ---@param tile_type string
 ---@param ammo AmmoReloadParameters
+---@param item_rolls {[string]: number}
 ---@return DungeonPrototype
-function dungeons.new_prototype(wall_entities, loot_value, rolls, chests, amount_scaling, qualities, tile_type, ammo)
+function dungeons.new_prototype(wall_entities, loot_value, rolls, chests, amount_scaling, qualities, tile_type, ammo, item_rolls)
     local prot = table.deepcopy {
         wall_entities = wall_entities,
         loot_value = loot_value,
@@ -91,6 +92,7 @@ function dungeons.new_prototype(wall_entities, loot_value, rolls, chests, amount
         qualities = qualities,
         tile_type = tile_type,
         ammo = ammo,
+        item_rolls = item_rolls,
     }
 
     return prot
@@ -675,6 +677,17 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
 
                     local coin = coin_tiers.from_base_value(total_coin_value / (10 * item_values.get_item_value("nauvis", "hex-coin")))
                     inventories.add_coin_to_inventory(inv, coin)
+
+                    -- Additionally roll for extra items
+                    for item_name, chance in pairs(prot.item_rolls) do
+                        local count = lib.multi_roll(chance)
+                        if count > 0 then
+                            inv.insert {
+                                name = item_name,
+                                count = count,
+                            }
+                        end
+                    end
 
                     inv.sort_and_merge()
                 end

@@ -10,7 +10,7 @@
 ---@alias AmmoReloadParameters {bullet_type: string|nil, flamethrower_type: string|nil, rocket_type: string|nil, railgun_type: string|nil, bullet_count: int|nil, flamethrower_count: int|nil, rocket_count: int|nil, railgun_count: int|nil}
 ---@alias MapPositionAndDirection {position: MapPosition, direction: defines.direction}
 ---@alias MapPositionSet {[int]: {[int]: true}}
----@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, qualities: string[], tile_type: string, ammo: AmmoReloadParameters, chests_per_hex: int, amount_scaling: number}
+---@alias DungeonPrototype {wall_entities: EntityRadii, loot_value: number, rolls: int, qualities: string[], tile_type: string, ammo: AmmoReloadParameters, chests_per_hex: int, amount_scaling: number, item_rolls: {[string]: number}}
 ---@alias Dungeon {surface: LuaSurface, prototype_idx: int, id: int, maze: HexMaze|nil, turrets: LuaEntity[], walls: LuaEntity[], loot_chests: LuaEntity[], last_turret_reload: int, internal_hexes: HexSet, is_looted: boolean|nil}
 
 ---@alias PlayerCatalogSelection {surface_name: string, item_name: string, bazaar_quality: string, last_item_selected: string|nil, last_qb_item_selected: string|nil, bazaar_buy_amount: int|nil}
