@@ -1,4 +1,6 @@
 
+local lib = require "api.lib"
+
 -- Buff recipes
 data.raw["recipe"]["rocket"].category = "organic-or-assembling"
 data.raw["recipe"]["explosive-rocket"].category = "organic-or-assembling"
@@ -340,3 +342,69 @@ data:extend({
     casting_piercing_rounds_magazine,
     casting_firearm_magazine,
 })
+
+
+
+-- SOVR Enrichment Process
+
+local recipes = {}
+for i = 2, 6 do
+    local degrade_chance = (7 - i) * 0.02
+    local sovr_enrichment_process = {
+        type = "recipe",
+        name = "sovr-enrichment-process-tier-" .. i,
+        localised_name = {"recipe-name.sovr-enrichment-process", i .. "/6"},
+        localised_description = {"", {"technology-description.sovr-enrichment-process"}, "\n", lib.color_localized_string({"recipe-description-extra.productivity-only-affects"}, "yellow", "default-semibold")},
+        category = "organic",
+        energy_required = 24,
+        enabled = false,
+        allow_productivity = true,
+        allow_quality = false,
+        auto_recycle = false,
+        allow_decomposition = false,
+        allow_as_intermediate = false,
+        allow_intermediates = false,
+        show_amount_in_title = false,
+        unlock_results = false,
+        always_show_products = true,
+        hide_from_signal_gui = false,
+
+        ingredients = {
+            {type = "item", name = "hexadic-resonator-tier-" .. i, amount = 1},
+            {type = "item", name = "hexaprism", amount = i * 6},
+            {type = "item", name = "tungsten-ore", amount = i * 100},
+            {type = "item", name = "raw-fish", amount = i},
+        },
+        results = {
+            -- Chance of not degrading
+            {type = "item", name = "hexadic-resonator-tier-" .. i, amount = 1, probability = 1 - degrade_chance, ignored_by_productivity = 1},
+
+            -- Chance of degrading
+            {type = "item", name = "hexadic-resonator-tier-" .. (i - 1), amount = 1, probability = degrade_chance, ignored_by_productivity = 1},
+
+            -- Byproduct (what we want)
+            {type = "item", name = "hexadic-resonator-tier-1", amount = 1, probability = i * 0.1},
+        },
+        icons = {
+            {
+                icon = "__hextorio__/graphics/icons/hexadic-resonator-" .. i .. ".png",
+                icon_size = 64,
+            },
+            {
+                icon = "__hextorio__/graphics/icons/cyclic-arrow.png",
+                icon_size = 64,
+            },
+        },
+        surface_conditions = {
+            {
+                property = "gravity",
+                min = 0,
+                max = 0,
+            },
+        },
+        order = "r[recipe]-e[sovr-enrichment-process-" .. i .. "]",
+    }
+    table.insert(recipes, sovr_enrichment_process)
+end
+data:extend(recipes)
+

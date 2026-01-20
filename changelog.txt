@@ -4,6 +4,8 @@ Date: 19/1/26
   Features:
     - Added 3 new quests.
     - Added Hexadic Resonators (six different power levels) to dungeon chests.
+    - Added five new recipes for the "SOVR Enrichment Process", used in massively extending the potency of Hexadic Resonators.
+    - Added technology to unlock the new "SOVR Enrichment Process" recipes.
   Changes:
     - Item buff enhancement (upgrading) is now gated behind the new "Cracking the Vault" quest.
     - "Enhance All" feature for item buffs is now gated behind the new "Lockbreaker" quest.

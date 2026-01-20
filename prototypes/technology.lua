@@ -452,6 +452,52 @@ data:extend({
             },
         },
     },
+
+    {
+        type = "technology",
+        name = "sovr-enrichment-process",
+        icons = {
+            {
+                icon = "__hextorio__/graphics/icons/hexadic-resonator-5.png",
+                icon_size = 64,
+            },
+            {
+                icon = "__hextorio__/graphics/icons/cyclic-arrow.png",
+                icon_size = 64,
+            },
+        },
+        prerequisites = {"cryogenic-science-pack"},
+        unit = {
+            count = 500,
+            time = 30,
+            ingredients = {
+                {"space-science-pack", 1},
+                {"cryogenic-science-pack", 1},
+            },
+        },
+        effects = {
+            {
+                type  = "unlock-recipe",
+                recipe = "sovr-enrichment-process-tier-2",
+            },
+            {
+                type  = "unlock-recipe",
+                recipe = "sovr-enrichment-process-tier-3",
+            },
+            {
+                type  = "unlock-recipe",
+                recipe = "sovr-enrichment-process-tier-4",
+            },
+            {
+                type  = "unlock-recipe",
+                recipe = "sovr-enrichment-process-tier-5",
+            },
+            {
+                type  = "unlock-recipe",
+                recipe = "sovr-enrichment-process-tier-6",
+            },
+        },
+    },
 })
 
 -- Add electromagnetic penetrator ammo category to the buffs from electric weapons damage tech
