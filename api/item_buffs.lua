@@ -10,6 +10,17 @@ local item_buffs = {}
 
 
 
+---@alias ItemBuffType "moving-speed"|"mining-speed"|"reach-distance"|"build-distance"|"crafting-speed"|"inventory-size"|"trade-productivity"|"all-buffs-level"|"all-buffs-cost-reduced"|"robot-battery"|"robot-speed"|"recipe-productivity"|"beacon-efficiency"|"belt-stack-size"|"passive-coins"|"train-trading-capacity"
+
+---@class ItemBuff
+---@field type ItemBuffType The type of buff effect to apply
+---@field value float|nil Single modifier value at level 1, used when the buff has one effect
+---@field values float[]|nil Array of modifier values at level 1, used when the buff has multiple effects
+---@field level_scaling float|nil Scaling factor for how the buff grows per level, applied to the single value
+---@field level_scalings float[]|nil Array of scaling factors for how each modifier grows per level
+
+
+
 ---Apply buff effect
 ---@param key string Key in storage.item_buffs
 ---@param value number
