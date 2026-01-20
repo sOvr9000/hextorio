@@ -18,6 +18,45 @@ local dungeons = {}
 
 
 
+---@alias EntityRadii {[string]: number[]}
+---@alias MapPositionAndDirection {position: MapPosition, direction: defines.direction}
+---@alias MapPositionSet {[int]: {[int]: true}}
+
+---@class AmmoReloadParameters
+---@field bullet_type string|nil Magazine item name for gun turrets
+---@field flamethrower_type string|nil Fluid name for flamethrower turrets
+---@field rocket_type string|nil Rocket item name for rocket turrets
+---@field railgun_type string|nil Railgun shell item name for railgun turrets
+---@field bullet_count int|nil Count of magazines to load per reload
+---@field flamethrower_count int|nil Count of fluid to load per reload
+---@field rocket_count int|nil Count of rockets to load per reload
+---@field railgun_count int|nil Count of shells to load per reload
+
+---@class DungeonPrototype
+---@field wall_entities EntityRadii Entity names mapped to arrays of radii for spawning walls/turrets around hex borders
+---@field loot_value number Approximate total loot value for each dungeon chest
+---@field rolls int Average number of times items are sampled for loot generation, affecting overall number of types of items per chest
+---@field qualities string[] Quality names that can be randomly assigned to spawned entities
+---@field tile_type string Tile name used for the dungeon floor
+---@field ammo AmmoReloadParameters Configuration for reloading turrets
+---@field chests_per_hex int Number of loot chests that spawn per hex in the dungeon
+---@field amount_scaling number Divisor of base item value per stack, and multiplier of item count per stack
+---@field item_rolls {[string]: number} Item names mapped to chance values for extra bonus item rolls
+
+---@class Dungeon
+---@field surface LuaSurface The surface where this dungeon exists
+---@field prototype_idx int Index into the prototypes array for this dungeon
+---@field id int Unique identifier for this dungeon, used as an index in storage.dungeons.dungeons
+---@field maze HexMaze|nil Maze structure defining the occupied hexes and open wall sections between dungeon hexes
+---@field turrets LuaEntity[] List of turret entities in this dungeon
+---@field walls LuaEntity[] List of wall entities in this dungeon
+---@field loot_chests LuaEntity[] List of dungeon chest entities in this dungeon
+---@field last_turret_reload int Last tick when this dungeon's turrets were reloaded
+---@field internal_hexes HexSet Hex positions that are fully surrounded by other hexes within this same dungeon
+---@field is_looted boolean|nil Whether all loot chests have been picked up
+
+
+
 function dungeons.register_events()
     event_system.register("dungeon-update", function()
         if #game.connected_players == 0 then return end
@@ -551,8 +590,8 @@ end
 ---@return MapPositionAndDirection[], MapPositionSet
 function dungeons.get_entity_positions(hex_center, available_positions, max_dim)
     available_positions = table.deepcopy(available_positions)
-    local entity_positions = {} --[=[@as MapPositionAndDirection[]]=]
-    local used_positions = {} --[[@as MapPositionSet]]
+    local entity_positions = {} ---@type MapPositionAndDirection[]
+    local used_positions = {} ---@type MapPositionSet
 
     ---@param x int
     ---@param y int
