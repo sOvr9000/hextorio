@@ -9,6 +9,15 @@ local hex_island = {}
 
 
 
+---@class IslandConfig
+---@field radius int The radius of the hexagonal island in hex tiles
+---@field fill_ratio number The proportion of hexes within the radius that should be land (0.0 to 1.0)
+---@field algorithm string The island generation algorithm to use
+---@field seed int|nil Optional random seed for reproducible island generation
+---@field start_pos HexPos|nil Optional starting hex position for island generation
+
+
+
 function hex_island.register_events()
     event_system.register("surface-created", hex_island.process_surface_creation)
 end

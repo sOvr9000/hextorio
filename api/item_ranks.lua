@@ -3,9 +3,14 @@ local lib = require "api.lib"
 local event_system = require "api.event_system"
 local quests       = require "api.quests"
 
-
-
 local item_ranks = {}
+
+
+
+---@class ItemRank
+---@field item_name string The name of the item
+---@field rank int Current rank tier (1-5: no star, bronze, silver, gold, red)
+---@field progress int[] Array of 4 progress values toward each rank tier (indexed 1-4 for ranks 2-5)
 
 
 

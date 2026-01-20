@@ -5,6 +5,10 @@ local weighted_choice = {}
 
 
 
+---@alias WeightedChoice {[any]: number, __total_weight: number}
+
+
+
 ---Create a new weighted choice object (which shallow copies the passed weights table)
 ---@param weights {[any]: number}
 ---@return WeightedChoice

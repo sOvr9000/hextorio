@@ -7,6 +7,17 @@ local hex_maze = {}
 
 
 
+---@class HexMazeTile
+---@field pos HexPos The axial coordinate position of this tile
+---@field open boolean[] Array of 6 booleans indicating if passages are open in each direction (indexed 1-6)
+
+---@class HexMaze
+---@field tiles HexMazeTile[] Array of all tiles in the maze
+---@field tiles_by_position IndexMap Lookup table mapping hex positions to tile indices for fast access
+---@field generated boolean Whether the maze has been successfully generated
+
+
+
 ---@param allowed_positions HexPosMap
 ---@return HexMaze
 function hex_maze.new(allowed_positions)

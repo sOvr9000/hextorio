@@ -17,6 +17,16 @@ local catalog_gui = {}
 
 
 
+---@class PlayerCatalogSelection
+---@field surface_name string The surface under which the item was selected; can be used to set scroll position when re-opening the catalog GUI
+---@field item_name string The currently selected item in the catalog
+---@field bazaar_quality string Quality name for quantum bazaar transactions
+---@field last_item_selected string|nil The last item selected in the catalog search
+---@field last_qb_item_selected string|nil The last item selected in the quantum bazaar search
+---@field bazaar_buy_amount int|nil The quantity of items selected for purchase from the quantum bazaar
+
+
+
 function catalog_gui.register_events()
     event_system.register_gui("gui-clicked", "catalog-button", catalog_gui.on_catalog_button_click)
     event_system.register_gui("gui-closed", "catalog", catalog_gui.hide_catalog)

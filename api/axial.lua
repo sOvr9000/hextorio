@@ -6,9 +6,12 @@
 local core_math = require "api.core_math"
 local lib = require "api.lib"
 
-
-
 local axial = {}
+
+
+
+---@alias AxialDirection 1|2|3|4|5|6
+---@alias AxialDirectionSet {[AxialDirection]: boolean}
 
 
 

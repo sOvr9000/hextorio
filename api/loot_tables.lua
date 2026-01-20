@@ -5,9 +5,21 @@ local lib = require "api.lib"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
 
-
-
 local loot_tables = {}
+
+
+
+---@class LootItem
+---@field item_name string The name of the item
+---@field quality_tier int The quality tier (1=normal, 2=uncommon, 3=rare, 4=epic, 5=legendary, 6=hextreme)
+
+---@class LootItemWithCount
+---@field loot_item LootItem The item and its quality tier
+---@field count int The quantity of this item
+
+---@class LootTable
+---@field wc WeightedChoice Weighted choice object for random item selection based on item values
+---@field loot LootItem[] Array of loot items that can be sampled from this table
 
 
 
