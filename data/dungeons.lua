@@ -6,7 +6,6 @@ local BASE_HEX_RES_CHANCE = {
     GLEBA = 0.9,
     AQUILO = 1.5,
 }
-local VULCANUS
 
 return {
     queued_reloads = {},
