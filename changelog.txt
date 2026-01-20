@@ -7,7 +7,7 @@ Date: 19/1/26
   Changes:
     - Item buff enhancement (upgrading) is now gated behind the new "Cracking the Vault" quest.
     - "Enhance All" feature for item buffs is now gated behind the new "Lockbreaker" quest.
-    - Dungeon chests contain fewer but more valuable items (overall loot value is unchanged).
+    - Dungeon chests contain fewer but more valuable items (overall better).
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 19/1/26
