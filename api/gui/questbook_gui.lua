@@ -72,7 +72,8 @@ function questbook_gui.init_questbook(player)
     gui.add_titlebar(questbook, {"hextorio-questbook.questbook-title"})
 
     local lower_flow = questbook.add {type = "flow", name = "lower-flow", direction = "horizontal"}
-    gui.auto_width_height(lower_flow)
+    lower_flow.style.horizontally_stretchable = true
+    lower_flow.style.vertically_stretchable = true
 
     local list_frame = lower_flow.add {type = "frame", name = "list-frame", direction = "vertical"}
     list_frame.style.natural_width = 300 / 1.2
@@ -80,7 +81,8 @@ function questbook_gui.init_questbook(player)
     list_frame.style.horizontally_squashable = false
 
     local quest_frame = lower_flow.add {type = "flow", name = "quest-frame", direction = "vertical"}
-    gui.auto_width_height(quest_frame)
+    quest_frame.style.horizontally_stretchable = true
+    quest_frame.style.vertically_stretchable = true
 
 
 
@@ -100,9 +102,11 @@ function questbook_gui.init_questbook(player)
     gui.auto_width_height(complete_list)
 
     local quest_info_frame = quest_frame.add {type = "frame", name = "info-frame", direction = "horizontal"}
-    quest_info_frame.style.natural_height = 300 / 1.2
+    quest_info_frame.style.maximal_height = 316 / 1.2
+    quest_info_frame.style.natural_height = 316 / 1.2
     quest_info_frame.style.maximal_width = 1153 / 1.2
     quest_info_frame.style.natural_width = 1153 / 1.2
+    quest_info_frame.style.vertically_stretchable = true
 
     local quest_info_main = quest_info_frame.add {type = "flow", name = "main", direction = "vertical"}
     local quest_info_img_frame = quest_info_frame.add {type = "frame", name = "img-frame"}
@@ -123,24 +127,43 @@ function questbook_gui.init_questbook(player)
     local debug_complete_quest = quest_info_main.add {type = "button", name = "debug-complete-quest", caption = {"hextorio-debug.complete-quest"}}
     debug_complete_quest.tags = {handlers = {["gui-clicked"] = "debug-complete-quest"}}
 
+    local empty = quest_info_main.add {type = "empty-widget"}
+    empty.style.vertically_stretchable = true
+
+    local quest_relations_flow = quest_info_main.add {type = "flow", name = "relations-flow", direction = "vertical"}
+    local revealed_by_label = quest_relations_flow.add {type = "label", name = "revealed-by"}
+    revealed_by_label.style.single_line = false
+    local reveals_label = quest_relations_flow.add {type = "label", name = "reveals"}
+    reveals_label.style.single_line = false
+
     local quest_conditions_rewards = quest_frame.add {type = "flow", name = "conditions-rewards", direction = "horizontal"}
-    gui.auto_width_height(quest_conditions_rewards)
+    quest_conditions_rewards.style.natural_height = 500
+    quest_conditions_rewards.style.horizontally_stretchable = true
+    -- quest_conditions_rewards.style.horizontally_squashable = true
+    quest_conditions_rewards.style.vertically_stretchable = true
+    quest_conditions_rewards.style.vertically_squashable = true
 
     local quest_conditions_frame = quest_conditions_rewards.add {type = "frame", name = "conditions", direction = "vertical"}
+    quest_conditions_frame.style.vertically_stretchable = true
 
     local quest_conditions_header = quest_conditions_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.conditions"}}
     quest_conditions_header.style.font = "heading-1"
 
     local quest_conditions_scroll_pane = quest_conditions_frame.add {type = "scroll-pane", name = "scroll-pane"}
-    gui.auto_width_height(quest_conditions_scroll_pane)
+    quest_conditions_scroll_pane.style.horizontally_stretchable = true
+    -- quest_conditions_scroll_pane.style.horizontally_squashable = true
+    quest_conditions_scroll_pane.style.vertically_stretchable = true
 
     local quest_rewards_frame = quest_conditions_rewards.add {type = "frame", name = "rewards", direction = "vertical"}
+    quest_rewards_frame.style.vertically_stretchable = true
 
     local quest_rewards_header = quest_rewards_frame.add {type = "label", name = "header", caption = {"hextorio-questbook.rewards"}}
     quest_rewards_header.style.font = "heading-1"
 
     local quest_rewards_scroll_pane = quest_rewards_frame.add {type = "scroll-pane", name = "scroll-pane"}
-    gui.auto_width_height(quest_rewards_scroll_pane)
+    quest_rewards_scroll_pane.style.horizontally_stretchable = true
+    -- quest_rewards_scroll_pane.style.horizontally_squashable = true
+    quest_rewards_scroll_pane.style.vertically_stretchable = true
 end
 
 function questbook_gui.update_questbook(player, quest_name)
@@ -207,6 +230,43 @@ function questbook_gui.update_questbook(player, quest_name)
         for i, note_name in ipairs(quest.notes) do
             gui.add_info(quest_notes_flow, quests.get_localized_note(note_name), "info-" .. i)
         end
+    end
+
+    local quest_relations_flow = quest_frame["info-frame"]["main"]["relations-flow"]
+    local revealed_by_label = quest_relations_flow["revealed-by"]
+    local reveals_label = quest_relations_flow["reveals"]
+
+    local quests_which_reveal = quests.get_quests_which_reveal(quest)
+    if #quests_which_reveal > 0 then
+        local caption_parts = {"", {"hextorio-questbook.revealed-by"}, " "}
+        for i, q in ipairs(quests_which_reveal) do
+            table.insert(caption_parts, quests.get_quest_localized_title(q))
+            if i < #quests_which_reveal then
+                table.insert(caption_parts, ", ")
+            end
+        end
+        revealed_by_label.caption = caption_parts
+        revealed_by_label.visible = true
+    else
+        revealed_by_label.visible = false
+    end
+
+    local quests_revealed_by = quests.get_quests_revealed_by(quest)
+    if quests.is_complete(quest) then
+        local caption_parts = {"", {"hextorio-questbook.revealed"}, " "}
+        for i, q in ipairs(quests_revealed_by) do
+            if quests.is_revealed(q) then
+                table.insert(caption_parts, quests.get_quest_localized_title(q))
+            else
+                table.insert(caption_parts, {"hextorio-gui.obfuscated-text"})
+            end
+            if i < #quests_revealed_by then
+                table.insert(caption_parts, ", ")
+            end
+        end
+        reveals_label.caption = caption_parts
+    else
+        reveals_label.caption = {"hextorio-questbook.reveals-n-quests", #quests_revealed_by}
     end
 
     quest_conditions_scroll_pane.clear()

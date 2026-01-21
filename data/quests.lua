@@ -490,7 +490,7 @@ return {
                     },
                 },
             },
-            prerequisites = {"too-many-hex-cores", "visit-fulgora"},
+            prerequisites = {"visit-fulgora"},
         },
         {
             name = "you-are-the-destroyer",

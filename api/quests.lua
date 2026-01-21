@@ -3,6 +3,7 @@ local lib = require "api.lib"
 local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
 local entity_util  = require "api.entity_util"
+local sets         = require "api.sets"
 
 local quests = {}
 
@@ -617,6 +618,68 @@ function quests.get_quests_which_unlock(feature_name)
             if reward.type == "unlock-feature" and reward.value == feature_name then
                 table.insert(quest_list, quest)
                 break
+            end
+        end
+    end
+
+    return quest_list
+end
+
+---Get a list of quests which reveal a specific quest.
+---@param quest Quest
+---@return Quest[]
+function quests.get_quests_which_reveal(quest)
+    local quest_list = {}
+    local names = sets.new {}
+
+    for _, q in pairs(storage.quests.quests) do
+        if q.unlocks then
+            for _, to_reveal in pairs(q.unlocks) do
+                if to_reveal == quest.name and not sets.contains(names, q.name) then
+                    sets.add(names, q.name)
+                    table.insert(quest_list, q)
+                end
+            end
+        end
+    end
+
+    if quest.prerequisites then
+        for _, revealed_by in pairs(quest.prerequisites) do
+            local q = quests.get_quest(revealed_by)
+            if q and not sets.contains(names, q.name) then
+                sets.add(names, q.name)
+                table.insert(quest_list, q)
+            end
+        end
+    end
+
+    return quest_list
+end
+
+---Get a list of quests which are revealed by a specific quest.
+---@param quest Quest
+---@return Quest[]
+function quests.get_quests_revealed_by(quest)
+    local quest_list = {}
+    local names = sets.new {}
+
+    for _, q in pairs(storage.quests.quests) do
+        if q.prerequisites then
+            for _, revealed_by in pairs(q.prerequisites) do
+                if revealed_by == quest.name and not sets.contains(names, q.name) then
+                    sets.add(names, q.name)
+                    table.insert(quest_list, q)
+                end
+            end
+        end
+    end
+
+    if quest.unlocks then
+        for _, to_reveal in pairs(quest.unlocks) do
+            local q = quests.get_quest(to_reveal)
+            if q and not sets.contains(names, q.name) then
+                sets.add(names, q.name)
+                table.insert(quest_list, q)
             end
         end
     end
