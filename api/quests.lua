@@ -606,6 +606,24 @@ function quests.get_quest(quest)
     end
 end
 
+---Get a list of quest objects which unlock a specific feature.
+---@param feature_name FeatureName
+---@return Quest[]
+function quests.get_quests_which_unlock(feature_name)
+    local quest_list = {}
+
+    for _, quest in pairs(storage.quests.quests) do
+        for _, reward in pairs(quest.rewards) do
+            if reward.type == "unlock-feature" and reward.value == feature_name then
+                table.insert(quest_list, quest)
+                break
+            end
+        end
+    end
+
+    return quest_list
+end
+
 ---@param quest Quest
 ---@return LocalisedString
 function quests.get_quest_localized_title(quest)

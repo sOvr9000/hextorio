@@ -5,6 +5,7 @@ local item_values = require "api.item_values"
 local item_ranks = require "api.item_ranks"
 local event_system = require "api.event_system"
 local inventories = require "api.inventories"
+local quests      = require "api.quests"
 
 local item_buffs = {}
 
@@ -186,6 +187,27 @@ end
 function item_buffs.register_events()
     event_system.register("player-used-capsule", function(player, capsule_name)
         if capsule_name:sub(1, 23) ~= "hexadic-resonator-tier-" then return end
+
+        local feature_name = "item-buff-enhancement"
+        if not quests.is_feature_unlocked(feature_name) then
+            local quests_to_unlock = quests.get_quests_which_unlock(feature_name)
+
+            local quest_str = {""}
+            if next(quests_to_unlock) then
+                table.insert(quest_str, lib.color_localized_string({"quest-title." .. quests_to_unlock[1].name}, "cyan", "heading-2"))
+            else
+                table.insert(quest_str, lib.color_localized_string({"hextorio-gui.obfuscated-text"}, "black", "heading-2"))
+            end
+
+            player.print {"hextorio.feature-locked",
+                lib.color_localized_string({"feature-name." .. feature_name}, "orange", "heading-2"),
+                quest_str,
+            }
+
+            lib.safe_insert(player, {name = capsule_name, count = 1})
+            return
+        end
+
         local tier = capsule_name:sub(24)
 
         item_buffs.add_free_buffs(2 ^ (tier - 1))
