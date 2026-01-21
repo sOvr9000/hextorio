@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.3
-Date: 21/1/26
+Date: 22/1/26
   Features:
     - Added 4 new quests: "Cracking the Vault", "Lockbreaker", "Automated Clearing", "Trades in Circuitry".
     - Added Hexadic Resonators (six different power levels) to dungeon chests.
@@ -15,6 +15,10 @@ Date: 21/1/26
     - "Enhance All" feature for item buffs is now gated behind the new "Lockbreaker" quest.
     - Dungeon chests contain fewer but more valuable items (overall better).
     - Recategorized loaders into their own subgroup so that editor mode has an organized arrangement of belt types.
+  Gui:
+    - Quests now show how many quests will be revealed upon completing them.
+    - Quests now show which quests that revealed them.
+    - Quests now show which quests they revealed.
   Balancing:
     - Added stromatolites to the starter hex on Gleba.
   Bugfixes:
