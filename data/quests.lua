@@ -324,6 +324,19 @@ return {
             },
             prerequisites = {"dark-factorian-dungeon"},
         },
+        {
+            name = "trades-in-circuitry",
+            conditions = {{type = "hex-core-trades-read", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "hexadic-resonator-tier-2", count = 1},
+                    },
+                },
+            },
+            prerequisites = {"exploration"},
+        },
 
         -- Post-Nauvis
         {

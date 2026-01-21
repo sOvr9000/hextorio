@@ -816,6 +816,8 @@ function hex_grid.copy_signals_to_combinator(entity)
             end
         end
     end
+
+    quests.increment_progress_for_type "hex-core-trades-read"
 end
 
 ---Initialize a hex for a dungeon.
