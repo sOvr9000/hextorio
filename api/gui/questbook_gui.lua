@@ -233,6 +233,13 @@ function questbook_gui.update_questbook(player, quest_name)
     end
 
     local quest_relations_flow = quest_frame["info-frame"]["main"]["relations-flow"]
+    if not quest_relations_flow then
+        -- For smoother migration from 1.5.2
+        questbook_gui.reinitialize(player)
+        questbook_gui.update_questbook(player, quest_name)
+        return
+    end
+
     local revealed_by_label = quest_relations_flow["revealed-by"]
     local reveals_label = quest_relations_flow["reveals"]
 
@@ -254,6 +261,9 @@ function questbook_gui.update_questbook(player, quest_name)
     local quests_revealed_by = quests.get_quests_revealed_by(quest)
     if quests.is_complete(quest) then
         local caption_parts = {"", {"hextorio-questbook.revealed"}, " "}
+        if #quests_revealed_by == 0 then
+            caption_parts[2] = {"hextorio-questbook.revealed-no-quests"}
+        end
         for i, q in ipairs(quests_revealed_by) do
             if quests.is_revealed(q) then
                 table.insert(caption_parts, quests.get_quest_localized_title(q))
