@@ -1218,32 +1218,56 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             local transformation = terrain.get_surface_transformation "gleba"
             local range = (transformation.scale - transformation.stroke_width) * 0.25
             local width = 3
-            for i, tile_type in ipairs {"natural-yumako-soil", "natural-jellynut-soil"} do
+            for i, tile_type in ipairs {"natural-yumako-soil", "natural-jellynut-soil", "wetland-light-green-slime", "wetland-pink-tentacle"} do
                 local positions = {}
                 local x, dx, entity_name
+
                 if i == 1 then
                     x = range
                     dx = 1
                     entity_name = "yumako-tree"
-                else
+                elseif i == 2 then
                     x = -range
                     dx = -1
                     entity_name = "jellystem"
+                elseif i == 3 then
+                    x = range
+                    dx = 1
+                    entity_name = "copper-stromatolite"
+                else
+                    x = -range
+                    dx = -1
+                    entity_name = "iron-stromatolite"
                 end
-                for y = -range, range do
-                    for n = 1, width do
-                        table.insert(positions, {x = x + dx * (n - 1), y = y})
-                    end
 
+                for y = -range, range do
                     local min_x = x
                     local max_x = x + dx * (width - 1)
                     local center_x = (min_x + max_x) * 0.5
 
+                    local entity_pos
+                    if i <= 2 then
+                        entity_pos = {x = center_x, y = y}
+                    else
+                        entity_pos = {x = -y, y = center_x}
+                    end
+
+                    for n = 1, width do
+                        if i <= 2 then
+                            table.insert(positions, {x = x + dx * (n - 1), y = y})
+                        else
+                            table.insert(positions, {x = -y, y = x + dx * (n - 1)})
+                        end
+                    end
+
                     local entity = surface.create_entity {
                         name = entity_name,
-                        position = {x = center_x, y = y},
+                        position = entity_pos,
                     }
-                    entity.tick_grown = game.tick
+
+                    if entity and i <= 2 then
+                        entity.tick_grown = game.tick
+                    end
                 end
                 terrain.set_tiles(surface, positions, tile_type)
             end
