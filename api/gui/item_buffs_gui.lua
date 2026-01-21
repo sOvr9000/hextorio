@@ -33,11 +33,11 @@ function item_buffs_gui.register_events()
     end)
 end
 
----Reinitialize the item buffs GUI for the given player, or all online players if no player is provided.
+---Reinitialize the item buffs GUI for the given player, or all players if no player is provided.
 ---@param player LuaPlayer|nil
 function item_buffs_gui.reinitialize(player)
     if not player then
-        for _, p in pairs(game.connected_players) do
+        for _, p in pairs(game.players) do
             item_buffs_gui.reinitialize(p)
         end
         return

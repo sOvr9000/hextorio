@@ -17,6 +17,8 @@ Date: 21/1/26
     - Recategorized loaders into their own subgroup so that editor mode has an organized arrangement of belt types.
   Balancing:
     - Added stromatolites to the starter hex on Gleba.
+  Bugfixes:
+    - Fixed potential crash caused by updating a server across some Hextorio versions and reconnecting.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 19/1/26

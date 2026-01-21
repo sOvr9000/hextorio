@@ -115,11 +115,11 @@ function trade_overview_gui.register_events()
     end)
 end
 
----Reinitialize the trade overview GUI for the given player, or all online players if no player is provided.
+---Reinitialize the trade overview GUI for the given player, or all players if no player is provided.
 ---@param player LuaPlayer|nil
 function trade_overview_gui.reinitialize(player)
     if not player then
-        for _, p in pairs(game.connected_players) do
+        for _, p in pairs(game.players) do
             trade_overview_gui.reinitialize(p)
         end
         return

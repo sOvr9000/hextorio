@@ -28,11 +28,11 @@ function questbook_gui.register_events()
     event_system.register("quest-completed", update_quest_guis)
 end
 
----Reinitialize the hex core GUI for the given player, or all online players if no player is provided.
+---Reinitialize the hex core GUI for the given player, or all players if no player is provided.
 ---@param player LuaPlayer|nil
 function questbook_gui.reinitialize(player)
     if not player then
-        for _, p in pairs(game.connected_players) do
+        for _, p in pairs(game.players) do
             questbook_gui.reinitialize(p)
         end
         return
