@@ -1,5 +1,7 @@
 
 local lib = require "api.lib"
+local terrain = require "api.terrain"
+local axial = require "api.axial"
 
 local hex_state_manager = {}
 
@@ -202,6 +204,15 @@ function hex_state_manager.get_hex_state_from_entity(unit_number)
     if not t then return end
 
     return hex_state_manager.get_hex_state(t.surface_name, t.hex_pos)
+end
+
+---Get a hex state containing a given position.
+---@param surface LuaSurface
+---@param position MapPosition
+function hex_state_manager.get_hex_state_containing(surface, position)
+    local transformation = terrain.get_surface_transformation(surface)
+    local hex_pos = axial.get_hex_containing(position, transformation.scale, transformation.rotation)
+    return hex_state_manager.get_hex_state(surface, hex_pos)
 end
 
 ---@param unit_number int

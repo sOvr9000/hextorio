@@ -9,6 +9,7 @@ Date: 21/1/26
   Minor Features:
     - Added 3 new item buffs: uranium-235, uranium-238, toolbelt equipment.
     - Added 1 new buff type: "Lower Unresearched Penalty".
+    - Constant combinators placed next to a hex core are now automatically configured to emit signals for trade item inputs (negative) and outputs (positive).
   Changes:
     - Item buff enhancement (upgrading) is now gated behind the new "Cracking the Vault" quest.
     - "Enhance All" feature for item buffs is now gated behind the new "Lockbreaker" quest.

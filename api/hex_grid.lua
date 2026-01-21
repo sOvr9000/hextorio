@@ -763,8 +763,59 @@ function hex_grid.update_hex_core_inventory_filters(hex_core_state)
     end
 end
 
+---Set up a constant combinator entity's output signals based on its adjacent hex core if possible.
+---Creates one section per trade, all disabled by default.
+---@param entity LuaEntity
 function hex_grid.copy_signals_to_combinator(entity)
-    -- TODO: Set signals of this constant combinator to the contents of the "next" enabled trade, if adjacent to hex core.
+    if not entity or not entity.valid then return end
+    if entity.type ~= "constant-combinator" then return end
+
+    local state = hex_state_manager.get_hex_state_containing(entity.surface, entity.position)
+    if not state then return end
+
+    local hex_core = state.hex_core
+    if not hex_core then return end
+    if not state.trades or #state.trades == 0 then return end
+
+    -- Adjacency/corner check
+    local dx = math.abs(entity.position.x - hex_core.position.x)
+    local dy = math.abs(entity.position.y - hex_core.position.y)
+    if (dx > 3) or (dy > 3) then return end
+
+    local control = entity.get_or_create_control_behavior()
+    if not control then return end
+    ---@cast control LuaConstantCombinatorControlBehavior
+
+    for i, trade_id in ipairs(state.trades) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            local section
+            if i == 1 then
+                section = control.get_section(1)
+            else
+                section = control.add_section()
+            end
+
+            if section then
+                local filters = {}
+                for _, input_item in ipairs(trade.input_items) do
+                    table.insert(filters, {
+                        value = {type = "item", name = input_item.name, quality = "normal"},
+                        min = -input_item.count
+                    })
+                end
+                for _, output_item in ipairs(trade.output_items) do
+                    table.insert(filters, {
+                        value = {type = "item", name = output_item.name, quality = "normal"},
+                        min = output_item.count
+                    })
+                end
+
+                section.filters = filters
+                section.active = false
+            end
+        end
+    end
 end
 
 ---Initialize a hex for a dungeon.
