@@ -2,10 +2,13 @@
 Version: 1.5.3
 Date: 21/1/26
   Features:
-    - Added 3 new quests.
+    - Added 3 new quests: "Cracking the Vault", "Lockbreaker", "Automated Clearing".
     - Added Hexadic Resonators (six different power levels) to dungeon chests.
     - Added five new recipes for the "SOVR Enrichment Process", used in massively extending the potency of Hexadic Resonators (get 6x value).
     - Added technology to unlock the new "SOVR Enrichment Process" recipes.
+  Minor Features:
+    - Added 3 new item buffs: uranium-235, uranium-238, toolbelt equipment.
+    - Added 1 new buff type: "Lower Unresearched Penalty".
   Changes:
     - Item buff enhancement (upgrading) is now gated behind the new "Cracking the Vault" quest.
     - "Enhance All" feature for item buffs is now gated behind the new "Lockbreaker" quest.

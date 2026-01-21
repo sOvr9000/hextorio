@@ -92,6 +92,20 @@ return {
                 level_scaling = 1.2,
             },
         },
+        ["uranium-238"] = {
+            {
+                type = "unresearched-penalty-reduced",
+                value = 0.03,
+                level_scaling = 0.03,
+            },
+        },
+        ["uranium-235"] = {
+            {
+                type = "unresearched-penalty-reduced",
+                value = 0.04,
+                level_scaling = 0.04,
+            },
+        },
         ["beacon"] = {
             {
                 type = "beacon-efficiency",
@@ -677,6 +691,13 @@ return {
                 level_scaling = 1.1,
             },
         },
+        ["toolbelt-equipment"] = {
+            {
+                type = "unresearched-penalty-reduced",
+                value = 0.05,
+                level_scaling = 0.05,
+            },
+        },
         ["electronic-circuit"] = {
             {
                 type = "recipe-productivity",
@@ -1058,6 +1079,7 @@ return {
     has_description = {
         ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
+        ["unresearched-penalty-reduced"] = true,
         ["passive-coins"] = true,
         ["train-trading-capacity"] = true,
         ["strongbox-loot"] = true,
@@ -1081,12 +1103,14 @@ return {
     is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.
         ["all-buffs-cost-reduced"] = true,
         ["strongbox-loot"] = true,
+        ["unresearched-penalty-reduced"] = true,
     },
 
     has_linear_effect_scaling = { -- These buff types give buffs that scale linearly rather than exponentially.
         ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
         ["strongbox-loot"] = true,
+        ["unresearched-penalty-reduced"] = true,
     },
 
     unlocked = {},
@@ -1103,6 +1127,7 @@ return {
 
     strongbox_loot= 1,
     cost_multiplier = 1,
+    unresearched_penalty_multiplier = 1,
     level_bonus = 0,
     passive_coins_rate = 0,
     passive_coins_interval = 30,

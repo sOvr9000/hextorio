@@ -10,7 +10,7 @@ local item_buffs = {}
 
 
 
----@alias ItemBuffType "moving-speed"|"mining-speed"|"reach-distance"|"build-distance"|"crafting-speed"|"inventory-size"|"trade-productivity"|"all-buffs-level"|"all-buffs-cost-reduced"|"robot-battery"|"robot-speed"|"recipe-productivity"|"beacon-efficiency"|"belt-stack-size"|"passive-coins"|"train-trading-capacity"
+---@alias ItemBuffType "moving-speed"|"mining-speed"|"reach-distance"|"build-distance"|"crafting-speed"|"inventory-size"|"trade-productivity"|"all-buffs-level"|"all-buffs-cost-reduced"|"unresearched-penalty-reduced"|"robot-battery"|"robot-speed"|"recipe-productivity"|"beacon-efficiency"|"belt-stack-size"|"passive-coins"|"train-trading-capacity"
 
 ---@class ItemBuff
 ---@field type ItemBuffType The type of buff effect to apply
@@ -148,6 +148,9 @@ local buff_type_actions = {
     end,
     ["all-buffs-cost-reduced"] = function(value)
         apply_nonlinear_buff("cost_multiplier", value)
+    end,
+    ["unresearched-penalty-reduced"] = function(value)
+        apply_nonlinear_buff("unresearched_penalty_multiplier", value)
     end,
     ["strongbox-loot"] = function(value)
         apply_nonlinear_buff("strongbox_loot", -value)

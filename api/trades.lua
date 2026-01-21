@@ -907,7 +907,7 @@ function trades.get_productivity_bonus_str(trade, quality)
     end
     for _, output_item in pairs(trade.output_items) do
         if not storage.trades.researched_items[output_item.name] then
-            table.insert(bonus_strs, "[img=virtual-signal.signal-science-pack][img=item." .. output_item.name .. "] [color=red]" .. lib.format_percentage(-storage.trades.unresearched_penalty, 0, true, true) .. "[.color]")
+            table.insert(bonus_strs, "[img=virtual-signal.signal-science-pack][img=item." .. output_item.name .. "] [color=red]" .. lib.format_percentage(-storage.trades.unresearched_penalty * storage.item_buffs.unresearched_penalty_multiplier, 0, true, true) .. "[.color]")
         end
     end
 
@@ -1712,7 +1712,7 @@ function trades.check_productivity(trade)
         if lib.is_catalog_item(item.name) then
             local penalty_prod = 0.0
             if not storage.trades.researched_items[item.name] then
-                penalty_prod = storage.trades.unresearched_penalty
+                penalty_prod = storage.trades.unresearched_penalty * storage.item_buffs.unresearched_penalty_multiplier
             end
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) - penalty_prod)
         end
