@@ -7,5 +7,10 @@ return function()
     quests.recalculate_condition_progress_of_type "total-strongbox-level"
     quests.recalculate_condition_progress_of_type("items-at-rank", 2)
 
+    -- Fix possible issue
+    quests.recalculate_condition_progress_of_type("visit-planet", "vulcanus")
+    quests.recalculate_condition_progress_of_type("visit-planet", "fulgora")
+    quests.recalculate_condition_progress_of_type("visit-planet", "gleba")
+
     storage.item_buffs.free_buffs_remaining = 0
 end

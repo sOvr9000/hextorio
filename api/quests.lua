@@ -59,6 +59,16 @@ local function define_progress_recalculator(condition_type, func)
     quest_condition_progress_recalculators[condition_type] = func
 end
 
+define_progress_recalculator("visit-planet", function(condition_value)
+    local surface_name = condition_value
+    ---@cast surface_name string
+
+    local surface = game.get_surface(surface_name)
+    if not surface then return 0 end
+
+    return 1
+end)
+
 define_progress_recalculator("items-at-rank", function(condition_value)
     local rank = condition_value
     local total = 0
