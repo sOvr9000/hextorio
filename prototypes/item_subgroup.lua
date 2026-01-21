@@ -14,4 +14,16 @@ data:extend({
         group = belt_subgroup.group,
         order = belt_subgroup.order .. "-3",
     },
+    {
+        type = "item-subgroup",
+        name = "loader",
+        group = belt_subgroup.group,
+        order = belt_subgroup.order .. "-4",
+    },
+    {
+        type = "item-subgroup",
+        name = "loader-1x1",
+        group = belt_subgroup.group,
+        order = belt_subgroup.order .. "-5",
+    },
 })
