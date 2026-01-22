@@ -191,6 +191,7 @@ function quests.register_events()
     end)
 
     event_system.register("entity-died", function(entity)
+        if not entity.valid then return end
         if entity.type == "mining-drill" then
             local now_uncovered = entity_util.untrack_ores_covered_by_drill(entity)
             quests.increment_progress_for_type("cover-ores-on", -now_uncovered, entity.surface.name)
@@ -198,6 +199,7 @@ function quests.register_events()
     end)
 
     event_system.register("player-built-entity", function(player, entity)
+        if not entity.valid then return end
         quests.increment_progress_for_type("place-entity", 1, entity.name)
         quests.increment_progress_for_type("place-entity-on-planet", 1, {entity.name, entity.surface.name})
 
@@ -212,6 +214,7 @@ function quests.register_events()
     end)
 
     event_system.register("entity-picked-up", function(entity)
+        if not entity.valid then return end
         quests.increment_progress_for_type("place-entity", -1, entity.name)
         quests.increment_progress_for_type("place-entity-on-planet", -1, {entity.name, entity.surface.name})
 
