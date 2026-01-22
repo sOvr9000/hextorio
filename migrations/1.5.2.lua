@@ -1,6 +1,9 @@
 
 local quests = require "api.quests"
 local gui = require "api.gui"
+local dungeons = require "api.dungeons"
+
+local data_dungeons = require "data.dungeons"
 
 return function()
     gui.questbook.reinitialize()
@@ -16,4 +19,6 @@ return function()
 
     storage.item_buffs.free_buffs_remaining = 0
     storage.item_buffs.unresearched_penalty_multiplier = 1
+
+    dungeons.migrate_old_data(data_dungeons)
 end

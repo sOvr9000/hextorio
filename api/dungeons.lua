@@ -97,11 +97,16 @@ function dungeons.register_events()
 end
 
 function dungeons.init()
-    storage.dungeons.prototypes = {} --[[@as {[string]: DungeonPrototype[]}]]
+    dungeons.init_prototypes()
+
     storage.dungeons.dungeons = {} --[=[@as Dungeon[]]=]
     storage.dungeons.dungeon_idx_by_position = {} --[[@as {[int]: IndexMap}]]
     storage.dungeons.used_hexes = {} --[[@as {[int]: HexSet}]]
     storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
+end
+
+function dungeons.init_prototypes()
+    storage.dungeons.prototypes = {} --[[@as {[string]: DungeonPrototype[]}]]
 
     for _, def in pairs(storage.dungeons.defs) do
         local prot = dungeons.new_prototype(def.wall_entities, def.loot_value, def.rolls, def.chests, def.amount_scaling, def.qualities, def.tile_type, def.ammo, def.item_rolls)
@@ -848,6 +853,12 @@ function dungeons._tick_turret_reload()
 
     storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] = nil
     table.remove(storage.dungeons.queued_reloads, queue_idx)
+end
+
+---@param new_data table
+function dungeons.migrate_old_data(new_data)
+    storage.dungeons.defs = new_data.defs
+    dungeons.init_prototypes()
 end
 
 
