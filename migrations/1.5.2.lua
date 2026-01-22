@@ -15,4 +15,5 @@ return function()
     quests.recalculate_condition_progress_of_type("visit-planet", "gleba")
 
     storage.item_buffs.free_buffs_remaining = 0
+    storage.item_buffs.unresearched_penalty_multiplier = 1
 end
