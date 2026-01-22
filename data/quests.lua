@@ -418,10 +418,27 @@ return {
                         {name = "big-mining-drill", count = 1, quality = "rare"},
                         {name = "efficiency-module-2", count = 1, quality = "rare"},
                         {name = "gravity-coin", count = 2},
+                        {name = "tungsten-ore", count = 50},
                     },
                 },
             },
             prerequisites = {"visit-vulcanus"},
+        },
+        {
+            name = "vulcanus-101",
+            conditions = {{type = "cover-ores-on", value = "vulcanus", progress_requirement = 200}},
+            rewards = {
+                {type = "claim-free-hexes", value = {"vulcanus", 5}},
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "big-mining-drill", count = 2, quality = "epic"},
+                        {name = "speed-module-2", count = 3, quality = "epic"},
+                        {name = "tungsten-ore", count = 250},
+                    },
+                },
+            },
+            prerequisites = {"copper-flavored-lava"},
         },
         {
             name = "this-is-fine",

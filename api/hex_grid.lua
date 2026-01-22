@@ -860,7 +860,6 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     terrain.generate_hex_border(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width, nil, hex_quality)
 
     local is_starting_hex = dist == 0
-    -- local is_land = is_starting_hex or math.random() < land_chance or (surface.name == "fulgora" and dist < 2) or (surface.name == "aquilo" and dist == 1)
     local is_land = hex_island.is_land_hex(surface.name, hex_pos)
 
     local dungeon_chance = lib.runtime_setting_value("dungeon-chance-" .. surface.name)
@@ -875,7 +874,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 force = "player",
             }
         elseif surface.name == "vulcanus" then
-            for i = 1, 16 do
+            for i = 1, 48 do
                 local pos = surface.find_non_colliding_position("huge-volcanic-rock", {x = math.random(-20, 20), y = math.random(-20, 20)}, 10, 0.5, false)
                 if pos then
                     surface.create_entity {

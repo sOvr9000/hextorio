@@ -2,7 +2,7 @@
 Version: 1.5.3
 Date: 22/1/26
   Features:
-    - Added 4 new quests: "Cracking the Vault", "Lockbreaker", "Automated Clearing", "Trades in Circuitry".
+    - Added 5 new quests: "Cracking the Vault", "Lockbreaker", "Automated Clearing", "Trades in Circuitry", "Vulcanus 101".
     - Added Hexadic Resonators (six different power levels) to dungeon chests.
     - Added five new recipes for the "SOVR Enrichment Process", used in massively extending the potency of Hexadic Resonators (get 6x value).
     - Added technology to unlock the new "SOVR Enrichment Process" recipes.
@@ -21,6 +21,8 @@ Date: 22/1/26
     - Quests now show which quests they revealed.
   Balancing:
     - Added stromatolites to the starter hex on Gleba.
+    - Increased the number of guaranteed huge volcanic rock spawns in the spawn hex on Vulcanus from 16 to 48.
+    - The quest "Vulcanus 101" can be completed from the spawn hex on Vulcanus without bringing coins and gives some free claims and tungsten ore.
   Bugfixes:
     - Fixed potential crash caused by updating a server across some Hextorio versions and reconnecting.
 ---------------------------------------------------------------------------------------------------

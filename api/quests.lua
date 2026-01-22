@@ -9,7 +9,7 @@ local quests = {}
 
 
 
----@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"|"hex-core-trades-read"
+---@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"|"hex-core-trades-read"|"cover-ores-on"
 ---@alias QuestRewardType "unlock-feature"|"receive-items"|"claim-free-hexes"|"reduce-biters"|"all-trades-productivity"|"receive-spaceship"
 ---@alias FeatureName "trade-overview"|"catalog"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"|"quick-trading"|"item-buff-enhancement"|"enhance-all"
 
@@ -144,6 +144,23 @@ define_progress_recalculator("total-strongbox-level", function(condition_value)
     return total_level
 end)
 
+define_progress_recalculator("cover-ores-on", function(condition_value)
+    local surface_name = condition_value
+    ---@cast surface_name string
+
+    local surface = game.get_surface(surface_name)
+    if not surface then return 0 end
+
+    local total_ores = 0
+    for _, entity in pairs(surface.find_entities_filtered {
+        type = "mining-drill",
+    }) do
+        total_ores = total_ores + entity_util.track_ores_covered_by_drill(entity)
+    end
+
+    return total_ores
+end)
+
 
 
 function quests.register_events()
@@ -173,9 +190,21 @@ function quests.register_events()
         quests.increment_progress_for_type("kill-with-damage-type", 1, damage_type_name)
     end)
 
+    event_system.register("entity-died", function(entity)
+        if entity.type == "mining-drill" then
+            local now_uncovered = entity_util.untrack_ores_covered_by_drill(entity)
+            quests.increment_progress_for_type("cover-ores-on", -now_uncovered, entity.surface.name)
+        end
+    end)
+
     event_system.register("player-built-entity", function(player, entity)
         quests.increment_progress_for_type("place-entity", 1, entity.name)
         quests.increment_progress_for_type("place-entity-on-planet", 1, {entity.name, entity.surface.name})
+
+        if entity.type == "mining-drill" then
+            local now_covered = entity_util.track_ores_covered_by_drill(entity)
+            quests.increment_progress_for_type("cover-ores-on", now_covered, entity.surface.name)
+        end
     end)
 
     event_system.register("player-mined-entity", function(player, entity)
@@ -185,6 +214,11 @@ function quests.register_events()
     event_system.register("entity-picked-up", function(entity)
         quests.increment_progress_for_type("place-entity", -1, entity.name)
         quests.increment_progress_for_type("place-entity-on-planet", -1, {entity.name, entity.surface.name})
+
+        if entity.type == "mining-drill" then
+            local now_uncovered = entity_util.untrack_ores_covered_by_drill(entity)
+            quests.increment_progress_for_type("cover-ores-on", -now_uncovered, entity.surface.name)
+        end
     end)
 
     event_system.register("dungeon-looted", function(dungeon)
