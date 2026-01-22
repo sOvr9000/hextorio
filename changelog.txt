@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.6
-Date: 22/1/26
+Date: 23/1/26
   Bugfixes:
     - Fixed that some quests based on finding trades were not giving their full amount of free hex claims reward.
 ---------------------------------------------------------------------------------------------------
@@ -10,7 +10,7 @@ Date: 22/1/26
     - Hotfix for game crashing when loading a pre-1.5.3 save and then trying to find more dungeons.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.4
-Date: 21/1/26
+Date: 22/1/26
   Bugfixes:
     - Hotfix for game sometimes crashing when an entity dies.
 ---------------------------------------------------------------------------------------------------
