@@ -34,7 +34,7 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
             if reverse or hex_grid.can_claim_hex(player, surface, hex_pos, false, true, player_inventory_coins) then
                 local center = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
                 if lib.is_position_in_rect(center, area.left_top, area.right_bottom) then
-                    table.insert(params, {surface, hex_pos, player, false})
+                    table.insert(params, {surface, hex_pos, player, false, true})
                 end
             end
         end
@@ -44,7 +44,7 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
             if e.name == "hex-core" then
                 local hex_pos = axial.get_hex_containing(e.position, transformation.scale, transformation.rotation)
                 if reverse or hex_grid.can_claim_hex(player, surface, hex_pos, false, true, player_inventory_coins) then
-                    table.insert(params, {surface, hex_pos, player, false})
+                    table.insert(params, {surface, hex_pos, player, false, true})
                 end
             end
         end

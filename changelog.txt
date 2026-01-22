@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.6
-Date: 22/01/26
+Date: 22/1/26
+  Bugfixes:
+    - Fixed that some quests based on finding trades were not giving their full amount of free hex claims reward.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.5
 Date: 22/1/26

@@ -1821,6 +1821,14 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         if not state.hex_core or not state.is_land then return end
     end
 
+    local spent_last_free_claim = false
+    if spend_free_claims then
+        if hex_grid.get_free_hex_claims(surface_name) == 1 then
+            spent_last_free_claim = true
+        end
+        hex_grid.add_free_hex_claims(surface_name, -1)
+    end
+
     state.claimed = true
     if by_player then
         state.claimed_by = by_player.name
@@ -1828,27 +1836,13 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
 
     state.claimed_timestamp = game.tick
 
-    local adjacent_hexes = axial.get_adjacent_hexes(hex_pos)
-    local transformation = terrain.get_surface_transformation(surface_id)
-
-    if not transformation then
-        lib.log_error("hex_grid.claim_hex: No transformation found")
-        return
-    end
-
-    for _, adj_hex in pairs(adjacent_hexes) do
-        if hex_grid.can_hex_core_spawn(surface_id, adj_hex) then
-            hex_grid.spawn_hex_core(surface, axial.get_hex_center(adj_hex, transformation.scale, transformation.rotation))
-        end
-    end
-
     -- Set tiles
     local tile_name
     if by_player then
         tile_name = lib.player_setting_value(by_player, "claimed-hex-tile")
 
         -- Purchase
-        if hex_grid.get_free_hex_claims(surface_name) == 0 and not lib.is_player_editor_like(by_player) then
+        if not spent_last_free_claim and hex_grid.get_free_hex_claims(surface_name) == 0 and not lib.is_player_editor_like(by_player) then
             local inv = lib.get_player_inventory(by_player)
             if inv then
                 inventories.remove_coin_from_inventory(inv, state.claim_price)
@@ -1906,11 +1900,8 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         end
     end
 
-    if spend_free_claims then
-        hex_grid.add_free_hex_claims(surface_name, -1)
-    end
-
     hex_grid.check_hex_span(surface, hex_pos)
+    hex_grid.spawn_adjacent_hex_cores(surface, hex_pos)
 
     quests.increment_progress_for_type("claimed-hexes", 1)
     quests.increment_progress_for_type("claimed-hexes-on", 1, surface_name)
@@ -1920,6 +1911,12 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     state.is_in_claim_queue = nil
 end
 
+---Add a hex to the claim queue.
+---@param surface SurfaceIdentification The surface on which to claim the hex.
+---@param hex_pos HexPos The position of the hex to be claimed.
+---@param by_player LuaPlayer|nil The player who requested the claim.
+---@param allow_nonland boolean|nil Whether to allow force-claiming non-land tiles like water, lava, etc. Defaults to false.
+---@param spend_free_claims boolean|nil Whether to allow spending the currently available free hex claims. Defaults to true.
 function hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland, spend_free_claims)
     if spend_free_claims == nil then spend_free_claims = true end
 
@@ -2030,7 +2027,7 @@ function hex_grid._claim_hexes_dfs(surface, hex_pos, range, by_player, center_po
 
     local state = hex_state_manager.get_hex_state(surface, hex_pos)
     if not hex_grid.is_claimed_or_in_queue(state) then
-        hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland)
+        hex_grid.add_hex_to_claim_queue(surface, hex_pos, by_player, allow_nonland, false)
     end
 
     for _, adj_hex in pairs(axial.get_adjacent_hexes(hex_pos)) do
@@ -2227,6 +2224,32 @@ function hex_grid.spawn_hex_core(surface, position)
     hex_grid.add_initial_trades(state)
 
     return hex_core
+end
+
+---Attempt to spawn hex cores in hexes adjacent to the given hex. Return the list of hex core entities successfully spawned.
+---@param surface LuaSurface
+---@param hex_pos HexPos
+---@return LuaEntity[]
+function hex_grid.spawn_adjacent_hex_cores(surface, hex_pos)
+    local adjacent_hexes = axial.get_adjacent_hexes(hex_pos)
+    local transformation = terrain.get_surface_transformation(surface)
+
+    if not transformation then
+        lib.log_error("hex_grid.spawn_adjacent_hex_cores: No transformation found")
+        return {}
+    end
+
+    local spawned = {}
+    for _, adj_hex in pairs(adjacent_hexes) do
+        if hex_grid.can_hex_core_spawn(surface, adj_hex) then
+            local e = hex_grid.spawn_hex_core(surface, axial.get_hex_center(adj_hex, transformation.scale, transformation.rotation))
+            if e then
+                table.insert(spawned, e)
+            end
+        end
+    end
+
+    return spawned
 end
 
 ---Spawn a hexport at a hex core.

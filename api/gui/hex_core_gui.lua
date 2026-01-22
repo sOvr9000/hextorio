@@ -727,7 +727,7 @@ function hex_core_gui.on_claim_hex_button_click(player)
         return
     end
 
-    hex_grid.add_hex_to_claim_queue(hex_core.surface, hex_pos, player)
+    hex_grid.add_hex_to_claim_queue(hex_core.surface, hex_pos, player, false, true)
 end
 
 function hex_core_gui.on_delete_core_button_click(player, element)
