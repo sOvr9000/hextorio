@@ -25,6 +25,7 @@ Date: 22/1/26
     - The quest "Vulcanus 101" can be completed from the spawn hex on Vulcanus without bringing coins and gives some free claims and tungsten ore.
   Bugfixes:
     - Fixed potential crash caused by updating a server across some Hextorio versions and reconnecting.
+    - Fixed GUI management bug when directly opening another Hextorio GUI while the item buffs GUI is open.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 19/1/26

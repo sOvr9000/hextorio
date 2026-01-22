@@ -94,6 +94,9 @@ function catalog_gui.register_events()
     end)
 
     event_system.register("item-buffs-gui-closed", function(player)
+        if gui_stack.is_switching(player) then
+            return
+        end
         catalog_gui.show_catalog(player)
     end)
 end

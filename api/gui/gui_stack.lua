@@ -53,6 +53,9 @@ function gui_stack.add(player, element)
     if not storage.gui.stack[player.index] then
         storage.gui.stack[player.index] = {}
     end
+    if not storage.gui.switching then
+        storage.gui.switching = {}
+    end
 
     local stack = storage.gui.stack[player.index]
     local index = gui_stack.index_of(player, element)
@@ -71,7 +74,10 @@ function gui_stack.add(player, element)
     element.visible = true
 
     if player.opened and not player.opened.valid then return end
+
+    storage.gui.switching[player.index] = true
     player.opened = element --  THIS IS TRIGGERING ON_CLOSED EVENTS, a workaround that's not yet implemented is crucial for the "gui stack" to work
+    storage.gui.switching[player.index] = nil
 end
 
 ---Pop and return the last element off of the opened stack for a player, or the element at the given index.
@@ -142,6 +148,15 @@ function gui_stack.index_of(player, element)
         end
     end
     return -1
+end
+
+---Check if a GUI switch is currently in progress for a player.
+---@param player LuaPlayer
+---@return boolean
+function gui_stack.is_switching(player)
+    if not storage.gui then return false end
+    if not storage.gui.switching then return false end
+    return storage.gui.switching[player.index] == true
 end
 
 
