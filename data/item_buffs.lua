@@ -299,57 +299,57 @@ return {
         ["wooden-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.05,
-                level_scaling = 0.05,
+                value = 0.025,
+                level_scaling = 0.025,
             },
         },
         ["iron-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.1,
-                level_scaling = 0.1,
+                value = 0.03,
+                level_scaling = 0.03,
             },
         },
         ["steel-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.15,
-                level_scaling = 0.15,
+                value = 0.04,
+                level_scaling = 0.04,
             },
         },
         ["requester-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.05,
-                level_scaling = 0.05,
+                value = 0.015,
+                level_scaling = 0.015,
             },
         },
         ["buffer-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.05,
-                level_scaling = 0.05,
+                value = 0.015,
+                level_scaling = 0.015,
             },
         },
         ["storage-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.05,
-                level_scaling = 0.05,
+                value = 0.015,
+                level_scaling = 0.015,
             },
         },
         ["passive-provider-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.05,
-                level_scaling = 0.05,
+                value = 0.015,
+                level_scaling = 0.015,
             },
         },
         ["active-provider-chest"] = {
             {
                 type = "strongbox-loot",
-                value = 0.05,
-                level_scaling = 0.05,
+                value = 0.015,
+                level_scaling = 0.015,
             },
         },
         ["defender-capsule"] = {
@@ -383,106 +383,106 @@ return {
         ["transport-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["underground-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["splitter"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["fast-transport-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["fast-underground-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["fast-splitter"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["express-transport-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["express-underground-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["express-splitter"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["turbo-transport-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["turbo-underground-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["turbo-splitter"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["hexic-transport-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["hexic-underground-belt"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["hexic-splitter"] = {
             {
                 type = "build-distance",
-                value = 0.5,
-                level_scaling = 1.2,
+                value = 1,
+                level_scaling = 1,
             },
         },
         ["electric-mining-drill"] = {
@@ -1100,17 +1100,18 @@ return {
         ["train-trading-capacity"] = true,
     },
 
-    is_nonlinear = { -- Bonuses themselves are typically multipliers, and those multipliers grow exponentially (although slower than cost), but those multiplying factors are incremented linearly, as seen in the item_buffs API.  It's bonuses like cost reduction, compounding for each separate bonus, that are truly nonlinear.
+    is_nonlinear = { -- These buff types give buffs that multiply across each other ("stacking" the effect), i.e. `total_effect(level) = effect1 * effect2 * ...`, as a product instead of a sum
         ["all-buffs-cost-reduced"] = true,
         ["strongbox-loot"] = true,
         ["unresearched-penalty-reduced"] = true,
     },
 
-    has_linear_effect_scaling = { -- These buff types give buffs that scale linearly rather than exponentially.
+    has_linear_effect_scaling = { -- These buff types give buffs that scale linearly rather than exponentially, i.e. `effect(level) = effect_per_level * level`, as a multiplication instead of an exponentiation
         ["all-buffs-level"] = true,
         ["all-buffs-cost-reduced"] = true,
         ["strongbox-loot"] = true,
         ["unresearched-penalty-reduced"] = true,
+        ["build-distance"] = true,
     },
 
     unlocked = {},

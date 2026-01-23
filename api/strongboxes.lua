@@ -72,7 +72,7 @@ end
 ---@param loot_scale number
 ---@return Coin
 function strongboxes.get_loot(sb_entity, loot_scale)
-    local coin_value = loot_scale * 0.001 * sb_entity.max_health ^ 1.2
+    local coin_value = loot_scale * 0.001 * sb_entity.max_health ^ 1.08
     coin_value = math.ceil(0.5 + coin_value * storage.strongboxes.loot_scale * storage.item_buffs.strongbox_loot)
 
     return coin_tiers.from_base_value(coin_value)
