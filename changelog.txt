@@ -4,6 +4,7 @@ Date: 23/1/26
   Balancing:
     - Rebalanced item buffs giving multipliers to strongbox loot value.
     - Rebalanced item buffs giving build distance.
+    - Reduced the amount of time that magmatic flames burn on the ground (the fire created from magmatic bullets).
   Bugfixes:
     - Fixed that some quests based on finding trades were not giving their full amount of free hex claims reward.
 ---------------------------------------------------------------------------------------------------
