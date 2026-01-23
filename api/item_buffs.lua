@@ -267,6 +267,14 @@ function item_buffs.get_scaled_buff_values(buff, level)
         end
     end
 
+    -- Level 0 means locked/nothing applied
+    if level <= 0 then
+        for i = 1, #modifiers do
+            modifiers[i] = 0
+        end
+        return modifiers
+    end
+
     -- Scale the modifiers by the level
     for i, v in ipairs(modifiers) do
         if type(v) == "number" then
@@ -756,46 +764,48 @@ function item_buffs.process_free_buffs()
 end
 
 function item_buffs.migrate_buff_changes(new_data)
+    -- Store which items were enabled and their levels
+    local items_to_restore = {}
+    for item_name, _ in pairs(storage.item_buffs.enabled) do
+        if item_buffs.is_enabled(item_name) then
+            local level = item_buffs.get_item_buff_level(item_name)
+            if level > 0 then
+                items_to_restore[item_name] = level
+            end
+        end
+    end
+
+    -- Reset all force bonuses and reapply technology effects
+    game.forces.player.reset_technology_effects()
+
+    -- Reset custom storage values that aren't affected by technologies
+    storage.trades.base_productivity = 0
+    storage.item_buffs.passive_coins_rate = 0
+    storage.item_buffs.train_trading_capacity = 10
+
+    -- Clear fractional trackers
+    storage.item_buffs.fractional_bonuses = {}
+
+    -- Reset nonlinear buffs
+    storage.item_buffs.strongbox_loot = 1
+    storage.item_buffs.cost_multiplier = 1
+    storage.item_buffs.unresearched_penalty_multiplier = 1
+    storage.item_buffs.level_bonus = 0
+
+    -- Update metadata
     storage.item_buffs.show_as_linear = new_data.show_as_linear
     storage.item_buffs.is_fractional = new_data.is_fractional
     storage.item_buffs.has_description = new_data.has_description
     storage.item_buffs.is_nonlinear = new_data.is_nonlinear
-
-    local prev_linear_scaling = storage.item_buffs.has_linear_effect_scaling or {}
     storage.item_buffs.has_linear_effect_scaling = new_data.has_linear_effect_scaling
+    storage.item_buffs.item_buffs = new_data.item_buffs
 
-    for item_name, buffs in pairs(new_data.item_buffs) do
-        if not lib.tables_equal(storage.item_buffs.item_buffs[item_name], buffs) then
-            local level = item_buffs.get_item_buff_level(item_name)
-
-            -- Migrate exponential effect scaling to linear.  When removing effects, use exponential scaling for old buffs if needed.
-            local cur_buffs = item_buffs.get_buffs(item_name)
-            local migrating_exponential_to_linear = {}
-            for _, buff in pairs(cur_buffs) do
-                if not prev_linear_scaling[buff.type] and storage.item_buffs.has_linear_effect_scaling[buff.type] then
-                    migrating_exponential_to_linear[buff.type] = true
-                    storage.item_buffs.has_linear_effect_scaling[buff.type] = false
-                end
-            end
-
-            -- Remove current effects by disabling if enabled
-            if item_buffs.is_enabled(item_name) then
-                item_buffs.on_item_buff_toggled(item_name)
-            end
-
-            -- Update item buff data for this item specifically
-            storage.item_buffs.item_buffs[item_name] = buffs
-
-            -- And re-mark all linear buffs as linear again
-            for _, buff in pairs(cur_buffs) do
-                if migrating_exponential_to_linear[buff.type] then
-                    storage.item_buffs.has_linear_effect_scaling[buff.type] = true
-                end
-            end
-
-            -- Apply with new effects by re-enabling at the current level
-            if level > 0 then
-                item_buffs.on_item_buff_toggled(item_name)
+    -- Re-apply all buffs with new parameters
+    for item_name, level in pairs(items_to_restore) do
+        local buffs = storage.item_buffs.item_buffs[item_name]
+        if buffs then
+            for _, buff in pairs(buffs) do
+                item_buffs.apply_buff_modifiers(buff, level, false)
             end
         end
     end
