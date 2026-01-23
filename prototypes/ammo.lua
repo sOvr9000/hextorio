@@ -20,9 +20,9 @@ explosive_direct.damage.amount = 5 -- Direct explosive damage
 magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects[1] = explosive_rocket.action.action_delivery.target_effects[1] -- Explosion graphic
 magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects[2].damage.amount = 20 -- Direct physical damage
 table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_direct)
-table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_rocket.action.action_delivery.target_effects[3])
-table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_rocket.action.action_delivery.target_effects[4])
-table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_rocket.action.action_delivery.target_effects[5])
+-- table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_rocket.action.action_delivery.target_effects[3]) -- Scorch mark entity
+-- table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_rocket.action.action_delivery.target_effects[4]) -- Tile trigger
+-- table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_rocket.action.action_delivery.target_effects[5]) -- Destroy decoratives
 table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, explosive_aoe)
 table.insert(magmatic_rounds_magazine.ammo_type.action.action_delivery.target_effects, {
     type = "create-fire",
