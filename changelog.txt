@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.7
-Date: 23/01/26
+Date: 23/1/26
   Bugfixes:
     - Hotfix for incorrectly migrated data from 1.5.5 -> 1.5.6.
         *This 1.5.7 version will force-recalculate all item buffs, restoring game balance in either 1.5.5 or 1.5.6 saves.*
