@@ -768,7 +768,7 @@ function item_buffs.migrate_buff_changes(new_data)
         if not lib.tables_equal(storage.item_buffs.item_buffs[item_name], buffs) then
             local level = item_buffs.get_item_buff_level(item_name)
 
-            -- Migrate exponential effect scaling to linear.  When level is set to 0 to remove the effect, trigger it to use exponential scaling.  Then re-apply the effect with linear scaling.
+            -- Migrate exponential effect scaling to linear.  When removing effects, use exponential scaling for old buffs if needed.
             local cur_buffs = item_buffs.get_buffs(item_name)
             local migrating_exponential_to_linear = {}
             for _, buff in pairs(cur_buffs) do
@@ -778,8 +778,10 @@ function item_buffs.migrate_buff_changes(new_data)
                 end
             end
 
-            -- Remove current effects
-            item_buffs.set_item_buff_level(item_name, 0)
+            -- Remove current effects by disabling if enabled
+            if item_buffs.is_enabled(item_name) then
+                item_buffs.on_item_buff_toggled(item_name)
+            end
 
             -- Update item buff data for this item specifically
             storage.item_buffs.item_buffs[item_name] = buffs
@@ -791,8 +793,10 @@ function item_buffs.migrate_buff_changes(new_data)
                 end
             end
 
-            -- Apply with new effects
-            item_buffs.set_item_buff_level(item_name, level)
+            -- Apply with new effects by re-enabling at the current level
+            if level > 0 then
+                item_buffs.on_item_buff_toggled(item_name)
+            end
         end
     end
 end
