@@ -763,6 +763,8 @@ function item_buffs.process_free_buffs()
     end
 end
 
+---Recalculate all bonuses from zero. This resets trade productivity, so ensure to call `quests.recalculate_quest_rewards("all-trades-productivity")` after calling this function.
+---@param new_data table
 function item_buffs.migrate_buff_changes(new_data)
     -- Store which items were enabled and their levels
     local items_to_restore = {}
@@ -779,7 +781,7 @@ function item_buffs.migrate_buff_changes(new_data)
     game.forces.player.reset_technology_effects()
 
     -- Reset custom storage values that aren't affected by technologies
-    storage.trades.base_productivity = 0
+    storage.trades.base_productivity = 0 -- THIS RESETS QUEST-GIVEN BONUSES
     storage.item_buffs.passive_coins_rate = 0
     storage.item_buffs.train_trading_capacity = 10
 
@@ -809,6 +811,8 @@ function item_buffs.migrate_buff_changes(new_data)
             end
         end
     end
+
+    event_system.trigger "item-buff-data-migrated"
 end
 
 

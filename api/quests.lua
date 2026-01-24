@@ -254,6 +254,10 @@ function quests.register_events()
     event_system.register("command-hextorio-debug", function(player, params)
         quests.complete_quest "ground-zero"
     end)
+
+    event_system.register("item-buff-data-migrated", function()
+        quests.redistribute_quest_rewards "all-trades-productivity"
+    end)
 end
 
 function quests.reinitialize_everything()
@@ -1215,6 +1219,25 @@ function quests.recalculate_condition_progress_of_type(condition_type, condition
     quests.set_progress_for_type(condition_type, progress, condition_value)
 
     lib.log("quests.recalculate_condition_progress_of_type: Recalculated progress for all quests of type " .. condition_type .. " with value " .. serpent.line(condition_value or {}) .. ". New progress value: " .. progress)
+end
+
+---Redistribute all currently received quest rewards of a certain type.  Useful for save migration when data changes significantly.
+---@param reward_type QuestRewardType
+function quests.redistribute_quest_rewards(reward_type)
+    if reward_type == "receive-items" then
+        error("redistributing receive-items is not yet supported")
+        return
+    end
+
+    for _, quest in pairs(storage.quests.quests) do
+        if quests.is_complete(quest) then
+            for _, reward in pairs(quest.rewards) do
+                if reward.type == reward_type then
+                    quests.give_reward(reward)
+                end
+            end
+        end
+    end
 end
 
 
