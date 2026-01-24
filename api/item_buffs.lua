@@ -763,7 +763,7 @@ function item_buffs.process_free_buffs()
     end
 end
 
----Recalculate all bonuses from zero. This resets trade productivity, so ensure to call `quests.recalculate_quest_rewards("all-trades-productivity")` after calling this function.
+---Recalculate all bonuses from zero.
 ---@param new_data table
 function item_buffs.migrate_buff_changes(new_data)
     -- Store which items were enabled and their levels
