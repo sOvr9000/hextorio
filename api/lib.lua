@@ -638,10 +638,10 @@ function lib.is_position_in_rect(position, top_left, bottom_right)
 end
 
 function lib.unstuck_player(player)
-    if not player then return end
+    if not player or not player.character then return end
     local surface = player.surface
     if not surface then return end
-    local position = surface.find_non_colliding_position("character", player.position, 20, 0.5, false)
+    local position = surface.find_non_colliding_position("character", player.character.position, 20, 0.5, false)
     if not position then return end
     player.teleport(position, surface)
 end
