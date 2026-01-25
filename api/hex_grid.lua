@@ -4048,7 +4048,7 @@ function hex_grid.on_strongbox_killed(sb_entity)
     local next_tier = math.min(storage.strongboxes.max_tier, cur_tier + 1)
     local coin_loot = inventories.get_coin_from_inventory(inv)
 
-    storage.strongboxes.total_coins_earned = coin_tiers.add(storage.strongboxes.total_coins_earned, coin_loot)
+    storage.strongboxes.total_coins_earned = coin_tiers.add(storage.strongboxes.total_coins_earned or coin_tiers.new(), coin_loot)
 
     -- Include offline players
     local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"

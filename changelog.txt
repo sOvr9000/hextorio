@@ -3,6 +3,7 @@ Version: 1.5.10
 Date: 25/1/26
   Bugfixes:
     - Fixed the game crashing upon placing a mining drill.
+    - Fixed the game crashing upon breaking a strongbox on a save created with version 1.5.9.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.9
 Date: 25/1/26
