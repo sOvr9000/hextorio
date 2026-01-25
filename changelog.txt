@@ -3,6 +3,7 @@ Version: 1.5.8
 Date: 25/1/26
   Features:
     - Added the Piggy Bank, unlocked from a quest on Gleba.
+    - Added 1 new quest: "Industrial Garden".
   Graphics:
     - Added images for the quests "Farm Fresh Produce" and "Lazy Bastard".
   Bugfixes:
