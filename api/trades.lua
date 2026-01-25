@@ -511,6 +511,8 @@ function trades.generator_solve_item_counts(surface_name, trade, params)
         end
     end
 
+    max_scale = math.max(1, max_scale) -- Just in case it becomes zero.
+
     local num_den_upscale = math.random(1, max_scale)
     num = num * num_den_upscale
     den = den * num_den_upscale
