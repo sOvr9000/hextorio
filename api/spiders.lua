@@ -15,12 +15,26 @@ local spiders = {}
 
 
 
-local function collapse_chunk_index(x, y)
-    -- No one's building 10k chunks out from spawn, and this allows for a total of ~100M unique chunk indices.
-    return (x + 10000) * 20001 + (y + 10000)
-end
+---@alias SpiderJobType "hunt"|"loot"|"claim"|"deliver"|"build"
 
----Register events for spider management.
+---@class SpiderClient
+---@field entity LuaEntity
+---@field force_index int
+
+---@class SpiderServer
+---@field spiders {[int]: SpiderClient} Mapping of unit numbers to a spider client.
+---@field jobs {[int]: SpiderJob} Mapping of unique job IDs to job objects.
+
+---@class SpiderJob
+---@field job_type SpiderJobType
+---@field target_entities LuaEntity[]
+---@field priority number
+
+---@class SpiderStorage
+---@field servers {[int]: SpiderServer} Mapping of force IDs to a spider server.
+
+
+
 function spiders.register_events()
     event_system.register("entity-built", function(entity)
         if entity.name == "entity-ghost" or entity.name == "tile-ghost" then
@@ -31,44 +45,35 @@ function spiders.register_events()
     end)
 end
 
----Initialize the API.
 function spiders.init()
-    storage.spiders.spiders = {} --[[@as {[int]: Spider}]]
-    storage.spiders.server_ais = {} --[=[@as SpiderServerAI[]]=]
-
-    -- For now, there's only one server AI. But this can be expanded as forces are added to the game (not the case for Hextorio).
-    storage.spiders.server_ais[game.forces.player.index] = {
-
+    ---@type SpiderStorage
+    storage.spiders = {
+        servers = {},
     }
 end
 
 ---Redefine the indexing for each spider based on what's currently placed across all surfaces.
 function spiders.reindex_spiders()
-    local valid_entity_names = sets.to_array(storage.spiders.valid_entity_names)
+    for _, server in pairs(storage.spiders.servers) do
+        server.spiders = {}
+    end
     for surface_id, surface in pairs(game.surfaces) do
         local entities = surface.find_entities_filtered {
-            name = valid_entity_names,
+            type = "spider-vehicle",
         }
         for _, e in pairs(entities) do
-            spiders.index_entity(e)
+            spiders.reindex_spider(e)
         end
     end
 end
 
----Create a new Spider object.
 ---@param entity LuaEntity
----@return Spider
-function spiders.new_spider(entity)
-    return {
-        entity = entity,
-        unit_number = entity.unit_number,
-        ai = spiders.new_client_ai(),
-    }
+function spiders.reindex_spider(entity)
+    local server
 end
 
----Create a new AI object.
----@return SpiderClientAI
-function spiders.new_client_ai()
+---@return SpiderClient
+function spiders.new_client()
     local ai = {
         current_mode = "build",
     }
