@@ -1846,7 +1846,8 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         if not spent_last_free_claim and hex_grid.get_free_hex_claims(surface_name) == 0 and not lib.is_player_editor_like(by_player) then
             local inv = lib.get_player_inventory(by_player)
             if inv then
-                inventories.remove_coin_from_inventory(inv, state.claim_price, nil, true)
+                local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+                inventories.remove_coin_from_inventory(inv, state.claim_price, nil, is_piggy_bank_unlocked)
             end
         end
     end

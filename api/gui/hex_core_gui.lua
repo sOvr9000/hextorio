@@ -642,13 +642,14 @@ function hex_core_gui.on_convert_resources_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_convert_resources_cost(hex_core)
-    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    inventories.remove_coin_from_inventory(inv, coin, nil, true)
+    inventories.remove_coin_from_inventory(inv, coin, nil, is_piggy_bank_unlocked)
 
     hex_grid.convert_resources(hex_core)
     hex_core_gui.update_hex_core(player)
@@ -662,13 +663,14 @@ function hex_core_gui.on_upgrade_quality_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_quality_upgrade_cost(hex_core)
-    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    inventories.remove_coin_from_inventory(inv, coin, nil, true)
+    inventories.remove_coin_from_inventory(inv, coin, nil, is_piggy_bank_unlocked)
 
     hex_grid.upgrade_quality(hex_core)
     hex_core_gui.update_hex_core(player)
@@ -687,13 +689,14 @@ function hex_core_gui.on_supercharge_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_supercharge_cost(hex_core)
-    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    inventories.remove_coin_from_inventory(inv, coin, nil, true)
+    inventories.remove_coin_from_inventory(inv, coin, nil, is_piggy_bank_unlocked)
 
     hex_grid.supercharge_resources(hex_core)
     hex_core_gui.update_hex_core(player)
@@ -782,13 +785,14 @@ function hex_core_gui.on_confirmation_button_click(player, element)
         if not inv then return end
 
         local coin = hex_grid.get_delete_core_cost(hex_core)
-        local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+        local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+        local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
         if coin_tiers.gt(coin, inv_coin) then
             player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
             return
         end
 
-        inventories.remove_coin_from_inventory(inv, coin, nil, true)
+        inventories.remove_coin_from_inventory(inv, coin, nil, is_piggy_bank_unlocked)
 
         hex_grid.delete_hex_core(hex_core)
         hex_core_gui.hide_hex_core(player)

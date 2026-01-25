@@ -669,7 +669,8 @@ function item_buffs._enhance_all_item_buffs_tick()
 
     local player = storage.item_buffs.enhance_all.player
     local inv = storage.item_buffs.enhance_all.inventory
-    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank") -- Check each time because the player can modify the coins they have available to spend while this processes over time.
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked) -- Check each time because the player can modify the coins they have available to spend while this processes over time.
     local item_names = storage.item_buffs.enhance_all.item_names
     local enhanced_items = storage.item_buffs.enhance_all.enhanced_items
 
@@ -680,7 +681,7 @@ function item_buffs._enhance_all_item_buffs_tick()
     if item_name and cost then
         storage.item_buffs.enhance_all.total_cost = coin_tiers.add(storage.item_buffs.enhance_all.total_cost, cost)
         enhanced_items[item_name] = (enhanced_items[item_name] or 0) + 1
-        inventories.remove_coin_from_inventory(inv, cost, nil, true)
+        inventories.remove_coin_from_inventory(inv, cost, nil, is_piggy_bank_unlocked)
 
         item_buffs.set_item_buff_level(
             item_name,

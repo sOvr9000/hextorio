@@ -992,14 +992,15 @@ function catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
     local total_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
 
-    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(total_coin, inv_coin) then
         -- This should no longer happen, but it's here just in case.
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(total_coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    inventories.remove_coin_from_inventory(inv, total_coin, nil, true)
+    inventories.remove_coin_from_inventory(inv, total_coin, nil, is_piggy_bank_unlocked)
     lib.safe_insert(player, {name = selection.item_name, count = count, quality = selection.bazaar_quality})
 
     catalog_gui.update_catalog_inspect_frame(player)
@@ -1036,7 +1037,8 @@ function catalog_gui.on_item_buff_button_click(player, elem)
     item_buffs.fetch_settings()
     local selection = catalog_gui.get_catalog_selection(player)
     local cost = item_buffs.get_item_buff_cost(selection.item_name)
-    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
 
     if coin_tiers.gt(cost, inv_coin) then
         player.print({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(cost), coin_tiers.coin_to_text(inv_coin)})
@@ -1048,7 +1050,7 @@ function catalog_gui.on_item_buff_button_click(player, elem)
         item_buffs.get_item_buff_level(selection.item_name) + 1
     )
 
-    inventories.remove_coin_from_inventory(inv, cost, nil, true)
+    inventories.remove_coin_from_inventory(inv, cost, nil, is_piggy_bank_unlocked)
 
     catalog_gui.update_catalog_inspect_frame(player)
 end

@@ -1,8 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.9
 Date: 27/1/26
-  Major Features:
-    - Added spidertron logistics.
+  Bugfixes:
+    - Fixed that most features consuming coins would auto-sort the rest of your coins into your piggy bank before it was unlocked.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.8
 Date: 25/1/26

@@ -68,16 +68,17 @@ local function on_delete_core_tool_used(player, entities)
     local inv = lib.get_player_inventory(player)
     if not inv then return end
 
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
     local failed = false
     for _, e in pairs(entities) do
         if e.name == "hex-core" then
             local cost = hex_grid.get_delete_core_cost(e)
-            local current_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+            local current_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
             if coin_tiers.ge(current_coin, cost) then
                 if not hex_grid.delete_hex_core(e) then
                     failed = true
                 end
-                inventories.remove_coin_from_inventory(inv, cost, nil, true)
+                inventories.remove_coin_from_inventory(inv, cost, nil, is_piggy_bank_unlocked)
             else
                 failed = true
             end
