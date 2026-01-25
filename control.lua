@@ -20,7 +20,7 @@ local blueprints = require "api.blueprints"
 local space_platforms = require "api.space_platforms"
 local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
-local spiders = require "api.spiders"
+-- local spiders = require "api.spiders"
 local hex_island = require "api.hex_island"
 local train_trading = require "api.train_trading"
 local inventories = require "api.inventories"
@@ -36,7 +36,7 @@ item_ranks.register_events()
 item_buffs.register_events()
 quests.register_events()
 dungeons.register_events()
-spiders.register_events()
+-- spiders.register_events()
 hex_island.register_events()
 space_platforms.register_events()
 train_trading.register_events()
@@ -62,7 +62,7 @@ local data_item_ranks = require "data.item_ranks"
 local data_trade_overview = require "data.trade_overview"
 local data_blueprints = require "data.blueprints"
 local data_dungeons = require "data.dungeons"
-local data_spiders = require "data.spiders"
+-- local data_spiders = require "data.spiders"
 local data_hex_island = require "data.hex_island"
 local data_item_buffs = require "data.item_buffs"
 local data_strongboxes = require "data.strongboxes"
@@ -93,7 +93,7 @@ script.on_init(function()
     storage.trade_overview = data_trade_overview
     storage.blueprints = data_blueprints
     storage.dungeons = data_dungeons
-    storage.spiders = data_spiders
+    -- storage.spiders = data_spiders
     storage.hex_island = data_hex_island
     storage.item_buffs = data_item_buffs
     storage.strongboxes = data_strongboxes
@@ -172,7 +172,7 @@ script.on_init(function()
     blueprints.init()
     loot_tables.init()
     dungeons.init()
-    spiders.init()
+    -- spiders.init()
     hex_island.init()
     train_trading.init()
     strongboxes.init()
