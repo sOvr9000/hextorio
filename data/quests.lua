@@ -581,7 +581,6 @@ return {
                 },
             },
             prerequisites = {"too-many-hex-cores", "visit-gleba"},
-            has_img = false,
         },
         {
             name = "industrial-garden",
