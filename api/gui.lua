@@ -6,6 +6,7 @@ local gui = {
     catalog = require "api.gui.catalog_gui",
     hex_core = require "api.gui.hex_core_gui",
     item_buffs = require "api.gui.item_buffs_gui",
+    piggy_bank = require "api.gui.piggy_bank_gui",
 
     trades = require "api.gui.trades_gui",
 }

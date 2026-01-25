@@ -584,6 +584,19 @@ return {
             has_img = false,
         },
         {
+            name = "industrial-garden",
+            conditions = {
+                {type = "place-entity-on-planet", value = {"biochamber", "gleba"}, progress_requirement = 50},
+                {type = "cover-ores-on", value = "gleba", progress_requirement = 360},
+                {type = "place-tile", value = "landfill", progress_requirement = 5000},
+                {type = "mine-entity", value = "yumako-tree", progress_requirement = 20},
+                {type = "mine-entity", value = "jellystem", progress_requirement = 20},
+                {type = "kill-with-damage-type", value = "poison", progress_requirement = 200},
+            },
+            rewards = {{type = "unlock-feature", value = "piggy-bank"}},
+            prerequisites = {"farm-fresh-produce"},
+        },
+        {
             name = "biochemical-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "gleba", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"gleba", 10}}},

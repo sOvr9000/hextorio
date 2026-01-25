@@ -1,6 +1,7 @@
 
 return {
     is_processing = {},
+    skip_processing = {},
 
     -- Some constants
     TIER_SCALING = 100000,

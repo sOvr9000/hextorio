@@ -3,10 +3,16 @@ local lib = require "api.lib"
 local coin_tiers = require "api.coin_tiers"
 local item_values = require "api.item_values"
 local item_ranks = require "api.item_ranks"
+local piggy_bank = require "api.piggy_bank"
+local event_system = require "api.event_system"
 
 local inventories = {}
 
 
+
+function inventories.register_events()
+    event_system.register("quest-reward-received", inventories.on_quest_reward_received)
+end
 
 ---@param surface_name any
 ---@param inv LuaInventory|nil
@@ -94,8 +100,9 @@ end
 ---Get a coin object from the given inventory.
 ---@param inventory LuaInventory|LuaTrain
 ---@param cargo_wagons LuaEntity[]|nil
+---@param use_piggy_bank boolean|nil Whether to use the piggy bank if the inventory belongs to a player.  Defaults to false.
 ---@return Coin
-function inventories.get_coin_from_inventory(inventory, cargo_wagons)
+function inventories.get_coin_from_inventory(inventory, cargo_wagons, use_piggy_bank)
     if cargo_wagons then
         local coin_values = coin_tiers.new_coin_values()
         for i, wagon in ipairs(cargo_wagons) do
@@ -117,7 +124,17 @@ function inventories.get_coin_from_inventory(inventory, cargo_wagons)
         values[j] = inventory.get_item_count(coin_name)
     end
 
-    return coin_tiers.new(values)
+    local coin = coin_tiers.new(values)
+
+    if use_piggy_bank and inventory.object_name == "LuaInventory" then
+        local player = inventory.player_owner
+        if player then
+            local stored_coins = piggy_bank.get_player_stored_coins(player.index)
+            coin = coin_tiers.add(coin, stored_coins)
+        end
+    end
+
+    return coin
 end
 
 ---Update the inventory contents such that it contains the given coin.
@@ -125,10 +142,29 @@ end
 ---@param current_coin Coin
 ---@param new_coin Coin
 ---@param cargo_wagons LuaEntity[]|nil
-function inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
+---@param use_piggy_bank boolean|nil Whether to use the piggy bank if the inventory belongs to a player.  Defaults to false.
+function inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons, use_piggy_bank)
     storage.coin_tiers.is_processing[inventory] = true
 
     local is_train = inventory.object_name == "LuaTrain"
+
+    if use_piggy_bank and not is_train then
+        local player = inventory.player_owner
+        if player then
+            piggy_bank.set_player_stored_coins(player.index, new_coin)
+
+            for tier = 1, #storage.coin_tiers.COIN_NAMES do
+                local coin_name = storage.coin_tiers.COIN_NAMES[tier]
+                local count = inventory.get_item_count(coin_name)
+                if count > 0 then
+                    inventory.remove {name = coin_name, count = count}
+                end
+            end
+
+            storage.coin_tiers.is_processing[inventory] = nil
+            return
+        end
+    end
 
     for tier = 1, current_coin.max_coin_tier do
         local coin_name = lib.get_coin_name_of_tier(tier)
@@ -153,16 +189,30 @@ function inventories.update_inventory(inventory, current_coin, new_coin, cargo_w
     storage.coin_tiers.is_processing[inventory] = nil
 end
 
+-- ---Mark the given inventory as "skipped" for auto-normalization, automatically removing the mark once auto-normalization attempts to change it once.
+-- ---@param inventory LuaInventory
+-- function inventories.skip_auto_normalization(inventory)
+--     storage.coin_tiers.skip_processing[inventory] = true
+-- end
+
 ---Normalize the inventory, combining multiple stacks of coins into their next tiers.
----@param inventory LuaInventory|LuaTrain
+---@param inventory LuaInventory
+---@param use_piggy_bank boolean|nil Whether to use the piggy bank if the inventory belongs to a player.  Defaults to false.
 ---@return Coin|nil
-function inventories.normalize_inventory(inventory)
+function inventories.normalize_inventory(inventory, use_piggy_bank)
     if storage.coin_tiers.is_processing[inventory] then return end
+
+    -- if storage.coin_tiers.skip_processing[inventory] then
+    --     storage.coin_tiers.skip_processing[inventory] = nil
+    --     storage.coin_tiers.is_processing[inventory] = nil
+    --     return
+    -- end
+
     storage.coin_tiers.is_processing[inventory] = true
 
-    local coin = inventories.get_coin_from_inventory(inventory)
+    local coin = inventories.get_coin_from_inventory(inventory, nil, use_piggy_bank)
     local normalized_coin = coin_tiers.normalized(coin)
-    inventories.update_inventory(inventory, coin, normalized_coin)
+    inventories.update_inventory(inventory, coin, normalized_coin, nil, use_piggy_bank)
     storage.coin_tiers.is_processing[inventory] = nil
 
     return normalized_coin
@@ -172,20 +222,37 @@ end
 ---@param inventory LuaInventory|LuaTrain
 ---@param coin Coin
 ---@param cargo_wagons LuaEntity[]|nil
-function inventories.add_coin_to_inventory(inventory, coin, cargo_wagons)
-    local current_coin = inventories.get_coin_from_inventory(inventory)
+---@param use_piggy_bank boolean|nil Whether to use the piggy bank if the inventory belongs to a player.  Defaults to false.
+function inventories.add_coin_to_inventory(inventory, coin, cargo_wagons, use_piggy_bank)
+    local current_coin = inventories.get_coin_from_inventory(inventory, cargo_wagons, use_piggy_bank)
     local new_coin = coin_tiers.add(current_coin, coin)
-    inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
+    inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons, use_piggy_bank)
 end
 
 ---Remove coins from the inventory
 ---@param inventory LuaInventory|LuaTrain
 ---@param coin Coin
 ---@param cargo_wagons LuaEntity[]|nil
-function inventories.remove_coin_from_inventory(inventory, coin, cargo_wagons)
-    local current_coin = inventories.get_coin_from_inventory(inventory)
+---@param use_piggy_bank boolean|nil Whether to use the piggy bank if the inventory belongs to a player.  Defaults to false.
+function inventories.remove_coin_from_inventory(inventory, coin, cargo_wagons, use_piggy_bank)
+    local current_coin = inventories.get_coin_from_inventory(inventory, cargo_wagons, use_piggy_bank)
     local new_coin = coin_tiers.subtract(current_coin, coin)
-    inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons)
+    inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons, use_piggy_bank)
+end
+
+---@param reward_type QuestRewardType
+---@param value any
+function inventories.on_quest_reward_received(reward_type, value)
+    if reward_type == "unlock-feature" then
+        if value == "piggy-bank" then
+            for _, player in pairs(game.players) do
+                local inv = player.get_main_inventory()
+                if inv then
+                    inventories.normalize_inventory(inv, true)
+                end
+            end
+        end
+    end
 end
 
 

@@ -17,6 +17,7 @@ local dungeons = require "api.dungeons"
 local inventories = require "api.inventories"
 local strongboxes = require "api.strongboxes"
 local entity_util = require "api.entity_util"
+local piggy_bank  = require "api.piggy_bank"
 
 
 
@@ -1781,7 +1782,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
                 return false
             end
 
-            player_inventory_coins = inventories.get_coin_from_inventory(inv)
+            player_inventory_coins = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
         end
 
         if coin_tiers.lt(player_inventory_coins, coin) then
@@ -1845,7 +1846,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         if not spent_last_free_claim and hex_grid.get_free_hex_claims(surface_name) == 0 and not lib.is_player_editor_like(by_player) then
             local inv = lib.get_player_inventory(by_player)
             if inv then
-                inventories.remove_coin_from_inventory(inv, state.claim_price)
+                inventories.remove_coin_from_inventory(inv, state.claim_price, nil, true)
             end
         end
     end
@@ -2820,7 +2821,7 @@ function hex_grid.get_supercharge_cost(hex_core)
         base_cost = base_cost * 12345
     end
 
-    return coin_tiers.from_base_value(#entities * base_cost)
+    return coin_tiers.ceil(coin_tiers.from_base_value(#entities * base_cost))
 end
 
 function hex_grid.get_quality_upgrade_cost(hex_core)
@@ -2845,7 +2846,7 @@ function hex_grid.get_quality_upgrade_cost(hex_core)
         end
     end
 
-    return coin_tiers.multiply(coin_tiers.from_base_value(base_cost), mult)
+    return coin_tiers.ceil(coin_tiers.multiply(coin_tiers.from_base_value(base_cost), mult))
 end
 
 ---Get the cost of converting a hex's ores.
@@ -4049,10 +4050,17 @@ function hex_grid.on_strongbox_killed(sb_entity)
     storage.strongboxes.total_coins_earned = coin_tiers.add(storage.strongboxes.total_coins_earned, coin_loot)
 
     -- Include offline players
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
     for _, player in pairs(game.players) do
-        local player_inv = player.get_main_inventory()
-        if player_inv then
-            inventories.add_coin_to_inventory(player_inv, coin_loot)
+        if is_piggy_bank_unlocked then
+            -- This is to be done without normalizing the entire inventory, to avoid annoying situations where the coins you're about to grab suddenly transfer themselves into your piggy bank.
+            piggy_bank.increment_player_stored_coins(player.index, coin_loot)
+        else
+            -- This would normalize the entire inventory if piggy bank was unlocked (impossible with this flow control).
+            local player_inv = player.get_main_inventory()
+            if player_inv then
+                inventories.add_coin_to_inventory(player_inv, coin_loot)
+            end
         end
     end
 

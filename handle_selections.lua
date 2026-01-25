@@ -23,7 +23,7 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
     if not reverse then
         local inv = lib.get_player_inventory(player)
         if inv then
-            player_inventory_coins = inventories.get_coin_from_inventory(inv)
+            player_inventory_coins = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
         end
     end
 
@@ -72,12 +72,12 @@ local function on_delete_core_tool_used(player, entities)
     for _, e in pairs(entities) do
         if e.name == "hex-core" then
             local cost = hex_grid.get_delete_core_cost(e)
-            local current_coin = inventories.get_coin_from_inventory(inv)
+            local current_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
             if coin_tiers.ge(current_coin, cost) then
                 if not hex_grid.delete_hex_core(e) then
                     failed = true
                 end
-                inventories.remove_coin_from_inventory(inv, cost)
+                inventories.remove_coin_from_inventory(inv, cost, nil, true)
             else
                 failed = true
             end

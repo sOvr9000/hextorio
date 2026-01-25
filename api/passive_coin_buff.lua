@@ -1,6 +1,8 @@
 
 local coin_tiers = require "api.coin_tiers"
 local inventories = require "api.inventories"
+local quests      = require "api.quests"
+local piggy_bank  = require "api.piggy_bank"
 
 local passive_coin_buff = {}
 
@@ -22,10 +24,17 @@ function passive_coin_buff.process_accumulation()
     local coin = passive_coin_buff.calculate_passive_gain(ticks_since_last_processing)
     if coin_tiers.is_negative(coin) or coin_tiers.is_zero(coin) then return end
 
+    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
     for _, player in pairs(game.players) do
-        local inv = player.get_main_inventory()
-        if inv then
-            inventories.add_coin_to_inventory(inv, coin)
+        if is_piggy_bank_unlocked then
+            -- This is to be done without normalizing the entire inventory, to avoid annoying situations where the coins you're about to grab suddenly transfer themselves into your piggy bank.
+            piggy_bank.increment_player_stored_coins(player.index, coin)
+        else
+            -- This would normalize the entire inventory if piggy bank was unlocked (impossible with this flow control).
+            local inv = player.get_main_inventory()
+            if inv then
+                inventories.add_coin_to_inventory(inv, coin)
+            end
         end
     end
 end

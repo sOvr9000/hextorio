@@ -25,6 +25,7 @@ local hex_island = require "api.hex_island"
 local train_trading = require "api.train_trading"
 local inventories = require "api.inventories"
 local strongboxes = require "api.strongboxes"
+local piggy_bank = require "api.piggy_bank"
 
 migrations.load_handlers()
 
@@ -40,6 +41,7 @@ hex_island.register_events()
 space_platforms.register_events()
 train_trading.register_events()
 strongboxes.register_events()
+inventories.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -174,6 +176,7 @@ script.on_init(function()
     hex_island.init()
     train_trading.init()
     strongboxes.init()
+    piggy_bank.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -312,7 +315,7 @@ script.on_event(defines.events.on_player_main_inventory_changed, function(event)
     local inv = player.get_inventory(defines.inventory.character_main)
     if not inv then return end
 
-    local coin = inventories.normalize_inventory(inv)
+    local coin = inventories.normalize_inventory(inv, false)
     if not coin then return end
 
     event_system.trigger("player-coins-changed", player, coin)
@@ -325,14 +328,14 @@ script.on_event(defines.events.on_player_trash_inventory_changed, function(event
     local inv = player.get_inventory(defines.inventory.character_trash)
     if not inv then return end
 
-    inventories.normalize_inventory(inv)
+    inventories.normalize_inventory(inv, false)
 end)
 
 script.on_event(defines.events.on_player_dropped_item_into_entity, function(event)
     local inv = event.entity.get_inventory(defines.inventory.chest)
     if not inv then return end
 
-    inventories.normalize_inventory(inv)
+    inventories.normalize_inventory(inv, false)
 end)
 
 script.on_event(defines.events.on_player_respawned, function(event)

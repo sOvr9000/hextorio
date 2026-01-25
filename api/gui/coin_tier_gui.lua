@@ -34,15 +34,24 @@ end
 ---Update a coin tier flow's sprite buttons to show numbers matching the Coin object's values.
 ---@param flow LuaGuiElement
 ---@param coin Coin
-function coin_tier_gui.update_coin_tier(flow, coin)
-    for i, coin_name in ipairs(storage.coin_tiers.COIN_NAMES) do
+---@param show_trailing_zeros boolean|nil Whether to show zeroes after the leading coin tier.  Defaults to false.
+function coin_tier_gui.update_coin_tier(flow, coin, show_trailing_zeros)
+    local visible = false
+    for i = #storage.coin_tiers.COIN_NAMES, 1, -1 do
+        local coin_name = storage.coin_tiers.COIN_NAMES[i]
         local coin_sprite = flow[coin_name]
-        if coin.values[i] > 0 then
-            coin_sprite.number = coin.values[i]
-            coin_sprite.visible = true
-            core_gui.try_give_coin_tooltip(coin_sprite)
+
+        if show_trailing_zeros then
+            visible = visible or coin.values[i] > 0
         else
-            coin_sprite.visible = false
+            visible = coin.values[i] > 0
+        end
+
+        coin_sprite.visible = visible
+
+        if visible then
+            coin_sprite.number = coin.values[i]
+            core_gui.try_give_coin_tooltip(coin_sprite)
         end
     end
 

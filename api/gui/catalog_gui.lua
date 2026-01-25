@@ -961,7 +961,7 @@ function catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
 
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
 
-    local inv_coin = inventories.get_coin_from_inventory(inv)
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
     local purchaseable = math.floor(coin_tiers.divide_coins(inv_coin, coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin"))))
 
     return purchaseable
@@ -992,14 +992,14 @@ function catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
     local total_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
 
-    local inv_coin = inventories.get_coin_from_inventory(inv)
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
     if coin_tiers.gt(total_coin, inv_coin) then
         -- This should no longer happen, but it's here just in case.
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(total_coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
         return
     end
 
-    inventories.remove_coin_from_inventory(inv, total_coin)
+    inventories.remove_coin_from_inventory(inv, total_coin, nil, true)
     lib.safe_insert(player, {name = selection.item_name, count = count, quality = selection.bazaar_quality})
 
     catalog_gui.update_catalog_inspect_frame(player)
@@ -1036,7 +1036,7 @@ function catalog_gui.on_item_buff_button_click(player, elem)
     item_buffs.fetch_settings()
     local selection = catalog_gui.get_catalog_selection(player)
     local cost = item_buffs.get_item_buff_cost(selection.item_name)
-    local inv_coin = inventories.get_coin_from_inventory(inv)
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
 
     if coin_tiers.gt(cost, inv_coin) then
         player.print({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(cost), coin_tiers.coin_to_text(inv_coin)})
@@ -1048,7 +1048,7 @@ function catalog_gui.on_item_buff_button_click(player, elem)
         item_buffs.get_item_buff_level(selection.item_name) + 1
     )
 
-    inventories.remove_coin_from_inventory(inv, cost)
+    inventories.remove_coin_from_inventory(inv, cost, nil, true)
 
     catalog_gui.update_catalog_inspect_frame(player)
 end
@@ -1156,7 +1156,7 @@ function catalog_gui.update_quantum_bazaar(player)
 
     local inv = lib.get_player_inventory(player)
     if inv then
-        local inv_coin = inventories.get_coin_from_inventory(inv)
+        local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
         no_coins_label.visible = coin_tiers.is_zero(inv_coin)
     end
 
@@ -1186,9 +1186,12 @@ function catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, elem)
     local inv = lib.get_player_inventory(player)
     if not inv then return end
 
+    -- Ensure that if the character is in space due to some glitch, this doesn't bug the shit out.
+    if not player.character or storage.item_values.values[player.character.surface.name] == nil then return end
+
     local received_coin = coin_tiers.ceil(inventories.get_total_coin_value(player.character.surface.name, inv, 5))
     inventories.remove_items_of_rank(inv, 5)
-    inventories.add_coin_to_inventory(inv, received_coin)
+    inventories.add_coin_to_inventory(inv, received_coin, nil, quests.is_feature_unlocked "piggy-bank")
 
     catalog_gui.update_catalog_inspect_frame(player)
 end
@@ -1196,7 +1199,8 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, elem)
-    if not player.character then return end
+    -- Ensure that if the character is in space due to some glitch, this doesn't bug the shit out.
+    if not player.character or storage.item_values.values[player.character.surface.name] == nil then return end
 
     local item_stack = player.cursor_stack
     if not item_stack or not item_stack.valid_for_read then
@@ -1215,7 +1219,7 @@ function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, elem)
     local item_value = item_values.get_item_value(player.character.surface.name, item_stack.name, true, item_stack.quality.name) * item_stack.count
     local received_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin")))
 
-    inventories.add_coin_to_inventory(inv, received_coin)
+    inventories.add_coin_to_inventory(inv, received_coin, nil, quests.is_feature_unlocked "piggy-bank")
     item_stack.clear()
 
     catalog_gui.update_catalog_inspect_frame(player)
