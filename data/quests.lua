@@ -526,7 +526,6 @@ return {
             conditions = {{type = "place-entity-on-planet", value = {"roboport", "fulgora"}, progress_requirement = 80}},
             rewards = {{type = "unlock-feature", value = "hexports", notes = {"no-robot-slots", "use-hexport-tool"}}},
             prerequisites = {"visit-fulgora"},
-            has_img = false,
         },
         {
             name = "electromagnetic-dungeon",
