@@ -433,7 +433,7 @@ script.on_event(defines.events.on_entity_settings_pasted, function (event)
 end)
 
 script.on_event(defines.events.on_entity_died, function (event)
-    if event.cause and event.cause.force == game.forces.player then
+    if event.cause and event.cause.valid and event.cause.force == game.forces.player then
         quests.increment_progress_for_type("kill-entity", 1, event.entity.name)
         if event.damage_type then
             if event.entity.force ~= game.forces.player then
