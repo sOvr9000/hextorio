@@ -455,7 +455,7 @@ script.on_event(defines.events.on_entity_died, function (event)
         end
     end
     if event.entity.name == "biter-spawner" or event.entity.name == "spitter-spawner" then
-        if event.cause and (event.cause.name == "car" or event.cause.name == "tank") then
+        if event.cause and event.cause.valid and (event.cause.name == "car" or event.cause.name == "tank") then
             event_system.trigger("spawner-rammed", event.entity, event.cause)
         end
     elseif event.entity.name == "space-platform-hub" then
