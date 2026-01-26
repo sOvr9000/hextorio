@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.0
 Date: 1/2/26
+  Changes:
+    - Disabled the original method of ranking up items to red stars (destroy your ship outside of the solar system while carrying hextreme items).
   Bugfixes:
     - Fixed the game crashing upon destroying your car and a biter/spawner spawner in the same collision.
 ---------------------------------------------------------------------------------------------------
