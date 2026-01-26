@@ -446,7 +446,7 @@ script.on_event(defines.events.on_entity_died, function (event)
         if event.damage_type then
             quests.increment_progress_for_type("die-to-damage-type", 1, event.damage_type.name)
         end
-        if event.cause then
+        if event.cause and event.cause.valid then
             if sets.new(lib.get_entity_ammo_categories(event.cause))["railgun"] then
                 if event.cause.force == game.forces.player then
                     quests.increment_progress_for_type "die-to-railgun"
