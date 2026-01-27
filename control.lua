@@ -1,6 +1,6 @@
 
 require "util" -- For table.deepcopy()
-local passive_coin_buff = require("api.passive_coin_buff")
+require "remotes"
 
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
@@ -26,6 +26,7 @@ local train_trading = require "api.train_trading"
 local inventories = require "api.inventories"
 local strongboxes = require "api.strongboxes"
 local piggy_bank = require "api.piggy_bank"
+local passive_coin_buff = require "api.passive_coin_buff"
 
 migrations.load_handlers()
 
