@@ -42,12 +42,35 @@ local quests = {}
 ---@field progress_requirement int
 ---@field progress int
 ---@field show_progress_bar boolean
----@field notes string[]|nil}
+---@field notes string[]|nil
 
 ---@class QuestReward
 ---@field type QuestRewardType
 ---@field value QuestRewardValue|nil
----@field notes string[]|nil}
+---@field notes string[]|nil
+
+
+
+---@class QuestDefinition
+---@field name string
+---@field conditions QuestConditionDefinition[]
+---@field rewards QuestRewardDefinition[]
+---@field notes string[]|nil
+---@field unlocks string[]|nil
+---@field prerequisites string[]|nil
+---@field has_img boolean|nil
+
+---@class QuestConditionDefinition
+---@field type QuestConditionType
+---@field value QuestConditionValue
+---@field progress_requirement int
+---@field show_progress_bar boolean
+---@field notes string[]|nil
+
+---@class QuestRewardDefinition
+---@field type QuestRewardType
+---@field value QuestRewardValue|nil
+---@field notes string[]|nil
 
 
 
@@ -429,14 +452,14 @@ function quests.get_reward_list_additions(new_quest, old_quest)
     return additions
 end
 
----@param params table
+---@param params QuestDefinition
 ---@param id int|nil
 ---@return Quest
 function quests.new_quest(params, id)
     if not params.name then
         lib.log_error("quests.new_quest: Quest has no name")
     end
-    if not params.conditions then
+    if not params.conditions or not next(params.conditions) then
         lib.log("quests.new_quest: Quest has no conditions")
     end
     if not params.rewards then
@@ -477,7 +500,7 @@ function quests.new_quest(params, id)
     return quest
 end
 
----@param params table
+---@param params QuestConditionDefinition
 ---@return QuestCondition|nil
 function quests.new_condition(params)
     if not params.type then
@@ -509,7 +532,7 @@ function quests.new_condition(params)
     return condition
 end
 
----@param params table
+---@param params QuestRewardDefinition
 ---@return QuestReward|nil
 function quests.new_reward(params)
     if not params.type then
