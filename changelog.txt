@@ -5,6 +5,7 @@ Date: 1/2/26
     - Disabled the original method of ranking up items to red stars (destroy your ship outside of the solar system while carrying hextreme items).
   Bugfixes:
     - Fixed the game crashing upon destroying your car and a biter/spawner spawner in the same collision.
+    - Fixed that disconnecting from a server (losing connection, being kicked, force-quitting, etc.) was teleporting you to your remote view location upon rejoining.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.10
 Date: 25/1/26
