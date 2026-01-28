@@ -65,6 +65,7 @@ local hex_state_manager = {}
 ---@field allow_locomotive_trading boolean|nil Whether trains are currently allowed to make trades with this hex state's hex core by stopping at train stops in the same hex.
 ---@field tags_created int|nil The number of tags created on the map for trades at this hex state's hex core. Starts counting at 0, so 0 means 1 tag has been created, etc.
 ---@field strongboxes LuaEntity[]|nil Array of strongbox entities assigned to this hex.
+---@field update_players int[]|nil Array of player indices for whom to update hex core GUI immediately when a trade occurs.
 
 
 

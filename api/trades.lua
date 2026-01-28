@@ -1123,7 +1123,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
 
-    local total_removed = {}
+    local total_removed = {} ---@type QualityItemCounts
     for _, input_item in pairs(trade.input_items) do
         if not lib.is_coin(input_item.name) then
             local to_remove = math.min(input_item.count * num_batches, input_items[quality][input_item.name] or 0)
@@ -1167,7 +1167,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
         coins_added = coin_tiers.new()
     end
 
-    local total_inserted = {}
+    local total_inserted = {} ---@type QualityItemCounts
     local remaining_to_insert = {}
 
     if total_output_batches >= 1 then

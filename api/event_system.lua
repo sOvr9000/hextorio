@@ -73,12 +73,12 @@ function event_system.bind_gui_events()
         local player = game.get_player(event.player_index)
         if not player then return end
 
-        if event.element then
+        if event.element and event.element.valid then
             local tag = (event.element.tags.handlers or {})["gui-opened"]
             if tag and type(tag) == "string" then
                 event_system.trigger_gui("gui-opened", tag, player, event.element)
             end
-        elseif event.entity then
+        elseif event.entity and event.entity.valid then
             event_system.trigger("player-opened-entity", player, event.entity)
         end
     end)
@@ -87,12 +87,12 @@ function event_system.bind_gui_events()
         local player = game.get_player(event.player_index)
         if not player then return end
 
-        if event.element then
+        if event.element and event.element.valid then
             local tag = (event.element.tags.handlers or {})["gui-closed"]
             if tag and type(tag) == "string" then
                 event_system.trigger_gui("gui-closed", tag, player, event.element)
             end
-        elseif event.entity then
+        elseif event.entity and event.entity.valid then
             event_system.trigger("player-closed-entity", player, event.entity)
         end
     end)

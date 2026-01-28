@@ -34,14 +34,21 @@ function hex_core_gui.register_events()
     event_system.register_gui("gui-clicked", "send-outputs-to-cargo-wagons", hex_core_gui.on_send_outputs_to_cargo_wagons_button_click)
     event_system.register_gui("gui-selection-changed", "update-hex-core", hex_core_gui.update_hex_core)
 
-    event_system.register("trade-processed", function(trade)
-        if not trade.hex_core_state or not trade.hex_core_state.hex_core or not trade.hex_core_state.hex_core.valid then return end
-        for _, player in pairs(game.connected_players) do
-            if player.opened == trade.hex_core_state.hex_core then
-                hex_core_gui.update_hex_core(player)
-            end
+    event_system.register("player-opened-entity", function(player, entity)
+        if not entity.valid then return end
+        if entity.name == "hex-core" then
+            hex_core_gui.on_hex_core_opened(player, entity)
         end
     end)
+
+    event_system.register("player-closed-entity", function(player, entity)
+        if not entity.valid then return end
+        if entity.name == "hex-core" then
+            hex_core_gui.on_hex_core_closed(player, entity)
+        end
+    end)
+
+    event_system.register("trade-processed", hex_core_gui.on_trade_processed)
 
     event_system.register("hex-claimed", function(surface, state)
         local hex_core = state.hex_core
@@ -958,6 +965,61 @@ end
 function hex_core_gui.on_delete_strongbox_button_click(player, elem)
     elem.parent.parent["delete-strongbox-confirmation"].visible = true
     elem.enabled = false
+end
+
+---@param player LuaPlayer
+---@param hex_core LuaEntity
+function hex_core_gui.on_hex_core_opened(player, hex_core)
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    if not state.update_players then
+        state.update_players = {}
+    end
+
+    table.insert(state.update_players, player.index)
+end
+
+---@param player LuaPlayer
+---@param hex_core LuaEntity
+function hex_core_gui.on_hex_core_closed(player, hex_core)
+    local state = hex_grid.get_hex_state_from_core(hex_core)
+    if not state then return end
+
+    if not state.update_players then
+        return
+    end
+
+    local player_id = player.index
+    for i = #state.update_players, 1, -1 do
+        if state.update_players[i] == player_id then
+            state.update_players[i] = nil
+            log("removed player id " .. player_id)
+            -- Don't break just in case somehow the player ID gets put in twice (it shouldn't)
+        end
+    end
+
+    if #state.update_players == 0 then
+        state.update_players = nil
+    end
+end
+
+---@param trade Trade
+---@param total_removed QualityItemCounts
+---@param total_inserted QualityItemCounts
+function hex_core_gui.on_trade_processed(trade, total_removed, total_inserted)
+    local state = trade.hex_core_state
+    if not state then return end
+
+    local update_players = state.update_players
+    if not update_players or #update_players == 0 then return end
+
+    for _, player_id in pairs(update_players) do
+        local player = game.get_player(player_id)
+        if player then
+            hex_core_gui.update_hex_core(player)
+        end
+    end
 end
 
 
