@@ -13,6 +13,8 @@ Date: 1/2/26
     - Fixed the game crashing upon destroying your car and a biter/spawner spawner in the same collision.
     - Fixed that disconnecting from a server (losing connection, being kicked, force-quitting, etc.) was teleporting you to your remote view location upon rejoining.
     - Fixed that the claim hexes tool wasn't taking coins from the piggy bank when in remote view.
+  Modding:
+    - Added remote interfaces.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.10
 Date: 25/1/26
