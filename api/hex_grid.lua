@@ -3998,6 +3998,7 @@ end
 ---@param train LuaTrain
 ---@param train_stop LuaEntity
 function hex_grid.on_train_arrived_at_stop(train, train_stop)
+    if not storage.train_trading.allow_two_headed_trains and lib.is_train_two_headed(train) then return end
     if not quests.is_feature_unlocked "locomotive-trading" then return end
 
     local transformation = terrain.get_surface_transformation(train_stop.surface)

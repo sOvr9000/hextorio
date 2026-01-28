@@ -1,10 +1,12 @@
 local event_system = require "api.event_system"
+local lib          = require "api.lib"
 
 local train_trading = {}
 
 
 
 ---@class TrainTradingStorage
+---@field allow_two_headed_trains boolean Whether to allow or disallow two-headed trains in trading.
 
 
 
@@ -23,11 +25,17 @@ function train_trading.register_events()
     end)
 
     -- event_system.register("train-traded-items", train_trading.on_train_traded_items)
+
+    event_system.register("runtime-setting-changed-allow-two-headed-trains", function()
+        storage.train_trading.allow_two_headed_trains = lib.runtime_setting_value_as_boolean "allow-two-headed-trains"
+    end)
 end
 
 function train_trading.init()
     ---@type TrainTradingStorage
-    storage.train_trading = {}
+    storage.train_trading = {
+        allow_two_headed_trains = lib.runtime_setting_value_as_boolean "allow-two-headed-trains"
+    }
 end
 
 ---@param train LuaTrain

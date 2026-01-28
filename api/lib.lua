@@ -2161,6 +2161,14 @@ function lib.remove_from_train(cargo_wagons, stack, wagon_limit)
     return count - remaining_count
 end
 
+---Return whether the LuaTrain is a two-headed train.
+---@param train LuaTrain
+---@return boolean
+function lib.is_train_two_headed(train)
+    if not train.valid then return false end
+    return #train.locomotives.back_movers > 0
+end
+
 ---Return a lookup table of names of items (and not fluids) that are only obtainable from planets without recipes.
 ---@return {[string]: boolean}
 function lib.get_raw_items()

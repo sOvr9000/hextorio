@@ -18,6 +18,13 @@ data:extend({
         maximum_value = 100,
         order = "a[important]-a[balancing]-s[unresearched-penalty]",
     },
+    {
+        type = "bool-setting",
+        setting_type = "runtime-global",
+        name = "hextorio-allow-two-headed-trains",
+        default_value = true,
+        order = "a[important]-b[balancing]-s[allow-two-headed-trains]",
+    },
 
     {
         type = "double-setting",
