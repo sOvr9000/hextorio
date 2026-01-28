@@ -127,7 +127,7 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function piggy_bank_gui.on_piggy_bank_deposit_button_clicked(player, elem)
-    local inv = player.get_main_inventory()
+    local inv = lib.get_player_inventory(player)
     if not inv then return end
 
     local player_id = player.index

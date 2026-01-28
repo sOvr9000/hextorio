@@ -776,6 +776,24 @@ function lib.get_player_inventory(player)
     lib.log_error("get_player_inventory: could not find inventory of player")
 end
 
+---Get a player which owns a given inventory.
+---@param inventory LuaInventory
+---@returns LuaPlayer|nil
+function lib.get_player_owner_of_inventory(inventory)
+    if not inventory.valid then return end
+
+    local player = inventory.player_owner
+    if player then return player end
+
+    local entity = inventory.entity_owner
+    if entity then
+        player = entity.player
+        if player then return player end
+    end
+
+    -- No player found from inventory
+end
+
 ---Turn a map gen setting between 0.16667 and 6 into a number between 0 and 1, or to a specified range
 ---@param x number|nil
 ---@param to_min number | nil

@@ -127,7 +127,7 @@ function inventories.get_coin_from_inventory(inventory, cargo_wagons, use_piggy_
     local coin = coin_tiers.new(values)
 
     if use_piggy_bank and inventory.object_name == "LuaInventory" then
-        local player = inventory.player_owner
+        local player = lib.get_player_owner_of_inventory(inventory)
         if player then
             local stored_coins = piggy_bank.get_player_stored_coins(player.index)
             coin = coin_tiers.add(coin, stored_coins)
