@@ -3,6 +3,8 @@ Version: 1.6.0
 Date: 1/2/26
   Changes:
     - Disabled the original method of ranking up items to red stars (destroy your ship outside of the solar system while carrying hextreme items).
+  Balancing:
+    - Added mod setting that toggles the allowance of two-headed trains in trading.
   Bugfixes:
     - Fixed the game crashing upon destroying your car and a biter/spawner spawner in the same collision.
     - Fixed that disconnecting from a server (losing connection, being kicked, force-quitting, etc.) was teleporting you to your remote view location upon rejoining.
