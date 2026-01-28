@@ -994,7 +994,6 @@ function hex_core_gui.on_hex_core_closed(player, hex_core)
     for i = #state.update_players, 1, -1 do
         if state.update_players[i] == player_id then
             state.update_players[i] = nil
-            log("removed player id " .. player_id)
             -- Don't break just in case somehow the player ID gets put in twice (it shouldn't)
         end
     end
