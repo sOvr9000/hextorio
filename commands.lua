@@ -65,6 +65,12 @@ local all_commands = {
         examples = {"/complete-quest ground-zero", "/complete-quest find-some-trades"},
     },
     {
+        name = "disable-quest",
+        usage = "/disable-quest <quest-name>",
+        params = {"string"},
+        examples = {"/disable-quest ground-zero", "/disable-quest lazy-looter"},
+    },
+    {
         name = "tp-to-ship",
         usage = "/tp-to-ship",
     },

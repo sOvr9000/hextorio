@@ -278,6 +278,16 @@ function quests.register_events()
         quests.complete_quest "ground-zero"
     end)
 
+    event_system.register("command-disable-quest", function(player, params)
+        local quest_name = params[1]
+        local q = quests.get_quest(quest_name)
+        if quests.remove_quest(quest_name) and q then
+            player.print {"hextorio.quest-disabled", quests.get_quest_localized_title(q)}
+        else
+            player.print {"hextorio.command-failed-to-disable-quest", quest_name}
+        end
+    end)
+
     event_system.register("item-buff-data-migrated", function()
         quests.redistribute_quest_rewards "all-trades-productivity"
     end)
@@ -1150,10 +1160,12 @@ end
 
 ---Remove a quest from the game.
 ---Particularly meant for migrations and replacing old quests with new ones using the same name.
+---Returns whether the quest was removed.
 ---@param quest QuestIdentification
+---@return boolean
 function quests.remove_quest(quest)
     local q = quests.get_quest(quest)
-    if not q then return end
+    if not q then return false end
 
     local found_i = -1
     for i, def in ipairs(storage.quests.quest_defs) do
@@ -1163,11 +1175,55 @@ function quests.remove_quest(quest)
         end
     end
     if found_i >= 1 then
-        storage.quests.quest_defs[i] = nil
+        storage.quests.quest_defs[found_i] = nil
     end
 
     storage.quests.quest_ids_by_name[q.name] = nil
     storage.quests.quests[q.id] = nil
+
+    -- Set prerequisite quests to unlock the removed quest's quests
+    for _, unlock in pairs(q.unlocks or {}) do
+        local _q = quests.get_quest(unlock)
+        if _q then
+            if not _q.prerequisites then
+                _q.prerequisites = {}
+            end
+
+            for _, prereq in pairs(q.prerequisites or {}) do
+                table.insert(_q.prerequisites, prereq)
+            end
+        end
+    end
+
+    -- Set unlockable quests to have the removed quest's prerequisite quests
+    for _, prereq in pairs(q.prerequisites or {}) do
+        local _q = quests.get_quest(prereq)
+        if _q then
+            if not _q.unlocks then
+                _q.unlocks = {}
+            end
+
+            for _, unlock in pairs(q.unlocks or {}) do
+                table.insert(_q.unlocks, unlock)
+            end
+        end
+    end
+
+    -- After unlocks and prereqs are reconnected, check for quest reveals.
+    for _, prereq in pairs(q.prerequisites or {}) do
+        local _q = quests.get_quest(prereq)
+        if _q then
+            quests.check_revelations(_q)
+        end
+    end
+
+    if not next(q.prerequisites or {}) then
+        quests.check_revelations(q)
+    end
+
+    event_system.trigger("quest-removed", q)
+
+    return true
 end
 
 ---Complete a quest, bypassing any progress requirements.

@@ -26,6 +26,12 @@ function questbook_gui.register_events()
 
     event_system.register("quest-revealed", update_quest_guis)
     event_system.register("quest-completed", update_quest_guis)
+
+    event_system.register("quest-removed", function()
+        for _, player in pairs(game.players) do
+            questbook_gui.repopulate_quest_lists(player)
+        end
+    end)
 end
 
 ---Reinitialize the hex core GUI for the given player, or all players if no player is provided.
