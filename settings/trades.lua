@@ -4,7 +4,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-base-trade-efficiency",
         setting_type = "runtime-global",
-        default_value = 1.0,
+        default_value = 0.8,
         minimum_value = 0.1,
         maximum_value = 10,
         order = "a[important]-a[balancing]-s[base-trade-efficiency]",
