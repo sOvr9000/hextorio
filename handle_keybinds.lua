@@ -4,6 +4,9 @@ local hex_grid = require "api.hex_grid"
 local quests = require "api.quests"
 local gui = require "api.gui"
 local event_system = require "api.event_system"
+local axial        = require "api.axial"
+local dungeons     = require "api.dungeons"
+local hex_state_manager = require "api.hex_state_manager"
 
 
 
@@ -87,7 +90,35 @@ script.on_event("teleport-to-hex-core", function(event)
         return
     end
 
-    lib.teleport_player(player, hex_core.position, hex_core.surface, true)
+    local surface = hex_core.surface
+    local hex_pos = state.position
+
+    local bad_tp = false
+    for _, adj_pos in pairs(axial.get_adjacent_hexes(hex_pos)) do
+        local adj_state = hex_state_manager.get_hex_state(surface, adj_pos)
+        -- local dungeon = dungeons.get_dungeon_at_hex_pos(surface.index, adj_pos, false)
+        -- if dungeon and not dungeon.is_looted then
+        if adj_state and adj_state.is_dungeon then
+            bad_tp = true
+            break
+        end
+    end
+
+    if not storage.hex_grid.player_last_teleport_attempts then
+        storage.hex_grid.player_last_teleport_attempts = {}
+    end
+
+    local last_tp = storage.hex_grid.player_last_teleport_attempts[player.index]
+    local tp_attempt = {surface_id = surface.index, hex_pos = hex_pos}
+    if bad_tp and (not last_tp or not lib.tables_equal(last_tp, tp_attempt)) then
+        player.print(lib.color_localized_string({"hextorio.dungeon-nearby-prevented-tp"}, "yellow"))
+        storage.hex_grid.player_last_teleport_attempts[player.index] = tp_attempt
+        return
+    end
+
+    storage.hex_grid.player_last_teleport_attempts[player.index] = nil
+
+    lib.teleport_player(player, hex_core.position, surface, true)
 end)
 
 script.on_event("claim-hex-core", function(event)
