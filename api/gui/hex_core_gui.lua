@@ -84,8 +84,8 @@ function hex_core_gui.register_events()
         hex_core_gui.on_add_to_filters_button_click(player, element)
     end)
 
-    event_system.register("trade-quality-bounds-selected", function(player, element, trade_number)
-        hex_core_gui.on_quality_bound_selected(player, element, trade_number)
+    event_system.register("trade-quality-selected", function(player, element, trade_number)
+        hex_core_gui.on_quality_selected(player, element, trade_number)
     end)
 end
 
@@ -847,18 +847,18 @@ function hex_core_gui.on_tag_button_click(player, element)
     quests.set_progress_for_type("create-trade-map-tag", 1)
 end
 
-function hex_core_gui.on_quality_bound_selected(player, element, trade_number)
+function hex_core_gui.on_quality_selected(player, element, trade_number)
     local signal = element.elem_value
 
     local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
     if not signal then
-        hex_core_gui._reset_quality_bound(element, hex_core.quality.name)
+        hex_core_gui._reset_quality(element, hex_core.quality.name)
         signal = element.elem_value
     elseif signal.type ~= "quality" then
         player.print({"hextorio.invalid-quality-selected"})
-        hex_core_gui._reset_quality_bound(element, hex_core.quality.name)
+        hex_core_gui._reset_quality(element, hex_core.quality.name)
         signal = element.elem_value
     end
 
@@ -868,15 +868,10 @@ function hex_core_gui.on_quality_bound_selected(player, element, trade_number)
     trade = trades.get_trade_from_id(state.trades[trade_number])
     if not trade then return end
 
-    local adjusted = false
-    if element.name:sub(1, 12) == "min-quality-" then
-        adjusted = not hex_grid.set_trade_allowed_qualities(hex_core, trade, signal.name, trade.allowed_qualities[1])
-    elseif element.name:sub(1, 12) == "max-quality-" then
-        adjusted = not hex_grid.set_trade_allowed_qualities(hex_core, trade, trade.allowed_qualities[#trade.allowed_qualities], signal.name)
-    end
+    local adjusted = not hex_grid.set_trade_allowed_qualities(hex_core, trade, signal.name, signal.name)
 
     if adjusted then
-        player.print({"hextorio.quality-bounds-adjusted"})
+        player.print({"hextorio.quality-adjusted"})
         element.elem_value = nil
     end
 
@@ -886,16 +881,12 @@ end
 ---Reset a choose-elem-button's element value to a valid quality.
 ---@param element LuaGuiElement
 ---@param hex_core_quality string|nil
-function hex_core_gui._reset_quality_bound(element, hex_core_quality)
-    if element.name:sub(1, 12) == "min-quality-" then
-        element.elem_value = {type = "quality", name = "normal"}
-    elseif element.name:sub(1, 12) == "max-quality-" then
-        local quality_tier = lib.get_quality_tier(lib.get_highest_unlocked_quality().name)
-        if hex_core_quality then
-            quality_tier = math.min(quality_tier, lib.get_quality_tier(hex_core_quality))
-        end
-        element.elem_value = {type = "quality", name = lib.get_quality_at_tier(quality_tier)}
+function hex_core_gui._reset_quality(element, hex_core_quality)
+    local quality_tier = lib.get_quality_tier(lib.get_highest_unlocked_quality().name)
+    if hex_core_quality then
+        quality_tier = math.min(quality_tier, lib.get_quality_tier(hex_core_quality))
     end
+    element.elem_value = {type = "quality", name = lib.get_quality_at_tier(quality_tier)}
 end
 
 ---@param player LuaPlayer

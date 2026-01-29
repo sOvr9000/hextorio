@@ -151,14 +151,6 @@ data:extend({
         default_value = true,
         order = "t[trades]-u[increment-trade-quality]",
     },
-    {
-        type = "string-setting",
-        name = "hextorio-default-trade-quality",
-        setting_type = "runtime-global",
-        allowed_values = {"lowest", "lowest-to-highest", "highest"},
-        default_value = "lowest",
-        order = "t[trades]-v[default-trade-quality]",
-    },
 
     {
         type = "int-setting",

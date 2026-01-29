@@ -671,28 +671,16 @@ end
 ---Return true if no qualities were automatically excluded due to hex core quality or currently unlocked qualities.
 ---@param hex_core LuaEntity
 ---@param trade Trade
----@param min_quality string|nil If not provided, this and max_quality will be set based on the "default-trade-quality" mod setting.
----@param max_quality string|nil If not provided, this and min_quality will be set based on the "default-trade-quality" mod setting.
+---@param min_quality string|nil If not provided, defaults to the lowest quality (normal).
+---@param max_quality string|nil If not provided, defaults to min_quality.
 ---@return boolean
 function hex_grid.set_trade_allowed_qualities(hex_core, trade, min_quality, max_quality)
-    local default_qualities_setting
-
     if not min_quality then
-        default_qualities_setting = lib.runtime_setting_value "default-trade-quality"
-        if default_qualities_setting == "highest" then
-            min_quality = lib.get_highest_unlocked_quality().name
-        else
-            min_quality = lib.get_lowest_quality().name
-        end
+        min_quality = lib.get_lowest_quality().name
     end
 
     if not max_quality then
-        default_qualities_setting = default_qualities_setting or lib.runtime_setting_value "default-trade-quality"
-        if default_qualities_setting == "lowest" then
-            max_quality = min_quality
-        else
-            max_quality = lib.get_highest_unlocked_quality().name
-        end
+        max_quality = min_quality
     end
 
     local min_quality_tier = lib.get_quality_tier(min_quality)
@@ -2577,7 +2565,8 @@ function hex_grid.set_quality(hex_core, quality)
         for _, trade_id in pairs(state.trades or {}) do
             local trade = trades.get_trade_from_id(trade_id)
             if trade then
-                hex_grid.set_trade_allowed_qualities(new_hex_core, trade, (trade.allowed_qualities or {})[#(trade.allowed_qualities or {})], quality.name)
+                -- For now, just make trades only use one quality at a time.  This appears to be the only way that people play.
+                hex_grid.set_trade_allowed_qualities(new_hex_core, trade, quality.name, quality.name)
             end
         end
     end

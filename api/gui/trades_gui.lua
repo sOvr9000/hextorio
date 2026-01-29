@@ -19,7 +19,7 @@ function trades_gui.register_events()
     event_system.register_gui("gui-clicked", "add-to-filters", trades_gui.on_trade_add_to_filters_button_clicked)
     event_system.register_gui("gui-clicked", "trade-item", trades_gui.on_trade_item_clicked)
     event_system.register_gui("gui-clicked", "trade-arrow", trades_gui.on_trade_arrow_clicked)
-    event_system.register_gui("gui-elem-changed", "trade-quality-bounds", trades_gui.on_trade_quality_bounds_selected)
+    event_system.register_gui("gui-elem-changed", "trade-quality", trades_gui.on_trade_quality_selected)
 
     -- event_system.register("favorite-trade-key-pressed", trades_gui.on_favorite_trade_key_pressed)
 end
@@ -230,25 +230,15 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
 
         if params.show_quality_bounds then
             local allowed_qualities = trade.allowed_qualities or {"normal"}
-            local min_quality = trade_control_flow.add {
+            local quality_button = trade_control_flow.add {
                 type = "choose-elem-button",
-                name = "min-quality-" .. trade_number,
-                elem_type = "signal",
-                signal = {type = "quality", name = allowed_qualities[#allowed_qualities]},
-                tags = {handlers = {["gui-elem-changed"] = "trade-quality-bounds"}, trade_number = trade_number},
-                raise_hover_events = true,
-            }
-            min_quality.tooltip = {"hex-core-gui.minimum-trade-quality"}
-
-            local max_quality = trade_control_flow.add {
-                type = "choose-elem-button",
-                name = "max-quality-" .. trade_number,
+                name = "trade-quality-" .. trade_number,
                 elem_type = "signal",
                 signal = {type = "quality", name = allowed_qualities[1]},
-                tags = {handlers = {["gui-elem-changed"] = "trade-quality-bounds"}, trade_number = trade_number},
+                tags = {handlers = {["gui-elem-changed"] = "trade-quality"}, trade_number = trade_number},
                 raise_hover_events = true,
             }
-            max_quality.tooltip = {"hex-core-gui.maximum-trade-quality"}
+            quality_button.tooltip = {"hex-core-gui.trade-quality"}
         end
     end
 
@@ -532,8 +522,8 @@ end
 
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
-function trades_gui.on_trade_quality_bounds_selected(player, elem)
-    event_system.trigger("trade-quality-bounds-selected", player, elem, elem.tags.trade_number)
+function trades_gui.on_trade_quality_selected(player, elem)
+    event_system.trigger("trade-quality-selected", player, elem, elem.tags.trade_number)
 end
 
 -- ---@param player LuaPlayer
