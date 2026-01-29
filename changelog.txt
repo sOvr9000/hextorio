@@ -9,6 +9,7 @@ Date: 1/2/26
     - Removed the mod setting for default trade quality bounds.
     - Trades now only use a single quality at a time.
     - Teleporting to a hex core adjacent to a dungeon now requires confirmation (pressing hotkey/button again to confirm).
+    - Strongboxes are now removed if the "parent" hex core is deleted.
   Balancing:
     - Added mod setting that toggles the allowance of two-headed trains in trading.
     - Changed the default value for the base trade efficiency setting from 1.0 to 0.8, where at least 25% trade productivity is required to create infinite coin loops.

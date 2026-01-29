@@ -1807,7 +1807,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     if not state or state.claimed then return end
 
     if not allow_nonland then
-        if not state.hex_core or not state.is_land then return end
+        if not state.is_land then return end
     end
 
     local spent_last_free_claim = false
@@ -1867,8 +1867,11 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         storage.hex_grid.last_used_edge_fill_tile = fill_tile_name
     end
 
-    if quests.is_feature_unlocked "hexports" then
-        hex_grid.spawn_hexport(state)
+    if state.hex_core and state.hex_core.valid then
+        if quests.is_feature_unlocked "hexports" then
+            hex_grid.spawn_hexport(state)
+        end
+        hex_grid.try_generate_strongbox(state)
     end
 
     hex_grid.add_to_pool(state)
@@ -1876,8 +1879,6 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     -- Fil the edges between claimed hexes
     hex_grid.fill_edges_between_claimed_hexes(surface, hex_pos, fill_tile_name)
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
-
-    hex_grid.try_generate_strongbox(state)
 
     -- Add trade items to catalog list
     trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
@@ -2432,6 +2433,8 @@ function hex_grid.delete_hex_core(hex_core)
     end
 
     hex_grid.remove_from_pool(state)
+    hex_grid.remove_strongboxes(state)
+
     hex_core.destroy()
     event_system.trigger("hex-core-deleted", state)
     state.hex_core = nil
