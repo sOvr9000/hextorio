@@ -1685,6 +1685,7 @@ function lib.player_is_in_remote_view(player)
     return player.controller_type == defines.controllers.remote
 end
 
+---Get the localized name for an item or entity.
 ---@param item_name string
 ---@param prototype_category string|nil
 ---@param localization_prefix string|nil
