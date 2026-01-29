@@ -736,7 +736,7 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
 
     local elem_filter_items = sets.new()
     for _, surface in pairs(game.surfaces) do
-        if not lib.is_space_platform(surface.name) then
+        if not lib.is_space_platform(surface) then
             local values = item_values.get_expanded_item_values_for_surface(surface.name)
             for name, _ in pairs(values) do
                 if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then

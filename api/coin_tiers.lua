@@ -7,6 +7,11 @@ local coin_tiers = {}
 
 
 
+-- Hardcoded constant for optimal performance when rapidly computing coin operations.
+local NUM_COIN_TIERS = 5
+
+
+
 ---@alias CoinName "hex-coin"|"gravity-coin"|"meteor-coin"|"hexaprism-coin"|"black-hole-coin"
 ---@alias CoinValues {[1]: number, [2]: number, [3]: number, [4]: number, [5]: number}
 ---@alias CoinValuesByName {[CoinName]: number}
@@ -141,12 +146,12 @@ end
 ---Add coin values to an accumulator without normalization (for performance).
 ---Saves processing time when adding many coins together.
 ---Instead of using calling `coin_tiers.add()` many times, call this function instead and normalize at the end.
----@param accumulator number[] -- Array of 4 numbers (modified in-place)
+---@param accumulator number[] Accumulation of coin values, modified in-place
 ---@param coin Coin
 function coin_tiers.accumulate(accumulator, coin)
     local values = coin.values
-    for i, v in pairs(accumulator) do
-        accumulator[i] = v + values[i]
+    for i = NUM_COIN_TIERS, 1, -1 do
+        accumulator[i] = accumulator[i] + values[i]
     end
 end
 

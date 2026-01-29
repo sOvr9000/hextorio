@@ -199,25 +199,21 @@ function item_values.init_coin_values(surface_vals)
     end
 end
 
+---Get the value of an item on a given surface.
+---@param surface_name string
+---@param item_name string
+---@param allow_interplanetary boolean|nil
+---@param quality_name string|nil
+---@return integer
 function item_values.get_item_value(surface_name, item_name, allow_interplanetary, quality_name)
-    if not surface_name then
-        lib.log_error("item_values.get_item_value: surface_name is nil, defaulting to 1")
+    local surface = game.get_surface(surface_name)
+    if not surface then
+        lib.log_error("item_values.get_item_value: Invalid surface_name: " .. surface_name)
         return 1
     end
-    if lib.is_space_platform(surface_name) then
+
+    if lib.is_space_platform(surface) then
         lib.log_error("item_values.get_item_value: surface_name = " .. surface_name .. " refers to a space platform, defaulting to " .. item_name .. " item value = 1")
-        return 1
-    end
-    if not item_name then
-        lib.log_error("item_values.get_item_value: item_name is nil, defaulting to 1")
-        return 1
-    end
-    if type(surface_name) ~= "string" then
-        lib.log_error("item_values.get_item_value: surface_name is not a string, received type: " .. type(surface_name))
-        return 1
-    end
-    if type(item_name) ~= "string" then
-        lib.log_error("item_values.get_item_value: item_name is not a string, received type: " .. type(item_name))
         return 1
     end
 
@@ -316,17 +312,12 @@ end
 ---@param allow_interplanetary boolean|nil
 ---@return boolean
 function item_values.has_item_value(surface_name, item_name, allow_interplanetary)
-    if not surface_name then
-        lib.log_error("item_values.has_item_value: surface_name is nil")
+    local surface = game.get_surface(surface_name)
+    if not surface then
         return false
     end
 
-    if not item_name then
-        lib.log_error("item_values.has_item_value: item_name is nil")
-        return false
-    end
-
-    if lib.is_space_platform(surface_name) then
+    if lib.is_space_platform(surface) then
         return false
     end
 
@@ -415,15 +406,25 @@ end
 ---@param surface_name string
 ---@return {[string]: number}
 function item_values.get_expanded_item_values_for_surface(surface_name)
-    if lib.is_space_platform(surface_name) then return {} end
+    local surface = game.get_surface(surface_name)
+    if not surface then
+        lib.log_error("item_values.get_expanded_item_values_for_surface: Invalid surface_name: " .. surface_name)
+        return {}
+    end
+
+    if lib.is_space_platform(surface) then return {} end
+
     if not storage.item_values.expanded_values then
         storage.item_values.expanded_values = {}
     end
+
     local surface_vals = storage.item_values.expanded_values[surface_name]
     if surface_vals then
         return surface_vals
     end
+
     surface_vals = table.deepcopy(item_values.get_item_values_for_surface(surface_name)) or {}
+
     for _, _surface_vals in pairs(storage.item_values.values) do
         for item_name, _ in pairs(_surface_vals) do
             if not surface_vals[item_name] then
@@ -431,23 +432,40 @@ function item_values.get_expanded_item_values_for_surface(surface_name)
             end
         end
     end
+
     storage.item_values.expanded_values[surface_name] = surface_vals
+
     return surface_vals
 end
 
+---Get a list of item names sorted by their values on a given surface.
+---@param surface_name string
+---@param items_only boolean|nil Defaults to false
+---@param allow_coins boolean|nil Defaults to true
+---@param allow_spoilable boolean|nil Defaults to true
+---@return string[]
 function item_values.get_items_sorted_by_value(surface_name, items_only, allow_coins, allow_spoilable)
-    if lib.is_space_platform(surface_name) then return {} end
+    local surface = game.get_surface(surface_name)
+    if not surface then
+        lib.log_error("item_values.get_items_sorted_by_value: Invalid surface_name: " .. surface_name)
+        return {}
+    end
+
+    if lib.is_space_platform(surface) then return {} end
+
     if allow_coins == nil then
         allow_coins = true
     end
     if allow_spoilable == nil then
         allow_spoilable = true
     end
+
     local surface_vals = item_values.get_item_values_for_surface(surface_name)
     if not surface_vals then
         lib.log_error("item_values.get_items_sorted_by_value: No item values for surface " .. surface_name .. ", defaulting to empty table")
         return {}
     end
+
     local sorted_items = {}
     for item_name, _ in pairs(surface_vals) do
         if not items_only or prototypes.item[item_name] then
@@ -456,13 +474,28 @@ function item_values.get_items_sorted_by_value(surface_name, items_only, allow_c
             end
         end
     end
+
     table.sort(sorted_items, function(a, b) return item_values.get_item_value(surface_name, a) < item_values.get_item_value(surface_name, b) end)
+
     return sorted_items
 end
 
--- Return a list of item names whose values are within a ratio range of a center value
+---Return a list of item names whose values are within a ratio range of a center value
+---@param surface_name string
+---@param center_value number
+---@param max_ratio number
+---@param items_only boolean|nil Defaults to false
+---@param allow_coins boolean|nil Defaults to true
+---@param allow_interplanetary boolean|nil Defaults to true
+---@return string[]
 function item_values.get_items_near_value(surface_name, center_value, max_ratio, items_only, allow_coins, allow_interplanetary)
-    if lib.is_space_platform(surface_name) then return {} end
+    local surface = game.get_surface(surface_name)
+    if not surface then
+        lib.log_error("item_values.get_items_near_value: Invalid surface_name: " .. surface_name)
+        return {}
+    end
+
+    if lib.is_space_platform(surface) then return {} end
     if allow_interplanetary == nil then allow_interplanetary = false end
     if allow_coins == nil then allow_coins = true end
 

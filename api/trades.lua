@@ -390,7 +390,13 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
     if not params then params = {} end
     trades.set_trade_generation_parameter_defaults(params)
 
-    if lib.is_space_platform(surface_name) then
+    local surface = game.get_surface(surface_name)
+    if not surface then
+        lib.log_error("trades.from_item_names: Invalid surface name: " .. surface_name)
+        return
+    end
+
+    if lib.is_space_platform(surface) then
         lib.log_error("trades.from_item_names: Attempting to create a trade for a space platform (illegal) with input_item_names = " .. serpent.line(input_item_names) .. ", output_item_names = " .. serpent.line(output_item_names))
     end
 
@@ -1755,7 +1761,7 @@ function trades.queue_productivity_update_job(surface)
     if surface == nil then
         for surface_id, _ in pairs(storage.hex_grid.surface_hexes) do
             surface = game.get_surface(surface_id)
-            if surface and not lib.is_space_platform(surface.name) then
+            if surface and not lib.is_space_platform(surface) then
                 trades.queue_productivity_update_job(surface_id)
             end
         end

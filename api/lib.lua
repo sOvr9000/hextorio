@@ -1401,10 +1401,11 @@ function lib.tables_equal(tab1, tab2)
     return true
 end
 
----@param surface_name string
+---Return whether the surface is a space platform.
+---@param surface LuaSurface
 ---@return boolean
-function lib.is_space_platform(surface_name)
-    return surface_name:sub(1, 9) == "platform-"
+function lib.is_space_platform(surface)
+    return surface.platform ~= nil
 end
 
 function lib.sum_mgs(mgs, target, keys)

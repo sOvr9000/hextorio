@@ -561,7 +561,7 @@ end
 function hex_grid.apply_extra_trades_bonus(state)
     if not state or not state.hex_core or not state.trades then return end
     local surface = state.hex_core.surface
-    if lib.is_space_platform(surface.name) then return end
+    if lib.is_space_platform(surface) then return end
     local surface_values = item_values.get_item_values_for_surface(surface.name)
     if not surface_values then return end
 
@@ -2861,6 +2861,8 @@ function hex_grid.get_convert_resources_cost(hex_core)
 
     local amounts = hex_grid.get_ore_amounts(state)
     local max_resource = hex_grid.get_most_abundant_ore(state, amounts)
+    if not max_resource then return coin_tiers.new() end
+
     local count = 0
     for name, amount in pairs(amounts) do
         if name ~= max_resource then
@@ -3708,7 +3710,7 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
     local added_trades = {}
     for surface_id, flattened_surface_hexes in pairs(storage.hex_grid.flattened_surface_hexes) do
         local surface = game.get_surface(surface_id)
-        if surface and not lib.is_space_platform(surface.name) then
+        if surface and not lib.is_space_platform(surface) then
             local volume = item_values.get_item_value(surface.name, item_name)
             if not item_values.is_item_interplanetary(surface.name, item_name) then
                 for _, hex_pos in pairs(flattened_surface_hexes) do
@@ -3846,7 +3848,7 @@ function hex_grid.recover_trades_retro(item_name)
     if not lib.is_catalog_item(item_name) then return end
 
     for _, surface in pairs(game.surfaces) do
-        if not lib.is_space_platform(surface.name) then
+        if not lib.is_space_platform(surface) then
             local states = hex_grid.get_states_with_fewest_trades(surface.name)
             for _, trade_id in pairs(trades.get_recoverable_trades()) do
                 local trade = trades.get_trade_from_id(trade_id)

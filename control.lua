@@ -230,7 +230,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
         end
     end
 
-    if lib.is_space_platform(surface.name) then return end
+    if lib.is_space_platform(surface) then return end
     if surface.name == "hextorio-temp" then return end
     if storage.initialization.is_nauvis_generating then return end
 

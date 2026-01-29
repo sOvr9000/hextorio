@@ -146,7 +146,7 @@ end
 ---@param ghost LuaEntity
 function spiders.track_ghost(ghost)
     local surface = ghost.surface
-    if lib.is_space_platform(surface.name) then return end
+    if lib.is_space_platform(surface) then return end
 
     if not storage.spiders.blueprint_ghosts then
         storage.spiders.blueprint_ghosts = {}

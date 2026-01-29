@@ -81,7 +81,22 @@ function core_gui.get_player_from_element(element)
     return player
 end
 
+---Give a sprite or sprite button element a tooltip based on its sprite, showing rank, value, and other stats from the perspective of the given surface.
+---@param player LuaPlayer
+---@param surface_name string
+---@param element LuaGuiElement
 function core_gui.give_item_tooltip(player, surface_name, element)
+    if element.type ~= "sprite" and element.type ~= "sprite-button" then
+        lib.log_error("core_gui.give_item_tooltip: elem has wrong element type: " .. element.type)
+        return
+    end
+
+    local surface = game.get_surface(surface_name)
+    if not surface then
+        lib.log_error("core_gui.give_item_tooltip: Invalid surface_name: " .. surface_name)
+        return
+    end
+
     local item_name
     local rich_type
     if element.sprite:sub(1, 5) == "item/" then
@@ -123,7 +138,7 @@ function core_gui.give_item_tooltip(player, surface_name, element)
     local item_count = element.number or 1
 
     local value, location_rich_text
-    if lib.is_space_platform(surface_name) then
+    if lib.is_space_platform(surface) then
         value = item_values.get_minimal_item_value(item_name)
         location_rich_text = "[img=space-location.solar-system-edge]"
     else

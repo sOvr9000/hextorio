@@ -116,7 +116,7 @@ function hex_state_manager.get_hex_state(surface, hex_pos)
     if surface_id == -1 then return end
 
     local surface_obj = game.get_surface(surface_id)
-    if not surface_obj or lib.is_space_platform(surface_obj.name) then return end
+    if not surface_obj or lib.is_space_platform(surface_obj) then return end
 
     local surface_hexes = hex_state_manager.get_surface_hexes(surface_id)
     if not surface_hexes then return end
@@ -141,7 +141,7 @@ function hex_state_manager.get_surface_hexes(surface)
     end
 
     local surface_obj = game.get_surface(surface_id)
-    if not surface_obj or lib.is_space_platform(surface_obj.name) then
+    if not surface_obj or lib.is_space_platform(surface_obj) then
         return
     end
 

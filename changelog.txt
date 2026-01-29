@@ -18,6 +18,8 @@ Date: 1/2/26
     - Added remote interfaces.
   Optimizations:
     - Optimized overall trading performance. The improvement is proportional to the number of players online at once.
+    - Slightly optimized coin calculations.
+    - Optimized random trade generation.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.10
 Date: 25/1/26
