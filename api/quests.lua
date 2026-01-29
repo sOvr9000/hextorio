@@ -267,6 +267,8 @@ function quests.register_events()
     end)
 
     event_system.register("entity-killed-entity", quests.on_entity_killed_entity)
+    -- event_system.register("pre-player-died-to-entity", quests.on_pre_player_died_to_entity)
+    event_system.register("player-respawned", quests.on_player_respawned)
 
     event_system.register("command-hextorio-debug", function(player, params)
         quests.complete_quest "ground-zero"
@@ -875,13 +877,17 @@ end
 ---Process the obtainment of a quest reward.
 ---@param reward QuestReward
 ---@param from_quest Quest|nil
-function quests.give_reward(reward, from_quest)
+function quests.give_reward(reward, from_quest, trigger_reward_received)
     if reward.type == "unlock-feature" then
         storage.quests.unlocked_features[reward.value] = true
     elseif reward.type == "receive-items" then
         if from_quest then
             for _, player in pairs(game.players) do
-                quests.try_receive_items_reward(player, from_quest, reward)
+                if lib.player_is_waiting_to_respawn(player) then
+                    quests.defer_receive_items_reward(player, from_quest, reward)
+                else
+                    quests.try_receive_items_reward(player, from_quest, reward)
+                end
             end
         else
             lib.log_error("quests.give_reward: Tried to give a quest reward of type 'receive-items' from a nil quest.")
@@ -933,6 +939,29 @@ function quests.try_receive_items_reward(player, quest, reward)
     end
 
     return true
+end
+
+---Set a quest's "receive items" reward to be deferred until the player respawns.
+---Use this if the player dies before the quest reward can be given.
+---For example, when a player dies to electricity, the "Electrocution" quest cannot give items to that player until they respawn.
+---@param player LuaPlayer
+---@param from_quest Quest
+---@param reward QuestReward
+function quests.defer_receive_items_reward(player, from_quest, reward)
+    if not storage.quests.deferred_rewards then
+        storage.quests.deferred_rewards = {}
+    end
+
+    if not storage.quests.deferred_rewards[player.index] then
+        storage.quests.deferred_rewards[player.index] = {}
+    end
+
+    log("deferred reward for " .. player.name)
+    log(serpent.block(reward))
+    table.insert(storage.quests.deferred_rewards[player.index], {
+        from_quest_name = from_quest.name,
+        reward = table.deepcopy(reward),
+    })
 end
 
 ---@param player LuaPlayer
@@ -1343,6 +1372,25 @@ function quests.on_entity_killed_entity(entity_that_died, entity_that_caused, da
             end
         end
     end
+end
+
+---@param player LuaPlayer
+function quests.on_player_respawned(player)
+    if not storage.quests.deferred_rewards then storage.quests.deferred_rewards = {} end
+    if not storage.quests.deferred_rewards[player.index] then return end
+
+    for _, deferred_reward in pairs(storage.quests.deferred_rewards[player.index]) do
+        local from_quest = quests.get_quest(deferred_reward.from_quest_name)
+        if from_quest then
+            quests.try_receive_items_reward(player, from_quest, deferred_reward.reward)
+        else
+            lib.log_error("quests.on_player_respawned: Failed to find quest for deferred reward for player=" .. player.name .. ", quest_name=" .. deferred_reward.from_quest_name)
+        end
+    end
+
+    -- All rewards given (or supposed to be given anyway).
+    -- Remove record of deferral.
+    storage.quests.deferred_rewards[player.index] = nil
 end
 
 

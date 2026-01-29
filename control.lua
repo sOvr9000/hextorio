@@ -342,7 +342,9 @@ end)
 script.on_event(defines.events.on_player_respawned, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
+
     lib.unstuck_player(player)
+    event_system.trigger("player-respawned", player)
 end)
 
 script.on_event(defines.events.on_player_created, function(event)
@@ -440,6 +442,16 @@ script.on_event(defines.events.on_entity_died, function (event)
         event_system.trigger("entity-killed-entity", event.entity, event.cause, event.damage_type)
     end
 end)
+
+-- script.on_event(defines.events.on_pre_player_died, function (event)
+--     local player = game.get_player(event.player_index)
+--     if not player then return end
+
+--     event_system.trigger("pre-player-died", player)
+--     if event.cause and event.cause.valid then
+--         event_system.trigger("pre-player-died-to-entity", player, event.cause)
+--     end
+-- end)
 
 script.on_event(defines.events.on_surface_created, function (event)
     local surface_id = event.surface_index

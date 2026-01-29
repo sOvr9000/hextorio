@@ -2218,6 +2218,13 @@ function lib.multi_roll(chance)
     return floor + math.floor(chance - floor + math.random())
 end
 
+---Return whether the given player is online and is currently dead, waiting to respawn.
+---@param player LuaPlayer
+---@return boolean
+function lib.player_is_waiting_to_respawn(player)
+    return player.connected and (not player.character or not player.character.valid)
+end
+
 
 
 return lib

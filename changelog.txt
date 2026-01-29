@@ -19,6 +19,7 @@ Date: 1/2/26
     - Fixed that the claim hexes tool wasn't taking coins from the piggy bank when in remote view.
     - Fixed that sometimes a hex core's GUI wouldn't update when one of its trades is made.
     - Fixed that quests requiring to kill entities using a specific damage type was not using localization for the damage type.
+    - Fixed that quest reward items given to dead players (waiting to respawn) were being dropped off at Nauvis spawn.  This pertains to the "Electrocution" quest.
   Modding:
     - Added remote interfaces.
   Optimizations:
