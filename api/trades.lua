@@ -265,6 +265,8 @@ function trades.register_events()
     event_system.register("runtime-setting-changed-base-trade-efficiency", function()
         storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
     end)
+
+    event_system.register("entity-killed-entity", trades.on_entity_killed_entity)
 end
 
 function trades.init()
@@ -3206,6 +3208,31 @@ function trades.migrate_old_data()
         storage.trades.unresearched_penalty = penalty
         trades.recalculate_researched_items()
         trades.fetch_base_trade_productivity_settings()
+    end
+end
+
+---@param entity_that_died LuaEntity
+---@param entity_that_caused LuaEntity
+---@param damage_type_prot LuaDamagePrototype|nil
+function trades.on_entity_killed_entity(entity_that_died, entity_that_caused, damage_type_prot)
+    if not damage_type_prot or damage_type_prot.name ~= "electric" or entity_that_caused.force.name ~= "player" then return end
+
+    local transformation = terrain.get_surface_transformation(entity_that_died.surface)
+    local hex_pos = axial.get_hex_containing(entity_that_died.position, transformation.scale, transformation.rotation)
+    local hex_state = hex_state_manager.get_hex_state(entity_that_died.surface, hex_pos)
+    if not hex_state or not hex_state.trades then return end
+
+    local prod_req = storage.item_ranks.productivity_requirements[3]
+    for _, trade_id in pairs(hex_state.trades) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade and trades.get_productivity(trade) >= prod_req then
+            for _, item_name in pairs(trades.get_item_names_in_trade(trade)) do
+                local rank = item_ranks.get_item_rank(item_name)
+                if rank == 3 then
+                    item_ranks.progress_item_rank(item_name, 4)
+                end
+            end
+        end
     end
 end
 

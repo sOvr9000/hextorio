@@ -434,34 +434,11 @@ script.on_event(defines.events.on_entity_settings_pasted, function (event)
 end)
 
 script.on_event(defines.events.on_entity_died, function (event)
-    if event.cause and event.cause.valid and event.cause.force == game.forces.player then
-        quests.increment_progress_for_type("kill-entity", 1, event.entity.name)
-        if event.damage_type then
-            if event.entity.force ~= game.forces.player then
-                event_system.trigger("enemy-died-to-damage-type", event.entity, event.damage_type.name, event.cause)
-            end
-        end
-    end
-    if event.entity.name == "character" then
-        -- This is not in on_player_died because the damage type for cause of death may be important.
-        if event.damage_type then
-            quests.increment_progress_for_type("die-to-damage-type", 1, event.damage_type.name)
-        end
-        if event.cause and event.cause.valid then
-            if sets.new(lib.get_entity_ammo_categories(event.cause))["railgun"] then
-                if event.cause.force == game.forces.player then
-                    quests.increment_progress_for_type "die-to-railgun"
-                end
-            end
-        end
-    end
-    if event.entity.name == "biter-spawner" or event.entity.name == "spitter-spawner" then
-        if event.cause and event.cause.valid and (event.cause.name == "car" or event.cause.name == "tank") then
-            event_system.trigger("spawner-rammed", event.entity, event.cause)
-        end
-    end
-
     event_system.trigger("entity-died", event.entity)
+
+    if event.cause and event.cause.valid and event.entity.valid then
+        event_system.trigger("entity-killed-entity", event.entity, event.cause, event.damage_type)
+    end
 end)
 
 script.on_event(defines.events.on_surface_created, function (event)

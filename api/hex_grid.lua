@@ -289,28 +289,6 @@ function hex_grid.register_events()
         end
     end)
 
-    event_system.register("enemy-died-to-damage-type", function(entity, damage_type, cause)
-        if damage_type == "electric" then
-            local transformation = terrain.get_surface_transformation(entity.surface)
-            local hex_pos = axial.get_hex_containing(entity.position, transformation.scale, transformation.rotation)
-            local hex_state = hex_state_manager.get_hex_state(entity.surface, hex_pos)
-            if hex_state and hex_state.trades then
-                local prod_req = storage.item_ranks.productivity_requirements[3]
-                for _, trade_id in pairs(hex_state.trades) do
-                    local trade = trades.get_trade_from_id(trade_id)
-                    if trade and trades.get_productivity(trade) >= prod_req then
-                        for _, item_name in pairs(trades.get_item_names_in_trade(trade)) do
-                            local rank = item_ranks.get_item_rank(item_name)
-                            if rank == 3 then
-                                item_ranks.progress_item_rank(item_name, 4)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end)
-
     event_system.register("entity-died", function(entity)
         if entity.name:sub(1, 15) ~= "strongbox-tier-" then return end
         hex_grid.on_strongbox_killed(entity)

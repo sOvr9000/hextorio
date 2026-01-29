@@ -205,14 +205,6 @@ function quests.register_events()
         end
     end)
 
-    event_system.register("spawner-rammed", function(spawner, vehicle)
-        quests.increment_progress_for_type "biter-ramming"
-    end)
-
-    event_system.register("enemy-died-to-damage-type", function(entity, damage_type_name, cause)
-        quests.increment_progress_for_type("kill-with-damage-type", 1, damage_type_name)
-    end)
-
     event_system.register("entity-died", function(entity)
         if not entity.valid then return end
         if entity.type == "mining-drill" then
@@ -273,6 +265,8 @@ function quests.register_events()
     event_system.register("player-coins-changed", function(player, coin)
         quests.set_progress_for_type("coins-in-inventory", coin_tiers.to_base_value(coin))
     end)
+
+    event_system.register("entity-killed-entity", quests.on_entity_killed_entity)
 
     event_system.register("command-hextorio-debug", function(player, params)
         quests.complete_quest "ground-zero"
@@ -1314,6 +1308,38 @@ function quests.redistribute_quest_rewards(reward_type)
                 if reward.type == reward_type then
                     quests.give_reward(reward)
                 end
+            end
+        end
+    end
+end
+
+---@param entity_that_died LuaEntity
+---@param entity_that_caused LuaEntity
+---@param damage_type_prot LuaDamagePrototype|nil
+function quests.on_entity_killed_entity(entity_that_died, entity_that_caused, damage_type_prot)
+    quests.increment_progress_for_type("kill-entity", 1, entity_that_died.name)
+
+    if damage_type_prot then
+        if entity_that_caused.force.name == "player" then
+            quests.increment_progress_for_type("kill-with-damage-type", 1, damage_type_prot.name)
+        end
+    end
+
+    if entity_that_died.name == "biter-spawner" or entity_that_died.name == "spitter-spawner" then
+        if entity_that_caused.name == "car" or entity_that_caused.name == "tank" then
+            quests.increment_progress_for_type "biter-ramming"
+        end
+    end
+
+    -- This is not in on_player_died because the damage type for cause of death is important.
+    if entity_that_died.name == "character" then
+        if damage_type_prot then
+            quests.increment_progress_for_type("die-to-damage-type", 1, damage_type_prot.name)
+        end
+
+        if lib.table_index(lib.get_entity_ammo_categories(entity_that_caused), "railgun") then
+            if entity_that_caused.force == game.forces.player then
+                quests.increment_progress_for_type "die-to-railgun"
             end
         end
     end
