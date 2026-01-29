@@ -99,6 +99,11 @@ end
 ---@param amount_scaling number
 ---@return LootItemWithCount[]
 function loot_tables.sample_until_total_value(loot_table, surface_name, expected_num_samples, max_num_samples, total_value, amount_scaling)
+    if not next(loot_table.loot) then
+        lib.log_error("loot_tables.sample_until_total_value: loot table is empty")
+        return {}
+    end
+
     local value_per_sample = total_value / (expected_num_samples * amount_scaling)
     local remaining_value = total_value
 

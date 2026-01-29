@@ -687,6 +687,11 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
     local max_item_value = math.huge -- No upper limit. Allow for very rare but valuable loot.
     local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
 
+    if not next(better_loot_table.loot) then
+        lib.log_error("dungeons.spawn_loot: dungeon loot value exceeded maximum (min_item_value = " .. min_item_value .. ")")
+        return {}
+    end
+
     local hex_center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
     local entities = {}
 

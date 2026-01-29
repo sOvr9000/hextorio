@@ -88,6 +88,14 @@ local raw_items = sets.new {
     "hexaprism-coin",
 }
 
+local vanilla_planet_names = {
+    ["nauvis"] = true,
+    ["vulcanus"] = true,
+    ["fulgora"] = true,
+    ["gleba"] = true,
+    ["aquilo"] = true,
+}
+
 
 
 function lib.position_to_string(x, y)
@@ -1406,6 +1414,13 @@ end
 ---@return boolean
 function lib.is_space_platform(surface)
     return surface.platform ~= nil
+end
+
+---Return whether the surface name corresponds to a vanilla Space Age planet.
+---@param surface_name string
+---@return boolean
+function lib.is_vanilla_planet_name(surface_name)
+    return vanilla_planet_names[surface_name] == true
 end
 
 function lib.sum_mgs(mgs, target, keys)

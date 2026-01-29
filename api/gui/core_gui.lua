@@ -91,12 +91,6 @@ function core_gui.give_item_tooltip(player, surface_name, element)
         return
     end
 
-    local surface = game.get_surface(surface_name)
-    if not surface then
-        lib.log_error("core_gui.give_item_tooltip: Invalid surface_name: " .. surface_name)
-        return
-    end
-
     local item_name
     local rich_type
     if element.sprite:sub(1, 5) == "item/" then
@@ -138,7 +132,7 @@ function core_gui.give_item_tooltip(player, surface_name, element)
     local item_count = element.number or 1
 
     local value, location_rich_text
-    if lib.is_space_platform(surface) then
+    if item_values.is_item_interplanetary(surface_name, item_name) then
         value = item_values.get_minimal_item_value(item_name)
         location_rich_text = "[img=space-location.solar-system-edge]"
     else
