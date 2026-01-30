@@ -14,7 +14,7 @@ Date: 1/2/26
     - Added mod setting that toggles the allowance of two-headed trains in trading.
     - Changed the default value for the base trade efficiency setting from 1.0 to 0.8, where at least 25% trade productivity is required to create infinite coin loops.
   Bugfixes:
-    - Fixed the game crashing upon destroying your car and a biter/spawner spawner in the same collision.
+    - Fixed the game crashing upon destroying your car and a biter/spitter spawner in the same collision.
     - Fixed that disconnecting from a server (losing connection, being kicked, force-quitting, etc.) was teleporting you to your remote view location upon rejoining.
     - Fixed that the claim hexes tool wasn't taking coins from the piggy bank when in remote view.
     - Fixed that sometimes a hex core's GUI wouldn't update when one of its trades is made.
