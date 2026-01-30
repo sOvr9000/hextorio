@@ -957,8 +957,6 @@ function quests.defer_receive_items_reward(player, from_quest, reward)
         storage.quests.deferred_rewards[player.index] = {}
     end
 
-    log("deferred reward for " .. player.name)
-    log(serpent.block(reward))
     table.insert(storage.quests.deferred_rewards[player.index], {
         from_quest_name = from_quest.name,
         reward = table.deepcopy(reward),
@@ -1506,7 +1504,6 @@ end
 ---@param character LuaEntity
 function quests.on_lightning_struck_character(character)
     local player = character.player
-    log(player)
     if not player then return end
 
     if not player.character or not player.character.valid or player.character.health == 0 then
