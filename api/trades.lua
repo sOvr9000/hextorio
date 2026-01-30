@@ -2328,6 +2328,10 @@ function trades.queue_trade_export_job(player)
         item_value_lookup = {nauvis = {}, vulcanus = {}, fulgora = {}, gleba = {}, aquilo = {}},
     }
 
+    if not storage.trades.trade_export_jobs then
+        storage.trades.trade_export_jobs = {}
+    end
+
     for i = #storage.trades.trade_export_jobs, 1, -1 do
         if storage.trades.trade_export_jobs[i].player == player then
             table.remove(storage.trades.trade_export_jobs, i)
@@ -2339,7 +2343,7 @@ end
 
 ---Process trade export jobs. Exports trades to JSON in batches.
 function trades.process_trade_export_jobs()
-    local jobs = storage.trades.trade_export_jobs
+    local jobs = storage.trades.trade_export_jobs or {}
     if #jobs == 0 then return end
 
     local batch_size = 2000
