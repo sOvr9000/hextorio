@@ -1773,6 +1773,8 @@ function trades.queue_productivity_update_job(surface)
     local surface_id = lib.get_surface_id(surface)
     if surface_id == -1 then return end
 
+    if not storage.hex_grid.flattened_surface_hexes then return end
+
     local flattened_hexes = storage.hex_grid.flattened_surface_hexes[surface_id]
     if not flattened_hexes then return end
 
