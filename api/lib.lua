@@ -2253,7 +2253,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean
 function lib.player_is_waiting_to_respawn(player)
-    return player.connected and (not player.character or not player.character.valid)
+    return player.connected and (not player.character or not player.character.valid or player.character.health == 0)
 end
 
 
