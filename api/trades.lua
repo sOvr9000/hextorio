@@ -1776,6 +1776,10 @@ function trades.queue_productivity_update_job(surface)
     local flattened_hexes = storage.hex_grid.flattened_surface_hexes[surface_id]
     if not flattened_hexes then return end
 
+    if not storage.trades.productivity_update_jobs then
+        storage.trades.productivity_update_jobs = {}
+    end
+
     for i, job in ipairs(storage.trades.productivity_update_jobs) do
         if job.surface_id == surface_id then
             table.remove(storage.trades.productivity_update_jobs, i) -- Overwrite previous job if it exists.  Only one job needs to exist for this task.
@@ -1794,7 +1798,7 @@ end
 
 ---Process trade productivity update jobs. Processes up to 50 hex cores per tick.
 function trades.process_trade_productivity_updates()
-    local jobs = storage.trades.productivity_update_jobs
+    local jobs = storage.trades.productivity_update_jobs or {}
     if #jobs == 0 then return end
 
     local batch_size = 400
@@ -1843,12 +1847,16 @@ function trades.queue_trade_collection_job(player, trade_ids_set, filter, proces
         process_immediately = process_immediately,
     }
 
+    if not storage.trades.trade_collection_jobs then
+        storage.trades.trade_collection_jobs = {}
+    end
+
     table.insert(storage.trades.trade_collection_jobs, job)
 end
 
 ---Process trade collection jobs. Collects trade objects from IDs in batches.
 function trades.process_trade_collection_jobs()
-    local jobs = storage.trades.trade_collection_jobs
+    local jobs = storage.trades.trade_collection_jobs or {}
     if #jobs == 0 then return end
 
     local batch_size = math.floor(storage.trades.collection_batch_size / #jobs)
@@ -1916,11 +1924,15 @@ function trades.queue_trade_filtering_job(player, trades_lookup, filter, process
         process_immediately = process_immediately,
     }
 
+    if not storage.trades.trade_filtering_jobs then
+        storage.trades.trade_filtering_jobs = {}
+    end
+
     table.insert(storage.trades.trade_filtering_jobs, job)
 end
 
 function trades.process_trade_filtering_jobs()
-    local jobs = storage.trades.trade_filtering_jobs
+    local jobs = storage.trades.trade_filtering_jobs or {}
     if #jobs == 0 then return end
 
     local batch_size = math.floor(storage.trades.filtering_batch_size / #jobs)
@@ -2036,6 +2048,10 @@ function trades.queue_trade_sorting_job(player, filtered_trades, is_favorited, f
         process_immediately = process_immediately,
     }
 
+    if not storage.trades.trade_sorting_jobs then
+        storage.trades.trade_sorting_jobs = {}
+    end
+
     table.insert(storage.trades.trade_sorting_jobs, job)
     if not process_immediately then
         event_system.trigger("trade-sorting-starting", player, #trade_ids)
@@ -2043,7 +2059,7 @@ function trades.queue_trade_sorting_job(player, filtered_trades, is_favorited, f
 end
 
 function trades.process_trade_sorting_jobs()
-    local jobs = storage.trades.trade_sorting_jobs
+    local jobs = storage.trades.trade_sorting_jobs or {}
     if #jobs == 0 then return end
 
     local batch_size = math.floor(storage.trades.sorting_batch_size / #jobs)
@@ -2262,22 +2278,22 @@ end
 ---Cancel all trade overview jobs for a player.
 ---@param player LuaPlayer
 function trades.cancel_trade_overview_jobs(player)
-    for i = #storage.trades.trade_collection_jobs, 1, -1 do
+    for i = #(storage.trades.trade_collection_jobs or {}), 1, -1 do
         if storage.trades.trade_collection_jobs[i].player == player then
             table.remove(storage.trades.trade_collection_jobs, i)
         end
     end
-    for i = #storage.trades.trade_filtering_jobs, 1, -1 do
+    for i = #(storage.trades.trade_filtering_jobs or {}), 1, -1 do
         if storage.trades.trade_filtering_jobs[i].player == player then
             table.remove(storage.trades.trade_filtering_jobs, i)
         end
     end
-    for i = #storage.trades.trade_sorting_jobs, 1, -1 do
+    for i = #(storage.trades.trade_sorting_jobs or {}), 1, -1 do
         if storage.trades.trade_sorting_jobs[i].player == player then
             table.remove(storage.trades.trade_sorting_jobs, i)
         end
     end
-    for i = #storage.trades.trade_export_jobs, 1, -1 do
+    for i = #(storage.trades.trade_export_jobs or {}), 1, -1 do
         if storage.trades.trade_export_jobs[i].player == player then
             table.remove(storage.trades.trade_export_jobs, i)
         end

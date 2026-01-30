@@ -2012,7 +2012,7 @@ function lib.reload_entity(entity, params, stack_sizes)
     local ammo_categories = attack_params.ammo_categories
     if not ammo_categories then return end
 
-    local ammo_type = storage.ammo_type_per_entity[entity.name]
+    local ammo_type = (storage.ammo_type_per_entity or {})[entity.name]
     if not ammo_type then return end
 
     local ammo_name = params[ammo_type] --[[@as string|nil]]
@@ -2088,10 +2088,15 @@ end
 ---@param cooldown_name string
 ---@return boolean
 function lib.is_player_cooldown_ready(player_index, cooldown_name)
+    if not storage.cooldowns then
+        storage.cooldowns = {}
+    end
+
     local cooldowns = storage.cooldowns[player_index]
     if not cooldowns or cooldowns[cooldown_name] == nil then
         return true
     end
+
     return game.tick >= cooldowns[cooldown_name]
 end
 
@@ -2100,10 +2105,15 @@ end
 ---@param cooldown_name string
 ---@return int
 function lib.get_player_cooldown_remaining(player_index, cooldown_name)
+    if not storage.cooldowns then
+        storage.cooldowns = {}
+    end
+
     local cooldowns = storage.cooldowns[player_index]
     if not cooldowns or cooldowns[cooldown_name] == nil then
         return 0
     end
+
     return cooldowns[cooldown_name] - game.tick
 end
 
@@ -2112,11 +2122,16 @@ end
 ---@param cooldown_name string
 ---@param cooldown_time int
 function lib.trigger_player_cooldown(player_index, cooldown_name, cooldown_time)
+    if not storage.cooldowns then
+        storage.cooldowns = {}
+    end
+
     local cooldowns = storage.cooldowns[player_index]
     if not cooldowns then
         cooldowns = {}
         storage.cooldowns[player_index] = cooldowns
     end
+
     cooldowns[cooldown_name] = game.tick + cooldown_time
 end
 

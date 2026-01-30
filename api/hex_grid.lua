@@ -2290,6 +2290,9 @@ function hex_grid.spawn_hexlight(state)
     if state.is_dungeon then
         hexlight.color = storage.hex_grid.dungeon_hexlight_color
     else
+        if not storage.hex_grid.default_hexlight_color then
+            hex_grid.update_hexlight_default_colors()
+        end
         hexlight.color = storage.hex_grid.default_hexlight_color[state.hex_core.surface.name]
     end
 
@@ -3450,6 +3453,10 @@ function hex_grid.process_flying_text(state, total_removed, total_inserted, tota
 
     if not any_output then
         str = {"", str, "[img=virtual-signal.signal-deny]"} ---@diagnostic disable-line
+    end
+
+    if not storage.hex_grid.show_trade_flying_text then
+        storage.hex_grid.show_trade_flying_text = {}
     end
 
     for _, player in pairs(game.connected_players) do

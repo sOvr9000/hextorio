@@ -198,7 +198,7 @@ function dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, try_generate)
     if not try_generate then return end
 
     local dist = axial.distance({q=0, r=0}, hex_pos)
-    if dist < storage.dungeons.min_dist then return end
+    if dist < (storage.dungeons.min_dist or 5) then return end
 
     -- Otherwise, try to generate one.
     local surface = game.get_surface(surface_id)
@@ -814,8 +814,16 @@ end
 ---Request turrets to be reloaded over time.
 ---@param params any
 function dungeons._queue_turret_reload(params)
+    if not storage.dungeons.queued_reload_dungeon_indices then
+        storage.dungeons.queued_reload_dungeon_indices = {}
+    end
+
     if storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] then return end
     storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] = true
+
+    if not storage.dungeons.queued_reloads then
+        storage.dungeons.queued_reloads = {}
+    end
 
     -- log("reload starting for " .. params.dungeon_id)
     params.progress = 0
@@ -823,7 +831,7 @@ function dungeons._queue_turret_reload(params)
 end
 
 function dungeons._tick_turret_reload()
-    if not next(storage.dungeons.queued_reloads) then return end
+    if not next(storage.dungeons.queued_reloads or {}) then return end
 
     -- local prof = game.create_profiler()
 
@@ -843,7 +851,7 @@ function dungeons._tick_turret_reload()
 
     params.progress = params.progress + #turrets
 
-    if next(turrets) then
+    if next(turrets) and params.ammo and params.progress and params.turrets then
         lib.reload_turrets(turrets, params.ammo)
         if params.progress < #params.turrets then
             -- prof.stop()
@@ -856,6 +864,10 @@ function dungeons._tick_turret_reload()
     -- log("reload finished for " .. params.dungeon_id)
     -- prof.stop()
     -- log(prof)
+
+    if not storage.dungeons.queued_reload_dungeon_indices then
+        storage.dungeons.queued_reload_dungeon_indices = {}
+    end
 
     storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] = nil
     table.remove(storage.dungeons.queued_reloads, queue_idx)
