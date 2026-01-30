@@ -317,7 +317,7 @@ function questbook_gui.update_questbook(player, quest_name)
                 table.insert(t, {"item-name." .. t[1]}) -- could possibly have to change this, but it might be fine
             elseif condition.type == "sell-item-of-quality" then
                 table.insert(t, {"quality-name." .. t[1]})
-            elseif condition.type == "kill-with-damage-type" then
+            elseif condition.type == "kill-with-damage-type" or condition.type == "die-to-damage-type" then
                 t[1] = {"damage-type-name." .. t[1]}
             end
             table.insert(t, "green")
