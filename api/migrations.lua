@@ -105,6 +105,13 @@ end
 function migrations.on_mod_updated(old_version, new_version)
     lib.log("Starting version migrations")
 
+    if helpers.compare_versions(old_version, new_version) == 1 then
+        -- Backwards compatibility?
+        lib.log("Migrating backwards: " .. old_version .. " -> " .. new_version)
+        lib.log("WARNING: Backwards save migration is not well-supported. Expect some features to be broken or cause crashes.")
+        return
+    end
+
     -- Handle coin updates for ALL versions. These are central to almost everything in the mod, so it gets to be updated on each release without instruction.
     storage.coin_tiers.COIN_NAMES = data_coin_tiers.COIN_NAMES
     storage.coin_tiers.TIER_SCALING = data_coin_tiers.TIER_SCALING

@@ -21,6 +21,8 @@ Date: 1/2/26
     - Fixed that quests requiring to kill entities using a specific damage type was not using localization for the damage type.
     - Fixed that quest reward items given to dead players (waiting to respawn) were being dropped off at Nauvis spawn.  This pertains to the "Electrocution" quest.
     - Fixed some migration issues from 1.3.1 saves and older.
+    - Fixed immediate crashes when trying to downgrade the Hextorio version on a save.
+        This does not mean perfect backwards compatibility, but instead the crash on save load is fixed.
   Scripting:
     - Added remote interfaces.
   Optimizations:
