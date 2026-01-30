@@ -269,6 +269,7 @@ function quests.register_events()
     event_system.register("entity-killed-entity", quests.on_entity_killed_entity)
     -- event_system.register("pre-player-died-to-entity", quests.on_pre_player_died_to_entity)
     event_system.register("player-respawned", quests.on_player_respawned)
+    event_system.register("lightning-struck-character", quests.on_lightning_struck_character)
 
     event_system.register("command-hextorio-debug", function(player, params)
         quests.complete_quest "ground-zero"
@@ -1301,6 +1302,115 @@ function quests.get_all_condition_types_and_values()
     return t
 end
 
+---Process a step of lightning acceleration, which helps players actually die to Fulgoran lightning for the "Electrocution" quest.
+function quests.process_lightning_acceleration()
+    local params = storage.quests.lightning_acceleration
+    if not params then return end
+
+    local player = params.player
+    local character = player.character
+    if not character or not character.valid then storage.quests.lightning_acceleration = nil return end
+
+    local surface = character.surface
+    if surface.name ~= "fulgora" then storage.quests.lightning_acceleration = nil return end
+
+    -- The number of ticks that the animation waits before starting.
+    local ANIMATION_DELAY = 300
+
+    if game.tick == params.start_tick + 1 then
+        game.print("\n\n\n\n")
+        game.print(lib.color_localized_string({"hextorio.lightning-anim-1"}, "pink", "heading-1"))
+    elseif game.tick == params.start_tick + ANIMATION_DELAY / 2 then
+        game.print(lib.color_localized_string({"hextorio.lightning-anim-2"}, "red", "heading-1"))
+    end
+
+    local start_tick = params.start_tick + ANIMATION_DELAY
+    if game.tick < start_tick then return end
+
+    -- The number of ticks between each step of the electrocution animation.
+    local ANIMATION_INTERVAL = 3
+
+    -- (phase 1) The distance from the character at which lightning strikes around the player character.
+    local ANIMATION_DISTANCE = 25
+
+    -- (phase 1) The number of steps along the hexagonal side that the animation takes.
+    local STEPS_PER_PHASE_1_EDGE = 12
+
+    -- (phase 1) The number of steps during which the animation stays at the current vertex.
+    local STEPS_PER_PHASE_1_VERTEX = 16
+
+    -- (phase 1) The number of times lightning goes around in a hexagon pattern before proceeding to phase 2.
+    local VERTEX_ROUNDS_PHASE_1 = 3
+
+    -- (phase 2) The number of steps taken while closing into the player.
+    local STEPS_CLOSING_IN_PHASE_2 = 48
+
+    -- The total number of steps that a vertex round takes in phase 1.
+    local TOTAL_STEPS_VERTEX_ROUND_PHASE_1 = STEPS_PER_PHASE_1_EDGE + STEPS_PER_PHASE_1_VERTEX
+
+    -- The total number of steps that phase 1 uses.
+    local TOTAL_STEPS_PHASE_1 = VERTEX_ROUNDS_PHASE_1 * TOTAL_STEPS_VERTEX_ROUND_PHASE_1
+
+    -- The total number of steps that phase 2 uses.
+    local TOTAL_STEPS_PHASE_2 = STEPS_CLOSING_IN_PHASE_2
+
+    -- The number of ticks since the beginning of the acceleration process.
+    local ticks_since_start = game.tick - start_tick
+
+    -- The current "frame" of the electrocution animation.
+    local anim_frame = ticks_since_start / ANIMATION_INTERVAL
+
+    -- Skip the tick if not aligned with an animation frame.
+    if math.floor(anim_frame) ~= anim_frame then return end
+
+    local center_pos = character.position
+
+    -- This can be cached for improved performance, but it may not be necessary as this animation occurs once per playthrough and does not last very long.
+    local vertices = {} ---@type MapPosition[]
+    local px = center_pos.x
+    local py = center_pos.y
+    for i = 1, 6 do
+        local angle = i * math.pi / 3
+        vertices[i] = {x = px + math.cos(angle) * ANIMATION_DISTANCE, y = py + math.sin(angle) * ANIMATION_DISTANCE}
+    end
+
+    if anim_frame < TOTAL_STEPS_PHASE_1 then
+        -- This is PHASE 1: Lightning strikes around the player, forming a hexagon in its successive strike locations.
+        local vertex_round_step = anim_frame % TOTAL_STEPS_VERTEX_ROUND_PHASE_1
+        if vertex_round_step < STEPS_PER_PHASE_1_VERTEX then
+            -- The lightning strikes are at hex vertices.
+            for i = 1, 6 do
+                surface.execute_lightning {
+                    name = "lightning",
+                    position = vertices[i],
+                }
+            end
+        else
+            -- The lightning strikes are between hex vertices.
+            local t = (1 + vertex_round_step - STEPS_PER_PHASE_1_VERTEX) / (1 + STEPS_PER_PHASE_1_EDGE)
+            for i = 1, 6 do
+                local position = lib.lerp_positions(vertices[i], vertices[1 + i % 6], t)
+                surface.execute_lightning {
+                    name = "lightning",
+                    position = position,
+                }
+            end
+        end
+    elseif anim_frame < TOTAL_STEPS_PHASE_1 + TOTAL_STEPS_PHASE_2 then
+        -- This is PHASE 2: Lightning closes in for the kill.
+        local t = (anim_frame - TOTAL_STEPS_PHASE_1) / TOTAL_STEPS_PHASE_2
+        for i = 1, 6 do
+            local position = lib.lerp_positions(vertices[i], center_pos, t)
+            surface.execute_lightning {
+                name = "lightning",
+                position = position,
+            }
+        end
+    else
+        storage.quests.lightning_acceleration = nil
+    end
+end
+
 function quests.recalculate_all_condition_progress()
     for _, condition_type_value_pair in pairs(quests.get_all_condition_types_and_values()) do
         quests.recalculate_condition_progress_of_type(condition_type_value_pair[1], condition_type_value_pair[2])
@@ -1391,6 +1501,28 @@ function quests.on_player_respawned(player)
     -- All rewards given (or supposed to be given anyway).
     -- Remove record of deferral.
     storage.quests.deferred_rewards[player.index] = nil
+end
+
+---@param character LuaEntity
+function quests.on_lightning_struck_character(character)
+    local player = character.player
+    log(player)
+    if not player then return end
+
+    if not player.character or not player.character.valid or player.character.health == 0 then
+        -- They died, but this isn't a trigger for entity-killed-entity, so handle the "died to electricity" thing separately here.
+        quests.increment_progress_for_type("die-to-damage-type", 1, "electric")
+        return
+    end
+
+    if quests.is_complete "electrocution" or not quests.is_revealed "electrocution" then return end
+    if storage.quests.lightning_acceleration and storage.quests.lightning_acceleration.player == player then return end
+
+    -- QoL to spam lightning strikes around players if the "Electrocution" quest is not yet complete.
+    storage.quests.lightning_acceleration = {
+        player = player,
+        start_tick = game.tick,
+    }
 end
 
 

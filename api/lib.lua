@@ -243,6 +243,22 @@ function lib.lerp(a, b, t)
     return a + (b - a) * t
 end
 
+---Linearly interpolate from `a` to `b` by the factor `t`.
+---@param a MapPosition
+---@param b MapPosition
+---@param t number
+---@return MapPosition
+function lib.lerp_positions(a, b, t)
+    -- TODO: Optimize by using variables for each coordinate instead of creating two more tables than needed to compute this.
+    local _a = {a[1] or a.x, a[2] or a.y}
+    local _b = {b[1] or b.x, b[2] or b.y}
+
+    return {
+        x = _a[1] + (_b[1] - _a[1]) * t,
+        y = _a[2] + (_b[2] - _a[2]) * t,
+    }
+end
+
 ---Round the position to integer coordinates, and optionally offset by 0.5.
 ---@param pos MapPosition
 ---@param offset_by_half boolean|nil

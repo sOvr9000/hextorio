@@ -295,6 +295,7 @@ script.on_event(defines.events.on_tick, function (event)
     trades.process_trade_filtering_jobs()
     trades.process_trade_sorting_jobs()
     trades.process_trade_export_jobs()
+    quests.process_lightning_acceleration()
 
     if storage.debug_spider then
         if not storage.debug_spider.valid then
@@ -439,7 +440,20 @@ script.on_event(defines.events.on_entity_died, function (event)
     event_system.trigger("entity-died", event.entity)
 
     if event.cause and event.cause.valid and event.entity.valid then
+        log(event.cause .. " killed " .. event.entity)
         event_system.trigger("entity-killed-entity", event.entity, event.cause, event.damage_type)
+    end
+end)
+
+script.on_event(defines.events.on_entity_damaged, function (event)
+    if not event.entity.valid then return end
+
+    if event.entity.type == "character" then
+        if event.source and event.source.valid then
+            if event.source.type == "lightning" then
+                event_system.trigger("lightning-struck-character", event.entity)
+            end
+        end
     end
 end)
 
