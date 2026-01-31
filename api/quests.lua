@@ -1026,6 +1026,32 @@ function quests.print_quest_completion(quest)
         lib.color_localized_string({"hextorio-questbook.rewards"}, "green", "heading-1"),
         rewards_str,
     })
+
+    for _, player in pairs(game.connected_players) do
+        local sound_setting = lib.player_setting_value_as_string(player, "quest-completion-sound")
+        if sound_setting ~= "none" and sound_setting ~= "console-message" then -- TODO: Implement quest toasts and stop printing quests to console (change this condition to stop checking for "console-message" when done)
+            local path
+            if sound_setting == "piano" then
+                path = "quest-completed"
+            elseif sound_setting == "console-message" then
+                path = "utility/console_message"
+            elseif sound_setting == "research-completed" then
+                path = "utility/research_completed"
+            elseif sound_setting == "game-won" then
+                path = "utility/game_won"
+            elseif sound_setting == "game-lost" then
+                path = "utility/game_lost"
+            elseif sound_setting == "alert" then
+                path = "utility/alert_destroyed"
+            end
+
+            if path then
+                player.play_sound {path = path}
+            else
+                lib.log_error("quests.print_quest_completion: missing quest completion sound for " .. sound_setting)
+            end
+        end
+    end
 end
 
 -- Check if all conditions are satisfied.

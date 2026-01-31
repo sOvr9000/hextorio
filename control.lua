@@ -440,7 +440,6 @@ script.on_event(defines.events.on_entity_died, function (event)
     event_system.trigger("entity-died", event.entity)
 
     if event.cause and event.cause.valid and event.entity.valid then
-        log(event.cause .. " killed " .. event.entity)
         event_system.trigger("entity-killed-entity", event.entity, event.cause, event.damage_type)
     end
 end)

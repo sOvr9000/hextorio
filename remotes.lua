@@ -43,6 +43,7 @@ for _, api_name in pairs{
     "strongboxes",
     "terrain",
     "tile_names",
+    "toasts",
     "trade_loop_finder",
     "trades",
     "train_trading",

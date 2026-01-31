@@ -32,4 +32,25 @@ data:extend({
         default_value = true,
         order = "x[misc]-s[trade-flying-text]",
     },
+    {
+        type = "string-setting",
+        setting_type = "runtime-per-user",
+        name = "hextorio-quest-completion-sound",
+
+        allowed_values = {
+            "none",
+            "piano",
+
+            -- TODO: Implement quest toasts and stop printing quests to console (enable this as an option when done)
+            -- "console-message",
+
+            "research-completed",
+            "game-won",
+            "game-lost",
+            "alert",
+        },
+
+        default_value = "research-completed",
+        order = "x[misc]-t[quest-completion-sound]",
+    },
 })

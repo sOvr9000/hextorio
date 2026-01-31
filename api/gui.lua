@@ -9,6 +9,7 @@ local gui = {
     piggy_bank = require "api.gui.piggy_bank_gui",
 
     trades = require "api.gui.trades_gui",
+    toasts = require "api.gui.toasts_gui"
 }
 
 

@@ -1,4 +1,5 @@
 
+require("prototypes.sound")
 require("prototypes.item_subgroup")
 require("prototypes.item")
 require("prototypes.hexadic-resonator")

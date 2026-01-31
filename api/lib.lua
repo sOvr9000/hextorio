@@ -2256,6 +2256,25 @@ function lib.player_is_waiting_to_respawn(player)
     return player.connected and (not player.character or not player.character.valid or player.character.health == 0)
 end
 
+---Return whether the given object is a LocalisedString. Does not check for circular references, so infinite recursion is possible.
+---@param obj any
+---@return boolean
+function lib.is_localized_string(obj)
+    -- Should probably be more sophisticated, but this works for now.
+    if obj == nil then return false end
+    if type(obj) == "userdata" then return false end
+
+    if type(obj) == "table" then
+        for _, _obj in pairs(obj) do
+            if not lib.is_localized_string(_obj) then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
 
 
 return lib
