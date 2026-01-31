@@ -130,7 +130,7 @@ function hex_state_manager.get_hex_state(surface, hex_pos)
     return state
 end
 
----Get or create surface storage, failing if the surface does not exist or is a space platform.
+---Get or create surface storage, failing if the surface does not exist, is a space platform, or is not a vanilla Space Age surface.
 ---@param surface SurfaceIdentification
 ---@return HexStateMap|nil
 function hex_state_manager.get_surface_hexes(surface)
@@ -141,7 +141,7 @@ function hex_state_manager.get_surface_hexes(surface)
     end
 
     local surface_obj = game.get_surface(surface_id)
-    if not surface_obj or lib.is_space_platform(surface_obj) then
+    if not surface_obj or lib.is_space_platform(surface_obj) or not lib.is_vanilla_planet_name(surface_obj.name) then
         return
     end
 
