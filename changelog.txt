@@ -22,6 +22,7 @@ Date: 1/2/26
     - Fixed that sometimes a hex core's GUI wouldn't update when one of its trades is made.
     - Fixed that quests specifying a damage type were not using localization for the damage type.
     - Fixed that quest reward items given to dead players (waiting to respawn) were being dropped off at Nauvis spawn.  This pertains to the "Electrocution" quest.
+    - Fixed that strongbox loot wasn't being given to players in remote view.
     - Fixed some migration issues from 1.3.1 saves and older.
     - Fixed immediate crashes when trying to downgrade the Hextorio version on a save.
         This does not mean perfect compatibility, but instead the crash on save load is fixed.

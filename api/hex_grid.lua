@@ -4038,7 +4038,7 @@ function hex_grid.on_strongbox_killed(sb_entity)
             piggy_bank.increment_player_stored_coins(player.index, coin_loot)
         else
             -- This would normalize the entire inventory if piggy bank was unlocked (impossible with this flow control).
-            local player_inv = player.get_main_inventory()
+            local player_inv = lib.get_player_inventory(player)
             if player_inv then
                 inventories.add_coin_to_inventory(player_inv, coin_loot)
             end
