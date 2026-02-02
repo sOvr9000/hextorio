@@ -105,10 +105,6 @@ local all_commands = {
         usage = "/tp-to-edge",
     },
     {
-        name = "simple-trade-loops",
-        usage = "/simple-trade-loops",
-    },
-    {
         name = "regenerate-trades",
         usage = "/regenerate-trades",
         requires_confirmation = true,
@@ -153,7 +149,6 @@ local all_commands = {
 local public_commands = sets.new {
     "hextorio-commands",
     "get-item-value",
-    "simple-trade-loops",
 }
 
 
