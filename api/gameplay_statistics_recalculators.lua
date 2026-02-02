@@ -1,0 +1,158 @@
+
+local event_system = require "api.event_system"
+local gameplay_statistics = require "api.gameplay_statistics"
+local lib = require "api.lib"
+local entity_util = require "api.entity_util"
+
+local recalculators = {}
+
+
+
+---@alias GameplayStatisticRecalculator fun(stat_value: any): int
+
+---@type {[GameplayStatisticType]: GameplayStatisticRecalculator}
+local recalculator_functions = {}
+
+---Register a recalculator function for a statistic type.
+---@param stat_type GameplayStatisticType
+---@param func GameplayStatisticRecalculator
+function recalculators.define_recalculator(stat_type, func)
+    recalculator_functions[stat_type] = func
+end
+
+---Event handler for recalculate-statistic event.
+---@param stat_type string
+---@param stat_value any
+local function on_recalculate_statistic(stat_type, stat_value)
+    local func = recalculator_functions[stat_type]
+    if not func then
+        return
+    end
+
+    local new_value = func(stat_value)
+    gameplay_statistics.set(stat_type, new_value, stat_value)
+
+    lib.log("gameplay_statistics_recalculators: Recalculated " .. stat_type .. " with value " .. serpent.line(stat_value or {}) .. ". New value: " .. new_value)
+end
+
+function recalculators.register_events()
+    event_system.register("recalculate-statistic", on_recalculate_statistic)
+end
+
+
+
+recalculators.define_recalculator("visit-planet", function(stat_value)
+    local surface_name = stat_value
+    ---@cast surface_name string
+
+    local surface = game.get_surface(surface_name)
+    if not surface then return 0 end
+
+    return 1
+end)
+
+recalculators.define_recalculator("items-at-rank", function(stat_value)
+    local rank = stat_value
+    local total = 0
+    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if lib.is_catalog_item(item_name) then
+            if rank_obj.rank >= rank then
+                total = total + 1
+            end
+        end
+    end
+    return total
+end)
+
+recalculators.define_recalculator("total-item-rank", function(stat_value)
+    local total = 0
+    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if lib.is_catalog_item(item_name) then
+            total = total + rank_obj.rank - 1
+        end
+    end
+    return total
+end)
+
+recalculators.define_recalculator("claimed-hexes-on", function(stat_value)
+    local surface_name = stat_value
+    ---@cast surface_name string
+
+    local surface = game.get_surface(surface_name)
+    if not surface then return 0 end
+
+    local surface_hexes = storage.hex_grid.surface_hexes[surface.index]
+    if not surface_hexes then return 0 end
+
+    local total = 0
+    for _, Q in pairs(surface_hexes) do
+        for _, state in pairs(Q) do
+            if state.claimed then
+                total = total + 1
+            end
+        end
+    end
+
+    return total
+end)
+
+recalculators.define_recalculator("total-hexes-claimed", function(stat_value)
+    local total = 0
+    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
+        for _, Q in pairs(hexes) do
+            for _, state in pairs(Q) do
+                if state.claimed then
+                    total = total + 1
+                end
+            end
+        end
+    end
+    return total
+end)
+
+recalculators.define_recalculator("total-strongbox-level", function(stat_value)
+    local total_level = 0
+    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
+        for _, Q in pairs(hexes) do
+            for _, state in pairs(Q) do
+                if state.strongboxes then
+                    for _, sb_entity in pairs(state.strongboxes) do
+                        total_level = total_level + (entity_util.get_tier_of_strongbox(sb_entity) or 1) - 1
+                    end
+                end
+            end
+        end
+    end
+    return total_level
+end)
+
+recalculators.define_recalculator("cover-ores-on", function(stat_value)
+    local surface_name = stat_value
+    ---@cast surface_name string
+
+    local surface = game.get_surface(surface_name)
+    if not surface then return 0 end
+
+    local total_ores = 0
+    for _, entity in pairs(surface.find_entities_filtered {
+        type = "mining-drill",
+    }) do
+        total_ores = total_ores + entity_util.track_ores_covered_by_drill(entity)
+    end
+
+    return total_ores
+end)
+
+recalculators.define_recalculator("tech-tree-completion", function(stat_value)
+    local total = 0
+    for _, tech in pairs(game.forces.player.technologies) do
+        if tech.researched then
+            total = total + 1
+        end
+    end
+    return total
+end)
+
+
+
+return recalculators

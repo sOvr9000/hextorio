@@ -49,9 +49,7 @@ local gameplay_statistics = {}
 ---| "ping-trade"
 ---| "create-trade-map-tag"
 
----@alias GameplayStatisticValue string|number|nil
-
-local recalculators = {} ---@type {[GameplayStatisticType]: fun(stat_value: GameplayStatisticValue): int}
+---@alias GameplayStatisticValue string|number|(string|number)[]
 
 
 
@@ -148,80 +146,17 @@ function gameplay_statistics.get_stat_value_key(stat_value)
         return "none"
     end
     if type(stat_value) == "table" then
-        ---@cast stat_value (string|number)[]
         return table.concat(stat_value, "-")
     end
-    ---@cast stat_value string|number
     return stat_value
 end
 
----Register a recalculator function for a statistic type.
----@param stat_type GameplayStatisticType
----@param func fun(stat_value: GameplayStatisticValue): int
-function gameplay_statistics.define_recalculator(stat_type, func)
-    recalculators[stat_type] = func
-end
-
----Recalculate a specific statistic from scratch.
+---Recalculate a specific statistic from scratch by triggering a recalculation event.
+---Recalculator modules listen to this event and update the statistic value.
 ---@param stat_type GameplayStatisticType
 ---@param stat_value GameplayStatisticValue|nil
 function gameplay_statistics.recalculate(stat_type, stat_value)
-    local func = recalculators[stat_type]
-    if not func then
-        return
-    end
-
-    local progress = func(stat_value)
-    gameplay_statistics.set(stat_type, progress, stat_value)
-
-    lib.log("gameplay_statistics.recalculate: Recalculated " .. stat_type .. " with value " .. serpent.line(stat_value or {}) .. ". New value: " .. progress)
-end
-
----Get all unique statistic type-value pairs currently tracked.
----@return {stat_type: GameplayStatisticType, stat_value: GameplayStatisticValue}[]
-function gameplay_statistics.get_all_tracked_statistics()
-    local stats_list = {}
-    local stats_storage = storage.gameplay_statistics
-
-    if not stats_storage then return stats_list end
-
-    if stats_storage.stats then
-        for stat_type, _ in pairs(stats_storage.stats) do
-            table.insert(stats_list, {stat_type = stat_type, stat_value = nil})
-        end
-    end
-
-    if stats_storage.stats_with_values then
-        for stat_type, stat_table in pairs(stats_storage.stats_with_values) do
-            for key, _ in pairs(stat_table) do
-                local stat_value
-                if key == "none" then
-                    stat_value = nil
-                elseif string.find(key, "-") then
-                    local parts = {}
-                    for part in string.gmatch(key, "[^-]+") do
-                        table.insert(parts, part)
-                    end
-                    stat_value = parts
-                else
-                    stat_value = key
-                end
-                table.insert(stats_list, {stat_type = stat_type, stat_value = stat_value})
-            end
-        end
-    end
-
-    return stats_list
-end
-
----Recalculate all statistics that have recalculator functions.
-function gameplay_statistics.recalculate_all()
-    local stats_list = gameplay_statistics.get_all_tracked_statistics()
-    for _, stat_info in pairs(stats_list) do
-        if recalculators[stat_info.stat_type] then
-            gameplay_statistics.recalculate(stat_info.stat_type, stat_info.stat_value)
-        end
-    end
+    event_system.trigger("recalculate-statistic", stat_type, stat_value)
 end
 
 ---@param entity_that_died LuaEntity
@@ -340,110 +275,6 @@ end
 function gameplay_statistics.on_hex_rank_changed(prev_val, new_val)
     gameplay_statistics.set("reach-hex-rank", new_val)
 end
-
-
-
-gameplay_statistics.define_recalculator("visit-planet", function(stat_value)
-    local surface_name = stat_value
-    ---@cast surface_name string
-
-    local surface = game.get_surface(surface_name)
-    if not surface then return 0 end
-
-    return 1
-end)
-
-gameplay_statistics.define_recalculator("items-at-rank", function(stat_value)
-    local rank = stat_value
-    local total = 0
-    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
-        if lib.is_catalog_item(item_name) then
-            if rank_obj.rank >= rank then
-                total = total + 1
-            end
-        end
-    end
-    return total
-end)
-
-gameplay_statistics.define_recalculator("total-item-rank", function(stat_value)
-    local total = 0
-    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
-        if lib.is_catalog_item(item_name) then
-            total = total + rank_obj.rank - 1
-        end
-    end
-    return total
-end)
-
-gameplay_statistics.define_recalculator("claimed-hexes-on", function(stat_value)
-    local surface_name = stat_value
-    ---@cast surface_name string
-
-    local surface = game.get_surface(surface_name)
-    if not surface then return 0 end
-
-    local surface_hexes = storage.hex_grid.surface_hexes[surface.index]
-    if not surface_hexes then return 0 end
-
-    local total = 0
-    for _, Q in pairs(surface_hexes) do
-        for _, state in pairs(Q) do
-            if state.claimed then
-                total = total + 1
-            end
-        end
-    end
-
-    return total
-end)
-
-gameplay_statistics.define_recalculator("total-hexes-claimed", function(stat_value)
-    local total = 0
-    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
-        for _, Q in pairs(hexes) do
-            for _, state in pairs(Q) do
-                if state.claimed then
-                    total = total + 1
-                end
-            end
-        end
-    end
-    return total
-end)
-
-gameplay_statistics.define_recalculator("total-strongbox-level", function(stat_value)
-    local total_level = 0
-    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
-        for _, Q in pairs(hexes) do
-            for _, state in pairs(Q) do
-                if state.strongboxes then
-                    for _, sb_entity in pairs(state.strongboxes) do
-                        total_level = total_level + (entity_util.get_tier_of_strongbox(sb_entity) or 1) - 1
-                    end
-                end
-            end
-        end
-    end
-    return total_level
-end)
-
-gameplay_statistics.define_recalculator("cover-ores-on", function(stat_value)
-    local surface_name = stat_value
-    ---@cast surface_name string
-
-    local surface = game.get_surface(surface_name)
-    if not surface then return 0 end
-
-    local total_ores = 0
-    for _, entity in pairs(surface.find_entities_filtered {
-        type = "mining-drill",
-    }) do
-        total_ores = total_ores + entity_util.track_ores_covered_by_drill(entity)
-    end
-
-    return total_ores
-end)
 
 
 

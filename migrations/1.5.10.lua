@@ -2,6 +2,8 @@
 local lib = require "api.lib"
 local hex_state_manager = require "api.hex_state_manager"
 local hex_grid          = require "api.hex_grid"
+local gameplay_statistics = require "api.gameplay_statistics"
+local hex_rank            = require "api.hex_rank"
 
 return function()
     storage.train_trading.allow_two_headed_trains = lib.runtime_setting_value_as_boolean "allow-two-headed-trains"
@@ -12,5 +14,11 @@ return function()
                 hex_grid.remove_strongboxes(state)
             end
         end
+    end
+
+    hex_rank.init()
+
+    for stat_type, _ in pairs(storage.hex_rank.factor_metadata) do
+        gameplay_statistics.recalculate(stat_type)
     end
 end

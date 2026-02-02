@@ -29,6 +29,7 @@ local piggy_bank = require "api.piggy_bank"
 local passive_coin_buff = require "api.passive_coin_buff"
 local hex_rank = require "api.hex_rank"
 local gameplay_statistics = require "api.gameplay_statistics"
+local gsr = require "api.gameplay_statistics_recalculators"
 
 migrations.load_handlers()
 
@@ -47,6 +48,7 @@ strongboxes.register_events()
 inventories.register_events()
 hex_rank.register_events()
 gameplay_statistics.register_events()
+gsr.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
