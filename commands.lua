@@ -110,6 +110,10 @@ local all_commands = {
         requires_confirmation = true,
     },
     {
+        name = "reload-item-buff-effects",
+        usage = "/reload-item-buff-effects",
+    },
+    {
         name = "export-item-values",
         usage = "/export-item-values",
     },

@@ -66,10 +66,7 @@ local buff_type_actions = {
     ["research-productivity"] = create_vanilla_buff_applier "laboratory_productivity_bonus",
     ["research-speed"] = create_vanilla_buff_applier "laboratory_speed_modifier",
     ["braking-force"] = create_vanilla_buff_applier "train_braking_force_bonus",
-
-    ["combat-robot-count"] = function(value)
-        game.forces.player.maximum_following_robot_count = game.forces.player.maximum_following_robot_count + value
-    end,
+    ["combat-robot-count"] = create_vanilla_buff_applier "maximum_following_robot_count",
     ["bullet-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("bullet", game.forces.player.get_ammo_damage_modifier("bullet") + value)
     end,
@@ -200,6 +197,10 @@ function item_buffs.register_events()
         local tier = capsule_name:sub(24)
 
         item_buffs.add_free_buffs(2 ^ (tier - 1))
+    end)
+
+    event_system.register("command-reload-item-buff-effects", function(player, params)
+        item_buffs.force_reset()
     end)
 end
 
@@ -355,9 +356,8 @@ function item_buffs.get_all_item_buffs()
     for item_name, _ in pairs(storage.item_buffs.enabled) do
         local buffs = storage.item_buffs.item_buffs[item_name]
         if buffs and next(buffs) then
-            local start_idx = #all_buffs + 1
-            for i = 1, #buffs do
-                item_buffs[start_idx + i] = buffs[i]
+            for _, buff in ipairs(buffs) do
+                table.insert(all_buffs, buff)
             end
         end
     end
@@ -442,7 +442,11 @@ end
 ---@param trigger_event boolean|nil Whether to trigger the `item-buff-level-changed` event.  Defaults to `true` if not provided.
 function item_buffs.set_item_buff_level(item_name, level, trigger_event)
     local prev_level = storage.item_buffs.levels[item_name] or 0
-    if prev_level == level or level < 0 then
+    if prev_level == level then
+        return
+    end
+    if level < 0 then
+        lib.log_error("item_buffs.set_item_buff_level: Attempted to set negative level " .. level .. " for " .. item_name)
         return
     end
 
@@ -657,7 +661,18 @@ function item_buffs._enhance_all_item_buffs_tick()
     if not storage.item_buffs.enhance_all.processing then return end
 
     local player = storage.item_buffs.enhance_all.player
+    if not player or not player.valid then
+        lib.log_error("item_buffs._enhance_all_item_buffs_tick: Player is no longer valid, aborting enhancement")
+        storage.item_buffs.enhance_all.processing = false
+        return
+    end
+
     local inv = storage.item_buffs.enhance_all.inventory
+    if not inv or not inv.valid then
+        lib.log_error("item_buffs._enhance_all_item_buffs_tick: Inventory is no longer valid, aborting enhancement")
+        storage.item_buffs.enhance_all.processing = false
+        return
+    end
     local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked) -- Check each time because the player can modify the coins they have available to spend while this processes over time.
     local item_names = storage.item_buffs.enhance_all.item_names
@@ -756,19 +771,48 @@ end
 ---Recalculate all bonuses from zero.
 ---@param new_data table
 function item_buffs.migrate_buff_changes(new_data)
-    -- Store which items were enabled and their levels
+    item_buffs.force_reset(new_data, true)
+end
+
+---Force-reset all item buffs, reapplying the effects of their current levels.  Does not reset any leveling progress.
+---@param new_data table|nil New data to be loaded into storage, necessary when migrating saves
+---@param reset_tech boolean|nil Whether to reset technologies. Defaults to true. Set to false if calling this function in response to tech resets from other mods.
+function item_buffs.force_reset(new_data, reset_tech)
+    if reset_tech == nil then reset_tech = true end
+
+    lib.log("Resetting all item buffs with reset_tech = " .. tostring(reset_tech))
+    if new_data then
+        lib.log("old_data = " .. serpent.line(storage.item_buffs))
+        lib.log("new_data = " .. serpent.line(new_data))
+    else
+        lib.log("new_data not provided")
+    end
+
+    -- Store the current level bonus before resetting
+    local old_level_bonus = storage.item_buffs.level_bonus
+
+    -- Store all unlocked item levels (enabled or disabled)
+    -- This prevents levels from being reset when catalog GUI calls get_item_buff_level()
     local items_to_restore = {}
-    for item_name, _ in pairs(storage.item_buffs.enabled) do
-        if item_buffs.is_enabled(item_name) then
+    for item_name, _ in pairs(storage.item_buffs.unlocked) do
+        if item_buffs.is_unlocked(item_name) then
             local level = item_buffs.get_item_buff_level(item_name)
             if level > 0 then
-                items_to_restore[item_name] = level
+                -- Subtract the old level bonus to get the base level
+                -- The bonus will be re-added when "all-buffs-level" items are re-applied
+                local base_level = level
+                if not item_buffs.gives_buff_of_type(item_name, "all-buffs-level") then
+                    base_level = level - math.floor(old_level_bonus)
+                end
+                items_to_restore[item_name] = math.max(1, base_level)
             end
         end
     end
 
-    -- Reset all force bonuses and reapply technology effects
-    game.forces.player.reset_technology_effects()
+    -- Reset all force bonuses and reapply technology effects, if specified
+    if reset_tech then
+        game.forces.player.reset_technology_effects()
+    end
 
     -- Reset custom storage values that aren't affected by technologies
     storage.trades.base_productivity = 0 -- THIS RESETS QUEST-GIVEN BONUSES
@@ -784,25 +828,43 @@ function item_buffs.migrate_buff_changes(new_data)
     storage.item_buffs.unresearched_penalty_multiplier = 1
     storage.item_buffs.level_bonus = 0
 
-    -- Update metadata
-    storage.item_buffs.show_as_linear = new_data.show_as_linear
-    storage.item_buffs.is_fractional = new_data.is_fractional
-    storage.item_buffs.has_description = new_data.has_description
-    storage.item_buffs.is_nonlinear = new_data.is_nonlinear
-    storage.item_buffs.has_linear_effect_scaling = new_data.has_linear_effect_scaling
-    storage.item_buffs.item_buffs = new_data.item_buffs
+    -- Clear levels table to prevent "all-buffs-level" from double-incrementing
+    storage.item_buffs.levels = {}
+
+    -- Update metadata if provided
+    if new_data then
+        storage.item_buffs.show_as_linear = new_data.show_as_linear
+        storage.item_buffs.is_fractional = new_data.is_fractional
+        storage.item_buffs.has_description = new_data.has_description
+        storage.item_buffs.is_nonlinear = new_data.is_nonlinear
+        storage.item_buffs.has_linear_effect_scaling = new_data.has_linear_effect_scaling
+        storage.item_buffs.item_buffs = new_data.item_buffs
+    end
 
     -- Re-apply all buffs with new parameters
+    lib.log("Base item levels (after subtracting old_level_bonus=" .. old_level_bonus .. "): " .. serpent.line(items_to_restore))
+
+    -- First pass: restore all levels in storage
+    -- This ensures all items are present when "all-buffs-level" actions iterate through the levels table
     for item_name, level in pairs(items_to_restore) do
-        local buffs = storage.item_buffs.item_buffs[item_name]
-        if buffs then
-            for _, buff in pairs(buffs) do
-                item_buffs.apply_buff_modifiers(buff, level, false)
+        storage.item_buffs.levels[item_name] = level
+    end
+
+    -- Second pass: apply buff modifiers only for enabled items
+    for item_name, level in pairs(items_to_restore) do
+        if item_buffs.is_enabled(item_name) then
+            local buffs = storage.item_buffs.item_buffs[item_name]
+            if buffs then
+                for _, buff in pairs(buffs) do
+                    item_buffs.apply_buff_modifiers(buff, level, false)
+                end
             end
         end
     end
 
-    event_system.trigger "item-buff-data-migrated"
+    lib.log("Restored item levels: " .. serpent.line(storage.item_buffs.levels))
+
+    event_system.trigger "item-buff-data-reset"
 end
 
 

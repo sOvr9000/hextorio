@@ -116,7 +116,7 @@ function quests.register_events()
         end
     end)
 
-    event_system.register("item-buff-data-migrated", function()
+    event_system.register("item-buff-data-reset", function()
         quests.redistribute_quest_rewards "all-trades-productivity"
     end)
 end

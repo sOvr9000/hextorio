@@ -80,6 +80,15 @@ function catalog_gui.register_events()
         end
     end)
 
+    event_system.register("item-buff-data-reset", function()
+        for _, player in pairs(game.connected_players) do
+            if gui.is_frame_open(player, "catalog") then
+                -- catalog_gui.hide_catalog(player)
+                catalog_gui.update_catalog(player)
+            end
+        end
+    end)
+
     event_system.register("post-set-item-value-command", function(player, params)
         catalog_gui.reinitialize()
     end)
@@ -296,12 +305,15 @@ end
 
 function catalog_gui.update_catalog_inspect_frame(player)
     local frame = player.gui.screen["catalog"]
-    if not frame then
+    if not frame or not frame.valid then
         catalog_gui.init_catalog(player)
         frame = player.gui.screen["catalog"]
     end
 
     local inspect_frame = frame["flow"]["inspect-frame"]
+    if not inspect_frame or not inspect_frame.valid then
+        return
+    end
 
     catalog_gui.verify_catalog_storage(player)
     local selection = catalog_gui.get_catalog_selection(player)
@@ -456,6 +468,13 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
             enabled = false
             tooltip = nil
         end
+    end
+
+    -- SOMEHOW this is occurring. I have NO idea how it's even possible. Fixes some random crashes. This element is not immediately invalid after creation. It's only invalid after the block above executes. (what the actual fuck?)
+    -- TODO: resolve that item buff level is being reset somehow with /reload-item-buff-effects
+    if not item_buff_flow.valid then
+        lib.log_error("item buffs level reset?")
+        return
     end
 
     local buff_button = item_buff_flow.add {
