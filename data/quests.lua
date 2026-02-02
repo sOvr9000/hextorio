@@ -339,7 +339,7 @@ return {
         },
         {
             name = "look-at-my-score",
-            conditions = {{type = "reach-hex-rank", progress_requirement = 6}},
+            conditions = {{type = "reach-hex-rank", progress_requirement = 300}},
             rewards = {{type = "unlock-feature", value = "hex-rank"}},
             prerequisites = {"remind-me-later"},
         },
