@@ -65,12 +65,12 @@ function hex_rank.init()
             goal_term = 2.5,
             coefficient = 1,
         },
-        ["net-coin-production"] = { -- TODO: not yet implemented
-            goal_term = 9,
+        ["net-coin-production"] = {
+            goal_term = 11,
             coefficient = 1,
         },
         ["total-spawners-killed"] = {
-            goal_term = 3,
+            goal_term = 3.1,
             coefficient = 2.1,
         },
         ["tech-tree-completion"] = {
@@ -79,27 +79,27 @@ function hex_rank.init()
         },
         ["total-resources-depleted"] = {
             goal_term = 4,
-            coefficient = 1.5,
+            coefficient = 1,
         },
         ["total-dungeons-looted"] = {
-            goal_term = 1.5,
+            goal_term = 1.65,
             coefficient = 2.7,
         },
         ["total-item-buff-level"] = {
-            goal_term = 2.3,
+            goal_term = 2.4,
             coefficient = 1,
         },
         ["total-item-rank"] = {
             goal_stat = total_items * 4,
             coefficient = 1.2,
         },
-        ["science-per-hour"] = { -- TODO: not yet implemented
-            goal_term = 2.4,
+        ["science-per-hour"] = {
+            goal_term = 4.2,
             coefficient = 3,
         },
         ["total-rockets-launched"] = {
-            goal_term = 3.5,
-            coefficient = 3,
+            goal_term = 3.7,
+            coefficient = 2,
         },
     }
 
@@ -173,18 +173,15 @@ function hex_rank.recalculate_hex_rank()
     local scale = storage.hex_rank.scale
     local factor_term_cache = storage.hex_rank.factor_term_cache
 
-    log("recomputing hex rank:")
     local total = 0
     for key, metadata in pairs(factors) do
         local stat = gameplay_statistics.get(key)
         local coefficient = metadata.coefficient or 1
         local term = math.log(stat + 1) * INV_LOG10 * coefficient
-        log("key: " .. key .. ", stat: " .. stat .. ", term: " .. term)
         total = total + term
 
         factor_term_cache[key] = term
     end
-    log("total: " .. total)
 
     -- Overall multiplier
     total = total * scale
