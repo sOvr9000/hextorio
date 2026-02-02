@@ -2725,11 +2725,24 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     -- Use raw array for accumulation to avoid repeated normalization (performance optimization)
     local total_coins_added_values = coin_tiers.new_coin_values()
 
+    local prod_reqs = storage.item_ranks.productivity_requirements
+
+    local uniquely_traded_items = storage.trades.uniquely_traded_items
+    if not uniquely_traded_items then
+        uniquely_traded_items = {}
+        storage.trades.uniquely_traded_items = uniquely_traded_items
+    end
+
     local function handle_item_in_trade(trade, quality, item_name, amount, trade_side, rounded_prod)
+        if not uniquely_traded_items[item_name] then
+            uniquely_traded_items[item_name] = true
+            gameplay_statistics.increment "total-unique-items-traded"
+        end
+
         local rank = item_ranks.get_item_rank(item_name)
         if rank ~= 2 and rank ~= 4 then return end
 
-        if rounded_prod + 1e-9 >= storage.item_ranks.productivity_requirements[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
+        if rounded_prod + 1e-9 >= prod_reqs[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
             item_ranks.progress_item_rank(item_name, rank + 1)
         end
     end

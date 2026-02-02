@@ -77,6 +77,10 @@ function hex_rank.init()
             goal_stat = total_techs,
             coefficient = 2,
         },
+        ["total-unique-items-traded"] = {
+            goal_stat = total_items * 5, -- once for each item on each planet
+            coefficient = 3,
+        },
         ["total-resources-depleted"] = {
             goal_term = 4,
             coefficient = 1,
@@ -92,6 +96,10 @@ function hex_rank.init()
         ["total-item-rank"] = {
             goal_stat = total_items * 4,
             coefficient = 1.2,
+        },
+        ["fastest-ship-speed"] = {
+            goal_stat = 550,
+            coefficient = 2,
         },
         ["science-per-hour"] = {
             goal_term = 4.4,

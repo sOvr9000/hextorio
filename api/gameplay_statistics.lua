@@ -48,6 +48,8 @@ local gameplay_statistics = {}
 ---| "hex-core-trades-read"
 ---| "ping-trade"
 ---| "create-trade-map-tag"
+---| "total-unique-items-traded"
+---| "fastest-ship-speed"
 
 ---@alias GameplayStatisticValue string|number|(string|number)[]
 
@@ -289,6 +291,7 @@ end
 
 function gameplay_statistics.on_dynamic_stats_updating()
     local total_hex_coins = 0
+    local fastest_ship_speed = 0
     local total_sph = 0
 
     for _, surface in pairs(game.surfaces) do
@@ -300,6 +303,8 @@ function gameplay_statistics.on_dynamic_stats_updating()
 
             local produced_sph = prod_stats.get_flow_count {name = "science", category = "input", precision_index = defines.flow_precision_index.one_hour}
             total_sph = total_sph + produced_sph
+        elseif lib.is_space_platform(surface) then
+            fastest_ship_speed = math.max(fastest_ship_speed, surface.platform.speed)
         end
     end
 
@@ -307,6 +312,7 @@ function gameplay_statistics.on_dynamic_stats_updating()
     total_sph = math.floor(0.5 + total_sph)
 
     gameplay_statistics.set_if_greater("net-coin-production", total_hex_coins)
+    gameplay_statistics.set_if_greater("fastest-ship-speed", fastest_ship_speed)
     gameplay_statistics.set_if_greater("science-per-hour", total_sph)
 end
 

@@ -31,6 +31,9 @@ local factor_metadata = {
     ["tech-tree-completion"] = {
         sprite = "virtual-signal.shape-t-4",
     },
+    ["total-unique-items-traded"] = {
+        sprite = "virtual-signal.signal-rightwards-leftwards-arrow",
+    },
     ["total-resources-depleted"] = {
         sprite = "item.electric-mining-drill",
     },
@@ -42,6 +45,9 @@ local factor_metadata = {
     },
     ["total-item-rank"] = {
         sprite = "gold-star",
+    },
+    ["fastest-ship-speed"] = {
+        sprite = "item.thruster",
     },
     ["science-per-hour"] = {
         sprite = "virtual-signal.signal-science-pack",

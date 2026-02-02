@@ -244,12 +244,12 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 end)
 
 script.on_nth_tick(60 * 30, function()
-    event_system.trigger "dynamic-stats-updating"
     passive_coin_buff.process_accumulation()
 end)
 
 script.on_nth_tick(300, function()
-    event_system.trigger("dungeon-update")
+    event_system.trigger "dynamic-stats-updating"
+    event_system.trigger "dungeon-update"
 end)
 
 script.on_nth_tick(60, function()
