@@ -33,68 +33,42 @@ local function apply_nonlinear_buff(key, value)
     end
 end
 
+local function create_vanilla_buff_applier(key)
+    return function(value)
+        local new_value = game.forces.player[key] + value
+        if new_value < 0 then
+            lib.log_error("Tried to set a negative value for vanilla buff " .. key .. ": " .. value)
+            new_value = 0
+        end
+        game.forces.player[key] = new_value
+    end
+end
+
 
 
 local buff_type_actions = {
-    ["mining-speed"] = function(value)
-        game.forces.player.manual_mining_speed_modifier = game.forces.player.manual_mining_speed_modifier + value
-    end,
-    ["moving-speed"] = function(value)
-        game.forces.player.character_running_speed_modifier = game.forces.player.character_running_speed_modifier + value
-    end,
-    ["reach-distance"] = function(value)
-        game.forces.player.character_reach_distance_bonus = game.forces.player.character_reach_distance_bonus + value
-    end,
-    ["build-distance"] = function(value)
-        game.forces.player.character_build_distance_bonus = game.forces.player.character_build_distance_bonus + value
-    end,
-    ["robot-battery"] = function(value)
-        game.forces.player.worker_robots_battery_modifier = game.forces.player.worker_robots_battery_modifier + value
-    end,
-    ["robot-speed"] = function(value)
-        game.forces.player.worker_robots_speed_modifier = game.forces.player.worker_robots_speed_modifier + value
-    end,
-    ["robot-cargo-size"] = function(value)
-        game.forces.player.worker_robots_storage_bonus = game.forces.player.worker_robots_storage_bonus + value
-    end,
-    ["crafting-speed"] = function(value)
-        game.forces.player.manual_crafting_speed_modifier = game.forces.player.manual_crafting_speed_modifier + value
-    end,
-    ["mining-productivity"] = function(value)
-        game.forces.player.mining_drill_productivity_bonus = game.forces.player.mining_drill_productivity_bonus + value
-    end,
-    ["inventory-size"] = function(value)
-        game.forces.player.character_inventory_slots_bonus = game.forces.player.character_inventory_slots_bonus + value
-    end,
-    ["beacon-efficiency"] = function(value)
-        game.forces.player.beacon_distribution_modifier = game.forces.player.beacon_distribution_modifier + value
-    end,
-    ["belt-stack-size"] = function(value)
-        game.forces.player.belt_stack_size_bonus = game.forces.player.belt_stack_size_bonus + value
-    end,
-    ["bulk-inserter-capacity"] = function(value)
-        game.forces.player.bulk_inserter_capacity_bonus = game.forces.player.bulk_inserter_capacity_bonus + value
-    end,
-    ["inserter-capacity"] = function(value)
-        game.forces.player.inserter_stack_size_bonus = game.forces.player.inserter_stack_size_bonus + value
-    end,
-    ["health"] = function(value)
-        game.forces.player.character_health_bonus = game.forces.player.character_health_bonus + value
-    end,
-    ["combat-robot-lifetime"] = function(value)
-        game.forces.player.following_robots_lifetime_modifier = game.forces.player.following_robots_lifetime_modifier + value
-    end,
+    ["mining-speed"] = create_vanilla_buff_applier "manual_mining_speed_modifier",
+    ["moving-speed"] = create_vanilla_buff_applier "character_running_speed_modifier",
+    ["reach-distance"] = create_vanilla_buff_applier "character_reach_distance_bonus",
+    ["build-distance"] = create_vanilla_buff_applier "character_build_distance_bonus",
+    ["robot-battery"] = create_vanilla_buff_applier "worker_robots_battery_modifier",
+    ["robot-speed"] = create_vanilla_buff_applier "worker_robots_speed_modifier",
+    ["robot-cargo-size"] = create_vanilla_buff_applier "worker_robots_storage_bonus",
+    ["crafting-speed"] = create_vanilla_buff_applier "manual_crafting_speed_modifier",
+    ["mining-productivity"] = create_vanilla_buff_applier "mining_drill_productivity_bonus",
+    ["inventory-size"] = create_vanilla_buff_applier "character_inventory_slots_bonus",
+    ["beacon-efficiency"] = create_vanilla_buff_applier "beacon_distribution_modifier",
+    ["belt-stack-size"] = create_vanilla_buff_applier "belt_stack_size_bonus",
+    ["bulk-inserter-capacity"] = create_vanilla_buff_applier "bulk_inserter_capacity_bonus",
+    ["inserter-capacity"] = create_vanilla_buff_applier "inserter_stack_size_bonus",
+    ["health"] = create_vanilla_buff_applier "character_health_bonus",
+    ["combat-robot-lifetime"] = create_vanilla_buff_applier "following_robots_lifetime_modifier",
+    ["research-productivity"] = create_vanilla_buff_applier "laboratory_productivity_bonus",
+    ["research-speed"] = create_vanilla_buff_applier "laboratory_speed_modifier",
+    ["braking-force"] = create_vanilla_buff_applier "train_braking_force_bonus",
+
     ["combat-robot-count"] = function(value)
         game.forces.player.maximum_following_robot_count = game.forces.player.maximum_following_robot_count + value
-    end,
-    ["research-productivity"] = function(value)
-        game.forces.player.laboratory_productivity_bonus = game.forces.player.laboratory_productivity_bonus + value
-    end,
-    ["research-speed"] = function(value)
-        game.forces.player.laboratory_speed_modifier = game.forces.player.laboratory_speed_modifier + value
-    end,
-    ["braking-force"] = function(value)
-        game.forces.player.train_braking_force_bonus = game.forces.player.train_braking_force_bonus + value
     end,
     ["bullet-damage"] = function(value)
         game.forces.player.set_ammo_damage_modifier("bullet", game.forces.player.get_ammo_damage_modifier("bullet") + value)
@@ -127,14 +101,24 @@ local buff_type_actions = {
         game.forces.player.set_gun_speed_modifier("electric", game.forces.player.get_gun_speed_modifier("electric") + value)
     end,
     ["trade-productivity"] = function(value)
-        storage.trades.base_productivity = storage.trades.base_productivity + value
-        event_system.trigger "item-buff-changed-trade-productivity"
+        local new_prod = storage.trades.base_productivity + value
+        if new_prod < 0 then
+            lib.log_error("Tried to set a negative trade productivity")
+            new_prod = 0
+        end
+
+        local prev = storage.trades.base_productivity
+        storage.trades.base_productivity = new_prod
+
+        if prev ~= new_prod then
+            event_system.trigger "item-buff-changed-trade-productivity"
+        end
     end,
     ["passive-coins"] = function(value)
-        storage.item_buffs.passive_coins_rate = storage.item_buffs.passive_coins_rate + value
+        storage.item_buffs.passive_coins_rate = math.max(0, storage.item_buffs.passive_coins_rate + value)
     end,
     ["train-trading-capacity"] = function(value)
-        storage.item_buffs.train_trading_capacity = storage.item_buffs.train_trading_capacity + value
+        storage.item_buffs.train_trading_capacity = math.max(0, storage.item_buffs.train_trading_capacity + value)
     end,
     ["all-buffs-level"] = function(value)
         storage.item_buffs.level_bonus = storage.item_buffs.level_bonus + value
@@ -167,7 +151,12 @@ local buff_type_actions = {
             return
         end
         local recipe = game.forces.player.recipes[recipe_name]
-        recipe.productivity_bonus = recipe.productivity_bonus + value * 0.01
+        local new_prod = recipe.productivity_bonus + value * 0.01
+        if new_prod < 0 then
+            lib.log_error("Tried to set a negative recipe productivity")
+            new_prod = 0
+        end
+        recipe.productivity_bonus = new_prod
     end,
 }
 
