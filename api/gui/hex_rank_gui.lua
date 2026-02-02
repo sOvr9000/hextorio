@@ -64,6 +64,23 @@ function hex_rank_gui.register_events()
             end
         end
     end)
+
+    event_system.register("runtime-setting-changed-show-hex-rank-hud", function(player_index)
+        local player = game.get_player(player_index)
+        if not player then return end
+
+        local flow = player.gui.center["hex-rank-hud"]
+        if not flow then
+            hex_rank_gui.init_hex_rank_hud(player)
+            flow = player.gui.center["hex-rank-hud"]
+        end
+
+        flow.visible = lib.player_setting_value_as_boolean(player, "show-hex-rank-hud")
+
+        if flow.visible then
+            hex_rank_gui.update_hex_rank_hud(player)
+        end
+    end)
 end
 
 ---Reinitialize the hex rank GUI for the given player, or all players if no player is provided.
@@ -294,7 +311,7 @@ function hex_rank_gui.update_hex_rank_hud(player, new_value)
         flow = player.gui.center["hex-rank-hud"]
     end
 
-    if not flow.valid then return end
+    if not flow or not flow.valid or not flow.visible then return end
 
     -- local center_flow = flow["center"]
     -- if not center_flow or not center_flow.valid or not center_flow.visible then return end

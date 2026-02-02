@@ -33,6 +33,13 @@ data:extend({
         order = "x[misc]-s[trade-flying-text]",
     },
     {
+        type = "bool-setting",
+        setting_type = "runtime-per-user",
+        name = "hextorio-show-hex-rank-hud",
+        default_value = true,
+        order = "x[misc]-t[show-hex-rank-hud]",
+    },
+    {
         type = "string-setting",
         setting_type = "runtime-per-user",
         name = "hextorio-quest-completion-sound",
@@ -51,6 +58,6 @@ data:extend({
         },
 
         default_value = "research-completed",
-        order = "x[misc]-t[quest-completion-sound]",
+        order = "x[misc]-u[quest-completion-sound]",
     },
 })
