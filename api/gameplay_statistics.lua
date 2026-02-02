@@ -278,7 +278,7 @@ end
 ---@param player LuaPlayer
 ---@param coin_value int
 function gameplay_statistics.on_player_coins_base_value_changed(player, coin_value)
-    gameplay_statistics.set("coins-in-inventory", coin_value)
+    gameplay_statistics.set_if_greater("coins-in-inventory", coin_value)
 end
 
 ---@param prev_val int

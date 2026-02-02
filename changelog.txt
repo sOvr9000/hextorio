@@ -15,6 +15,7 @@ Date: 1/2/26
     - Teleporting to a hex core adjacent to a dungeon now requires confirmation (pressing hotkey/button again to confirm).
     - Strongboxes are now removed if the "parent" hex core is deleted.
     - The passive coin buff now continually supplies coins based on the overall maximum achieved net coin rate, never going down.
+    - The "Coins in Inventory" quest conditions now keep track of the most coins held at once, never going down.
   Balancing:
     - Added mod setting that toggles the allowance of two-headed trains in trading.
     - Changed the default value for the base trade efficiency setting from 1.0 to 0.8, where at least 25% trade productivity is required to create infinite coin loops.
