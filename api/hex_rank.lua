@@ -82,7 +82,7 @@ function hex_rank.init()
             coefficient = 1,
         },
         ["total-dungeons-looted"] = {
-            goal_term = 1.65,
+            goal_term = 2,
             coefficient = 2.7,
         },
         ["total-item-buff-level"] = {
@@ -98,7 +98,7 @@ function hex_rank.init()
             coefficient = 3,
         },
         ["total-rockets-launched"] = {
-            goal_term = 3.7,
+            goal_term = 4,
             coefficient = 2,
         },
     }
