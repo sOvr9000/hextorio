@@ -2729,7 +2729,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
         local rank = item_ranks.get_item_rank(item_name)
         if rank ~= 2 and rank ~= 4 then return end
 
-        if rounded_prod >= storage.item_ranks.productivity_requirements[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
+        if rounded_prod + 1e-9 >= storage.item_ranks.productivity_requirements[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
             item_ranks.progress_item_rank(item_name, rank + 1)
         end
     end
