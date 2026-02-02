@@ -68,6 +68,7 @@ function passive_coin_buff.get_passive_gain_calculation_steps(tick_interval)
     if total_hex_coins < 0 then
         total_hex_coins = 0
     end
+    total_hex_coins = total_hex_coins * 60 -- net coins over last hour
     table.insert(progressive_calculations, total_hex_coins)
 
     local second_interval = tick_interval / 60
