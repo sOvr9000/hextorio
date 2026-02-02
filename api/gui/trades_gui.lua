@@ -4,6 +4,7 @@ local gui = require "api.gui.core_gui"
 local trades = require "api.trades"
 local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
+local gameplay_statistics = require "api.gameplay_statistics"
 local quests = require "api.quests"
 local core_gui = require "api.gui.core_gui"
 
@@ -485,7 +486,7 @@ function trades_gui.on_ping_button_clicked(player, elem)
     local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
 
     game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
-    quests.set_progress_for_type("ping-trade", 1)
+    gameplay_statistics.set("ping-trade", 1)
 end
 
 ---Get a trade GUI flow from one of its nested child elements.

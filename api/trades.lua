@@ -7,6 +7,7 @@ local sets        = require "api.sets"
 local item_ranks  = require "api.item_ranks"
 local coin_tiers  = require "api.coin_tiers"
 local event_system= require "api.event_system"
+local gameplay_statistics = require "api.gameplay_statistics"
 local quests      = require "api.quests"
 local hex_island  = require "api.hex_island"
 local trade_loop_finder = require "api.trade_loop_finder"
@@ -2860,7 +2861,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, check_output_buffer, max_items_per_output, max_output_batches_per_trade, inventory_output_size)
                 if num_batches >= 1 then
-                    quests.increment_progress_for_type("sell-item-of-quality", num_batches, quality)
+                    gameplay_statistics.increment("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + 1
 
                     local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin, cargo_wagons)
@@ -2895,7 +2896,7 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
     local total_coins_removed = coin_tiers.subtract(initial_input_coin, input_coin)
 
-    quests.increment_progress_for_type("make-trades", total_batches)
+    gameplay_statistics.increment("make-trades", total_batches)
 
     -- Only NOW does it normalize, skipping all unnecessary normalizations mid-processing.
     local total_coins_added = coin_tiers.normalized(coin_tiers.new(total_coins_added_values))

@@ -2,20 +2,21 @@
 local quests = require "api.quests"
 local gui = require "api.gui"
 local dungeons = require "api.dungeons"
+local gameplay_statistics = require "api.gameplay_statistics"
 
 local data_dungeons = require "data.dungeons"
 
 return function()
     gui.questbook.reinitialize()
-    quests.recalculate_condition_progress_of_type "total-strongbox-level"
-    quests.recalculate_condition_progress_of_type("items-at-rank", 2)
+    gameplay_statistics.recalculate "total-strongbox-level"
+    gameplay_statistics.recalculate("items-at-rank", 2)
 
-    quests.recalculate_condition_progress_of_type("cover-ores-on", "vulcanus")
+    gameplay_statistics.recalculate("cover-ores-on", "vulcanus")
 
     -- Fix possible issue
-    quests.recalculate_condition_progress_of_type("visit-planet", "vulcanus")
-    quests.recalculate_condition_progress_of_type("visit-planet", "fulgora")
-    quests.recalculate_condition_progress_of_type("visit-planet", "gleba")
+    gameplay_statistics.recalculate("visit-planet", "vulcanus")
+    gameplay_statistics.recalculate("visit-planet", "fulgora")
+    gameplay_statistics.recalculate("visit-planet", "gleba")
 
     storage.item_buffs.free_buffs_remaining = 0
     storage.item_buffs.unresearched_penalty_multiplier = 1

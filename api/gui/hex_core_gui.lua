@@ -8,6 +8,7 @@ local hex_state_manager = require "api.hex_state_manager"
 local coin_tiers  = require "api.coin_tiers"
 local trades = require "api.trades"
 local event_system = require "api.event_system"
+local gameplay_statistics = require "api.gameplay_statistics"
 local quests = require "api.quests"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
 local trades_gui = require "api.gui.trades_gui"
@@ -844,7 +845,7 @@ function hex_core_gui.on_tag_button_click(player, element)
         quality = state.hex_core.quality,
     })
 
-    quests.set_progress_for_type("create-trade-map-tag", 1)
+    gameplay_statistics.set("create-trade-map-tag", 1)
 end
 
 function hex_core_gui.on_quality_selected(player, element, trade_number)

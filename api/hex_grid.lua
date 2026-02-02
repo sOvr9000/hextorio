@@ -139,7 +139,7 @@ function hex_grid.register_events()
     end)
 
     event_system.register("command-regenerate-trades", function(player, params)
-        quests.set_progress_for_type("trades-found", 0)
+        gameplay_statistics.set("trades-found", 0)
         storage.trades.recoverable = {}
         storage.trades.discovered_items = {}
         storage.trades.interplanetary_trade_locations = {}
@@ -270,8 +270,8 @@ function hex_grid.register_events()
                 end
             end
         end
-        quests.set_progress_for_type("trades-found", trades_found)
-        quests.set_progress_for_type("claimed-hexes", claimed_hexes)
+        gameplay_statistics.set("trades-found", trades_found)
+        gameplay_statistics.set("total-hexes-claimed", claimed_hexes)
     end)
 
     event_system.register("interplanetary-trade-generated", function(surface_name, item_name, hex_pos)
@@ -457,7 +457,7 @@ function hex_grid.add_trade(hex_core_state, trade)
     end
 
     if not hex_core_state.is_dungeon then
-        quests.increment_progress_for_type("trades-found")
+        gameplay_statistics.increment "trades-found"
     end
 end
 
@@ -630,9 +630,9 @@ function hex_grid.switch_hex_core_mode(state, mode)
     end
 
     if state.mode then
-        quests.increment_progress_for_type("hex-cores-in-mode", -1, state.mode)
+        gameplay_statistics.increment("hex-cores-in-mode", -1, state.mode)
     end
-    quests.increment_progress_for_type("hex-cores-in-mode", 1, mode)
+    gameplay_statistics.increment("hex-cores-in-mode", 1, mode)
 
     state.mode = mode
     return true
@@ -785,7 +785,7 @@ function hex_grid.copy_signals_to_combinator(entity)
         end
     end
 
-    quests.increment_progress_for_type "hex-core-trades-read"
+    gameplay_statistics.increment "hex-core-trades-read"
 end
 
 ---Initialize a hex for a dungeon.
@@ -1819,7 +1819,6 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     end
 
     state.claimed_timestamp = game.tick
-    gameplay_statistics.increment "total-hexes-claimed"
 
     -- Set tiles
     local tile_name
@@ -1890,8 +1889,8 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     hex_grid.check_hex_span(surface, hex_pos)
     hex_grid.spawn_adjacent_hex_cores(surface, hex_pos)
 
-    quests.increment_progress_for_type("claimed-hexes", 1)
-    quests.increment_progress_for_type("claimed-hexes-on", 1, surface_name)
+    gameplay_statistics.increment "total-hexes-claimed"
+    gameplay_statistics.increment("claimed-hexes-on", 1, surface_name)
 
     event_system.trigger("hex-claimed", surface, state)
 
@@ -2046,7 +2045,7 @@ function hex_grid.check_hex_span(surface, hex_pos)
 
     storage.hex_grid.hex_span[surface] = math.max(span, storage.hex_grid.hex_span[surface] or 0)
 
-    quests.set_progress_for_type("hex-span", span)
+    gameplay_statistics.set("hex-span", span)
 end
 
 ---Add free claims on a surface.
@@ -4085,7 +4084,7 @@ function hex_grid.on_strongbox_killed(sb_entity)
         hex_grid.update_strongbox_entity(state, new_sb_entity)
     end
 
-    quests.increment_progress_for_type "total-strongbox-level"
+    gameplay_statistics.increment "total-strongbox-level"
 end
 
 

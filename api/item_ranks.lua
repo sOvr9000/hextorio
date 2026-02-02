@@ -2,6 +2,7 @@
 local lib = require "api.lib"
 local event_system = require "api.event_system"
 local quests       = require "api.quests"
+local gameplay_statistics = require "api.gameplay_statistics"
 
 local item_ranks = {}
 
@@ -27,7 +28,7 @@ function item_ranks.register_events()
         event_system.trigger("post-rank-up-all-command", player, params)
     end)
     event_system.register("quests-reinitialized", function()
-        quests.set_progress_for_type("total-item-rank", item_ranks.get_total_item_rank())
+        gameplay_statistics.set("total-item-rank", item_ranks.get_total_item_rank())
     end)
     event_system.register("runtime-setting-changed-rank-2-prod-requirement", function()
         storage.item_ranks.productivity_requirements[2] = lib.runtime_setting_value "rank-2-prod-requirement"
@@ -149,8 +150,7 @@ function item_ranks.rank_up(item_name)
     lib.print_notification("item-ranked-up", lib.color_localized_string({"", {"hextorio.item-rank-up"}, " [img=item." .. item_name .. "]", lib.get_rank_img_str(rank.rank - 1), "->", lib.get_rank_img_str(rank.rank), "[img=item." .. item_name .. "]"}, storage.item_ranks.rank_colors[rank.rank], "heading-1"))
     event_system.trigger("item-rank-up", item_name)
 
-    quests.increment_progress_for_type "total-item-rank"
-    quests.increment_progress_for_type("items-at-rank", 1, rank.rank)
+    gameplay_statistics.increment("items-at-rank", 1, rank.rank)
 
     -- Used to verify how many items in total can be ranked up.
     -- if item_ranks.get_item_rank("iron-ore") == 3 then
@@ -178,7 +178,7 @@ function item_ranks.recalculate_items_at_rank_quests()
     end
 
     for rank, count in pairs(total_ranks) do
-        quests.set_progress_for_type("items-at-rank", count, rank)
+        gameplay_statistics.set("items-at-rank", count, rank)
     end
 end
 

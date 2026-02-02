@@ -324,7 +324,7 @@ script.on_event(defines.events.on_player_main_inventory_changed, function(event)
     local coin = inventories.normalize_inventory(inv, false)
     if not coin then return end
 
-    event_system.trigger("player-coins-changed", player, coin)
+    event_system.trigger("player-coins-base-value-changed", player, coin_tiers.to_base_value(coin))
 end)
 
 script.on_event(defines.events.on_player_trash_inventory_changed, function(event)
@@ -393,22 +393,22 @@ script.on_event(defines.events.on_robot_mined_entity, function(event)
 end)
 
 script.on_event(defines.events.on_player_built_tile, function(event)
-    quests.increment_progress_for_type("place-tile", #event.tiles, event.tile.name)
+    gameplay_statistics.increment("place-tile", #event.tiles, event.tile.name)
 end)
 
 script.on_event(defines.events.on_player_mined_tile, function(event)
     for _, tile in pairs(event.tiles) do
-        quests.increment_progress_for_type("place-tile", -1, tile.old_tile.name)
+        gameplay_statistics.increment("place-tile", -1, tile.old_tile.name)
     end
 end)
 
 script.on_event(defines.events.on_robot_built_tile, function(event)
-    quests.increment_progress_for_type("place-tile", #event.tiles, event.tile.name)
+    gameplay_statistics.increment("place-tile", #event.tiles, event.tile.name)
 end)
 
 script.on_event(defines.events.on_robot_mined_tile, function(event)
     for _, tile in pairs(event.tiles) do
-        quests.increment_progress_for_type("place-tile", -1, tile.old_tile.name)
+        gameplay_statistics.increment("place-tile", -1, tile.old_tile.name)
     end
 end)
 
@@ -426,7 +426,7 @@ script.on_event(defines.events.on_player_used_capsule, function (event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    quests.increment_progress_for_type("use-capsule", 1, event.item.name)
+    gameplay_statistics.increment("use-capsule", 1, event.item.name)
     event_system.trigger("player-used-capsule", player, event.item.name)
 end)
 

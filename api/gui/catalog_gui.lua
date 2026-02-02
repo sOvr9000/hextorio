@@ -88,7 +88,7 @@ function catalog_gui.register_events()
         catalog_gui.reinitialize()
     end)
 
-    event_system.register("player-coins-changed", function(player, coin)
+    event_system.register("player-coins-base-value-changed", function(player, coin_value)
         if not catalog_gui.is_catalog_open(player) then return end
         catalog_gui.update_quantum_bazaar(player)
     end)

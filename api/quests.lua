@@ -1,8 +1,6 @@
 
 local lib = require "api.lib"
-local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
-local entity_util  = require "api.entity_util"
 local sets         = require "api.sets"
 local gameplay_statistics = require "api.gameplay_statistics"
 
@@ -10,7 +8,7 @@ local quests = {}
 
 
 
----@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"reach-hex-rank"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"|"hex-core-trades-read"|"cover-ores-on"
+---@alias QuestConditionType "total-hexes-claimed"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"reach-hex-rank"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"|"hex-core-trades-read"|"cover-ores-on"
 ---@alias QuestRewardType "unlock-feature"|"receive-items"|"claim-free-hexes"|"reduce-biters"|"all-trades-productivity"|"receive-spaceship"
 ---@alias FeatureName "trade-overview"|"catalog"|"hex-rank"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"|"quick-trading"|"item-buff-enhancement"|"enhance-all"|"piggy-bank"
 
@@ -75,120 +73,12 @@ local quests = {}
 
 
 
--- TODO: (IMPORTANT REFACTORING) Move condition progress management into gameplay_statistics.lua or a similar module.  They are functionally the same thing.
-local quest_condition_progress_recalculators = {} ---@as {[QuestConditionType]: fun(condition_value: QuestConditionValue): int}
-
----@param condition_type QuestConditionType
----@param func fun(condition_value: QuestConditionValue): int
-local function define_progress_recalculator(condition_type, func)
-    quest_condition_progress_recalculators[condition_type] = func
-end
-
-define_progress_recalculator("visit-planet", function(condition_value)
-    local surface_name = condition_value
-    ---@cast surface_name string
-
-    local surface = game.get_surface(surface_name)
-    if not surface then return 0 end
-
-    return 1
-end)
-
-define_progress_recalculator("items-at-rank", function(condition_value)
-    local rank = condition_value
-    local total = 0
-    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
-        if lib.is_catalog_item(item_name) then -- Shouldn't be necessary to check this, but it's here just in case it prevents a bug/exploit.
-            if rank_obj.rank >= rank then
-                total = total + 1
-            end
-        end
-    end
-    return total
-end)
-
-define_progress_recalculator("total-item-rank", function(condition_value)
-    local total = 0
-    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
-        if lib.is_catalog_item(item_name) then -- Shouldn't be necessary to check this, but it's here just in case it prevents a bug/exploit.
-            total = total + rank_obj.rank - 1
-        end
-    end
-    return total
-end)
-
-define_progress_recalculator("claimed-hexes-on", function(condition_value)
-    local surface_name = condition_value
-    ---@cast surface_name string
-
-    local surface = game.get_surface(surface_name)
-    if not surface then return 0 end
-
-    local surface_hexes = storage.hex_grid.surface_hexes[surface.index]
-    if not surface_hexes then return 0 end
-
-    local total = 0
-    for _, Q in pairs(surface_hexes) do
-        for _, state in pairs(Q) do
-            if state.claimed then
-                total = total + 1
-            end
-        end
-    end
-
-    return total
-end)
-
-define_progress_recalculator("claimed-hexes", function(condition_value)
-    local total = 0
-    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
-        for _, Q in pairs(hexes) do
-            for _, state in pairs(Q) do
-                if state.claimed then
-                    total = total + 1
-                end
-            end
-        end
-    end
-    return total
-end)
-
-define_progress_recalculator("total-strongbox-level", function(condition_value)
-    local total_level = 0
-    for surface_id, hexes in pairs(storage.hex_grid.surface_hexes) do
-        for _, Q in pairs(hexes) do
-            for _, state in pairs(Q) do
-                if state.strongboxes then
-                    for _, sb_entity in pairs(state.strongboxes) do
-                        total_level = total_level + (entity_util.get_tier_of_strongbox(sb_entity) or 1) - 1
-                    end
-                end
-            end
-        end
-    end
-    return total_level
-end)
-
-define_progress_recalculator("cover-ores-on", function(condition_value)
-    local surface_name = condition_value
-    ---@cast surface_name string
-
-    local surface = game.get_surface(surface_name)
-    if not surface then return 0 end
-
-    local total_ores = 0
-    for _, entity in pairs(surface.find_entities_filtered {
-        type = "mining-drill",
-    }) do
-        total_ores = total_ores + entity_util.track_ores_covered_by_drill(entity)
-    end
-
-    return total_ores
-end)
 
 
 
 function quests.register_events()
+    event_system.register("gameplay-statistic-changed", quests.on_gameplay_statistic_changed)
+
     event_system.register("command-complete-quest", function(player, params)
         local quest = quests.get_quest_from_name(params[1])
         if quest then
@@ -205,67 +95,6 @@ function quests.register_events()
         else
             lib.log_error("Couldn't find quest to unlock trade overview")
         end
-    end)
-
-    event_system.register("entity-died", function(entity)
-        if not entity.valid then return end
-        if entity.type == "mining-drill" then
-            local now_uncovered = entity_util.untrack_ores_covered_by_drill(entity)
-            quests.increment_progress_for_type("cover-ores-on", -now_uncovered, entity.surface.name)
-        end
-    end)
-
-    event_system.register("player-built-entity", function(player, entity)
-        if not entity.valid then return end
-        quests.increment_progress_for_type("place-entity", 1, entity.name)
-        quests.increment_progress_for_type("place-entity-on-planet", 1, {entity.name, entity.surface.name})
-
-        if entity.type == "mining-drill" then
-            local now_covered = entity_util.track_ores_covered_by_drill(entity)
-            quests.increment_progress_for_type("cover-ores-on", now_covered, entity.surface.name)
-        end
-    end)
-
-    event_system.register("player-mined-entity", function(player, entity)
-        quests.increment_progress_for_type("mine-entity", 1, entity.name)
-    end)
-
-    event_system.register("entity-picked-up", function(entity)
-        if not entity.valid then return end
-        quests.increment_progress_for_type("place-entity", -1, entity.name)
-        quests.increment_progress_for_type("place-entity-on-planet", -1, {entity.name, entity.surface.name})
-
-        if entity.type == "mining-drill" then
-            local now_uncovered = entity_util.untrack_ores_covered_by_drill(entity)
-            quests.increment_progress_for_type("cover-ores-on", -now_uncovered, entity.surface.name)
-        end
-    end)
-
-    event_system.register("dungeon-looted", function(dungeon)
-        quests.increment_progress_for_type("loot-dungeons-on", 1, dungeon.surface.name)
-
-        local passed = true
-        for _, player in pairs(game.connected_players) do
-            if player.character and player.character.surface == dungeon.surface then
-                passed = false
-            end
-        end
-
-        if passed then
-            quests.increment_progress_for_type "loot-dungeons-off-planet"
-        end
-    end)
-
-    event_system.register("surface-created", function(surface)
-        quests.set_progress_for_type("visit-planet", 1, surface.name)
-    end)
-
-    event_system.register("player-favorited-trade", function(player, trade)
-        quests.set_progress_for_type("favorite-trade", 1)
-    end)
-
-    event_system.register("player-coins-changed", function(player, coin)
-        quests.set_progress_for_type("coins-in-inventory", coin_tiers.to_base_value(coin))
     end)
 
     event_system.register("entity-killed-entity", quests.on_entity_killed_entity)
@@ -289,10 +118,6 @@ function quests.register_events()
 
     event_system.register("item-buff-data-migrated", function()
         quests.redistribute_quest_rewards "all-trades-productivity"
-    end)
-
-    event_system.register("hex-rank-changed", function(prev_val, new_val)
-        quests.set_progress_for_type("reach-hex-rank", new_val)
     end)
 end
 
@@ -1128,22 +953,23 @@ function quests.set_progress_for_type(condition_type, amount, condition_value)
     end
 end
 
----Increment the progress of all quest conditions of a certain type.
----@param condition_type QuestConditionType
----@param amount int|nil
----@param condition_value QuestConditionValue|nil
-function quests.increment_progress_for_type(condition_type, amount, condition_value)
-    if not amount then amount = 1 end
-    if not storage.quests.quests_by_condition_type[condition_type] then return end
-    for _, quest in pairs(quests.get_quests_by_condition_type(condition_type, condition_value)) do
+---Update quest progress when a gameplay statistic changes.
+---@param stat_type string
+---@param stat_value any
+---@param prev_value int
+---@param new_value int
+function quests.on_gameplay_statistic_changed(stat_type, stat_value, prev_value, new_value)
+    if not storage.quests.quests_by_condition_type[stat_type] then return end
+
+    for _, quest in pairs(quests.get_quests_by_condition_type(stat_type, stat_value)) do
         if not quests.is_complete(quest) then
             for _, condition in pairs(quest.conditions) do
-                local pass = condition.type == condition_type and (condition.value == nil or condition.value == condition_value)
+                local pass = condition.type == stat_type and (condition.value == nil or condition.value == stat_value)
                 if not pass and condition.value_is_table then
-                    pass = lib.tables_equal(condition_value, condition.value)
+                    pass = lib.tables_equal(stat_value, condition.value)
                 end
                 if pass then
-                    quests.set_progress(quest, condition, condition.progress + amount)
+                    quests.set_progress(quest, condition, new_value)
                 end
             end
         end
@@ -1447,25 +1273,7 @@ function quests.process_lightning_acceleration()
 end
 
 function quests.recalculate_all_condition_progress()
-    for _, condition_type_value_pair in pairs(quests.get_all_condition_types_and_values()) do
-        quests.recalculate_condition_progress_of_type(condition_type_value_pair[1], condition_type_value_pair[2])
-    end
-end
-
----@param condition_type QuestConditionType
----@param condition_value QuestConditionValue|nil
-function quests.recalculate_condition_progress_of_type(condition_type, condition_value)
-    local func = quest_condition_progress_recalculators[condition_type]
-    if not func then
-        -- Log to be used when most conditions have recalculator functions
-        -- lib.log("quests.recalculate_condition_progress_of_type: Attempted to recalculate progress for all quests of type " .. condition_type .. " with value " .. serpent.line(condition_value) .. " but found no recalculator function.")
-        return
-    end
-
-    local progress = func(condition_value)
-    quests.set_progress_for_type(condition_type, progress, condition_value)
-
-    lib.log("quests.recalculate_condition_progress_of_type: Recalculated progress for all quests of type " .. condition_type .. " with value " .. serpent.line(condition_value or {}) .. ". New progress value: " .. progress)
+    gameplay_statistics.recalculate_all()
 end
 
 ---Redistribute all currently received quest rewards of a certain type.  Useful for save migration when data changes significantly.
@@ -1491,29 +1299,29 @@ end
 ---@param entity_that_caused LuaEntity
 ---@param damage_type_prot LuaDamagePrototype|nil
 function quests.on_entity_killed_entity(entity_that_died, entity_that_caused, damage_type_prot)
-    quests.increment_progress_for_type("kill-entity", 1, entity_that_died.name)
+    gameplay_statistics.increment("kill-entity", 1, entity_that_died.name)
 
     if damage_type_prot then
         if entity_that_caused.force.name == "player" then
-            quests.increment_progress_for_type("kill-with-damage-type", 1, damage_type_prot.name)
+            gameplay_statistics.increment("kill-with-damage-type", 1, damage_type_prot.name)
         end
     end
 
     if entity_that_died.name == "biter-spawner" or entity_that_died.name == "spitter-spawner" then
         if entity_that_caused.name == "car" or entity_that_caused.name == "tank" then
-            quests.increment_progress_for_type "biter-ramming"
+            gameplay_statistics.increment "biter-ramming"
         end
     end
 
     -- This is not in on_player_died because the damage type for cause of death is important.
     if entity_that_died.name == "character" then
         if damage_type_prot then
-            quests.increment_progress_for_type("die-to-damage-type", 1, damage_type_prot.name)
+            gameplay_statistics.increment("die-to-damage-type", 1, damage_type_prot.name)
         end
 
         if lib.table_index(lib.get_entity_ammo_categories(entity_that_caused), "railgun") then
             if entity_that_caused.force == game.forces.player then
-                quests.increment_progress_for_type "die-to-railgun"
+                gameplay_statistics.increment "die-to-railgun"
             end
         end
     end
@@ -1545,7 +1353,7 @@ function quests.on_lightning_struck_character(character)
 
     if not player.character or not player.character.valid or player.character.health == 0 then
         -- They died, but this isn't a trigger for entity-killed-entity, so handle the "died to electricity" thing separately here.
-        quests.increment_progress_for_type("die-to-damage-type", 1, "electric")
+        gameplay_statistics.increment("die-to-damage-type", 1, "electric")
         return
     end
 

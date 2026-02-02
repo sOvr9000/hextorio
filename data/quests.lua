@@ -76,7 +76,7 @@ return {
         {
             name = "ground-zero",
             conditions = {
-                {type = "claimed-hexes", progress_requirement = 2},
+                {type = "total-hexes-claimed", progress_requirement = 2},
                 {type = "make-trades", progress_requirement = 1, notes = {"trades-require-claim"}},
             },
             rewards = {
@@ -146,7 +146,7 @@ return {
         },
         {
             name = "exploration",
-            conditions = {{type = "claimed-hexes", progress_requirement = 15}},
+            conditions = {{type = "total-hexes-claimed", progress_requirement = 15}},
             rewards = {
                 {
                     type = "receive-items",
@@ -222,7 +222,7 @@ return {
         },
         {
             name = "too-many-hex-cores",
-            conditions = {{type = "claimed-hexes", progress_requirement = 50}},
+            conditions = {{type = "total-hexes-claimed", progress_requirement = 50}},
             rewards = {{type = "unlock-feature", value = "hex-core-deletion"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"exploration"},
         },
