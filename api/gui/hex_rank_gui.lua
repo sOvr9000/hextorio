@@ -293,6 +293,7 @@ function hex_rank_gui.update_hex_rank_factor_row(elem)
         elem.style = "inside_deep_frame"
         elem.style.minimal_height = 70 / 1.2
         elem.style.horizontally_stretchable = true
+        elem.style.bottom_padding = 2
 
         image.visible = false
         flow.visible = false
@@ -300,6 +301,7 @@ function hex_rank_gui.update_hex_rank_factor_row(elem)
         elem.style = "frame"
         elem.style.minimal_height = 70 / 1.2
         elem.style.horizontally_stretchable = true
+        elem.style.bottom_padding = 2
 
         image.visible = true
         flow.visible = true
@@ -379,6 +381,7 @@ end
 function hex_rank_gui.on_hex_rank_changed(prev, new)
     for _, player in pairs(game.connected_players) do
         hex_rank_gui.update_hex_rank_hud(player, new)
+        hex_rank_gui.update_hex_rank_gui(player)
     end
 end
 
