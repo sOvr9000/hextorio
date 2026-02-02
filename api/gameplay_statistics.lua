@@ -68,6 +68,7 @@ function gameplay_statistics.register_events()
     event_system.register("player-favorited-trade", gameplay_statistics.on_player_favorited_trade)
     event_system.register("player-coins-base-value-changed", gameplay_statistics.on_player_coins_base_value_changed)
     event_system.register("hex-rank-changed", gameplay_statistics.on_hex_rank_changed)
+    event_system.register("dynamic-stats-updating", gameplay_statistics.on_dynamic_stats_updating)
 end
 
 ---Get a gameplay statistic.
@@ -93,7 +94,7 @@ end
 
 ---Set a gameplay statistic.
 ---@param stat_type GameplayStatisticType
----@param new_value int|nil
+---@param new_value int
 ---@param stat_value GameplayStatisticValue|nil
 function gameplay_statistics.set(stat_type, new_value, stat_value)
     local stats_storage = storage.gameplay_statistics
@@ -127,6 +128,16 @@ function gameplay_statistics.set(stat_type, new_value, stat_value)
             event_system.trigger("gameplay-statistic-changed", stat_type, stat_value, prev, new_value)
         end
     end
+end
+
+---Set a gameplay statistic only if it is greater than its current value.
+---@param stat_type GameplayStatisticType
+---@param new_value int
+---@param stat_value GameplayStatisticValue|nil
+function gameplay_statistics.set_if_greater(stat_type, new_value, stat_value)
+    local current = gameplay_statistics.get(stat_type, stat_value)
+    if new_value <= current then return end
+    gameplay_statistics.set(stat_type, new_value, stat_value)
 end
 
 ---Increment a gameplay statistic.
@@ -274,6 +285,29 @@ end
 ---@param new_val int
 function gameplay_statistics.on_hex_rank_changed(prev_val, new_val)
     gameplay_statistics.set("reach-hex-rank", new_val)
+end
+
+function gameplay_statistics.on_dynamic_stats_updating()
+    local total_hex_coins = 0
+    local total_sph = 0
+
+    for _, surface in pairs(game.surfaces) do
+        if lib.is_vanilla_planet_name(surface.name) then
+            local prod_stats = game.forces.player.get_item_production_statistics(surface)
+            local produced_hex_coins = prod_stats.get_flow_count {name = "hex-coin", category = "input", precision_index = defines.flow_precision_index.one_hour}
+            local consumed_hex_coins = prod_stats.get_flow_count {name = "hex-coin", category = "output", precision_index = defines.flow_precision_index.one_hour}
+            total_hex_coins = total_hex_coins + produced_hex_coins - consumed_hex_coins
+
+            local produced_sph = prod_stats.get_flow_count {name = "science", category = "input", precision_index = defines.flow_precision_index.one_hour}
+            total_sph = total_sph + produced_sph
+        end
+    end
+
+    total_hex_coins = math.floor(0.5 + total_hex_coins)
+    total_sph = math.floor(0.5 + total_sph)
+
+    gameplay_statistics.set_if_greater("net-coin-production", total_hex_coins)
+    gameplay_statistics.set_if_greater("science-per-hour", total_sph)
 end
 
 

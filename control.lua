@@ -244,6 +244,7 @@ script.on_event(defines.events.on_chunk_generated, function(event)
 end)
 
 script.on_nth_tick(60 * 30, function()
+    event_system.trigger "dynamic-stats-updating"
     passive_coin_buff.process_accumulation()
 end)
 

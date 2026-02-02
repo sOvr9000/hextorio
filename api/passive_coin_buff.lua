@@ -1,8 +1,10 @@
 
+local lib         = require "api.lib"
 local coin_tiers = require "api.coin_tiers"
 local inventories = require "api.inventories"
 local quests      = require "api.quests"
 local piggy_bank  = require "api.piggy_bank"
+local gameplay_statistics = require "api.gameplay_statistics"
 
 local passive_coin_buff = {}
 
@@ -62,15 +64,7 @@ function passive_coin_buff.get_passive_gain_calculation_steps(tick_interval)
 
     local progressive_calculations = {}
 
-    local total_hex_coins = 0
-    for _, surface in pairs(game.surfaces) do
-        if storage.item_values.values[surface.name] then
-            local prod_stats = game.forces.player.get_item_production_statistics(surface)
-            local produced = prod_stats.get_flow_count {name = "hex-coin", category = "input", precision_index = defines.flow_precision_index.one_hour}
-            local consumed = prod_stats.get_flow_count {name = "hex-coin", category = "output", precision_index = defines.flow_precision_index.one_hour}
-            total_hex_coins = total_hex_coins + produced - consumed
-        end
-    end
+    local total_hex_coins = gameplay_statistics.get "net-coin-production"
     if total_hex_coins < 0 then
         total_hex_coins = 0
     end
