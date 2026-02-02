@@ -278,7 +278,8 @@ function hex_rank_gui.update_hex_rank_factor_row(elem)
     end
 
     local flow = elem["flow"]
-    if not flow then return end
+    local image = elem["image"]
+    if not flow or not image then return end
 
     local progress_bar = flow["progress-bar"]
     local details = flow["details"]
@@ -288,17 +289,33 @@ function hex_rank_gui.update_hex_rank_factor_row(elem)
     if not contribution then return end
 
     local term = hex_rank.get_factor_term_cache(factor_type)
-    local progress = hex_rank.get_factor_progress(factor_type)
-    local current, goal = hex_rank.get_hex_rank_completion(factor_type)
+    if math.abs(term) < 1e-9 then
+        elem.style = "inside_deep_frame"
+        elem.style.minimal_height = 70 / 1.2
+        elem.style.horizontally_stretchable = true
 
-    local font = "count-font"
+        image.visible = false
+        flow.visible = false
+    else
+        elem.style = "frame"
+        elem.style.minimal_height = 70 / 1.2
+        elem.style.horizontally_stretchable = true
 
-    contribution.caption = "[img=hex-rank] +" .. (math.floor(0.5 + 10 * term * hex_rank.get_overall_scale()) / 10)
-    progress_bar.value = math.min(1, progress)
-    progress_bar.tooltip = {"", 
-        "[font=" .. font .. "]" .. current .. " / " .. goal .. "   (" .. lib.format_percentage(progress_bar.value, 0, true, false) .. ")[.font]\n\n",
-        lib.color_localized_string({"hextorio-gui.hex-rank-progress-logarithmic", font}, "gray"),
-    }
+        image.visible = true
+        flow.visible = true
+
+        local progress = hex_rank.get_factor_progress(factor_type)
+        local current, goal = hex_rank.get_hex_rank_completion(factor_type)
+
+        local font = "count-font"
+
+        contribution.caption = "[img=hex-rank] +" .. (math.floor(0.5 + 10 * term * hex_rank.get_overall_scale()) / 10)
+        progress_bar.value = math.min(1, progress)
+        progress_bar.tooltip = {"", 
+            "[font=" .. font .. "]" .. current .. " / " .. goal .. "   (" .. lib.format_percentage(progress_bar.value, 0, true, false) .. ")[.font]\n\n",
+            lib.color_localized_string({"hextorio-gui.hex-rank-progress-logarithmic", font}, "gray"),
+        }
+    end
 end
 
 ---Update the hex rank HUD for a player.
