@@ -4,14 +4,15 @@ local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
 local entity_util  = require "api.entity_util"
 local sets         = require "api.sets"
+local gameplay_statistics = require "api.gameplay_statistics"
 
 local quests = {}
 
 
 
----@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"|"hex-core-trades-read"|"cover-ores-on"
+---@alias QuestConditionType "claimed-hexes"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"reach-hex-rank"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"|"hex-core-trades-read"|"cover-ores-on"
 ---@alias QuestRewardType "unlock-feature"|"receive-items"|"claim-free-hexes"|"reduce-biters"|"all-trades-productivity"|"receive-spaceship"
----@alias FeatureName "trade-overview"|"catalog"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"|"quick-trading"|"item-buff-enhancement"|"enhance-all"|"piggy-bank"
+---@alias FeatureName "trade-overview"|"catalog"|"hex-rank"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"|"quick-trading"|"item-buff-enhancement"|"enhance-all"|"piggy-bank"
 
 ---@alias SingleQuestConditionValue string|number
 ---@alias SingleQuestRewardValue string|number|ItemStackIdentification
@@ -74,6 +75,7 @@ local quests = {}
 
 
 
+-- TODO: (IMPORTANT REFACTORING) Move condition progress management into gameplay_statistics.lua or a similar module.  They are functionally the same thing.
 local quest_condition_progress_recalculators = {} ---@as {[QuestConditionType]: fun(condition_value: QuestConditionValue): int}
 
 ---@param condition_type QuestConditionType
@@ -287,6 +289,10 @@ function quests.register_events()
 
     event_system.register("item-buff-data-migrated", function()
         quests.redistribute_quest_rewards "all-trades-productivity"
+    end)
+
+    event_system.register("hex-rank-changed", function(prev_val, new_val)
+        quests.set_progress_for_type("reach-hex-rank", new_val)
     end)
 end
 
@@ -839,7 +845,12 @@ end
 
 ---@param quest Quest
 function quests._mark_complete(quest)
-    quest.complete = true
+    local prev = quest.complete
+    if not prev then
+        quest.complete = true
+        gameplay_statistics.increment "total-quests-completed"
+    end
+
     quest.revealed = true
 end
 

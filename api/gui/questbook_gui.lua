@@ -324,7 +324,12 @@ function questbook_gui.update_questbook(player, quest_name)
             table.insert(t, "heading-2") -- Lua table.unpack() and ... is weird, so this is necessary
             caption = quests.get_condition_localized_description(condition, condition_str, table.unpack(t))
         else
-            caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2")
+            if condition.type == "reach-hex-rank" then
+                condition_str = "[img=hex-rank] [font=count-font][color=192,32,255]" .. condition.progress_requirement .. "[.color][.font]"
+                caption = quests.get_condition_localized_description(condition, condition_str)
+            else
+                caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2")
+            end
         end
 
         local condition_desc = condition_frame.add {

@@ -506,7 +506,7 @@ function item_buffs.set_item_buff_level(item_name, level, trigger_event)
     end
 
     if trigger_event then
-        event_system.trigger("item-buff-level-changed", item_name)
+        event_system.trigger("item-buff-level-changed", item_name, prev_level, level)
     end
 end
 

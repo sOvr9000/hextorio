@@ -1198,7 +1198,7 @@ end
 ---@param item_name string
 ---@return boolean
 function lib.is_coin(item_name)
-    return storage.coin_tiers.COIN_TIERS_BY_NAME[item_name] ~= nil
+    return ((storage.coin_tiers or {}).COIN_TIERS_BY_NAME or {})[item_name] ~= nil
 end
 
 function lib.is_fluid(item_name)

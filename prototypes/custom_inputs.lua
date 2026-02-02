@@ -17,6 +17,11 @@ data:extend({
     },
     {
         type = "custom-input",
+        name = "toggle-hex-rank",
+        key_sequence = "",
+    },
+    {
+        type = "custom-input",
         name = "teleport-to-hex-core",
         key_sequence = "T",
     },
@@ -25,11 +30,6 @@ data:extend({
         name = "claim-hex-core",
         key_sequence = "Y",
     },
-    -- {
-    --     type = "custom-input",
-    --     name = "favorite-trade",
-    --     key_sequence = "K",
-    -- },
     {
         type = "custom-input",
         name = "hextorio-fast-entity-split",

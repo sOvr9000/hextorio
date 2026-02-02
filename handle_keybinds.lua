@@ -50,6 +50,20 @@ script.on_event("toggle-trade-overview", function(event)
     end
 end)
 
+script.on_event("toggle-hex-rank", function(event)
+    ---@cast event {player_index: int}
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    if not quests.is_feature_unlocked "hex-rank" then return end
+
+    if gui.core_gui.is_frame_open(player, "hex-rank") then
+        gui.hex_rank.hide_hex_rank(player)
+    else
+        gui.hex_rank.show_hex_rank(player)
+    end
+end)
+
 script.on_event("teleport-to-hex-core", function(event)
     ---@cast event {player_index: int}
     local player = game.get_player(event.player_index)

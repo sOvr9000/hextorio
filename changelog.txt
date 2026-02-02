@@ -1,10 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.0
 Date: 1/2/26
+  Features:
+    - Added the hex rank system, unlocked via the new early-game quest.
+    - Added new quest: "Look at My Score".
   Minor Features:
     - Added command /disable-quest, which lets you skip a quest in the progression path.  For example, "/disable-quest biter-rammer" to avoid having to ram biters with vehicles to progress.
         Note that this also permanently makes its specific rewards unobtainable.  To skip and get the rewards, use "/complete-quest <quest>".
-    - A different sound from "console message" can now played when a quest gets completed, configurable in player mod settings.
+    - A different sound from "console message" can now be played when a quest gets completed, configurable in player mod settings.
   Changes:
     - Disabled the original method of ranking up items to red stars (destroy your ship outside of the solar system while carrying hextreme items).
     - Removed the mod setting for default trade quality bounds.

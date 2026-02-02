@@ -18,6 +18,7 @@ local inventories = require "api.inventories"
 local strongboxes = require "api.strongboxes"
 local entity_util = require "api.entity_util"
 local piggy_bank  = require "api.piggy_bank"
+local gameplay_statistics = require "api.gameplay_statistics"
 
 
 
@@ -913,14 +914,22 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 if is_biter_hex then
                     local biter_chance = lib.remap_map_gen_setting(mgs.autoplace_controls["enemy-base"].frequency)
 
+                    local r = math.random()
+                    local proc = r < biter_chance
+
                     if storage.hex_grid.total_biter_multiplier then
                         biter_chance = biter_chance * storage.hex_grid.total_biter_multiplier
                     end
 
-                    is_biter_hex = math.random() < biter_chance
+                    is_biter_hex = r < biter_chance
                     if is_biter_hex then
                         if hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
                             state.is_biters = true
+                        end
+                    else
+                        if proc then
+                            -- Count some spawner kills towards total spawners killed stat
+                            gameplay_statistics.increment("total-spawners-killed", math.random(1, 4))
                         end
                     end
                 end
@@ -930,14 +939,22 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 if is_pentapod_hex then
                     local pentapod_chance = math.sqrt(lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency))
 
+                    local r = math.random()
+                    local proc = r < pentapod_chance
+
                     if storage.hex_grid.total_pentapod_multiplier then
                         pentapod_chance = pentapod_chance * storage.hex_grid.total_pentapod_multiplier
                     end
 
-                    is_pentapod_hex = math.random() < pentapod_chance
+                    is_pentapod_hex = r < pentapod_chance
                     if is_pentapod_hex then
                         if hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width) then
                             state.is_pentapods = true
+                        end
+                    else
+                        if proc then
+                            -- Count some spawner kills towards total spawners killed stat
+                            gameplay_statistics.increment("total-spawners-killed", math.random(1, 2))
                         end
                     end
                 end
@@ -1802,6 +1819,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     end
 
     state.claimed_timestamp = game.tick
+    gameplay_statistics.increment "total-hexes-claimed"
 
     -- Set tiles
     local tile_name
@@ -3845,9 +3863,11 @@ function hex_grid.reduce_biters(portion)
     storage.hex_grid.total_biter_multiplier = (storage.total_biter_multiplier or 1) * (1 - portion)
     local surface = game.surfaces.nauvis
 
+    local total = 0
     for _, state in pairs(hex_state_manager.get_flattened_surface_hexes "nauvis") do
         if state.is_biters then
             if math.random() < portion then
+                -- TODO: Switch to storing spawner/worm entities in hex state, will reduce risk of bugs if system is extended or reused later, especially if for modded entities
                 local entities = surface.find_entities_filtered {
                     force = "enemy",
                     position = axial.get_hex_center(state.position, transformation.scale, transformation.rotation),
@@ -3855,12 +3875,17 @@ function hex_grid.reduce_biters(portion)
                 }
                 for _, e in pairs(entities) do
                     if e.valid then
+                        if e.type == "unit-spawner" then
+                            total = total + 1
+                        end
                         e.destroy()
                     end
                 end
             end
         end
     end
+
+    gameplay_statistics.increment("total-spawners-killed", total)
 end
 
 ---@param surface_name string
@@ -4029,6 +4054,7 @@ function hex_grid.on_strongbox_killed(sb_entity)
     local coin_loot = inventories.get_coin_from_inventory(inv)
 
     storage.strongboxes.total_coins_earned = coin_tiers.add(storage.strongboxes.total_coins_earned or coin_tiers.new(), coin_loot)
+    gameplay_statistics.increment "total-strongbox-level"
 
     -- Include offline players
     local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"

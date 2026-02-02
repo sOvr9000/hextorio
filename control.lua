@@ -27,6 +27,8 @@ local inventories = require "api.inventories"
 local strongboxes = require "api.strongboxes"
 local piggy_bank = require "api.piggy_bank"
 local passive_coin_buff = require "api.passive_coin_buff"
+local hex_rank = require "api.hex_rank"
+local gameplay_statistics = require "api.gameplay_statistics"
 
 migrations.load_handlers()
 
@@ -43,6 +45,8 @@ space_platforms.register_events()
 train_trading.register_events()
 strongboxes.register_events()
 inventories.register_events()
+hex_rank.register_events()
+gameplay_statistics.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -466,6 +470,14 @@ end)
 --     end
 -- end)
 
+script.on_event(defines.events.on_resource_depleted, function (event)
+    event_system.trigger("resource-depleted", event.entity)
+end)
+
+script.on_event(defines.events.on_rocket_launched, function (event)
+    event_system.trigger("rocket-launched", event.rocket, event.rocket_silo)
+end)
+
 script.on_event(defines.events.on_surface_created, function (event)
     local surface_id = event.surface_index
     local surface = game.get_surface(surface_id)
@@ -575,6 +587,7 @@ end)
 script.on_event(defines.events.on_research_finished, function(event)
     trades.recalculate_researched_items()
     trades.queue_productivity_update_job()
+    event_system.trigger("research-completed", event.research)
 end)
 
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)

@@ -73,6 +73,8 @@ data:extend{
         filename = "__hextorio__/graphics/icons/questbook.png",
         width = 128,
         height = 128,
+        scale = 0.5,
+        flags = {"no-crop"},
     },
     {
         type = "sprite",
@@ -369,6 +371,29 @@ data:extend{
         filename = "__hextorio__/graphics/icons/no-roboport.png",
         width = 64,
         height = 64,
+    },
+    {
+        type = "sprite",
+        name = "hex-rank",
+        filename = "__hextorio__/graphics/icons/hex-rank.png",
+        width = 128,
+        height = 128,
+        flags = {"no-crop"},
+    },
+    {
+        type = "sprite",
+        name = "hex-rank-button",
+        filename = "__hextorio__/graphics/icons/hex-rank-button.png",
+        width = 64,
+        height = 64,
+    },
+    {
+        type = "sprite",
+        name = "hexagon-with-plus-sign",
+        filename = "__hextorio__/graphics/icons/hexagon-with-plus-sign.png",
+        width = 64,
+        height = 64,
+        flags = {"no-crop"},
     },
 }
 
