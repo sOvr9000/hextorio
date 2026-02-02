@@ -11,6 +11,7 @@ local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
 local coin_tiers = require "api.coin_tiers"
 local inventories = require "api.inventories"
+local sets        = require "api.sets"
 
 local TURRET_RELOAD_INTERVAL = 3600
 
@@ -785,6 +786,31 @@ function dungeons.remove_loot_chest(dungeon, chest)
 
         event_system.trigger("dungeon-looted", dungeon)
     end
+end
+
+---Get a list of all currently generated dungeons on a given surface.
+---@param surface_id int
+---@return Dungeon[]
+function dungeons.get_dungeons_on_surface(surface_id)
+    local indices = storage.dungeons.dungeon_idx_by_position[surface_id]
+    if not indices then return {} end
+
+    local d = {}
+    local counted = sets.new()
+
+    for _, I in pairs(indices) do
+        for _, main_index in pairs(I) do
+            if not sets.contains(counted, main_index) then
+                sets.add(counted, main_index)
+                local dungeon = storage.dungeons.dungeons[main_index]
+                if dungeon then
+                    d[#d+1] = dungeon
+                end
+            end
+        end
+    end
+
+    return d
 end
 
 ---Handle the event where a dungeon chest is picked up.

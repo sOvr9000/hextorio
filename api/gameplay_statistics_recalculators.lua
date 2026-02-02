@@ -3,6 +3,7 @@ local event_system = require "api.event_system"
 local gameplay_statistics = require "api.gameplay_statistics"
 local lib = require "api.lib"
 local entity_util = require "api.entity_util"
+local dungeons    = require "api.dungeons"
 
 local recalculators = {}
 
@@ -124,6 +125,50 @@ recalculators.define_recalculator("total-strongbox-level", function(stat_value)
         end
     end
     return total_level
+end)
+
+recalculators.define_recalculator("total-dungeons-looted", function(stat_value)
+    local total = 0
+    for _, surface in pairs(game.surfaces) do
+        if lib.is_vanilla_planet_name(surface.name) then
+            for _, dungeon in pairs(dungeons.get_dungeons_on_surface(surface.index)) do
+                if dungeon.is_looted then
+                    total = total + 1
+                end
+            end
+        end
+    end
+    return total
+end)
+
+recalculators.define_recalculator("total-spawners-killed", function(stat_value)
+    local entity_names = {}
+    for _, prot in pairs(prototypes.entity) do
+        if prot.type == "unit-spawner" then
+            log(prot.name)
+            entity_names[#entity_names+1] = prot.name
+        end
+    end
+
+    local total = 0
+    for _, surface in pairs(game.surfaces) do
+        local flow_stats = game.forces.player.get_kill_count_statistics(surface)
+        for _, entity_name in pairs(entity_names) do
+            total = total + flow_stats.get_input_count(entity_name)
+        end
+    end
+
+    return total
+end)
+
+recalculators.define_recalculator("total-rockets-launched", function(stat_value)
+    local total = 0
+    for _, surface in pairs(game.surfaces) do
+        local flow_stats = game.forces.player.get_item_production_statistics(surface)
+        total = total + flow_stats.get_input_count "rocket-part"
+    end
+    total = math.floor(total / 50) -- approximation
+    return total
 end)
 
 recalculators.define_recalculator("cover-ores-on", function(stat_value)
