@@ -2725,16 +2725,12 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     -- Use raw array for accumulation to avoid repeated normalization (performance optimization)
     local total_coins_added_values = coin_tiers.new_coin_values()
 
-    local function handle_item_in_trade(trade_id, quality, item_name, amount, trade_side)
+    local function handle_item_in_trade(trade, quality, item_name, amount, trade_side, rounded_prod)
         local rank = item_ranks.get_item_rank(item_name)
         if rank ~= 2 and rank ~= 4 then return end
 
-        local trade = trades.get_trade_from_id(trade_id)
-        if trade then
-            local prod = trades.get_productivity(trade, quality)
-            if prod >= storage.item_ranks.productivity_requirements[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
-                item_ranks.progress_item_rank(item_name, rank + 1)
-            end
+        if rounded_prod >= storage.item_ranks.productivity_requirements[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
+            item_ranks.progress_item_rank(item_name, rank + 1)
         end
     end
 
@@ -2764,12 +2760,17 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
     local total_batches = 0
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
+
         if trade and trade.active then
             for _, quality in pairs(trade.allowed_qualities or {"normal"}) do
                 local all_items_quality = all_items_lookup[quality] or {}
                 local quality_cost_mult = quality_cost_multipliers[quality] or 1
                 local num_batches = trades.get_num_batches_for_trade(all_items_lookup, input_coin, trade, quality, quality_cost_mult, check_output_buffer, max_items_per_output, max_output_batches_per_trade, inventory_output_size)
+
                 if num_batches >= 1 then
+                    local prod = trades.get_productivity(trade, quality)
+                    local rounded_prod = math.floor(0.5 + prod * 1000) * 0.001 -- This is what's displayed in GUI, so even if the prod is slightly less than what's shown, allow the shown value to be used to conditionally rank up items (trade in precision for fewer confusing situations)
+
                     gameplay_statistics.increment("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + 1
 
@@ -2783,20 +2784,20 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
                     for item_name, amount in pairs(total_inserted[quality] or {}) do
                         _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
                         all_items_quality[item_name] = (all_items_quality[item_name] or 0) + amount
-                        handle_item_in_trade(trade_id, quality, item_name, amount, "receive")
+                        handle_item_in_trade(trade, quality, item_name, amount, "receive", rounded_prod)
                     end
 
                     if not _total_removed[quality] then _total_removed[quality] = {} end
                     for item_name, amount in pairs(total_removed[quality] or {}) do
                         _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
                         all_items_quality[item_name] = math.max(0, (all_items_quality[item_name] or 0) - amount)
-                        handle_item_in_trade(trade_id, quality, item_name, amount, "give")
+                        handle_item_in_trade(trade, quality, item_name, amount, "give", rounded_prod)
                     end
 
                     if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
                     for item_name, amount in pairs(remaining_to_insert[quality] or {}) do
                         _remaining_to_insert[quality][item_name] = (_remaining_to_insert[quality][item_name] or 0) + amount
-                        handle_item_in_trade(trade_id, quality, item_name, amount, "receive")
+                        handle_item_in_trade(trade, quality, item_name, amount, "receive", rounded_prod)
                     end
                 end
             end
@@ -2812,47 +2813,6 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
     return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
 end
-
--- ---Process the traded items after a trade had occurred.
--- ---@param surface_name string
--- ---@param total_traded QualityItemCounts
--- ---@param trade_side TradeSide
--- function trades._postprocess_items_traded(surface_name, total_traded, trade_side)
---     local process_again = {}
---     for quality, item_names in pairs(total_traded) do
---         local tier = lib.get_quality_tier(quality)
---         if tier >= 3 and trade_side == "give" then
---             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
---             for item_name, count in pairs(item_names) do
---                 local rank = item_ranks.get_item_rank(item_name)
---                 if rank == 2 then
---                     -- A bronze rank item was sold at rare+ quality.
---                     item_ranks.rank_up(item_name)
---                     if not process_again[quality] then
---                         process_again[quality] = {}
---                     end
---                     process_again[quality][item_name] = count
---                 end
---             end
---         end
---         if tier >= 4 then -- trade type can be either
---             -- The loop below can be removed or optimized if item names are tracked separately for this rank-up condition check.
---             for item_name, _ in pairs(item_names) do
---                 if not item_values.has_item_value(surface_name, item_name) then
---                     local rank = item_ranks.get_item_rank(item_name)
---                     if rank == 3 then
---                         -- A silver rank item was sold at epic+ quality on a planet where it cannot be naturally produced.
---                         item_ranks.rank_up(item_name)
---                     end
---                 end
---             end
---         end
---     end
---     if next(process_again) then
---         trades._postprocess_items_traded(surface_name, process_again, "give")
---         trades._postprocess_items_traded(surface_name, process_again, "receive")
---     end
--- end
 
 ---Calculate the productivity modifier for a given quality.
 ---@param quality string
