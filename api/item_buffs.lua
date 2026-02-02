@@ -432,7 +432,7 @@ function item_buffs.get_item_buff_level(item_name)
         end
         item_buffs.set_item_buff_level(item_name, level, trigger_event)
     end
-    return storage.item_buffs.levels[item_name]
+    return storage.item_buffs.levels[item_name] or 0 -- should NOT be needed to "or 0" here, but JUST in case it causes an issue six months from now or some shit
 end
 
 ---Set the level of the item's buff.  0 = locked, 1 = first level of unlocked buff, etc.
@@ -441,7 +441,7 @@ end
 ---@param level int
 ---@param trigger_event boolean|nil Whether to trigger the `item-buff-level-changed` event.  Defaults to `true` if not provided.
 function item_buffs.set_item_buff_level(item_name, level, trigger_event)
-    local prev_level = storage.item_buffs.levels[item_name]
+    local prev_level = storage.item_buffs.levels[item_name] or 0
     if prev_level == level or level < 0 then
         return
     end
@@ -511,7 +511,7 @@ function item_buffs.get_item_buff_cost(item_name)
         item_buffs.set_item_buff_level(item_name, 0)
     end
 
-    local level = storage.item_buffs.levels[item_name]
+    local level = storage.item_buffs.levels[item_name] or 0
 
     local level_bonus
     if item_buffs.gives_buff_of_type(item_name, "all-buffs-level") then
