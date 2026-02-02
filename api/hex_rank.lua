@@ -94,7 +94,7 @@ function hex_rank.init()
             coefficient = 1.2,
         },
         ["science-per-hour"] = {
-            goal_term = 4.2,
+            goal_term = 4.4,
             coefficient = 3,
         },
         ["total-rockets-launched"] = {
