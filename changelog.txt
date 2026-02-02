@@ -19,6 +19,7 @@ Date: 1/2/26
     - Added mod setting that toggles the allowance of two-headed trains in trading.
     - Changed the default value for the base trade efficiency setting from 1.0 to 0.8, where at least 25% trade productivity is required to create infinite coin loops.
     - If the "Electrocution" quest is revealed but not yet completed, then the next lightning strike that hits your character will now call for Fulgora's magnificent storms to finish the job.
+    - Increased the default setting for trades per hex on Fulgora from 3 to 4 to accommodate for the fewer total hexes available to claim.
   Bugfixes:
     - Fixed the game crashing upon destroying your car and a biter/spitter spawner in the same collision.
     - Fixed that disconnecting from a server (losing connection, being kicked, force-quitting, etc.) was teleporting you to your remote view location upon rejoining.
