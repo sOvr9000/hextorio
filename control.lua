@@ -602,6 +602,13 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     end
 end)
 
+script.on_event(defines.events.on_player_display_scale_changed, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("player-display-scaled-changed", player)
+end)
+
 script.on_configuration_changed(function(handler)
     local changes = handler.mod_changes.hextorio
     if changes and changes.old_version ~= changes.new_version then

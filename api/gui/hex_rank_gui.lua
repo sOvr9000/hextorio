@@ -5,7 +5,6 @@ local gui_stack = require "api.gui.gui_stack"
 local event_system = require "api.event_system"
 local quests       = require "api.quests"
 local hex_rank     = require "api.hex_rank"
-local gameplay_statistics = require "api.gameplay_statistics"
 
 local hex_rank_gui = {}
 
@@ -87,6 +86,10 @@ function hex_rank_gui.register_events()
             hex_rank_gui.update_hex_rank_hud(player)
         end
     end)
+
+    event_system.register("player-display-scaled-changed", function(player)
+        hex_rank_gui.reinitialize(player)
+    end)
 end
 
 ---Reinitialize the hex rank GUI for the given player, or all players if no player is provided.
@@ -104,6 +107,9 @@ function hex_rank_gui.reinitialize(player)
 
     local button = player.gui.top["hex-rank-button"]
     if button then button.destroy() end
+
+    local hud = player.gui.center["hex-rank-hud"]
+    if hud then hud.destroy() end
 
     hex_rank_gui.init_hex_rank_button(player)
     hex_rank_gui.init_hex_rank(player)
@@ -236,7 +242,7 @@ function hex_rank_gui.init_hex_rank_hud(player)
         ignored_by_interaction = true,
     }
     hud.style.vertically_stretchable = true
-    hud.style.natural_height = 1130
+    hud.style.height = 1413 / player.display_scale
     hud.style.vertically_squashable = true
 
     local hex_rank_label = hud.add {
