@@ -14,6 +14,11 @@ local recalculators = {}
 ---@type {[GameplayStatisticType]: GameplayStatisticRecalculator}
 local recalculator_functions = {}
 
+function recalculators.register_events()
+    event_system.register("recalculate-statistic", gameplay_statistics.on_recalculate_statistic)
+    event_system.register("recalculate-all-statistics", gameplay_statistics.on_recalculate_all_statistics)
+end
+
 ---Register a recalculator function for a statistic type.
 ---@param stat_type GameplayStatisticType
 ---@param func GameplayStatisticRecalculator
@@ -21,23 +26,20 @@ function recalculators.define_recalculator(stat_type, func)
     recalculator_functions[stat_type] = func
 end
 
----Event handler for recalculate-statistic event.
----@param stat_type string
----@param stat_value any
-local function on_recalculate_statistic(stat_type, stat_value)
+---@param stat_type GameplayStatisticType
+---@param stat_value GameplayStatisticValue
+function gameplay_statistics.on_recalculate_statistic(stat_type, stat_value)
     local func = recalculator_functions[stat_type]
     if not func then
+        lib.log("gameplay_statistics_recalculators.on_recalculate_statistics: Missing recalculator for stat type " .. stat_type)
         return
     end
 
+    local prev = gameplay_statistics.get(stat_type, stat_value)
     local new_value = func(stat_value)
     gameplay_statistics.set(stat_type, new_value, stat_value)
 
-    lib.log("gameplay_statistics_recalculators: Recalculated " .. stat_type .. " with value " .. serpent.line(stat_value or {}) .. ". New value: " .. new_value)
-end
-
-function recalculators.register_events()
-    event_system.register("recalculate-statistic", on_recalculate_statistic)
+    lib.log("gameplay_statistics_recalculators.on_recalculate_statistics: Recalculated " .. stat_type .. " with value " .. serpent.line(stat_value or {}) .. ". Prev value: " .. prev .. ", New value: " .. new_value)
 end
 
 

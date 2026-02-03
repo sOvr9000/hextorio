@@ -17,7 +17,6 @@ local gameplay_statistics = {}
 ---| "total-resources-depleted"
 ---| "total-dungeons-looted"
 ---| "total-item-buff-level"
----| "total-item-rank"
 ---| "science-per-hour"
 ---| "total-rockets-launched"
 ---| "claimed-hexes-on"
@@ -165,12 +164,18 @@ function gameplay_statistics.get_stat_value_key(stat_value)
     return stat_value
 end
 
----Recalculate a specific statistic from scratch by triggering a recalculation event.
----Recalculator modules listen to this event and update the statistic value.
+---Recalculate a specific statistic from scratch.
 ---@param stat_type GameplayStatisticType
 ---@param stat_value GameplayStatisticValue|nil
 function gameplay_statistics.recalculate(stat_type, stat_value)
     event_system.trigger("recalculate-statistic", stat_type, stat_value)
+end
+
+---Recalculate all statistics used in calculating hex rank.
+function gameplay_statistics.recalculate_for_hex_rank()
+    for stat_type, _ in pairs(storage.hex_rank.factor_metadata) do
+        gameplay_statistics.recalculate(stat_type)
+    end
 end
 
 ---@param entity_that_died LuaEntity
