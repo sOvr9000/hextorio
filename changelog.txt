@@ -3,6 +3,8 @@ Version: 1.6.2
 Date: 3/2/26
   Features:
     - Hex core loaders can now be flipped.
+  Changes:
+    - Changed how progress bars for each statistic in the hex rank GUI visually progress, from logarithmic to cubed logarithmic (slows down how fast they go up).
   Bugfixes:
     - Fixed that spaceship speed readings in the hex rank GUI were on the wrong scale (per tick instead of per second).
     - Fixed that the counter for unique items traded in the hex rank GUI wasn't per surface as the description says it is.

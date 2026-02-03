@@ -218,7 +218,10 @@ function hex_rank.get_factor_progress(stat)
     local raw_term = math.log(current_stat + 1) * INV_LOG10
     local goal_term = math.log(goal_stat + 1) * INV_LOG10
 
-    return raw_term / goal_term
+    local progress = raw_term / goal_term
+    progress = progress * progress * progress
+
+    return progress
 end
 
 ---Get the current and goal amount of progress on hex rank statistics.  These are direct measures of the gameplay statistics instead of hex rank calculations.
