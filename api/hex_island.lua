@@ -131,6 +131,25 @@ function hex_island.generate_island(radius, fill_ratio)
     local open_list = {}
     local open_set = hex_sets.new()
 
+    -- Guarantee some nonland tiles
+    local blacklist = hex_sets.new()
+
+    for i = 1, 5 do
+        local ring = axial.ring({q=0, r=0}, i)
+        local idx = math.random(1, #ring)
+        local pos = ring[idx]
+        if i > 1 and (pos.q == -pos.r or pos.q ~= 0 and pos.r == 0 or pos.r ~= 0 and pos.q == 0) then
+            -- The randomly selected hex on the ring is on a line going out to a vertex of the giant hex island
+            if math.random() < 0.5 then
+                idx = idx + 1
+            else
+                idx = idx - 1
+            end
+            pos = ring[1 + (idx - 1) % #ring]
+        end
+        hex_sets.add(blacklist, pos)
+    end
+
     -- Misc parameters
     -- local radius_inv = 1 / radius
 
@@ -143,7 +162,7 @@ function hex_island.generate_island(radius, fill_ratio)
             for i, adj in ipairs(adj_list) do
                 local dist = axial.distance(adj, {q=0, r=0})
                 if dist <= radius then
-                    if not hex_sets.contains(set, adj) and not hex_sets.contains(open_set, adj) then
+                    if not hex_sets.contains(set, adj) and not hex_sets.contains(open_set, adj) and not hex_sets.contains(blacklist, adj) then
                         hex_sets.add(open_set, adj)
                         table.insert(open_list, adj)
                     end
@@ -155,9 +174,15 @@ function hex_island.generate_island(radius, fill_ratio)
 
     -- Draw lines along the three diameters.
     for i = -radius, radius do
-        add_hex {q = i, r = 0}
-        add_hex {q = i, r = -i}
-        add_hex {q = 0, r = i}
+        for _, pos in pairs {
+            {q = i, r = 0},
+            {q = i, r = -i},
+            {q = 0, r = i},
+        } do
+            if not hex_sets.contains(blacklist, pos) then
+                add_hex(pos)
+            end
+        end
     end
 
     -- Randomly sample from the open set.

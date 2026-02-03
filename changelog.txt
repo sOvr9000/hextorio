@@ -3,6 +3,8 @@ Version: 1.6.2
 Date: 3/2/26
   Features:
     - Hex core loaders can now be flipped.
+  Balancing:
+    - Some nonland (water, lava, etc.) hex tiles are now guaranteed to exist within five hexes of spawn on each planet.
   Changes:
     - Changed how progress bars for each statistic in the hex rank GUI visually progress, from logarithmic to cubed logarithmic (slows down how fast they go up).
   Bugfixes:
