@@ -71,6 +71,7 @@ function gameplay_statistics.register_events()
     event_system.register("player-coins-base-value-changed", gameplay_statistics.on_player_coins_base_value_changed)
     event_system.register("hex-rank-changed", gameplay_statistics.on_hex_rank_changed)
     event_system.register("dynamic-stats-updating", gameplay_statistics.on_dynamic_stats_updating)
+    event_system.register("resource-depleted", gameplay_statistics.on_resource_depleted)
 end
 
 ---Get a gameplay statistic.
