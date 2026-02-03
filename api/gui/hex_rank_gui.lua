@@ -241,8 +241,10 @@ function hex_rank_gui.init_hex_rank_hud(player)
         direction = "vertical",
         ignored_by_interaction = true,
     }
+
+    local resolution = player.display_resolution
     hud.style.vertically_stretchable = true
-    hud.style.height = 1413 / player.display_scale
+    hud.style.height = resolution.height * 0.98 / player.display_scale
     hud.style.vertically_squashable = true
 
     local hex_rank_label = hud.add {
