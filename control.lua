@@ -202,26 +202,6 @@ script.on_init(function()
     -- Set enemy force color.
     game.forces.enemy.custom_color = {0.6, 0.1, 0.6}
 
-    -- Give preset logistic group for coin autotrash
-    -- game.forces.player.create_logistic_group("Coins Anti-Autotrash")
-    -- local group = game.forces.player.get_logistic_group("Coins Anti-Autotrash")
-    -- if group then
-    --     local member = group.members[1]
-    --     if member then
-    --         for i, coin_name in ipairs(storage.coin_tiers.COIN_NAMES) do
-    --             member.set_slot(i, {
-    --                 min = 1,
-    --                 max = 99999,
-    --                 value = {type = "item", name = coin_name},
-    --             })
-    --         end
-    --     else
-    --         log("nil member")
-    --     end
-    -- else
-    --     log("nil")
-    -- end
-
     -- Testing lib functions
     -- for _, t in pairs {
     --     {0.427, 1000, 1000},
