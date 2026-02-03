@@ -3,6 +3,9 @@ Version: 1.6.2
 Date: 3/2/26
   Features:
     - Hex core loaders can now be flipped.
+  Bugfixes:
+    - Fixed that spaceship speed readings in the hex rank GUI were on the wrong scale (per tick instead of per second).
+    - Fixed that the counter for unique items traded in the hex rank GUI wasn't per surface as the description says it is.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.1
 Date: 3/2/26

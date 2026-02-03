@@ -309,6 +309,7 @@ function gameplay_statistics.on_dynamic_stats_updating()
     end
 
     total_hex_coins = math.floor(0.5 + total_hex_coins)
+    fastest_ship_speed = fastest_ship_speed * 60 -- normalize from ticks to seconds
     total_sph = math.floor(0.5 + total_sph)
 
     gameplay_statistics.set_if_greater("net-coin-production", total_hex_coins)

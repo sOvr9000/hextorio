@@ -2684,7 +2684,7 @@ function trades.get_coins_and_items_of_inventory(inv)
 end
 
 ---Process all trades from one inventory to another.
----@param surface_name string
+---@param surface_id int
 ---@param input_inv LuaInventory|LuaTrain
 ---@param output_inv LuaInventory|LuaTrain
 ---@param trade_ids int[]
@@ -2694,7 +2694,7 @@ end
 ---@param max_output_batches_per_trade int|nil How many output batches (successful outputs if negative productivity) are allowed per trade.
 ---@param cargo_wagons LuaEntity[]|nil If either the input or output inventory is a LuaTrain, then these are its cargo wagons closest to train stop.
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, table, table
-function trades.process_trades_in_inventories(surface_name, input_inv, output_inv, trade_ids, quality_cost_multipliers, check_output_buffer, max_items_per_output, max_output_batches_per_trade, cargo_wagons)
+function trades.process_trades_in_inventories(surface_id, input_inv, output_inv, trade_ids, quality_cost_multipliers, check_output_buffer, max_items_per_output, max_output_batches_per_trade, cargo_wagons)
     if check_output_buffer == nil then check_output_buffer = true end
     quality_cost_multipliers = quality_cost_multipliers or {}
 
@@ -2727,11 +2727,13 @@ function trades.process_trades_in_inventories(surface_name, input_inv, output_in
 
     local prod_reqs = storage.item_ranks.productivity_requirements
 
-    local uniquely_traded_items = storage.trades.uniquely_traded_items
-    if not uniquely_traded_items then
-        uniquely_traded_items = {}
-        storage.trades.uniquely_traded_items = uniquely_traded_items
+    if not storage.trades.uniquely_traded_items then
+        storage.trades.uniquely_traded_items = {}
     end
+    if not storage.trades.uniquely_traded_items[surface_id] then
+        storage.trades.uniquely_traded_items[surface_id] = {}
+    end
+    local uniquely_traded_items = storage.trades.uniquely_traded_items[surface_id]
 
     local function handle_item_in_trade(trade, quality, item_name, amount, trade_side, rounded_prod)
         if not uniquely_traded_items[item_name] then
