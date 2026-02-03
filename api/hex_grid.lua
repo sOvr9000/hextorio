@@ -352,6 +352,7 @@ function hex_grid.register_events()
     event_system.register("train-arrived-at-stop", hex_grid.on_train_arrived_at_stop)
     event_system.register("entity-built", hex_grid.on_entity_built)
     event_system.register("runtime-setting-changed-unresearched-penalty", hex_grid.on_setting_changed_unresearched_penalty)
+    event_system.register("player-rotated-entity", hex_grid.on_player_rotated_entity)
 end
 
 ---Get the state of a hex from a hex core entity
@@ -2629,13 +2630,13 @@ function hex_grid.generate_loaders(hex_core_state)
 
         local input_loader = surface.create_entity {name = "hex-core-loader", position = {position.x + dx, position.y + dy}, direction = defines.direction[dir_name], type = "input", force = "player"}
         input_loader.destructible = false
-        input_loader.rotatable = false
+        -- input_loader.rotatable = false
         table.insert(hex_core_state.input_loaders, input_loader)
 
         local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - dx, position.y + dy}, direction = defines.direction[dir_name_opposite], type = "output", force = "player"}
         output_loader.loader_filter_mode = "whitelist"
         output_loader.destructible = false
-        output_loader.rotatable = false
+        -- output_loader.rotatable = false
         if filters[lib.position_to_string(output_loader.position)] then
             set_filters(output_loader, filters[lib.position_to_string(output_loader.position)])
         end
@@ -2653,17 +2654,98 @@ function hex_grid.regenerate_all_hex_core_loaders()
     end
 end
 
+---@param loader LuaEntity
+---@param previous_direction defines.direction
+function hex_grid.handle_hex_core_loader_flip(loader, previous_direction)
+    local state = hex_state_manager.get_hex_state_containing(loader.surface, loader.position)
+    if not state then return end
+
+    if not state.input_loaders then
+        state.input_loaders = {}
+    end
+
+    if not state.output_loaders then
+        state.output_loaders = {}
+    end
+
+    local remove_from, add_to
+
+    local i = lib.table_index(state.input_loaders, loader)
+    if i then
+        -- input loader got flipped to become an output loader
+        remove_from = state.input_loaders
+        add_to = state.output_loaders
+
+        loader.loader_filter_mode = "whitelist"
+    else
+        -- output loader got flipped to become an input loader
+        remove_from = state.output_loaders
+        add_to = state.input_loaders
+        i = lib.table_index(state.output_loaders, loader)
+
+        loader.loader_filter_mode = "none"
+    end
+
+    loader.set_filter(1, nil)
+    loader.set_filter(2, nil)
+
+    if i then
+        ---@cast remove_from LuaEntity[]
+        table.remove(remove_from, i)
+    end
+
+    add_to[#add_to+1] = loader
+end
+
 function hex_grid.on_entity_settings_pasted(player, source, destination)
-    if source.name ~= "hex-core" or destination.name ~= "hex-core" then return end
+    if source.name == "hex-core" and destination.name == "hex-core" then
+        local source_state = hex_grid.get_hex_state_from_core(source)
+        local destination_state = hex_grid.get_hex_state_from_core(destination)
+        if not source_state or not destination_state then return end
 
-    local source_state = hex_grid.get_hex_state_from_core(source)
-    if not source_state then return end
+        local source_hex_core = source_state.hex_core
+        local destination_hex_core = destination_state.hex_core
+        if not source_hex_core or not destination_hex_core or not source_hex_core.valid or not destination_hex_core.valid then return end
 
-    local destination_state = hex_grid.get_hex_state_from_core(destination)
-    if not destination_state then return end
+        local destination_loaders = lib.table_extend(destination_state.output_loaders, destination_state.input_loaders)
+        local source_loaders = lib.table_extend(source_state.output_loaders, source_state.input_loaders)
 
-    for i, loader in ipairs(destination_state.output_loaders) do
-        loader.copy_settings(source_state.output_loaders[i], player)
+        for i = 1, #source_loaders do
+            local source_loader = source_loaders[i]
+            local source_dx = source_loader.position.x - source_hex_core.position.x
+            local source_dy = source_loader.position.y - source_hex_core.position.y
+
+            for j = 1, #destination_loaders do
+                local destination_loader = destination_loaders[j]
+                local destination_dx = destination_loader.position.x - destination_hex_core.position.x
+                local destination_dy = destination_loader.position.y - destination_hex_core.position.y
+
+                if source_dx == destination_dx and source_dy == destination_dy then
+                    if destination_loader.direction ~= source_loader.direction then
+                        destination_loader.rotate {by_player = player}
+                    end
+                    destination_loader.copy_settings(source_loader, player)
+                    break
+                end
+            end
+        end
+    elseif source.name == "hex-core-loader" and destination.name == "hex-core-loader" then
+        local source_state = hex_state_manager.get_hex_state_containing(source.surface, source.position)
+        local destination_state = hex_state_manager.get_hex_state_containing(destination.surface, destination.position)
+        if not source_state or not destination_state then return end
+
+        local source_is_input = lib.table_index(source_state.input_loaders or {}, source) ~= nil
+        local destination_is_input = lib.table_index(destination_state.input_loaders or {}, destination) ~= nil
+
+        if source_is_input ~= destination_is_input then
+            -- We also want to copy and paste the I/O setting of the loader.
+            -- e.g. paste settings of an input loader onto an output loader while also turning that output loader into an input loader
+            destination.rotate {by_player = player}
+        end
+
+        -- Still run this because rotating the loader might have cleared the settings after pasting them.
+        -- But don't include the by_player because that'll cause an infinite loop here.
+        destination.copy_settings(source)
     end
 end
 
@@ -4085,6 +4167,15 @@ function hex_grid.on_strongbox_killed(sb_entity)
     end
 
     gameplay_statistics.increment "total-strongbox-level"
+end
+
+---@param player LuaPlayer
+---@param entity LuaEntity
+---@param previous_direction defines.direction
+function hex_grid.on_player_rotated_entity(player, entity, previous_direction)
+    if entity.name == "hex-core-loader" then
+        hex_grid.handle_hex_core_loader_flip(entity, previous_direction)
+    end
 end
 
 

@@ -445,6 +445,13 @@ script.on_event(defines.events.on_player_changed_position, function(event)
     end
 end)
 
+script.on_event(defines.events.on_player_rotated_entity, function (event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("player-rotated-entity", player, event.entity, event.previous_direction)
+end)
+
 script.on_event(defines.events.on_player_used_capsule, function (event)
     local player = game.get_player(event.player_index)
     if not player then return end
