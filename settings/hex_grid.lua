@@ -374,6 +374,14 @@ data:extend({
         minimum_value = 1.0,
         order="h[hex-grid]-k[quality]-s[tiles-per-quality]-r[aquilo]",
     },
+    {
+        type = "string-setting",
+        name = "hextorio-world-generation-mode",
+        setting_type = "runtime-global",
+        allowed_values = {"standard", "spiral", "maze"},
+        default_value = "standard",
+        order = "v[world-gen]-g[world-generation-mode]",
+    },
 
     -- RUNTIME (PERFORMANCE)
     {

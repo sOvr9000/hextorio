@@ -250,6 +250,34 @@ function hex_maze.get_connected_tiles(maze, tile)
     return connected
 end
 
+---Return a set of hex positions where the world space is scaled up by `scale`, where hex positions are added to the dilated space to bridge between connected hexes in the maze.
+---@param maze HexMaze
+---@param scale int
+---@return HexSet
+function hex_maze.dilated(maze, scale)
+    local set = hex_sets.new()
+
+    for _, tile in pairs(maze.tiles) do
+        local pos = axial.multiply(tile.pos, scale)
+        hex_sets.add(set, pos)
+
+        for i = 1, 6 do
+            if tile.open[i] then
+                local offset = axial.get_adjacency_offset(i)
+                for n = scale - 1, 1, -1 do
+                    local bridge_pos = axial.add(pos, axial.multiply(offset, n))
+                    if hex_sets.contains(set, bridge_pos) then
+                        break
+                    end
+                    hex_sets.add(set, bridge_pos)
+                end
+            end
+        end
+    end
+
+    return set
+end
+
 
 
 return hex_maze
