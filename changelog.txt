@@ -3,6 +3,8 @@ Version: 1.6.3
 Date: 3/2/26
   Features:
     - Added the mod setting "World Generation Mode" for controlling the shape of terrain generation, currently with "Standard", "Spiral", and "Maze" modes.
+  Bugfixes:
+    - Added missing migration for existing hex core loaders to become rotatable.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.2
 Date: 3/2/26
