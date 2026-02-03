@@ -5,6 +5,8 @@ Date: 3/2/26
     - Added the mod setting "World Generation Mode" for controlling the shape of terrain generation, currently with "Standard", "Spiral", and "Maze" modes.
   Bugfixes:
     - Added missing migration for existing hex core loaders to become rotatable.
+  Scripting:
+    - Added the remote interface "gameplay_statistics_recalculators".
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.2
 Date: 3/2/26
