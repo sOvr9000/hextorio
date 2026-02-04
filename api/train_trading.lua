@@ -1,6 +1,7 @@
-local event_system = require "api.event_system"
-local lib          = require "api.lib"
-
+local event_system  = require "api.event_system"
+local lib           = require "api.lib"
+local quests        = require("api.quests")
+local hex_grid = require("api.hex_grid")
 local train_trading = {}
 
 
@@ -41,7 +42,21 @@ end
 ---@param train LuaTrain
 ---@param train_stop LuaEntity
 function train_trading.on_train_arrived_at_stop(train, train_stop)
-    event_system.trigger("train-arrived-at-stop", train, train_stop)
+    if not storage.train_trading.allow_two_headed_trains and lib.is_train_two_headed(train) then return end
+    if not quests.is_feature_unlocked "locomotive-trading" then return end
+
+    local state = hex_grid.get_closest_hex_state(train_stop.position, train_stop.surface)
+    if not state then return end
+    if not state.allow_locomotive_trading then return end
+
+    local inventory_output
+    if state.send_outputs_to_cargo_wagons then
+        inventory_output = train
+    else
+        inventory_output = state.hex_core_output_inventory
+    end
+
+    hex_grid.process_hex_core_trades(state, train, inventory_output, train_stop)
 end
 
 -- ---@param train LuaTrain

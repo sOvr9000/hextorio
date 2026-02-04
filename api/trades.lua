@@ -2688,15 +2688,15 @@ end
 ---@param input_inv LuaInventory|LuaTrain
 ---@param output_inv LuaInventory|LuaTrain
 ---@param trade_ids int[]
----@param quality_cost_multipliers StringAmounts|nil
 ---@param check_output_buffer boolean|nil Whether to prevent making a trade if the trade's hex core's output buffer contains any amount of at least one of the trade's output items.
 ---@param max_items_per_output int|nil
 ---@param max_output_batches_per_trade int|nil How many output batches (successful outputs if negative productivity) are allowed per trade.
 ---@param cargo_wagons LuaEntity[]|nil If either the input or output inventory is a LuaTrain, then these are its cargo wagons closest to train stop.
 ---@return QualityItemCounts, QualityItemCounts, QualityItemCounts, table, table
-function trades.process_trades_in_inventories(surface_id, input_inv, output_inv, trade_ids, quality_cost_multipliers, check_output_buffer, max_items_per_output, max_output_batches_per_trade, cargo_wagons)
+function trades.process_trades_in_inventories(surface_id, input_inv, output_inv, trade_ids, check_output_buffer, max_items_per_output, max_output_batches_per_trade, cargo_wagons)
     if check_output_buffer == nil then check_output_buffer = true end
-    quality_cost_multipliers = quality_cost_multipliers or {}
+
+    local quality_cost_multipliers = lib.get_quality_cost_multipliers() or {}
 
     local is_output_train = output_inv.object_name == "LuaTrain"
     local is_input_train = input_inv.object_name == "LuaTrain"

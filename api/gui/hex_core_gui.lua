@@ -921,8 +921,7 @@ function hex_core_gui.on_quick_trade_button_click(player, elem)
     local max_output_batches_per_trade = 1 -- Make exactly one output batch's worth of trade per trade in this hex core.
     local check_output_buffer = false -- Don't let output buffers confuse people about why their quick trading isn't working
 
-    local quality_cost_multipliers = lib.get_quality_cost_multipliers()
-    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.index, inv, inv, state.trades, quality_cost_multipliers, check_output_buffer, nil, max_output_batches_per_trade, nil)
+    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.index, inv, inv, state.trades, check_output_buffer, nil, max_output_batches_per_trade, nil)
 
     for quality_name, counts in pairs(remaining_to_insert) do
         for item_name, count in pairs(counts) do

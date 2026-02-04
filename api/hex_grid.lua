@@ -349,7 +349,7 @@ function hex_grid.register_events()
         hex_grid.set_pool_size(size)
     end)
 
-    event_system.register("train-arrived-at-stop", hex_grid.on_train_arrived_at_stop)
+
     event_system.register("entity-built", hex_grid.on_entity_built)
     event_system.register("runtime-setting-changed-unresearched-penalty", hex_grid.on_setting_changed_unresearched_penalty)
     event_system.register("player-rotated-entity", hex_grid.on_player_rotated_entity)
@@ -3029,14 +3029,13 @@ function hex_grid.process_hex_core_pool()
 
     -- log("Starting: Pool index: " .. storage.hex_grid.cur_pool_idx)
     -- local prof = game.create_profiler()
-    local quality_cost_multipliers = lib.get_quality_cost_multipliers()
 
     storage.hex_grid.cur_pool_idx = (storage.hex_grid.cur_pool_idx or 0) % #storage.hex_grid.pool + 1
     local pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
     for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
         if state then
-            hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
+            hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, nil)
             hex_grid.process_strongboxes(state)
             hex_grid.process_hexlight(state)
         end
@@ -3430,9 +3429,8 @@ end
 ---@param state HexState
 ---@param inventory_input LuaInventory|LuaTrain|nil
 ---@param inventory_output LuaInventory|LuaTrain|nil
----@param quality_cost_multipliers {[string]: number}|nil
 ---@param train_stop LuaEntity|nil
-function hex_grid.process_hex_core_trades(state, inventory_input, inventory_output, quality_cost_multipliers, train_stop)
+function hex_grid.process_hex_core_trades(state, inventory_input, inventory_output, train_stop)
     if not state.trades then return end
     if not state.hex_core or not state.hex_core.valid then return end
     if not inventory_input or not inventory_input.valid then return end
@@ -3471,7 +3469,7 @@ function hex_grid.process_hex_core_trades(state, inventory_input, inventory_outp
     -- First try to unload whatever buffer is here.  Without this first check for unloading the buffer, a partially full buffer (which wouldn't completely fill the output inventory) can prevent trading from happening to fill the rest of the output inventory in the same tick.
     hex_grid.try_unload_output_buffer(state, inventory_output, cargo_wagons)
 
-    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.index, inventory_input, inventory_output, state.trades, quality_cost_multipliers, true, max_items_per_output, max_output_batches_per_trade, cargo_wagons)
+    local total_removed, total_inserted, remaining_to_insert, total_coins_removed, total_coins_added = trades.process_trades_in_inventories(state.hex_core.surface.index, inventory_input, inventory_output, state.trades, true, max_items_per_output, max_output_batches_per_trade, cargo_wagons)
     hex_grid.add_to_output_buffer(state, remaining_to_insert)
 
     -- Now try to unload whatever was just traded.
@@ -4080,28 +4078,14 @@ function hex_grid.update_all_hex_claim_costs(surface_name)
     end
 end
 
----@param train LuaTrain
----@param train_stop LuaEntity
-function hex_grid.on_train_arrived_at_stop(train, train_stop)
-    if not storage.train_trading.allow_two_headed_trains and lib.is_train_two_headed(train) then return end
-    if not quests.is_feature_unlocked "locomotive-trading" then return end
-
-    local transformation = terrain.get_surface_transformation(train_stop.surface)
-    local hex_pos = axial.get_hex_containing(train_stop.position, transformation.scale, transformation.rotation)
-    local state = hex_state_manager.get_hex_state(train_stop.surface, hex_pos)
-    if not state then return end
-
-    if not state.allow_locomotive_trading then return end
-
-    local inventory_output
-    if state.send_outputs_to_cargo_wagons then
-        inventory_output = train
-    else
-        inventory_output = state.hex_core_output_inventory
-    end
-
-    local quality_cost_multipliers = lib.get_quality_cost_multipliers()
-    hex_grid.process_hex_core_trades(state, train, inventory_output, quality_cost_multipliers, train_stop)
+---comment
+---@param position MapPosition
+---@param surface LuaSurface
+---@return unknown
+function hex_grid.get_closest_hex_state(position, surface)
+    local transformation = terrain.get_surface_transformation(surface)
+    local hex_pos = axial.get_hex_containing(position, transformation.scale, transformation.rotation)
+    return hex_state_manager.get_hex_state(surface, hex_pos)
 end
 
 ---@param entity LuaEntity
