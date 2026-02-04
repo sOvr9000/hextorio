@@ -1,11 +1,13 @@
-
-local lib = require "api.lib"
-
 local event_system = {}
-
 local funcs = {}
 
+local on_init_name = -1
 
+local function on_init()
+    for _, callback in pairs(funcs[on_init_name]) do
+        callback()
+    end
+end
 
 ---Register an event handler
 ---@param name string
@@ -13,6 +15,20 @@ local funcs = {}
 function event_system.register(name, callback)
     funcs[name] = (funcs[name] or {})
     table.insert(funcs[name], callback)
+end
+
+---Register callback function to be called on_init.
+---@param callback function()
+function event_system.on_init(callback)
+    local listeners = funcs[on_init_name]
+
+    if listeners then
+        table.insert(listeners, callback)
+        return
+    end
+
+    funcs[on_init_name] = { callback }
+    script.on_init(on_init)
 end
 
 ---Register an event handler for a GUI element
@@ -69,7 +85,7 @@ function event_system.bind_gui_events()
         end
     end)
 
-    script.on_event(defines.events.on_gui_opened, function (event)
+    script.on_event(defines.events.on_gui_opened, function(event)
         local player = game.get_player(event.player_index)
         if not player then return end
 
@@ -83,7 +99,7 @@ function event_system.bind_gui_events()
         end
     end)
 
-    script.on_event(defines.events.on_gui_closed, function (event)
+    script.on_event(defines.events.on_gui_closed, function(event)
         local player = game.get_player(event.player_index)
         if not player then return end
 
@@ -117,7 +133,5 @@ function event_system.bind_gui_events()
     script.on_event(defines.events.on_gui_selection_state_changed, create_handler "gui-selection-changed")
     script.on_event(defines.events.on_gui_switch_state_changed, create_handler "gui-switch-changed")
 end
-
-
 
 return event_system

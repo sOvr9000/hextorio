@@ -1,4 +1,3 @@
-
 require "util" -- For table.deepcopy()
 require "remotes"
 
@@ -10,7 +9,7 @@ local initialization = require "api.initialization"
 local sets = require "api.sets"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
-local event_system= require "api.event_system"
+local event_system = require "api.event_system"
 local migrations = require "api.migrations"
 local trades = require "api.trades"
 local item_ranks = require "api.item_ranks"
@@ -85,8 +84,8 @@ end
 
 
 
-script.on_init(function()
-    storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
+event_system.on_init(function()
+    storage.cached = {}    -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
     storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
 
     storage.constants = data_constants
@@ -169,7 +168,7 @@ script.on_init(function()
     }
 
     local temp = game.create_surface("hextorio-temp", mgs)
-    temp.request_to_generate_chunks({0, 0}, 0)
+    temp.request_to_generate_chunks({ 0, 0 }, 0)
 
     coin_tiers.init()
     item_values.init()
@@ -200,7 +199,7 @@ script.on_init(function()
     trades.generate_interplanetary_trade_locations("nauvis", num_trades)
 
     -- Set enemy force color.
-    game.forces.enemy.custom_color = {0.6, 0.1, 0.6}
+    game.forces.enemy.custom_color = { 0.6, 0.1, 0.6 }
 
     -- Testing lib functions
     -- for _, t in pairs {
@@ -271,7 +270,7 @@ script.on_nth_tick(20, function()
     hex_grid.process_claim_queue()
 end)
 
-script.on_event(defines.events.on_tick, function (event)
+script.on_event(defines.events.on_tick, function(event)
     if reinit_guis then
         -- There's likely a better way to handle this.
         lib.log("Reinitializing GUIs for all players.")
@@ -281,9 +280,9 @@ script.on_event(defines.events.on_tick, function (event)
 
     if storage.initialization.has_game_started and not storage.initialization.intro_finished then
         if event.tick == storage.initialization.game_start_tick + 60 then
-            game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
+            game.print(lib.color_localized_string({ "hextorio.intro" }, "yellow", "heading-1"))
             if not lib.is_hextreme_enabled() then
-                game.print(lib.color_localized_string({"hextorio.hextreme-disabled"}, "pink", "heading-1"))
+                game.print(lib.color_localized_string({ "hextorio.hextreme-disabled" }, "pink", "heading-1"))
             end
             -- if not lib.startup_setting_value "pvp-mode" then
             --     game.print(lib.color_localized_string({"hextorio.try-pvp"}, "orange", "heading-1"))
@@ -312,7 +311,8 @@ script.on_event(defines.events.on_tick, function (event)
             local r = storage.debug_spider.color.r
             local g = storage.debug_spider.color.g
             local b = storage.debug_spider.color.b
-            storage.debug_spider.color = {math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(g, math.random(), 0.5)), math.sqrt(lib.lerp(b, math.random(), 0.5))}
+            storage.debug_spider.color = { math.sqrt(lib.lerp(r, math.random(), 0.5)), math.sqrt(lib.lerp(g,
+                math.random(), 0.5)), math.sqrt(lib.lerp(b, math.random(), 0.5)) }
         end
     end
 end)
@@ -425,14 +425,14 @@ script.on_event(defines.events.on_player_changed_position, function(event)
     end
 end)
 
-script.on_event(defines.events.on_player_rotated_entity, function (event)
+script.on_event(defines.events.on_player_rotated_entity, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
     event_system.trigger("player-rotated-entity", player, event.entity, event.previous_direction)
 end)
 
-script.on_event(defines.events.on_player_used_capsule, function (event)
+script.on_event(defines.events.on_player_used_capsule, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
@@ -440,7 +440,7 @@ script.on_event(defines.events.on_player_used_capsule, function (event)
     event_system.trigger("player-used-capsule", player, event.item.name)
 end)
 
-script.on_event(defines.events.on_entity_settings_pasted, function (event)
+script.on_event(defines.events.on_entity_settings_pasted, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
@@ -450,7 +450,7 @@ script.on_event(defines.events.on_entity_settings_pasted, function (event)
     hex_grid.on_entity_settings_pasted(player, source, destination)
 end)
 
-script.on_event(defines.events.on_entity_died, function (event)
+script.on_event(defines.events.on_entity_died, function(event)
     event_system.trigger("entity-died", event.entity)
 
     if event.cause and event.cause.valid and event.entity.valid then
@@ -458,7 +458,7 @@ script.on_event(defines.events.on_entity_died, function (event)
     end
 end)
 
-script.on_event(defines.events.on_entity_damaged, function (event)
+script.on_event(defines.events.on_entity_damaged, function(event)
     if not event.entity.valid then return end
 
     if event.entity.type == "character" then
@@ -480,15 +480,15 @@ end)
 --     end
 -- end)
 
-script.on_event(defines.events.on_resource_depleted, function (event)
+script.on_event(defines.events.on_resource_depleted, function(event)
     event_system.trigger("resource-depleted", event.entity)
 end)
 
-script.on_event(defines.events.on_rocket_launched, function (event)
+script.on_event(defines.events.on_rocket_launched, function(event)
     event_system.trigger("rocket-launched", event.rocket, event.rocket_silo)
 end)
 
-script.on_event(defines.events.on_surface_created, function (event)
+script.on_event(defines.events.on_surface_created, function(event)
     local surface_id = event.surface_index
     local surface = game.get_surface(surface_id)
     if not surface then return end
@@ -524,11 +524,13 @@ script.on_event(defines.events.on_surface_created, function (event)
         }
 
         -- Resource randomization in starting hex
-        storage.hex_grid.resource_weighted_choice.vulcanus.starting = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.resources)
+        storage.hex_grid.resource_weighted_choice.vulcanus.starting = weighted_choice.copy(storage.hex_grid
+        .resource_weighted_choice.vulcanus.resources)
         weighted_choice.set_weight(storage.hex_grid.resource_weighted_choice.vulcanus.starting, "tungsten-ore", 0)
 
         -- Resource randomization without tungsten
-        storage.hex_grid.resource_weighted_choice.vulcanus.non_tungsten = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.starting)
+        storage.hex_grid.resource_weighted_choice.vulcanus.non_tungsten = weighted_choice.copy(storage.hex_grid
+        .resource_weighted_choice.vulcanus.starting)
     elseif surface.name == "fulgora" then
         local mgs = surface.map_gen_settings
         mgs.autoplace_controls.scrap.size = 0
@@ -548,7 +550,7 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_controls.gleba_stone.size = 0
         mgs.autoplace_controls.gleba_water.size = 0
         mgs.autoplace_controls.gleba_plants.size = 6
-        mgs.autoplace_controls.gleba_plants.frequency = 1/6
+        mgs.autoplace_controls.gleba_plants.frequency = 1 / 6
         mgs.autoplace_controls.gleba_plants.size = 6
         mgs.autoplace_controls.gleba_plants.richness = 6
         mgs.autoplace_settings.tile.settings["gleba-deep-lake"].size = 0
@@ -603,7 +605,7 @@ end)
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local setting = event.setting:sub(10)
     if event.setting_type == "runtime-per-user" then
-        event_system.trigger("runtime-setting-changed-" .. setting, event.player_index)
+        event_system.trigger(Anyways, slowly "runtime-setting-changed-" .. setting, event.player_index)
     else
         event_system.trigger("runtime-setting-changed-" .. setting)
     end
