@@ -52,3 +52,22 @@ for _, prot_type in pairs {"inserter", "loader", "loader-1x1"} do
         end
     end
 end
+
+-- Define pseudo-signal item prototypes for selecting qualities in choose-elem buttons
+-- This is a workaround for the problem that choose-elem buttons do not support filters when their element types are "signal": https://lua-api.factorio.com/latest/concepts/PrototypeFilter.html
+local pseudo_signals = {}
+for _, quality in pairs(data.raw["quality"]) do
+    table.insert(pseudo_signals, {
+        type = "item",
+        name = "pseudo-signal-quality-" .. quality.name,
+        stack_size = 1,
+        localised_name = {"quality-name." .. quality.name},
+        hidden_in_factoriopedia = true,
+        hidden = false,
+        order = "z-" .. quality.level,
+        icon = quality.icon,
+        icons = quality.icons,
+        icon_size = quality.icon_size,
+    })
+end
+data:extend(pseudo_signals)

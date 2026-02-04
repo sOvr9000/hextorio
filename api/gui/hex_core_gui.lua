@@ -33,7 +33,6 @@ function hex_core_gui.register_events()
     event_system.register_gui("gui-clicked", "confirmation-button", hex_core_gui.on_confirmation_button_click)
     event_system.register_gui("gui-clicked", "allow-locomotive-trading", hex_core_gui.on_allow_locomotive_trading_button_click)
     event_system.register_gui("gui-clicked", "send-outputs-to-cargo-wagons", hex_core_gui.on_send_outputs_to_cargo_wagons_button_click)
-    event_system.register_gui("gui-selection-changed", "update-hex-core", hex_core_gui.update_hex_core)
 
     event_system.register("player-opened-entity", function(player, entity)
         if not entity.valid then return end
@@ -287,12 +286,6 @@ function hex_core_gui.init_hex_core(player)
     local trades_header_label = trades_header_flow.add {type = "label", name = "label", caption = {"hex-core-gui.trades-header"}}
     trades_header_label.style.font = "heading-1"
 
-    local quality_dropdown = core_gui.create_quality_dropdown(trades_header_flow)
-    local quality_dropdown_info = trades_header_flow.add {type = "label", name = "info", caption = "[img=virtual-signal.signal-info]"}
-    quality_dropdown_info.tooltip = {"hex-core-gui.quality-dropdown-info"}
-    quality_dropdown_info.style.top_margin = 4
-    quality_dropdown.tags = {handlers = {["gui-selection-changed"] = "update-hex-core"}}
-
     core_gui.add_warning(frame, {"hex-core-gui.unresearched-penalty"}, "unresearched-penalty")
 
     local trades_scroll_pane = frame.add {type = "scroll-pane", name = "trades", direction = "vertical"}
@@ -318,10 +311,6 @@ function hex_core_gui.update_hex_core(player)
     frame["hex-control-flow"]["delete-strongbox-button"].enabled = true
     frame["sink-mode-confirmation"].visible = false
     frame["generator-mode-confirmation"].visible = false
-
-    local quality_unlocked = game.forces.player.is_quality_unlocked(prototypes.quality.uncommon)
-    frame["trades-header"]["quality-dropdown"].visible = quality_unlocked
-    frame["trades-header"]["info"].visible = quality_unlocked
 
     local has_penalties = false
     local is_unresearched_penalty_enabled = lib.runtime_setting_value "unresearched-penalty" > 0
@@ -453,8 +442,8 @@ function hex_core_gui.update_hex_core(player)
     frame["delete-strongbox-confirmation"].visible = false
     -- frame["unloader-filters-flow"].visible = false
 
-    local quality_dropdown = frame["trades-header"]["quality-dropdown"]
-    local quality_name = core_gui.get_quality_name_from_dropdown(quality_dropdown)
+    -- local quality_dropdown = frame["trades-header"]["quality-dropdown"]
+    -- local quality_name = core_gui.get_quality_name_from_dropdown(quality_dropdown)
 
     local show_quality_bounds = false
     if state.claimed then
@@ -469,7 +458,10 @@ function hex_core_gui.update_hex_core(player)
         show_core_finder = false,
         show_productivity_bar = true,
         show_quality_bounds = show_quality_bounds,
-        quality_to_show = quality_name,
+
+        -- Omit quality_to_show because it will make the trade show the quality it is set to use (more intuitive than having to use a dropdown above all the trades)
+        -- quality_to_show = quality_name,
+
         show_productivity_info = true,
         expanded = true,
         is_configuration_unlocked = quests.is_feature_unlocked "trade-configuration",
@@ -849,19 +841,17 @@ function hex_core_gui.on_tag_button_click(player, element)
 end
 
 function hex_core_gui.on_quality_selected(player, element, trade_number)
-    local signal = element.elem_value
-
     local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
 
-    if not signal then
+    local elem = element.elem_value
+    if not elem then
         hex_core_gui._reset_quality(element, hex_core.quality.name)
-        signal = element.elem_value
-    elseif signal.type ~= "quality" then
-        player.print({"hextorio.invalid-quality-selected"})
-        hex_core_gui._reset_quality(element, hex_core.quality.name)
-        signal = element.elem_value
+        elem = element.elem_value
     end
+
+    local quality = lib.get_quality_from_pseudo_signal_name(elem)
+    if not quality then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
@@ -869,12 +859,7 @@ function hex_core_gui.on_quality_selected(player, element, trade_number)
     trade = trades.get_trade_from_id(state.trades[trade_number])
     if not trade then return end
 
-    local adjusted = not hex_grid.set_trade_allowed_qualities(hex_core, trade, signal.name, signal.name)
-
-    if adjusted then
-        player.print({"hextorio.quality-adjusted"})
-        element.elem_value = nil
-    end
+    local adjusted = not hex_grid.set_trade_allowed_qualities(hex_core, trade, quality.name, quality.name)
 
     hex_core_gui.update_hex_core(player)
 end

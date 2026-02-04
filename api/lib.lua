@@ -1782,6 +1782,22 @@ function lib.get_all_unlocked_quality_names()
     return unlocked
 end
 
+---Return the quality prototype that the given pseudo-signal name represents.
+---@param name string
+---@return LuaQualityPrototype|nil
+function lib.get_quality_from_pseudo_signal_name(name)
+    if name:len() < 23 then
+        lib.log_error("lib.get_quality_name_from_pseudo_signal_name: name is too short")
+        return
+    end
+
+    local q_name = name:sub(23)
+    local prot = prototypes["quality"][q_name]
+    if not prot then return end
+
+    return prot
+end
+
 ---Return whether the given entity should not be destroyed when a hex core spawns on top of or underneath it.
 ---@param entity LuaEntity
 ---@return boolean

@@ -150,7 +150,8 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         create_ping_button(trade_flow)
     end
 
-    local quality_to_show = params.quality_to_show or "normal"
+    -- Quality to show is first set by params, but if not set, it defaults to the trade's current set quality, and if that for some reason doesn't exist, it defaults to normal quality.
+    local quality_to_show = params.quality_to_show or (trade.allowed_qualities or {})[1] or "normal"
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
     local quality_cost_mult = quality_cost_multipliers[quality_to_show]
 
@@ -230,14 +231,27 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         end
 
         if params.show_quality_bounds then
+            -- TODO: optimize by caching elem_filter results, but it's not super critical as long as no one is putting 100+ trades in a single hex core (other performance issues probably would arise from that than just this)
+            local elem_filters = {}
+            local core_quality_level = 0
+            if trade.hex_core_state and trade.hex_core_state.hex_core and trade.hex_core_state.hex_core.valid then
+                core_quality_level = trade.hex_core_state.hex_core.quality.level
+            end
+            for _, q in pairs(lib.get_all_unlocked_qualities()) do
+                if q.level <= core_quality_level then
+                    elem_filters[#elem_filters+1] = {filter = "name", name = "pseudo-signal-quality-" .. q.name}
+                end
+            end
+
             local allowed_qualities = trade.allowed_qualities or {"normal"}
             local quality_button = trade_control_flow.add {
                 type = "choose-elem-button",
                 name = "trade-quality-" .. trade_number,
-                elem_type = "signal",
-                signal = {type = "quality", name = allowed_qualities[1]},
+                elem_type = "item",
+                item = "pseudo-signal-quality-" .. allowed_qualities[1],
                 tags = {handlers = {["gui-elem-changed"] = "trade-quality"}, trade_number = trade_number},
                 raise_hover_events = true,
+                elem_filters = elem_filters,
             }
             quality_button.tooltip = {"hex-core-gui.trade-quality"}
         end
