@@ -2090,8 +2090,7 @@ end
 ---@return LuaEntity|nil
 function lib.get_player_opened_entity(player)
     local entity = player.opened
-    if not entity or not entity.valid or not entity.surface or not entity.position then return end
-    ---@cast entity LuaEntity
+    if not entity or not entity.valid or entity.object_name ~= "LuaEntity" then return end
     return entity
 end
 

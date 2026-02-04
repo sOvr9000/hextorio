@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.6
-Date: 03/02/26
+Date: 4/2/26
+  Bugfixes:
+    - Fixed rare crash when you open an equipment grid while viewing a hex core right before a train makes a trade at that hex core.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.5
 Date: 4/2/26
