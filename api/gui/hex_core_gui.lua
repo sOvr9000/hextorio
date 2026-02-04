@@ -991,14 +991,22 @@ function hex_core_gui.on_trade_processed(trade, total_removed, total_inserted)
     if not update_players or #update_players == 0 then return end
 
     for i = #update_players, 1, -1 do
-        local player = game.get_player(update_players[i])
-        if player then
-            if player.opened == state.hex_core then
-                hex_core_gui.update_hex_core(player)
+        local player_id = update_players[i]
+        if player_id then
+            local player = game.get_player(player_id)
+            if player then
+                if player.opened == state.hex_core then
+                    hex_core_gui.update_hex_core(player)
+                else
+                    -- This can get desynced somehow, so make a final correction to it here.
+                    table.remove(update_players, i)
+                end
             else
-                -- This can get desynced somehow, so make a final correction to it here.
                 table.remove(update_players, i)
             end
+        else
+            -- what?
+            table.remove(update_players, i)
         end
     end
 end
