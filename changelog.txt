@@ -1,9 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.5
-Date: 3/2/26
+Date: 4/2/26
   Gui:
-    - Improved the quality selection GUI for trades.
-    - Trades now individually and automatically shows the quality (trade productivity and the quality symbols on items) that they are set to in the hex core GUI.
+    - Improved the quality selection GUI for trades, reducing icon clutter and showing only valid choices.
+    - Trades in the hex core GUI now separately show the quality (trade productivity and the quality symbols on items) to which they are set.
     - Removed the quality dropdown to the right of the "Trades" header in the hex core GUI.
   Bugfixes:
     - Fixed that hex core GUI was sometimes getting updated rapidly and interfering with GUI controls. 
