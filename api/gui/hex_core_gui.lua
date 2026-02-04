@@ -1006,7 +1006,7 @@ function hex_core_gui.on_trade_processed(trade, total_removed, total_inserted)
             end
         else
             -- what?
-            table.remove(update_players, i)
+            -- table.remove(update_players, i)
         end
     end
 end
