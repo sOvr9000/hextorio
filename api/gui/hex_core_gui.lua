@@ -1000,15 +1000,20 @@ end
 ---@param total_inserted QualityItemCounts
 function hex_core_gui.on_trade_processed(trade, total_removed, total_inserted)
     local state = trade.hex_core_state
-    if not state then return end
+    if not state or not state.hex_core then return end
 
     local update_players = state.update_players
     if not update_players or #update_players == 0 then return end
 
-    for _, player_id in pairs(update_players) do
-        local player = game.get_player(player_id)
+    for i = #update_players, 1, -1 do
+        local player = game.get_player(update_players[i])
         if player then
-            hex_core_gui.update_hex_core(player)
+            if player.opened == state.hex_core then
+                hex_core_gui.update_hex_core(player)
+            else
+                -- This can get desynced somehow, so make a final correction to it here.
+                table.remove(update_players, i)
+            end
         end
     end
 end

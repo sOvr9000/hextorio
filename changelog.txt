@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.5
-Date: 03/02/26
+Date: 3/2/26
+  Bugfixes:
+    - Fixed that hex core GUI was sometimes getting updated rapidly and interfering with GUI controls. 
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.4
 Date: 3/2/26
