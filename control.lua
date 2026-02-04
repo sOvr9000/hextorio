@@ -605,7 +605,7 @@ end)
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local setting = event.setting:sub(10)
     if event.setting_type == "runtime-per-user" then
-        event_system.trigger(Anyways, slowly "runtime-setting-changed-" .. setting, event.player_index)
+        event_system.trigger("runtime-setting-changed-" .. setting, event.player_index)
     else
         event_system.trigger("runtime-setting-changed-" .. setting)
     end
