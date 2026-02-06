@@ -426,14 +426,18 @@ function on_command(player, command, params)
         local entity_name = params[1]
         local amount = params[2] or 1
         local quality = params[3] or "normal"
+        local surface = player.surface
+        local position = player.position -- yes, make it work from remote view and not only around the character
+
         for i = 1, amount do
-            game.surfaces[1].create_entity {
+            local non_colliding = surface.find_non_colliding_position(entity_name, position, 24, 2)
+            surface.create_entity {
                 name = entity_name,
-                position = player.position,
+                position = non_colliding,
                 quality = quality,
             }
         end
-        lib.unstuck_player(player)
+        -- lib.unstuck_player(player)
     end
 
     event_system.trigger("command-" .. command, player, params)

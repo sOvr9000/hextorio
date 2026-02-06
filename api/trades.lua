@@ -3132,11 +3132,15 @@ function trades.on_entity_killed_entity(entity_that_died, entity_that_caused, da
     local prod_req = storage.item_ranks.productivity_requirements[3]
     for _, trade_id in pairs(hex_state.trades) do
         local trade = trades.get_trade_from_id(trade_id)
-        if trade and trades.get_productivity(trade) >= prod_req then
-            for _, item_name in pairs(trades.get_item_names_in_trade(trade)) do
-                local rank = item_ranks.get_item_rank(item_name)
-                if rank == 3 then
-                    item_ranks.progress_item_rank(item_name, 4)
+        if trade then
+            local prod = trades.get_productivity(trade, "normal") -- just assume normal quality even if it's not set on that
+            local rounded_prod = math.floor(0.5000001 + prod * 100) / 100 + 1e-9 -- floating point rounding errors... -_-
+            if rounded_prod >= prod_req then
+                for _, item_name in pairs(trades.get_item_names_in_trade(trade)) do
+                    local rank = item_ranks.get_item_rank(item_name)
+                    if rank == 3 then
+                        item_ranks.progress_item_rank(item_name, 4)
+                    end
                 end
             end
         end
