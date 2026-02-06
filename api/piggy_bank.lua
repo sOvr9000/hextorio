@@ -1,6 +1,7 @@
 
 local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
+local lib          = require "api.lib"
 
 local piggy_bank = {}
 
@@ -32,6 +33,10 @@ end
 ---@param player_id int
 ---@param new_coin Coin
 function piggy_bank.set_player_stored_coins(player_id, new_coin)
+    if coin_tiers.is_negative(new_coin) then
+        lib.log_error("piggy_bank.set_player_stored_coins: Tried to set a negative coin amount for piggy bank for player_id = " .. player_id)
+        new_coin = coin_tiers.new()
+    end
     local bank = storage.piggy_bank.player_banks[player_id]
 
     if not bank then

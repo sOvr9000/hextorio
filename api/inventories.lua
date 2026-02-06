@@ -166,24 +166,39 @@ function inventories.update_inventory(inventory, current_coin, new_coin, cargo_w
         end
     end
 
+    -- List of functions and arguments to be called in a certain order to prevent inventory overflow during the coin value update.  (remove coin items before adding them, when applicable)
+    -- The most common case is that no coins are being removed completely from the inventory, so this is only to handle a rare edge case.
+    local call_order = {}
+
     for tier = 1, current_coin.max_coin_tier do
         local coin_name = lib.get_coin_name_of_tier(tier)
         local new_amount = new_coin.values[tier]
         local current_amount = current_coin.values[tier]
 
+        local fn, args
         if new_amount > current_amount then
             if is_train then
-                lib.insert_into_train(cargo_wagons or {}, {name = coin_name, count = new_amount - current_amount}, storage.item_buffs.train_trading_capacity)
+                fn = lib.insert_into_train
+                args = {cargo_wagons or {}, {name = coin_name, count = new_amount - current_amount}, storage.item_buffs.train_trading_capacity}
             else
-                inventory.insert {name = coin_name, count = new_amount - current_amount}
+                fn = inventory.insert
+                args = {{name = coin_name, count = new_amount - current_amount}}
             end
+            call_order[#call_order+1] = {fn, args}
         elseif new_amount < current_amount then
             if is_train then
-                lib.remove_from_train(cargo_wagons or {}, {name = coin_name, count = current_amount - new_amount}, storage.item_buffs.train_trading_capacity)
+                fn = lib.remove_from_train
+                args = {cargo_wagons or {}, {name = coin_name, count = current_amount - new_amount}, storage.item_buffs.train_trading_capacity}
             else
-                inventory.remove {name = coin_name, count = current_amount - new_amount}
+                fn = inventory.remove
+                args = {{name = coin_name, count = current_amount - new_amount}}
             end
+            table.insert(call_order, 1, {fn, args})
         end
+    end
+
+    for _, call in pairs(call_order) do
+        call[1](table.unpack(call[2]))
     end
 
     storage.coin_tiers.is_processing[inventory] = nil
@@ -229,7 +244,7 @@ function inventories.add_coin_to_inventory(inventory, coin, cargo_wagons, use_pi
     inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons, use_piggy_bank)
 end
 
----Remove coins from the inventory
+---Remove coins from the inventory.
 ---@param inventory LuaInventory|LuaTrain
 ---@param coin Coin
 ---@param cargo_wagons LuaEntity[]|nil
@@ -238,6 +253,24 @@ function inventories.remove_coin_from_inventory(inventory, coin, cargo_wagons, u
     local current_coin = inventories.get_coin_from_inventory(inventory, cargo_wagons, use_piggy_bank)
     local new_coin = coin_tiers.subtract(current_coin, coin)
     inventories.update_inventory(inventory, current_coin, new_coin, cargo_wagons, use_piggy_bank)
+end
+
+---Return whether the coin amount can be inserted into the inventory.
+---@param inventory LuaInventory
+---@param coin Coin
+---@return boolean
+function inventories.can_insert_coin(inventory, coin)
+    local current_coin = inventories.get_coin_from_inventory(inventory, nil, false) -- Note: If use_piggy_bank was true, this would always return true.
+    local new_coin = coin_tiers.add(current_coin, coin)
+
+    local current_tiers = coin_tiers.count_nonzero_tiers(current_coin)
+    local new_tiers = coin_tiers.count_nonzero_tiers(new_coin)
+    if new_tiers > current_tiers then
+        local needed_slots = new_tiers - current_tiers
+        return inventory.count_empty_stacks(false, false) >= needed_slots
+    end
+
+    return true
 end
 
 ---@param reward_type QuestRewardType

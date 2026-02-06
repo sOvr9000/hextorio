@@ -155,6 +155,32 @@ function coin_tiers.accumulate(accumulator, coin)
     end
 end
 
+---Return a new coin object with the values negated.
+---@param coin Coin
+function coin_tiers.negated(coin)
+    local values = coin.values
+    local new_values = {}
+    for i = #values, 1, -1 do
+        new_values[i] = -values[i]
+    end
+    return coin_tiers.new(new_values)
+end
+
+---Return how many tiers of coins are nonzero in the coin object.
+---Assumes that `coin` is normalized.
+---@param coin Coin
+---@return int
+function coin_tiers.count_nonzero_tiers(coin)
+    local values = coin.values
+    local total = 0
+    for i = #values, 1, -1 do
+        if values[i] ~= 0 then -- Allow negatives, but this algorithm can possibly return an incorrect number if a single one of the values is negative because it implies the coin object is not normalized.
+            total = total + 1
+        end
+    end
+    return total
+end
+
 ---Add two coin objects, returning a new coin object.
 ---@param coin1 Coin
 ---@param coin2 Coin

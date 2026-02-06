@@ -116,12 +116,17 @@ function piggy_bank_gui.on_piggy_bank_coin_clicked(player, elem)
     local clicked_tier = elem.name
     local withdraw_tier = stored_coin.values[lib.get_tier_of_coin_name(clicked_tier)]
     local to_add = coin_tiers.from_coin_values_by_name({
-        [clicked_tier] = -withdraw_tier,
+        [clicked_tier] = withdraw_tier,
     })
 
+    if not inventories.can_insert_coin(inv, to_add) then
+        -- Maybe print a message to the player?
+        return
+    end
+
     -- inventories.skip_auto_normalization(inv)
-    inventories.remove_coin_from_inventory(inv, to_add, nil, false)
-    piggy_bank.increment_player_stored_coins(player_id, to_add)
+    inventories.add_coin_to_inventory(inv, to_add, nil, false)
+    piggy_bank.increment_player_stored_coins(player_id, coin_tiers.negated(to_add))
 end
 
 ---@param player LuaPlayer
