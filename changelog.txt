@@ -4,6 +4,7 @@ Date: 6/2/26
   Bugfixes:
     - Fixed biter ramming crash.
     - Fixed crash when claiming hexes near ungenerated chunks.
+    - Fixed that the guaranteed trades on Nauvis could be put in water hexes, where they would never be found.
     - Fixed that the piggy bank was deleting coins when your inventory is full.
     - Fixed that trade productivity would be displayed as being high enough for item rank-ups but they weren't when attempted.
     - Fixed that the /summon command would only spawn units on Nauvis.

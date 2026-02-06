@@ -30,6 +30,7 @@ for _, api_name in pairs{
     "hex_rank",
     "hex_sets",
     "hex_state_manager",
+    "hex_util",
     "initialization",
     "inventories",
     "item_buffs",

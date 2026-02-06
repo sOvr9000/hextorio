@@ -13,6 +13,8 @@ local hex_island  = require "api.hex_island"
 local trade_loop_finder = require "api.trade_loop_finder"
 local inventories       = require "api.inventories"
 local hex_state_manager = require "api.hex_state_manager"
+local hex_util          = require "api.hex_util"
+local hex_sets          = require "api.hex_sets"
 
 
 
@@ -181,17 +183,35 @@ end
 
 function trades.init()
     for surface_name, surrounding_trades in pairs(storage.trades.surrounding_trades) do
-        local ring = axial.ring({q=0, r=0}, 1)
-        for _, trade_items in pairs(surrounding_trades) do
-            local input_names = trade_items[1]
-            local output_names = trade_items[2]
-            local params = {target_efficiency = storage.trades.base_trade_efficiency}
-            local trade = trades.from_item_names(surface_name, input_names, output_names, params)
-            if trade then
-                trades.add_guaranteed_trade(trade, ring[math.random(1, #ring)])
-            else
-                lib.log_error("trades.init: Failed to generate trade from item names: " .. serpent.line(input_names) .. " -> " .. serpent.line(output_names) .. " -- Is target_efficiency too high or low (see below)?\nparams = " .. serpent.block(params))
+        local island_hexes = hex_island.get_island_hex_set(surface_name)
+
+        -- lib.log("found island hexes for " .. surface_name .. ": " .. serpent.line(island_hexes))
+
+        -- Select land hexes close to spawn
+        local range = 2 -- Adjacent hexes, or secondly adjacent
+        local hexes_set, _ = hex_util.all_hexes_within_range({q=0, r=0}, range, island_hexes)
+        hex_sets.remove(hexes_set, {q=0, r=0})
+
+        local hexes_list = hex_sets.to_array(hexes_set)
+
+        -- lib.log("found connected hexes from spawn: " .. serpent.line(hexes_list))
+
+        if #hexes_list > 0 then
+            for _, trade_items in pairs(surrounding_trades) do
+                local input_names = trade_items[1]
+                local output_names = trade_items[2]
+                local params = {target_efficiency = storage.trades.base_trade_efficiency}
+                local trade = trades.from_item_names(surface_name, input_names, output_names, params)
+                if trade then
+                    local pos = hexes_list[math.random(1, #hexes_list)]
+                    trades.add_guaranteed_trade(trade, pos)
+                    -- lib.log("Added guaranteed trade " .. lib.tostring_trade(trade) .. " in hex " .. serpent.line(pos))
+                else
+                    lib.log_error("trades.init: Failed to generate trade from item names: " .. serpent.line(input_names) .. " -> " .. serpent.line(output_names) .. " -- Is target_efficiency too high or low (see below)?\nparams = " .. serpent.block(params))
+                end
             end
+        else
+            lib.log_error("trades.init: Could not find hexes near spawn to add guaranteed trades on " .. surface_name)
         end
     end
 end
