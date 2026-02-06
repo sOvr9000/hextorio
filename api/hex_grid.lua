@@ -975,11 +975,12 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     state.generated = true
     state.send_outputs_to_cargo_wagons = true
     state.flat_index = flat_index
+    state.claim_price = hex_grid.calculate_hex_claim_price(surface, dist)
 
     flattened_surface_hexes[flat_index] = hex_pos
 
-    local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
     if hex_grid.can_hex_core_spawn(surface, hex_pos) then
+        local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
         hex_grid.spawn_hex_core(surface, center)
     end
 
@@ -1691,7 +1692,7 @@ end
 ---@return boolean
 function hex_grid.can_hex_core_spawn(surface, hex_pos)
     local state = hex_state_manager.get_hex_state(surface, hex_pos)
-    if not state or state.hex_core or not state.is_land or state.deleted then
+    if not state or state.hex_core or not state.is_land or state.deleted or not state.generated then
         return false
     end
     if hex_pos.q == 0 and hex_pos.r == 0 then
@@ -1715,19 +1716,19 @@ function hex_grid.is_hex_near_claimed_hex(surface, hex_pos)
     return false
 end
 
+---Return whether the given hex is claimable or eventually claimable.  Note that this does not measure whether the hex is immediately claimable.
+---@param player LuaPlayer
+---@param surface SurfaceIdentification
+---@param hex_pos HexPos
+---@param allow_nonland boolean|nil
+---@param check_coins boolean|nil
+---@param player_inventory_coins Coin|nil
+---@return boolean
 function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_coins, player_inventory_coins)
     if check_coins == nil then check_coins = true end
 
     local state = hex_state_manager.get_hex_state(surface, hex_pos)
-    if not state or state.claimed then
-        return false
-    end
-
-    if state.is_dungeon then
-        return false
-    end
-
-    if not state.is_land and not allow_nonland then
+    if not state or state.claimed or not state.generated or state.is_dungeon or not state.is_land and not allow_nonland then
         return false
     end
 
@@ -1736,8 +1737,8 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
         lib.log_error("hex_grid.can_claim_hex: No surface found")
         return false
     end
-    surface = game.get_surface(surface_id)
-    if not surface then return false end
+    local surface_obj = game.get_surface(surface_id)
+    if not surface_obj then return false end
 
     if player then
         if lib.is_player_editor_like(player) then
@@ -1745,7 +1746,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
         end
     end
 
-    if hex_grid.get_free_hex_claims(surface.name) > 0 then
+    if hex_grid.get_free_hex_claims(surface_obj.name) > 0 then
         return true
     end
 
@@ -1800,10 +1801,17 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     local surface_name = surface.name
 
     local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
-    if not state or state.claimed then return end
+    if not state or state.claimed or not state.generated then return end
 
     if not allow_nonland then
-        if not state.is_land then return end
+        if state.is_land then
+            if not state.hex_core then
+                -- This can happen if trying to claim deep in uncharted areas, where hex cores are trying to spawn but can't yet.
+                return
+            end
+        else
+            return
+        end
     end
 
     local spent_last_free_claim = false
@@ -1831,7 +1839,14 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
             local inv = lib.get_player_inventory(by_player)
             if inv then
                 local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
-                inventories.remove_coin_from_inventory(inv, state.claim_price, nil, is_piggy_bank_unlocked)
+                local cost = state.claim_price
+                if not cost then
+                    -- This shouldn't happen, but if some other rare edge case arises, this will prevent a crash.
+                    cost = hex_grid.calculate_hex_claim_price(surface, axial.distance(hex_pos, {q=0, r=0}))
+                    state.claim_price = cost
+                    lib.log_error("hex_grid.claim_hex: Claim price not found in hex state, forced to calculate immediately")
+                end
+                inventories.remove_coin_from_inventory(inv, cost, nil, is_piggy_bank_unlocked)
             end
         end
     end
@@ -2201,8 +2216,6 @@ function hex_grid.spawn_hex_core(surface, position)
     state.hex_core_input_inventory = hex_core.get_inventory(defines.inventory.chest)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory
-
-    state.claim_price = hex_grid.calculate_hex_claim_price(surface, dist)
 
     hex_grid.generate_loaders(state)
     hex_grid.spawn_hexlight(state)
