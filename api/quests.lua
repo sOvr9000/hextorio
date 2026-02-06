@@ -1299,27 +1299,13 @@ end
 ---@param entity_that_caused LuaEntity
 ---@param damage_type_prot LuaDamagePrototype|nil
 function quests.on_entity_killed_entity(entity_that_died, entity_that_caused, damage_type_prot)
-    if not entity_that_died.valid then return end -- This somehow is needed?  A crash had occurred because this check wasn't here.  EVEN THOUGH this event is only triggered AFTER VALIDITY IS CHECKED.
-
-    gameplay_statistics.increment("kill-entity", 1, entity_that_died.name) -- This did not cause a crash, but the name == "character" check below did.  Seems impossible.  Something VERY weird is going on here.
-
-    if not entity_that_died.valid then return end -- This somehow is needed?  A crash had occurred because this check wasn't here.  What happens in the code above to make the dying entity invalid??? How is that crash reproduced?
+    gameplay_statistics.increment("kill-entity", 1, entity_that_died.name)
 
     if damage_type_prot then
         if entity_that_caused.force.name == "player" then
             gameplay_statistics.increment("kill-with-damage-type", 1, damage_type_prot.name)
         end
     end
-
-    if not entity_that_died.valid then return end -- This somehow is needed?  A crash had occurred because this check wasn't here.  What happens in the code above to make the dying entity invalid??? How is that crash reproduced?
-
-    if entity_that_died.name == "biter-spawner" or entity_that_died.name == "spitter-spawner" then
-        if entity_that_caused.name == "car" or entity_that_caused.name == "tank" then
-            gameplay_statistics.increment "biter-ramming"
-        end
-    end
-
-    if not entity_that_died.valid then return end -- This somehow is needed?  A crash had occurred because this check wasn't here.  What happens in the code above to make the dying entity invalid??? How is that crash reproduced?
 
     -- This is not in on_player_died because the damage type for cause of death is important.
     if entity_that_died.name == "character" then
@@ -1333,6 +1319,14 @@ function quests.on_entity_killed_entity(entity_that_died, entity_that_caused, da
             end
         end
     end
+
+    if entity_that_died.name == "biter-spawner" or entity_that_died.name == "spitter-spawner" then
+        if entity_that_caused.name == "car" or entity_that_caused.name == "tank" then
+            gameplay_statistics.increment "biter-ramming"
+        end
+    end
+    -- NOTE: Completing the "biter-ramming" quest (above) can cause entity_that_died to become invalid, starting
+    -- \/\/ FROM HERE AND BELOW. \/\/
 end
 
 ---@param player LuaPlayer
