@@ -378,7 +378,7 @@ data:extend({
         type = "string-setting",
         name = "hextorio-world-generation-mode",
         setting_type = "runtime-global",
-        allowed_values = {"standard", "spiral", "maze", "ribbon", "ribbon-maze", "spider-web", "lattice", "solid"},
+        allowed_values = {"standard", "spiral", "maze", "ribbon", "ribbon-maze", "spider-web", "lattice", "clusters", "donut", "solid"},
         default_value = "standard",
         order = "v[world-gen]-g[world-generation-mode]",
     },
