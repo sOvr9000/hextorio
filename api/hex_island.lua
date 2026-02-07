@@ -166,6 +166,8 @@ function hex_island.process_surface_creation(surface)
     end
 
     storage.hex_island.max_distances[surface.name] = calculate_max_distance(island)
+
+    event_system.trigger("hex-island-generated", surface, island)
 end
 
 ---Initialize islands for each planet.

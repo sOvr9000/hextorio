@@ -355,6 +355,7 @@ function hex_grid.register_events()
     event_system.register("entity-built", hex_grid.on_entity_built)
     event_system.register("runtime-setting-changed-unresearched-penalty", hex_grid.on_setting_changed_unresearched_penalty)
     event_system.register("player-rotated-entity", hex_grid.on_player_rotated_entity)
+    event_system.register("hex-island-generated", hex_grid.on_hex_island_generated)
 end
 
 ---Get the state of a hex from a hex core entity
@@ -1355,7 +1356,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
     -- Calculate frequencies
     if surface.name == "nauvis" then
-        if is_starter_hex then
+        if is_starter_hex or hex_sets.contains(storage.hex_grid.guaranteed_hexaprisms or {}, hex_pos) then
             return storage.hex_grid.resource_weighted_choice.nauvis.resources, false
         end
         local well_names = {"crude-oil"}
@@ -4225,6 +4226,44 @@ end
 function hex_grid.on_player_rotated_entity(player, entity, previous_direction)
     if entity.name == "hex-core-loader" then
         hex_grid.handle_hex_core_loader_flip(entity, previous_direction)
+    end
+end
+
+---@param surface LuaSurface
+---@param island HexSet
+function hex_grid.on_hex_island_generated(surface, island)
+    local gh = storage.hex_grid.guaranteed_hexaprisms
+    if not gh then
+        gh = {} ---@type HexSet
+        storage.hex_grid.guaranteed_hexaprisms = gh
+    end
+
+    local extent = hex_island.get_island_extent(surface.name)
+
+    local min_distance = extent * 0.95
+    local max_distance = extent
+
+    local center = {q=0, r=0}
+    local candidates = {}
+    for q, Q in pairs(island) do
+        for r, _ in pairs(Q) do
+            local pos = {q=q, r=r}
+            local dist = axial.distance(center, pos)
+            if dist >= min_distance and dist <= max_distance then
+                candidates[#candidates+1] = pos
+            end
+        end
+    end
+
+    -- Sample multiple positions for guaranteed hexaprism spawns.
+    for i = 1, 10 do
+        if #candidates == 0 then
+            lib.log_error("hex_grid.on_hex_island_generated: Ran out of position candidates to force hexaprism placement, after " .. (i-1) .. " successful placements.")
+            break
+        end
+
+        local pos = table.remove(candidates, math.random(1, #candidates))
+        hex_sets.add(gh, pos)
     end
 end
 
