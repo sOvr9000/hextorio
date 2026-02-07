@@ -159,6 +159,8 @@ function hex_island.process_surface_creation(surface)
     end
 
     local island = hex_island.generate_island(generator_name, params)
+    island = hex_island.auto_center(island)
+
     storage.hex_island.islands[surface.name] = island
 
     if not storage.hex_island.max_distances then
@@ -244,6 +246,77 @@ function hex_island.get_island_extent(surface_name)
     end
 
     return max_distance
+end
+
+---Auto-center an island by finding its deepest inland point and translating to origin.
+---@param island HexSet
+---@return HexSet
+function hex_island.auto_center(island)
+    if hex_sets.contains(island, {q = 0, r = 0}) then
+        return island
+    end
+
+    local current_layer = table.deepcopy(island)
+    local previous_layer = table.deepcopy(island)
+
+    -- Erosion algorithm to find deep centers of bodies of land, works especially nice for Clusters world gen mode, but should extend well to other island generators if needed
+    while true do
+        local current_array = hex_sets.to_array(current_layer)
+        if #current_array == 0 then
+            break
+        end
+
+        previous_layer = current_layer
+        local next_layer = hex_sets.new()
+
+        for _, hex_pos in ipairs(current_array) do
+            local all_neighbors_in_layer = true
+            for _, neighbor in pairs(axial.get_adjacent_hexes(hex_pos)) do
+                if not hex_sets.contains(current_layer, neighbor) then
+                    all_neighbors_in_layer = false
+                    break
+                end
+            end
+
+            if all_neighbors_in_layer then
+                hex_sets.add(next_layer, hex_pos)
+            end
+        end
+
+        if #hex_sets.to_array(next_layer) == 0 then
+            break
+        end
+
+        current_layer = next_layer
+    end
+
+    local deepest_hexes = hex_sets.to_array(previous_layer)
+    local new_center
+
+    if #deepest_hexes == 0 then
+        local all_hexes = hex_sets.to_array(island)
+        local sum_q, sum_r = 0, 0
+        for _, pos in ipairs(all_hexes) do
+            sum_q = sum_q + pos.q
+            sum_r = sum_r + pos.r
+        end
+        new_center = {
+            q = math.floor(sum_q / #all_hexes + 0.5),
+            r = math.floor(sum_r / #all_hexes + 0.5)
+        }
+    else
+        new_center = deepest_hexes[math.random(1, #deepest_hexes)]
+    end
+
+    local centered_island = hex_sets.new()
+    for _, hex_pos in pairs(hex_sets.to_array(island)) do
+        hex_sets.add(centered_island, {
+            q = hex_pos.q - new_center.q,
+            r = hex_pos.r - new_center.r
+        })
+    end
+
+    return centered_island
 end
 
 ---Generate a hexagonal island.
