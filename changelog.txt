@@ -5,6 +5,8 @@ Date: 7/2/26
     - Added world generation modes "Ribbon", "Ribbon Maze", "Spider Web", "Lattice", "Clusters", "Donut", and "Solid".
     - Added maze generation algorithm setting with the options "Kruskal", "Recursive Backtracker", "Wilson", and "Binary Tree".
         For use with world generation modes that generate mazes.
+  Changes:
+    - Spiral world generation mode can now generate with either orientation of a spiral (clockwise or counterclockwise).
   Bugfixes:
     - Fixed biter ramming crash.
     - Fixed crash when claiming hexes near ungenerated chunks.

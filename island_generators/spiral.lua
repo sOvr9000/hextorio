@@ -14,12 +14,17 @@ return function(params)
     local pos = {q = 0, r = 0}
     hex_sets.add(island, pos)
 
+    local orientiation = 0 -- counter-clockwise
+    if math.random() < 0.5 then
+        orientiation = -2 -- clockwise
+    end
+
     local dir = math.random(1, 6)
     local done = false
     for i = 1, 999 do
         if done then break end
         for j = 1, 3 do
-            dir = 1 + dir % 6
+            dir = 1 + (dir + orientiation) % 6
             local offset = axial.get_adjacency_offset(dir)
             for n = 1, i do
                 pos = axial.add(pos, offset)
