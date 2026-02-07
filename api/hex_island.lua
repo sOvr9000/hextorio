@@ -1,6 +1,7 @@
 -- Generate hex sets which represent a single, connected island.
 
 local lib = require "api.lib"
+local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
 
@@ -33,6 +34,22 @@ for _, generator_name in pairs {
     "clusters",
 } do
     island_generators[generator_name] = require("island_generators." .. generator_name)
+end
+
+
+
+---Calculate the maximum distance from origin to any hex in the island.
+---@param island HexSet
+---@return int
+local function calculate_max_distance(island)
+    local max_distance = 0
+    for _, hex_pos in pairs(hex_sets.to_array(island)) do
+        local distance = axial.distance(hex_pos, {q = 0, r = 0})
+        if distance > max_distance then
+            max_distance = distance
+        end
+    end
+    return max_distance
 end
 
 
@@ -143,6 +160,12 @@ function hex_island.process_surface_creation(surface)
 
     local island = hex_island.generate_island(generator_name, params)
     storage.hex_island.islands[surface.name] = island
+
+    if not storage.hex_island.max_distances then
+        storage.hex_island.max_distances = {}
+    end
+
+    storage.hex_island.max_distances[surface.name] = calculate_max_distance(island)
 end
 
 ---Initialize islands for each planet.
@@ -194,6 +217,31 @@ function hex_island.get_island_hex_set(surface_name)
     end
 
     return island
+end
+
+---Get the maximum distance from spawn to any land hex on the surface.
+---@param surface_name string
+---@return int
+function hex_island.get_island_extent(surface_name)
+    local hex_island_storage = storage.hex_island
+
+    if not hex_island_storage.max_distances then
+        hex_island_storage.max_distances = {}
+    end
+
+    local max_distance = hex_island_storage.max_distances[surface_name]
+    if not max_distance then
+        local island = hex_island_storage.islands[surface_name]
+        if not island then
+            lib.log_error("hex_island.get_island_extent: Could not find island for surface " .. surface_name)
+            return 0
+        end
+
+        max_distance = calculate_max_distance(island)
+        hex_island_storage.max_distances[surface_name] = max_distance
+    end
+
+    return max_distance
 end
 
 ---Generate a hexagonal island.

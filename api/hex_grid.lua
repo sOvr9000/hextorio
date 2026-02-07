@@ -1042,7 +1042,8 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     local resource_names
     local is_hexaprism = false
     if surface.name == "nauvis" then
-        is_hexaprism = dist >= planet_size
+        local extent = hex_island.get_island_extent "nauvis"
+        is_hexaprism = dist >= extent * 0.95
         resource_names = {"iron-ore", "copper-ore", "coal", "stone"}
     elseif surface.name == "vulcanus" then
         resource_names = {"vulcanus_coal", "calcite", "tungsten_ore"}
