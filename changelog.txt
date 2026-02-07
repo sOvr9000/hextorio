@@ -12,7 +12,6 @@ Date: 7/2/26
     - Fixed that the piggy bank was deleting coins when your inventory is full.
     - Fixed that trade productivity would be displayed as being high enough for item rank-ups but they weren't when attempted.
     - Fixed that the /summon command would only spawn units on Nauvis.
-    - Fixed that Binary Tree maze algorithm could create disconnected components in Ribbon Maze mode.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.7
 Date: 4/2/26
