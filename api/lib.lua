@@ -1763,10 +1763,11 @@ end
 ---@return LuaQualityPrototype[]
 function lib.get_all_unlocked_qualities()
     local unlocked = {}
-    local q = prototypes.quality.normal
-    while q.next do
-        table.insert(unlocked, q)
-        q = q.next
+    local force = game.forces.player
+    for quality_name, prot in pairs(prototypes.quality) do
+        if force.is_quality_unlocked(prot) then
+            unlocked[#unlocked+1] = prot
+        end
     end
     return unlocked
 end
@@ -1774,10 +1775,11 @@ end
 ---@return string[]
 function lib.get_all_unlocked_quality_names()
     local unlocked = {}
-    local q = prototypes.quality.normal
-    while q.next do
-        table.insert(unlocked, q.name)
-        q = q.next
+    local force = game.forces.player
+    for quality_name, prot in pairs(prototypes.quality) do
+        if force.is_quality_unlocked(prot) then
+            unlocked[#unlocked+1] = quality_name
+        end
     end
     return unlocked
 end

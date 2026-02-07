@@ -16,6 +16,7 @@ Date: 7/2/26
     - Fixed that the guaranteed trades on Nauvis could be put in water hexes, where they would never be found.
     - Fixed that the piggy bank was deleting coins when your inventory is full.
     - Fixed that trade productivity would be displayed as being high enough for item rank-ups but they weren't when attempted.
+    - Fixed that hextreme quality not showing up in trade quality selection.
     - Fixed that the /summon command would only spawn units on Nauvis.
     - Fixed incompatibilities with some quality mods.
 ---------------------------------------------------------------------------------------------------
