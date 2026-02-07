@@ -16,6 +16,7 @@ for _, api_name in pairs{
     "gui.trades_gui",
 
     "axial",
+    "bezier",
     "blueprints",
     "coin_tiers",
     "core_math",
