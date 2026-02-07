@@ -378,9 +378,17 @@ data:extend({
         type = "string-setting",
         name = "hextorio-world-generation-mode",
         setting_type = "runtime-global",
-        allowed_values = {"standard", "spiral", "maze"},
+        allowed_values = {"standard", "spiral", "maze", "ribbon", "ribbon-maze", "spider-web", "lattice", "solid"},
         default_value = "standard",
         order = "v[world-gen]-g[world-generation-mode]",
+    },
+    {
+        type = "string-setting",
+        name = "hextorio-maze-generation-algorithm",
+        setting_type = "runtime-global",
+        allowed_values = {"kruskal", "wilson", "recursive-backtracker", "binary-tree"},
+        default_value = "kruskal",
+        order = "v[world-gen]-h[maze-generation-algorithm]",
     },
 
     -- RUNTIME (PERFORMANCE)

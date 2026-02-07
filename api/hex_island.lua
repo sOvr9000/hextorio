@@ -21,6 +21,8 @@ local hex_island = {}
 
 local island_generators = {
     ["standard"] = function(params)
+        -- Generates a snowflake-like island.
+
         local radius = params.radius or 30
         local fill_ratio = params.fill_ratio or 0.866
 
@@ -126,13 +128,12 @@ local island_generators = {
             if add_hex(pos) then break end
         end
 
-        log("finished island generation")
-
         return set
     end,
 
     ["maze"] = function(params)
         local radius = params.radius or 30
+        local algorithm = params.algorithm or "kruskal"
 
         local dilation_factor = 2
         local div_radius = math.ceil(radius / dilation_factor)
@@ -147,7 +148,7 @@ local island_generators = {
         end
 
         local maze = hex_maze.new(allowed_positions)
-        hex_maze.generate(maze)
+        hex_maze.generate(maze, algorithm)
 
         local island = hex_maze.dilated(maze, dilation_factor)
         return island
@@ -182,6 +183,146 @@ local island_generators = {
 
         return island
     end,
+
+    ["ribbon"] = function(params)
+        local radius = params.radius or 30
+        local width = params.width or 5
+
+        local island = hex_sets.new()
+        local direction = math.random(1, 3)
+
+        local half_width = math.floor((width - 1) / 2)
+
+        local centering = math.random(0, width - 1)
+        local upper_w = half_width - centering
+        if direction == 1 then
+            for q = -radius, radius do
+                for w = -half_width - centering, upper_w do
+                    hex_sets.add(island, {q = q, r = w})
+                end
+            end
+        elseif direction == 2 then
+            for q = -radius, radius do
+                for w = -half_width - centering, upper_w do
+                    hex_sets.add(island, {q = q, r = w - q})
+                end
+            end
+        else
+            for r = -radius, radius do
+                for w = -half_width - centering, upper_w do
+                    hex_sets.add(island, {q = w, r = r})
+                end
+            end
+        end
+
+        return island
+    end,
+
+    ["ribbon-maze"] = function(params)
+        local radius = params.radius or 30
+        local width = params.width or 7
+        local algorithm = params.algorithm or "kruskal"
+
+        local dilation_factor = 2
+        local div_radius = math.ceil(radius / dilation_factor)
+        local div_width = math.ceil(width / dilation_factor)
+
+        local allowed_positions = hex_sets.new()
+        local direction = math.random(1, 3)
+
+        local centering = math.random(0, div_width - 1)
+        local upper_w = div_width - 1 - centering
+        if direction == 1 then
+            for q = -div_radius, div_radius do
+                for w = -centering, upper_w do
+                    hex_sets.add(allowed_positions, {q = q, r = w})
+                end
+            end
+        elseif direction == 2 then
+            for q = -div_radius, div_radius do
+                for w = -centering, upper_w do
+                    hex_sets.add(allowed_positions, {q = q, r = w - q})
+                end
+            end
+        else
+            for r = -div_radius, div_radius do
+                for w = -centering, upper_w do
+                    hex_sets.add(allowed_positions, {q = w, r = r})
+                end
+            end
+        end
+
+        local maze = hex_maze.new(allowed_positions)
+        hex_maze.generate(maze, algorithm)
+
+        local island = hex_maze.dilated(maze, dilation_factor)
+        return island
+    end,
+
+    ["spider-web"] = function(params)
+        local radius = params.radius or 30
+
+        local dilation_factor = 2
+        local div_radius = math.ceil(radius / dilation_factor)
+
+        local island = hex_sets.new()
+        hex_sets.add(island, {q=0, r=0})
+
+        for r = 1, div_radius do
+            local dilated_r = r * dilation_factor
+            local ring = axial.ring({q=0, r=0}, dilated_r)
+            for _, pos in pairs(ring) do
+                hex_sets.add(island, pos)
+            end
+        end
+
+        for i = -radius, radius do
+            for _, pos in pairs {
+                {q = i, r = 0},
+                {q = i, r = -i},
+                {q = 0, r = i},
+            } do
+                hex_sets.add(island, pos)
+            end
+        end
+
+        return island
+    end,
+
+    ["lattice"] = function(params)
+        local radius = params.radius or 30
+        local spacing = params.spacing or 2
+        local s = spacing + 1
+
+        local island = hex_sets.new()
+        for q = -radius, radius do
+            for r = -radius, radius do
+                if axial.distance({q = q, r = r}, {q = 0, r = 0}) <= radius then
+                    if q % s == 0 or r % s == 0 or (q + r) % s == 0 then
+                        hex_sets.add(island, {q = q, r = r})
+                    end
+                end
+            end
+        end
+
+        return island
+    end,
+
+    ["solid"] = function(params)
+        local radius = params.radius or 30
+
+        local island = hex_sets.new()
+        hex_sets.add(island, {q = 0, r = 0})
+
+        for r = 1, radius do
+            for _, pos in pairs(axial.ring({q=0, r=0}, r)) do
+                hex_sets.add(island, pos)
+            end
+        end
+
+        return island
+    end,
+
 }
 
 
@@ -207,6 +348,7 @@ function hex_island.process_surface_creation(surface)
 
     ---@cast planet_size int
     local generator_name = lib.runtime_setting_value_as_string "world-generation-mode"
+    local maze_algorithm = lib.runtime_setting_value_as_string "maze-generation-algorithm"
     local params
 
     if generator_name == "standard" then
@@ -242,8 +384,33 @@ function hex_island.process_surface_creation(surface)
     elseif generator_name == "maze" then
         params = {
             radius = planet_size,
+            algorithm = maze_algorithm,
         }
     elseif generator_name == "spiral" then
+        params = {
+            radius = planet_size,
+        }
+    elseif generator_name == "ribbon" then
+        params = {
+            radius = planet_size,
+            width = 5,
+        }
+    elseif generator_name == "ribbon-maze" then
+        params = {
+            radius = planet_size,
+            width = 7,
+            algorithm = maze_algorithm,
+        }
+    elseif generator_name == "spider-web" then
+        params = {
+            radius = planet_size,
+        }
+    elseif generator_name == "lattice" then
+        params = {
+            radius = planet_size,
+            spacing = 2,
+        }
+    elseif generator_name == "solid" then
         params = {
             radius = planet_size,
         }

@@ -1,6 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.8
 Date: 6/2/26
+  Features:
+    - Added world generation modes "Ribbon", "Ribbon Maze", "Spider Web", "Lattice", "Solid", and "Islands".
+    - Added maze generation algorithm setting with options: Kruskal (default, uniform), Recursive Backtracker (long passages), Wilson (perfect uniformity, slower), and Binary Tree (diagonal bias). Affects Maze and Ribbon Maze modes.
   Bugfixes:
     - Fixed biter ramming crash.
     - Fixed crash when claiming hexes near ungenerated chunks.
@@ -8,6 +11,7 @@ Date: 6/2/26
     - Fixed that the piggy bank was deleting coins when your inventory is full.
     - Fixed that trade productivity would be displayed as being high enough for item rank-ups but they weren't when attempted.
     - Fixed that the /summon command would only spawn units on Nauvis.
+    - Fixed that Binary Tree maze algorithm could create disconnected components in Ribbon Maze mode.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.7
 Date: 4/2/26
