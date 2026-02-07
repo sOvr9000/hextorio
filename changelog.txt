@@ -1,9 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.8
-Date: 6/2/26
+Date: 7/2/26
   Features:
     - Added world generation modes "Ribbon", "Ribbon Maze", "Spider Web", "Lattice", "Clusters", "Donut", and "Solid".
-    - Added maze generation algorithm setting with options: Kruskal (default, uniform), Recursive Backtracker (long passages), Wilson (perfect uniformity, slower), and Binary Tree (diagonal bias). Affects Maze and Ribbon Maze modes.
+    - Added maze generation algorithm setting with the options "Kruskal", "Recursive Backtracker", "Wilson", and "Binary Tree".
+        For use with world generation modes that generate mazes.
   Bugfixes:
     - Fixed biter ramming crash.
     - Fixed crash when claiming hexes near ungenerated chunks.
