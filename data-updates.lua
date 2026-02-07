@@ -1,4 +1,5 @@
 
+require "prototypes.quality"
 require "nerf_atomic_bomb"
 
 local lib = require "api.lib"
