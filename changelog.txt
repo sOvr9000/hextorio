@@ -7,6 +7,8 @@ Date: 7/2/26
         For use with world generation modes that generate mazes.
   Changes:
     - Spiral world generation mode can now generate with either orientation of a spiral (clockwise or counterclockwise).
+  Balancing:
+    - A hex containing sulfuric acid geysers (on Vulcanus) or crude oil wells (on Nauvis) is now guaranteed to exist near the spawn hex.
   Bugfixes:
     - Fixed biter ramming crash.
     - Fixed crash when claiming hexes near ungenerated chunks.

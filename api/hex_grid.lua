@@ -19,6 +19,8 @@ local strongboxes = require "api.strongboxes"
 local entity_util = require "api.entity_util"
 local piggy_bank  = require "api.piggy_bank"
 local gameplay_statistics = require "api.gameplay_statistics"
+local hex_util            = require "api.hex_util"
+local hex_sets            = require "api.hex_sets"
 
 
 
@@ -997,7 +999,6 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     event_system.trigger("hex-generated", surface_id, hex_pos)
 end
 
--- Generate a small ring of mixed resources right up to the border of the hex
 function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
     surface = game.get_surface(surface_id)
@@ -1325,6 +1326,32 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
     local is_starter_hex = dist == 0
     local dropoff = lib.runtime_setting_value("resource-frequency-dropoff-" .. surface.name)
 
+    local function guarantee_well()
+        if is_starter_hex or dist > 2 then return false end
+
+        local island = hex_island.get_island_hex_set(surface.name)
+        local within_range, _ = hex_util.all_hexes_within_range({q=0, r=0}, 2, island)
+        if not hex_sets.contains(within_range, hex_pos) then return false end
+
+        local hexes_near_spawn = hex_sets.to_array(within_range)
+
+        local num_generated = 0
+        for _, pos in pairs(hexes_near_spawn) do
+            local state = hex_state_manager.get_hex_state(surface, pos)
+            if state and state.is_well then
+                return false
+            else
+                if state and state.generated then
+                    num_generated = num_generated + 1
+                end
+            end
+        end
+
+        local chance = 1 / (#hexes_near_spawn - num_generated) -- doesn't hit infinity (not that it matter) because state.generated for the last hex to be generated is only set to true after this function finishes
+
+        return math.random() < chance
+    end
+
     -- Calculate frequencies
     if surface.name == "nauvis" then
         if is_starter_hex then
@@ -1346,6 +1373,10 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         resource_freq = resource_freq / (1 + dist * dropoff)
         well_freq = well_freq / (1 + dist * dropoff)
 
+        local well_guaranteed = guarantee_well()
+        if well_guaranteed then
+            return storage.hex_grid.resource_weighted_choice.nauvis.wells, true
+        end
         if math.random() > (well_freq + resource_freq) / (1 + #resource_names) then
             return nil, nil
         end
@@ -1382,6 +1413,11 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         resource_freq = resource_freq * resource_freq / 3
         resource_freq = resource_freq / (1 + dist * dropoff)
         well_freq = well_freq / (1 + dist * dropoff)
+
+        local well_guaranteed = guarantee_well()
+        if well_guaranteed then
+            return storage.hex_grid.resource_weighted_choice.vulcanus.wells, true
+        end
 
         if math.random() > (well_freq + resource_freq) * 0.25 then
             return nil, nil
