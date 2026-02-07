@@ -23,6 +23,7 @@ for _, generator_name in pairs {
     "standard",
     "maze",
     "spiral",
+    "triangular",
     "ribbon",
     "ribbon-maze",
     "spider-web",
@@ -96,6 +97,10 @@ function hex_island.process_surface_creation(surface)
             algorithm = maze_algorithm,
         }
     elseif generator_name == "spiral" then
+        params = {
+            radius = planet_size,
+        }
+    elseif generator_name == "triangular" then
         params = {
             radius = planet_size,
         }

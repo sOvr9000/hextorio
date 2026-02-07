@@ -2,7 +2,7 @@
 Version: 1.6.8
 Date: 7/2/26
   Features:
-    - Added world generation modes "Ribbon", "Ribbon Maze", "Spider Web", "Lattice", "Clusters", "Donut", and "Solid".
+    - Added world generation modes "Triangular", "Ribbon", "Ribbon Maze", "Spider Web", "Lattice", "Clusters", "Donut", and "Solid".
     - Added maze generation algorithm setting with the options "Kruskal", "Recursive Backtracker", "Wilson", and "Binary Tree".
         For use with world generation modes that generate mazes.
   Changes:
