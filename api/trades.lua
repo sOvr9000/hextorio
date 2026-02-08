@@ -1095,17 +1095,10 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     end
 
     local remaining_coin
-    local coins_removed_values = coin_tiers.new_coin_values()
-    local coins_removed
     if trade.has_coins_in_input then
         local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
-        coin_tiers.multiply_into(coins_removed_values, trade_coin.values, num_batches, input_coin.tier_scaling)
-        coins_removed = coin_tiers.new(coins_removed_values)
-
-        local remaining_coin_values = coin_tiers.new_coin_values()
-        coin_tiers.subtract_into(remaining_coin_values, input_coin.values, coins_removed_values, input_coin.tier_scaling)
-        remaining_coin = coin_tiers.new(remaining_coin_values)
-
+        local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
+        remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
         inventories.remove_coin_from_inventory(inventory_input, coins_removed, cargo_wagons)
         flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
     else
@@ -1117,9 +1110,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local coins_added
     if trade.has_coins_in_output and total_output_batches >= 1 then
         local trade_coin = trades.get_output_coins_of_trade(trade, quality)
-        local coins_added_values = coin_tiers.new_coin_values()
-        coin_tiers.multiply_into(coins_added_values, trade_coin.values, total_output_batches, trade_coin.tier_scaling)
-        coins_added = coin_tiers.new(coins_added_values)
+        coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
         inventories.add_coin_to_inventory(inventory_output, coins_added, cargo_wagons)
         flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
     else
