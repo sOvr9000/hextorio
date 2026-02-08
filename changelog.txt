@@ -19,6 +19,8 @@ Date: 7/2/26
     - Fixed that hextreme quality not showing up in trade quality selection.
     - Fixed that the /summon command would only spawn units on Nauvis.
     - Fixed incompatibilities with some quality mods.
+  Optimizations:
+    - Optimized hex core and trade processing.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.7
 Date: 4/2/26

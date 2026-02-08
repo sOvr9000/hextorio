@@ -3078,13 +3078,12 @@ function hex_grid.process_hex_core_pool()
         return
     end
 
-    -- log("Starting: Pool index: " .. storage.hex_grid.cur_pool_idx)
-    -- local prof = game.create_profiler()
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
 
     storage.hex_grid.cur_pool_idx = (storage.hex_grid.cur_pool_idx or 0) % #storage.hex_grid.pool + 1
     local pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
-    for _, pool_params in pairs(pool) do
+
+    for _, pool_params in ipairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
         if state then
             hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
@@ -3092,10 +3091,6 @@ function hex_grid.process_hex_core_pool()
             hex_grid.process_hexlight(state)
         end
     end
-    -- prof.stop()
-
-    -- log("Finished: Pool size: " .. #pool .. " | Total elapsed:")
-    -- log({"", prof})
 end
 
 function hex_grid.setup_pool()
@@ -3119,6 +3114,7 @@ function hex_grid.setup_pool()
         end
     end
     table.insert(pool, cur_pool)
+    hex_grid.recalculate_pool_active_counts()
 end
 
 ---@param state HexState
@@ -3135,6 +3131,10 @@ function hex_grid.add_to_pool(state, pool_idx)
 
     if not next(storage.hex_grid.pool) then
         table.insert(storage.hex_grid.pool, {})
+        if not storage.hex_grid.pool_active_counts then
+            storage.hex_grid.pool_active_counts = {}
+        end
+        storage.hex_grid.pool_active_counts[1] = 0
     end
 
     if not pool_idx then
@@ -3148,6 +3148,10 @@ function hex_grid.add_to_pool(state, pool_idx)
         if not pool_idx then
             table.insert(storage.hex_grid.pool, {})
             pool_idx = #storage.hex_grid.pool
+            if not storage.hex_grid.pool_active_counts then
+                storage.hex_grid.pool_active_counts = {}
+            end
+            storage.hex_grid.pool_active_counts[pool_idx] = 0
         end
     end
 
@@ -3159,6 +3163,10 @@ function hex_grid.add_to_pool(state, pool_idx)
         end
         pool = {}
         storage.hex_grid.pool[pool_idx] = pool
+        if not storage.hex_grid.pool_active_counts then
+            storage.hex_grid.pool_active_counts = {}
+        end
+        storage.hex_grid.pool_active_counts[pool_idx] = 0
     end
 
     ---@type HexPoolParameters
@@ -3168,6 +3176,10 @@ function hex_grid.add_to_pool(state, pool_idx)
     }
 
     table.insert(pool, pool_params)
+
+    if state.is_active then
+        hex_grid.increment_pool_active_count(pool_idx, 1)
+    end
 end
 
 ---@param state HexState
@@ -3218,6 +3230,10 @@ function hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
         return
     end
 
+    if state.is_active then
+        hex_grid.increment_pool_active_count(pool_idx, -1)
+    end
+
     table.remove(pool, idx_in_pool)
     hex_grid.cleanup_empty_pools()
 end
@@ -3252,7 +3268,7 @@ function hex_grid.verify_pool_sizes()
         for j = 1, size - #pool1 do
             for k = #storage.hex_grid.pool, i + 1, -1 do
                 local pool2 = storage.hex_grid.pool[k]
-                if next(pool2) then
+                if pool2 and pool2[1] then
                     local state = hex_grid.get_hex_state_from_pool_params(pool2[1])
                     if state then
                         hex_grid.relocate_in_pool(state, k, 1)
@@ -3262,6 +3278,8 @@ function hex_grid.verify_pool_sizes()
             end
         end
     end
+
+    hex_grid.recalculate_pool_active_counts()
 end
 
 function hex_grid.cleanup_empty_pools()
@@ -3270,6 +3288,9 @@ function hex_grid.cleanup_empty_pools()
         if not next(storage.hex_grid.pool[i]) then
             if found then
                 table.remove(storage.hex_grid.pool, i)
+                if storage.hex_grid.pool_active_counts then
+                    table.remove(storage.hex_grid.pool_active_counts, i)
+                end
             else
                 found = true
             end
@@ -3312,6 +3333,29 @@ function hex_grid.count_active_hexes(pool)
     return total
 end
 
+function hex_grid.recalculate_pool_active_counts()
+    if not storage.hex_grid.pool_active_counts then
+        storage.hex_grid.pool_active_counts = {}
+    end
+    for pool_idx, pool in pairs(storage.hex_grid.pool) do
+        storage.hex_grid.pool_active_counts[pool_idx] = hex_grid.count_active_hexes(pool)
+    end
+end
+
+function hex_grid.get_pool_active_count(pool_idx)
+    if not storage.hex_grid.pool_active_counts then
+        hex_grid.recalculate_pool_active_counts()
+    end
+    return storage.hex_grid.pool_active_counts[pool_idx] or 0
+end
+
+function hex_grid.increment_pool_active_count(pool_idx, delta)
+    if not storage.hex_grid.pool_active_counts then
+        hex_grid.recalculate_pool_active_counts()
+    end
+    storage.hex_grid.pool_active_counts[pool_idx] = (storage.hex_grid.pool_active_counts[pool_idx] or 0) + delta
+end
+
 function hex_grid.has_active_hexes_fewer_than(pool, limit)
     local total = 0
 
@@ -3341,8 +3385,16 @@ function hex_grid._set_state_active(state, flag)
     end
 
     if flag == prev then return false end
-    if not flag then return false end
     if not state.hex_core.valid then return false end
+
+    local this_pool_idx = storage.hex_grid.cur_pool_idx
+    if flag then
+        hex_grid.increment_pool_active_count(this_pool_idx, 1)
+    else
+        hex_grid.increment_pool_active_count(this_pool_idx, -1)
+    end
+
+    if not flag then return false end
 
     -- This hex just became active.
     -- Swap to another pool, if possible.
@@ -3350,11 +3402,7 @@ function hex_grid._set_state_active(state, flag)
     -- If that pool has at least two fewer active hexes than this current one,
     -- swap places with an inactive hex.
 
-    -- log("Load balancing step start")
-    -- local prof = game.create_profiler()
-    -- local prof2 = game.create_profiler()
-
-    local this_pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
+    local this_pool = storage.hex_grid.pool[this_pool_idx]
     local this_index_in_pool = hex_grid.get_index_in_pool(this_pool, state.hex_core.surface.index, state.position)
     if this_index_in_pool == -1 then
         lib.log_error("hex_grid._set_state_active: parameters not found in pool for load balancing")
@@ -3365,59 +3413,44 @@ function hex_grid._set_state_active(state, flag)
         local other = hex_grid.get_hex_state_from_pool_params(params)
         if other and not other.is_active then
             -- Bubble down all active hex cores over time, towards the front of the pool for fastest processing in the loop below.
-            hex_grid.swap_params_in_pool(storage.hex_grid.cur_pool_idx, this_index_in_pool, storage.hex_grid.cur_pool_idx, i)
+            hex_grid.swap_params_in_pool(this_pool_idx, this_index_in_pool, this_pool_idx, i)
             this_index_in_pool = i
             break
         end
     end
 
-    local num_active_here = hex_grid.count_active_hexes(this_pool)
+    local num_active_here = hex_grid.get_pool_active_count(this_pool_idx)
     local active_threshold = num_active_here - 2
-
-    -- log({"", "Part 1 completed: ", prof2})
-    -- prof2.restart()
 
     local min_pool_idx, min_active, target_index_in_pool
     for pool_idx, pool in pairs(storage.hex_grid.pool) do
-        if pool_idx ~= storage.hex_grid.cur_pool_idx then
-            local num_active_there = 0
-
-            if not min_pool_idx then
-                target_index_in_pool = nil
-            end
-
-            for i, params in ipairs(pool) do
-                local other = hex_grid.get_hex_state_from_pool_params(params)
-                if other and other.is_active then
-                    num_active_there = num_active_there + 1
-                    if num_active_there > active_threshold then
-                        break
-                    end
-                else
-                    if not target_index_in_pool then
-                        target_index_in_pool = i
-                    end
-                end
-            end
+        if pool_idx ~= this_pool_idx then
+            local num_active_there = hex_grid.get_pool_active_count(pool_idx)
 
             if num_active_there <= active_threshold then
                 if not min_pool_idx or num_active_there < min_active then
                     min_pool_idx = pool_idx
                     min_active = num_active_there
-                end
-            end
+                    target_index_in_pool = nil
 
-            if target_index_in_pool and num_active_there == 0 then
-                break
+                    for i, params in ipairs(pool) do
+                        local other = hex_grid.get_hex_state_from_pool_params(params)
+                        if other and not other.is_active then
+                            target_index_in_pool = i
+                            break
+                        end
+                    end
+                end
+
+                if target_index_in_pool and num_active_there == 0 then
+                    break
+                end
             end
         end
     end
 
-    -- log({"", "Part 2 completed: ", prof2}) -- TODO: This step takes around 5 - 10 ms sometimes.  Can be optimized by managing active hex count rather than repeatedly counting and iterating over all hexes.  Overall, this load balancing results in reduced load per frame.
-    -- log({"", "Load balancing step completed: ", prof})
-
     if min_pool_idx and target_index_in_pool then
-        hex_grid.swap_params_in_pool(storage.hex_grid.cur_pool_idx, this_index_in_pool, min_pool_idx, target_index_in_pool)
+        hex_grid.swap_params_in_pool(this_pool_idx, this_index_in_pool, min_pool_idx, target_index_in_pool)
         return true
     end
 

@@ -955,9 +955,12 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
 
     if check_output_buffer and trade.hex_core_state.output_buffer then
         -- Ensure that if the output buffer has any of the output items, it does not process.
-        for _, outp in pairs(trade.output_items) do
-            if ((trade.hex_core_state.output_buffer[quality] or {})[outp.name] or 0) > 0 then
-                return 0
+        local buffer_quality = trade.hex_core_state.output_buffer[quality]
+        if buffer_quality then
+            for _, outp in pairs(trade.output_items) do
+                if (buffer_quality[outp.name] or 0) > 0 then
+                    return 0
+                end
             end
         end
     end
@@ -967,16 +970,22 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     end
     if max_items_per_output < 1 then return 0 end -- Probably won't ever happen, but if it ever does, it's an optimization.
 
+    local input_items_quality = input_items[quality]
+    if not input_items_quality then return 0 end
+
     -- Initial calculation by comparing item counts in input inventory and trade inputs.
     local num_batches = math.huge
     for _, input_item in pairs(trade.input_items) do
         if not lib.is_coin(input_item.name) then
-            num_batches = math.min(math.floor(((input_items[quality] or {})[input_item.name] or 0) / input_item.count), num_batches)
+            local available = input_items_quality[input_item.name] or 0
+            if available == 0 then return 0 end
+            num_batches = math.min(math.floor(available / input_item.count), num_batches)
             if num_batches == 0 then return 0 end
         end
     end
 
     -- Limit by max output batches
+    local total_prod
     if max_output_batches then
         max_output_batches = math.max(0, max_output_batches) -- Probably not needed, but doesn't hurt to have this.
         if max_output_batches == 0 then
@@ -984,7 +993,7 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
         else
             local for_max_batches = trades.get_num_batches_to_fill_productivity_bar(trade, max_output_batches, quality) or max_output_batches
 
-            local total_prod = trades.get_productivity(trade, quality)
+            total_prod = trades.get_productivity(trade, quality)
             if total_prod > 0 then
                 -- for_max_batches needs to be adjusted because total output batches is incremented by total input batches (when total prod is positive)
                 for_max_batches = math.max(1, math.ceil((max_output_batches - for_max_batches) * total_prod / (1 + total_prod)))
@@ -1014,8 +1023,11 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     end
 
     -- Even further limit by total stacks of output if number of empty slots in output inventory is known
-    if inventory_output_size then
-        approximate_stacks_output = trades.scale_value_with_productivity(approximate_stacks_output, trades.get_productivity(trade, quality))
+    if inventory_output_size and approximate_stacks_output > 0 then
+        if not total_prod then
+            total_prod = trades.get_productivity(trade, quality)
+        end
+        approximate_stacks_output = trades.scale_value_with_productivity(approximate_stacks_output, total_prod)
         num_batches = math.min(math.floor(inventory_output_size / approximate_stacks_output), num_batches)
         if num_batches == 0 then return 0 end
     end
@@ -2688,17 +2700,22 @@ function trades.get_coins_and_items_of_inventory(inv)
     local input_coin_values = {}
     local all_items = inv.get_contents()
     local all_items_lookup = {}
+
     for _, stack in pairs(all_items) do
-        if lib.is_coin(stack.name) then
-            input_coin_values[stack.name] = stack.count
+        local item_name = stack.name
+        if lib.is_coin(item_name) then
+            input_coin_values[item_name] = stack.count
         else
             local quality = stack.quality or "normal"
-            if not all_items_lookup[quality] then
-                all_items_lookup[quality] = {}
+            local quality_table = all_items_lookup[quality]
+            if not quality_table then
+                quality_table = {}
+                all_items_lookup[quality] = quality_table
             end
-            all_items_lookup[quality][stack.name] = stack.count
+            quality_table[item_name] = stack.count
         end
     end
+
     local input_coin = coin_tiers.normalized(coin_tiers.from_coin_values_by_name(input_coin_values))
     return input_coin, all_items_lookup
 end
