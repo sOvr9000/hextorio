@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.8
-Date: 7/2/26
+Date: 8/2/26
   Features:
     - Added world generation modes "Triangular", "Ribbon", "Ribbon Maze", "Spider Web", "Lattice", "Clusters", "Donut", and "Solid".
     - Added maze generation algorithm setting with the options "Kruskal", "Recursive Backtracker", "Wilson", and "Binary Tree".
@@ -8,6 +8,7 @@ Date: 7/2/26
   Changes:
     - Spiral world generation mode can now generate with either orientation of a spiral (clockwise or counterclockwise).
     - Properly adapted hexaprism spawning conditions to all world generation modes (even ones injected by other mods).
+    - Revised the English description of the "Hex Span" quest condition type to more clearly describe that it measures "straight line" distance as opposed to "path through claims" distance.
   Balancing:
     - A hex containing sulfuric acid geysers (on Vulcanus) or crude oil wells (on Nauvis) is now guaranteed to exist near the spawn hex.
   Bugfixes:
