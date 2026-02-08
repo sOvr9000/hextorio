@@ -4265,6 +4265,8 @@ end
 ---@param surface LuaSurface
 ---@param island HexSet
 function hex_grid.on_hex_island_generated(surface, island)
+    if surface.name ~= "nauvis" then return end
+
     local gh = storage.hex_grid.guaranteed_hexaprisms
     if not gh then
         gh = {} ---@type HexSet
