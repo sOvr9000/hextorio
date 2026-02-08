@@ -908,6 +908,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
 
     if is_land then
         state.is_land = true
+        state.claim_price = hex_grid.calculate_hex_claim_price(surface, hex_pos)
 
         hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
 
@@ -978,7 +979,6 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     state.generated = true
     state.send_outputs_to_cargo_wagons = true
     state.flat_index = flat_index
-    state.claim_price = hex_grid.calculate_hex_claim_price(surface, dist)
 
     flattened_surface_hexes[flat_index] = hex_pos
 
@@ -1879,7 +1879,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
                 local cost = state.claim_price
                 if not cost then
                     -- This shouldn't happen, but if some other rare edge case arises, this will prevent a crash.
-                    cost = hex_grid.calculate_hex_claim_price(surface, axial.distance(hex_pos, {q=0, r=0}))
+                    cost = hex_grid.calculate_hex_claim_price(surface, hex_pos)
                     state.claim_price = cost
                     lib.log_error("hex_grid.claim_hex: Claim price not found in hex state, forced to calculate immediately")
                 end
@@ -4106,10 +4106,17 @@ end
 
 ---Calculate the claim cost for a hex at some position on a given surface.
 ---@param surface LuaSurface
----@param dist int
+---@param hex_pos HexPos
 ---@return Coin
-function hex_grid.calculate_hex_claim_price(surface, dist)
-    local claim_price = (dist + 1) * (dist + 1) * hex_grid.get_planet_coin_scaling(surface.name)
+function hex_grid.calculate_hex_claim_price(surface, hex_pos)
+    local dist = hex_island.get_distance_from_spawn(surface.name, hex_pos)
+    if not dist then
+        lib.log_error("hex_grid.calculate_hex_claim_price: Tried to get the distance to a non-land hex: " .. serpent.line(hex_pos))
+        dist = 0
+    end
+
+    local coin_scaling = hex_grid.get_planet_coin_scaling(surface.name)
+    local claim_price = (dist + 1) * (dist + 1) * coin_scaling
 
     local coin = coin_tiers.from_base_value(claim_price)
     local mult = hex_grid.get_claim_cost_multiplier(surface.name)
@@ -4158,7 +4165,7 @@ function hex_grid.update_all_hex_claim_costs(surface_name)
     for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
         if state.hex_core then
             -- Claim cost affects delete core cost, so also check claimed hexes
-            state.claim_price = hex_grid.calculate_hex_claim_price(surface, axial.distance(state.position, {q=0, r=0}))
+            state.claim_price = hex_grid.calculate_hex_claim_price(surface, state.position)
         end
     end
 end

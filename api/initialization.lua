@@ -2,6 +2,9 @@
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
 local coin_tiers        = require "api.coin_tiers"
+local hex_util          = require "api.hex_util"
+local hex_island        = require "api.hex_island"
+local hex_sets          = require "api.hex_sets"
 
 local initialization = {}
 
@@ -18,6 +21,25 @@ function initialization.on_game_started()
     storage.initialization.has_game_started = true
     storage.initialization.is_ready_to_start = false
 
+    local surface = game.get_surface "nauvis"
+    if not surface or not surface.valid then
+        lib.log_error("initialization.on_game_started: Failed to find the Nauvis surface")
+        return
+    end
+
+    local spawn_hex = {q=0, r=0}
+    local island = hex_island.get_island_hex_set "nauvis"
+    local hexes_in_range, _ = hex_util.all_hexes_within_range(spawn_hex, 1, island)
+    local hex_list = hex_sets.to_array(hexes_in_range)
+    local second_cost = 0
+    if hex_list[2] then
+        second_cost = coin_tiers.to_base_value(hex_grid.calculate_hex_claim_price(surface, hex_list[2]))
+    end
+
+    local first_cost = coin_tiers.to_base_value(hex_grid.calculate_hex_claim_price(surface, spawn_hex))
+    local cost_of_first_hexes = first_cost + second_cost
+    if cost_of_first_hexes <= 0 then cost_of_first_hexes = 1 end
+
     for _, player in pairs(game.connected_players) do
         -- Make sure that all players have a character
         if not player.character then
@@ -28,8 +50,6 @@ function initialization.on_game_started()
         end
 
         -- Give starting items
-        local cost_of_first_hexes = coin_tiers.to_base_value(hex_grid.calculate_hex_claim_price(game.surfaces.nauvis, 0)) + coin_tiers.to_base_value(hex_grid.calculate_hex_claim_price(game.surfaces.nauvis, 1))
-        if cost_of_first_hexes <= 0 then cost_of_first_hexes = 5 end
         player.insert{name = "hex-coin", count = cost_of_first_hexes}
 
         -- And whatever other items the player should have from other mods

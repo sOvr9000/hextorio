@@ -4,6 +4,7 @@ local lib = require "api.lib"
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
+local hex_util     = require "api.hex_util"
 
 local hex_island = {}
 
@@ -38,15 +39,16 @@ end
 
 
 
----Calculate the maximum distance from origin to any hex in the island.
----@param island HexSet
+---Get the maximum distance in the distances array.
+---@param distances IndexMap
 ---@return int
-local function calculate_max_distance(island)
+local function calculate_extent(distances)
     local max_distance = 0
-    for _, hex_pos in pairs(hex_sets.to_array(island)) do
-        local distance = axial.distance(hex_pos, {q = 0, r = 0})
-        if distance > max_distance then
-            max_distance = distance
+    for _, Q in pairs(distances) do
+        for _, distance in pairs(Q) do
+            if distance > max_distance then
+                max_distance = distance
+            end
         end
     end
     return max_distance
@@ -151,20 +153,31 @@ function hex_island.process_surface_creation(surface)
         }
     end
 
+    lib.log("hex_island.process_surface_creation: Generating island with generator = " .. generator_name .. ", params = " .. serpent.line(params))
     local island = hex_island.generate_island(generator_name, params)
+
+    lib.log("hex_island.process_surface_creation: Centering island")
     island = hex_island.auto_center(island)
 
     storage.hex_island.islands[surface.name] = island
 
-    if not storage.hex_island.max_distances then
-        storage.hex_island.max_distances = {}
+    if not storage.hex_island.distances then
+        storage.hex_island.distances = {}
     end
 
-    local max_distance = calculate_max_distance(island)
-    storage.hex_island.max_distances[surface.name] = max_distance
+    lib.log("hex_island.process_surface_creation: Calculating distances")
+    local distances = hex_util.calculate_distances({q=0, r=0}, island)
+    storage.hex_island.distances[surface.name] = distances
 
-    local actual_hex_count = #hex_sets.to_array(island)
-    lib.log(string.format("hex_island.process_surface_creation: Generated %d hexes for %s (target: %d, extent: %d)", actual_hex_count, surface.name, total_hexes, max_distance))
+    if not storage.hex_island.extents then
+        storage.hex_island.extents = {}
+    end
+
+    local extent = calculate_extent(distances)
+    storage.hex_island.extents[surface.name] = extent
+
+    local actual_hex_count = hex_sets.size(island)
+    lib.log(string.format("hex_island.process_surface_creation: Generated %d hexes for %s (target: %d, extent: %d)", actual_hex_count, surface.name, total_hexes, extent))
 
     event_system.trigger("hex-island-generated", surface, island)
 end
@@ -220,29 +233,61 @@ function hex_island.get_island_hex_set(surface_name)
     return island
 end
 
+---Get the array of distances from spawn to each hex in the surface's island.
+---@param surface_name string
+---@return IndexMap
+function hex_island.get_island_distances(surface_name)
+    local hex_island_storage = storage.hex_island
+
+    if not hex_island_storage.distances then
+        hex_island_storage.distances = {}
+    end
+
+    local distances = hex_island_storage.distances[surface_name]
+    if not distances then
+        local island = hex_island_storage.islands[surface_name]
+        if not island then
+            lib.log_error("hex_island.get_island_extent: Could not find island for surface " .. surface_name)
+            return {}
+        end
+
+        distances = hex_util.calculate_distances({q=0, r=0}, island)
+        hex_island_storage.distances[surface_name] = distances
+    end
+
+    return distances
+end
+
 ---Get the maximum distance from spawn to any land hex on the surface.
 ---@param surface_name string
 ---@return int
 function hex_island.get_island_extent(surface_name)
     local hex_island_storage = storage.hex_island
 
-    if not hex_island_storage.max_distances then
-        hex_island_storage.max_distances = {}
+    if not hex_island_storage.extents then
+        hex_island_storage.extents = {}
     end
 
-    local max_distance = hex_island_storage.max_distances[surface_name]
-    if not max_distance then
-        local island = hex_island_storage.islands[surface_name]
-        if not island then
-            lib.log_error("hex_island.get_island_extent: Could not find island for surface " .. surface_name)
-            return 0
-        end
+    local extent = hex_island_storage.extents[surface_name]
+    if not extent then
+        local distances = hex_island.get_island_distances(surface_name)
 
-        max_distance = calculate_max_distance(island)
-        hex_island_storage.max_distances[surface_name] = max_distance
+        extent = calculate_extent(distances)
+        hex_island_storage.extents[surface_name] = extent
     end
 
-    return max_distance
+    return extent
+end
+
+---Get the distance from spawn to `position`.
+---@param surface_name string
+---@param position HexPos
+---@return int|nil
+function hex_island.get_distance_from_spawn(surface_name, position)
+    local distances = hex_island.get_island_distances(surface_name)
+    local Q = distances[position.q]
+    if not Q then return end
+    return Q[position.r]
 end
 
 ---Auto-center an island by finding its deepest inland point and translating to origin.
@@ -325,8 +370,6 @@ function hex_island.generate_island(generator_name, params)
     if not gen then
         error("hex_island.generate_island: No generator found with name " .. generator_name)
     end
-
-    lib.log("hex_island.generate_island: Generating island with generator = " .. generator_name .. ", params = " .. serpent.line(params))
 
     return gen(params)
 end

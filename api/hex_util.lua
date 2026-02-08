@@ -49,6 +49,48 @@ function hex_util.all_hexes_within_range(center, range, allowed_positions)
     return included, distances
 end
 
+---Calculate distances from `center` to each position in `positions` using BFS.
+---@param center HexPos
+---@param positions HexSet
+---@return IndexMap distances A mapping of hex positions to their distances from `center`
+function hex_util.calculate_distances(center, positions)
+    local distances = {}
+    local visited = hex_sets.new()
+    local found_count = 0
+    local target_count = hex_sets.size(positions)
+
+    if target_count == 0 then
+        return distances
+    end
+
+    local queue = {{pos = center, distance = 0}}
+    local head = 1
+
+    while head <= #queue and found_count < target_count do
+        local current = queue[head]
+        head = head + 1
+
+        local pos = current.pos
+        local dist = current.distance
+
+        if not hex_sets.contains(visited, pos) and hex_sets.contains(positions, pos) then
+            hex_sets.add(visited, pos)
+
+            distances[pos.q] = distances[pos.q] or {}
+            distances[pos.q][pos.r] = dist
+            found_count = found_count + 1
+
+            for _, adj_pos in pairs(axial.get_adjacent_hexes(pos)) do
+                if not hex_sets.contains(visited, adj_pos) then
+                    table.insert(queue, {pos = adj_pos, distance = dist + 1})
+                end
+            end
+        end
+    end
+
+    return distances
+end
+
 -- TODO: Eventually include a pathfinding function, probably implementing A*
 -- This would be used by sentient spiders (or general spidertron logic) if/when their functionality finally gets implemented
 
