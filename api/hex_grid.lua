@@ -2099,7 +2099,7 @@ function hex_grid.check_hex_span(surface, hex_pos)
 
     storage.hex_grid.hex_span[surface] = math.max(span, storage.hex_grid.hex_span[surface] or 0)
 
-    gameplay_statistics.set("hex-span", span)
+    gameplay_statistics.set_if_greater("hex-span", span)
 end
 
 ---Add free claims on a surface.

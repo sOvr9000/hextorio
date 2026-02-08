@@ -11,6 +11,7 @@ Date: 7/2/26
   Balancing:
     - A hex containing sulfuric acid geysers (on Vulcanus) or crude oil wells (on Nauvis) is now guaranteed to exist near the spawn hex.
   Bugfixes:
+    - Fixed that "Hex Span" types of conditions for quests were not being calculated correctly.
     - Fixed biter ramming crash.
     - Fixed crash when claiming hexes near ungenerated chunks.
     - Fixed that the guaranteed trades on Nauvis could be put in water hexes, where they would never be found.
