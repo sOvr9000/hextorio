@@ -2387,11 +2387,21 @@ end
 
 ---@param state HexState
 function hex_grid.add_initial_trades(state)
-    local dist = axial.distance(state.position, {q=0, r=0})
+    local dist = hex_island.get_distance_from_spawn(state.hex_core.surface.name, state.position)
+    if not dist then
+        lib.log_error("hex_grid.add_initial_trades: Could not get BFS distance from spawn, falling back to axial distance")
+        dist = axial.distance(state.position, {q=0, r=0})
+    end
     local is_starting_hex = dist == 0
 
+    local hex_core = state.hex_core
+    if not hex_core then return end
+
+    local surface = hex_core.surface
+    local surface_name = surface.name
+
     if is_starting_hex then
-        for _, trade_items in pairs(storage.trades.starting_trades[state.hex_core.surface.name]) do
+        for _, trade_items in pairs(storage.trades.starting_trades[surface_name]) do
             local input_names = trade_items[1]
             local output_names = trade_items[2]
             local params = {target_efficiency = storage.trades.base_trade_efficiency}
@@ -2403,36 +2413,58 @@ function hex_grid.add_initial_trades(state)
             end
         end
     else
-        local island_extent = hex_island.get_island_extent(state.hex_core.surface.name)
-        local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. state.hex_core.surface.name)
+        local island_extent = hex_island.get_island_extent(surface_name)
+        local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. surface_name)
 
-        local guaranteed_trades = lib.get_at_multi_index(storage.trades.guaranteed_trades, state.hex_core.surface.name, state.position.q, state.position.r)
+        local guaranteed_trades = lib.get_at_multi_index(storage.trades.guaranteed_trades, surface_name, state.position.q, state.position.r)
         if guaranteed_trades then
             for _, trade in pairs(guaranteed_trades) do
                 hex_grid.add_trade(state, trade)
                 trades_per_hex = trades_per_hex - 1
             end
-            lib.remove_at_multi_index(storage.trades.guaranteed_trades, state.hex_core.surface.name, state.position.q, state.position.r) -- Erase it so that multiple copies of the same trade don't exist in storage (bad for save times)
+            lib.remove_at_multi_index(storage.trades.guaranteed_trades, surface_name, state.position.q, state.position.r) -- Erase it so that multiple copies of the same trade don't exist in storage (bad for save times)
         end
 
+        --[[
+            EXPLANATION OF TRADE VOLUME SAMPLING METHOD:
+
+            Island extent is the distance to the farthest hex tile from spawn, measuring the length of the shortest valid path from spawn to the hex tile.
+
+            All hexes that are (30% * island extent) hex tiles away from spawn (again measuring shortest valid path length) sample with uniform distribution from all items that have values on the respective surface.
+
+            Inside this 30% threshold, an exponential interpolation is made from the lowest item values to the highest, based on distance from spawn to this 30% threshold.
+
+            In one sentence:
+            This interpolation puts low-valued, quickly unlockable items near spawn and
+            gradually creates trades with more and more expensive items as distance increases,
+            where all of the planet-related items are able to be found after 30% of the island's extent.
+        ]]
+
         if trades_per_hex >= 1 then
-            local items_sorted_by_value = item_values.get_items_sorted_by_value(state.hex_core.surface.name, true, false)
-            local max_item_value = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[#items_sorted_by_value])
+            local items_sorted_by_value = item_values.get_items_sorted_by_value(surface_name, true, false)
+            local max_item_value = item_values.get_item_value(surface_name, items_sorted_by_value[#items_sorted_by_value])
+
+            -- This is the distance from spawn after which the most expensive items can be found
+            local threshold_dist = island_extent * 0.3
 
             -- These two parameters are for scaling volume by distance
-            local base = hex_grid.get_trade_volume_base(state.hex_core.surface.name)
-            local exponent = (max_item_value * 0.5 / base) ^ (1 / island_extent)
+            local base = hex_grid.get_trade_volume_base(surface_name)
+            local exponent = (max_item_value * 0.5 / base) ^ (1 / threshold_dist)
 
-            local dist_factor = dist / island_extent
+            -- Exponentially interpolate towards pure random as distance increases, capping after the extent threshold.
+            local dist_factor = math.min(dist / threshold_dist, 1)
 
             for _ = 1, trades_per_hex do
-                local r = math.random()
-                local random_volume_by_dist = math.min(max_item_value * 0.5, base * (exponent ^ (r * r * dist)))
+                local random_volume_by_dist
+                if dist <= threshold_dist then
+                    local r = math.random()
+                    random_volume_by_dist = math.min(max_item_value * 0.5, base * (exponent ^ (r * r * dist)))
+                else
+                    random_volume_by_dist = max_item_value * 0.5
+                end
 
                 -- This is a random volume chosen from a uniform distribution of all item values on the surface, resulting in each item having equal chance of being chosen as the central value.
-                local random_volume_uniform = item_values.get_item_value(state.hex_core.surface.name, items_sorted_by_value[math.random(1, #items_sorted_by_value)])
-
-                -- Exponentially interpolate towards pure random as distance increases.
+                local random_volume_uniform = item_values.get_item_value(surface_name, items_sorted_by_value[math.random(1, #items_sorted_by_value)])
                 local random_volume = math.exp(math.log(random_volume_by_dist) * (1 - dist_factor) + math.log(random_volume_uniform) * dist_factor)
 
                 local trade = hex_grid.generate_random_trade(state, random_volume)
