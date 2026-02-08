@@ -596,7 +596,6 @@ end
 ---@param max_dim int The maximum width and height of the entity throughout rotation.
 ---@return MapPositionAndDirection[], MapPositionSet
 function dungeons.get_entity_positions(hex_center, available_positions, max_dim)
-    available_positions = table.deepcopy(available_positions)
     local entity_positions = {} ---@type MapPositionAndDirection[]
     local used_positions = {} ---@type MapPositionSet
 
@@ -622,7 +621,6 @@ function dungeons.get_entity_positions(hex_center, available_positions, max_dim)
             end
             for _y = y, y + max_dim - 1 do
                 used_positions[_x][_y] = true
-                available_positions[_x][_y] = nil
             end
         end
         local center = {x = x + (max_dim / 2), y = y + (max_dim / 2)}

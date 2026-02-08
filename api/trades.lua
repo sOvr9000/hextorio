@@ -2762,28 +2762,17 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
     -- Use raw array for accumulation to avoid repeated normalization (performance optimization)
     local total_coins_added_values = coin_tiers.new_coin_values()
 
+    -- Retrieve uniquely traded items and prod reqs tables
     local prod_reqs = storage.item_ranks.productivity_requirements
-
-    if not storage.trades.uniquely_traded_items then
-        storage.trades.uniquely_traded_items = {}
+    local uniquely_traded_items = storage.trades.uniquely_traded_items
+    if not uniquely_traded_items then
+        uniquely_traded_items = {}
+        storage.trades.uniquely_traded_items = uniquely_traded_items
     end
-    if not storage.trades.uniquely_traded_items[surface_id] then
-        storage.trades.uniquely_traded_items[surface_id] = {}
-    end
-    local uniquely_traded_items = storage.trades.uniquely_traded_items[surface_id]
-
-    local function handle_item_in_trade(trade, quality, item_name, amount, trade_side, rounded_prod)
-        if not uniquely_traded_items[item_name] then
-            uniquely_traded_items[item_name] = true
-            gameplay_statistics.increment "total-unique-items-traded"
-        end
-
-        local rank = item_ranks.get_item_rank(item_name)
-        if rank ~= 2 and rank ~= 4 then return end
-
-        if rounded_prod + 1e-9 >= prod_reqs[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
-            item_ranks.progress_item_rank(item_name, rank + 1)
-        end
+    local surface_uniquely_traded_items = uniquely_traded_items[surface_id]
+    if not surface_uniquely_traded_items then
+        surface_uniquely_traded_items = {}
+        uniquely_traded_items[surface_id] = surface_uniquely_traded_items
     end
 
     local inventory_output_size
@@ -2800,7 +2789,7 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
         end
     else
         local hex_core = output_inv.entity_owner
-        if hex_core then
+        if hex_core and hex_core.valid then
             -- inventory_output_size = hex_core.prototype.get_inventory_size(defines.inventory.chest, hex_core.quality)
             local inv = hex_core.get_inventory(defines.inventory.chest)
             if inv then
@@ -2836,20 +2825,20 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
                     for item_name, amount in pairs(total_inserted[quality] or {}) do
                         _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
                         all_items_quality[item_name] = (all_items_quality[item_name] or 0) + amount
-                        handle_item_in_trade(trade, quality, item_name, amount, "receive", rounded_prod)
+                        trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "receive", rounded_prod)
                     end
 
                     if not _total_removed[quality] then _total_removed[quality] = {} end
                     for item_name, amount in pairs(total_removed[quality] or {}) do
                         _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
                         all_items_quality[item_name] = math.max(0, (all_items_quality[item_name] or 0) - amount)
-                        handle_item_in_trade(trade, quality, item_name, amount, "give", rounded_prod)
+                        trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "give", rounded_prod)
                     end
 
                     if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
                     for item_name, amount in pairs(remaining_to_insert[quality] or {}) do
                         _remaining_to_insert[quality][item_name] = (_remaining_to_insert[quality][item_name] or 0) + amount
-                        handle_item_in_trade(trade, quality, item_name, amount, "receive", rounded_prod)
+                        trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "receive", rounded_prod)
                     end
                 end
             end
@@ -2864,6 +2853,25 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
     local total_coins_added = coin_tiers.normalized(coin_tiers.new(total_coins_added_values))
 
     return _total_removed, _total_inserted, _remaining_to_insert, total_coins_removed, total_coins_added
+end
+
+---@param uniquely_traded_items {[string]: boolean}
+---@param prod_reqs {[int]: number}
+---@param item_name string
+---@param trade_side TradeSide
+---@param rounded_prod number
+function trades._handle_item_in_trade(uniquely_traded_items, prod_reqs, item_name, trade_side, rounded_prod)
+    if not uniquely_traded_items[item_name] then
+        uniquely_traded_items[item_name] = true
+        gameplay_statistics.increment "total-unique-items-traded"
+    end
+
+    local rank = item_ranks.get_item_rank(item_name)
+    if rank ~= 2 and rank ~= 4 then return end
+
+    if rounded_prod + 1e-9 >= prod_reqs[rank] and (trade_side == "receive" and rank == 2 or trade_side == "give" and rank == 4) then
+        item_ranks.progress_item_rank(item_name, rank + 1)
+    end
 end
 
 ---Calculate the productivity modifier for a given quality.

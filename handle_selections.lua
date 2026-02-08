@@ -29,7 +29,7 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
 
     if alt then
         -- Include ALL hexes, not just ones that have hex cores currently.
-        local overlapping = axial.get_overlapping_hexes(area.left_top, area.right_bottom, transformation.scale, transformation.rotation, false)
+        local overlapping = axial.get_overlapping_hexes(area.left_top, area.right_bottom, transformation.scale, transformation.rotation)
         for _, hex_pos in pairs(overlapping) do
             if reverse or hex_grid.can_claim_hex(player, surface, hex_pos, false, true, player_inventory_coins) then
                 local center = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)

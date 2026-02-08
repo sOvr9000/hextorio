@@ -415,43 +415,37 @@ function axial.does_hex_overlap_rect(hex_pos, hex_grid_scale, hex_grid_rotation,
 end
 
 -- Get all hexes that overlap a rectangular area
-function axial.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation, cache)
-    if cache == nil then cache = true end
-    local coords = {x = rect_top_left.x, y = rect_top_left.y}
-    local result = lib.get_at_multi_index(storage.cached, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
-    if result then return result end
-    result = axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
-    if cache then
-        lib.set_at_multi_index(storage.cached, result, "overlapping-hexes", coords.x, coords.y, hex_grid_scale, hex_grid_rotation)
-    end
-    return result
-end
-
--- Get all hexes that overlap a rectangular area
-function axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
-    -- Default values
+function axial.get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid_scale, hex_grid_rotation)
     hex_grid_scale = hex_grid_scale or 1
     hex_grid_rotation = hex_grid_rotation or 0
 
     -- Normalize the rectangle coordinates (ensure top_left is actually top-left)
-    local tl = {
-        x = math.min(rect_top_left.x, rect_bottom_right.x),
-        y = math.min(rect_top_left.y, rect_bottom_right.y)
-    }
-    local br = {
-        x = math.max(rect_top_left.x, rect_bottom_right.x),
-        y = math.max(rect_top_left.y, rect_bottom_right.y)
-    }
+    local tl_x = math.min(rect_top_left.x, rect_bottom_right.x)
+    local tl_y = math.min(rect_top_left.y, rect_bottom_right.y)
+    local br_x = math.max(rect_top_left.x, rect_bottom_right.x)
+    local br_y = math.max(rect_top_left.y, rect_bottom_right.y)
 
     -- Calculate a margin to accommodate rotated hexes that might overlap
     -- This margin should be at least the hex size plus some buffer for rotation
     local margin = hex_grid_scale * 2
 
     -- Get hexes for the four corners of the rectangle (plus margin)
-    local tl_hex = axial.get_hex_containing({x = tl.x - margin, y = tl.y - margin}, hex_grid_scale, hex_grid_rotation)
-    local tr_hex = axial.get_hex_containing({x = br.x + margin, y = tl.y - margin}, hex_grid_scale, hex_grid_rotation)
-    local bl_hex = axial.get_hex_containing({x = tl.x - margin, y = br.y + margin}, hex_grid_scale, hex_grid_rotation)
-    local br_hex = axial.get_hex_containing({x = br.x + margin, y = br.y + margin}, hex_grid_scale, hex_grid_rotation)
+    local temp_pos = {}
+    temp_pos.x = tl_x - margin
+    temp_pos.y = tl_y - margin
+    local tl_hex = axial.get_hex_containing(temp_pos, hex_grid_scale, hex_grid_rotation)
+
+    temp_pos.x = br_x + margin
+    temp_pos.y = tl_y - margin
+    local tr_hex = axial.get_hex_containing(temp_pos, hex_grid_scale, hex_grid_rotation)
+
+    temp_pos.x = tl_x - margin
+    temp_pos.y = br_y + margin
+    local bl_hex = axial.get_hex_containing(temp_pos, hex_grid_scale, hex_grid_rotation)
+
+    temp_pos.x = br_x + margin
+    temp_pos.y = br_y + margin
+    local br_hex = axial.get_hex_containing(temp_pos, hex_grid_scale, hex_grid_rotation)
 
     -- Find the min/max q and r to create a bounding box of hexes
     local min_q = math.min(tl_hex.q, tr_hex.q, bl_hex.q, br_hex.q)
@@ -461,11 +455,15 @@ function axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid
 
     -- Check each hex in the bounding box
     local overlapping_hexes = {}
+    local tl = {x = tl_x, y = tl_y}
+    local br = {x = br_x, y = br_y}
+    local hex = {}
     for q = min_q, max_q do
         for r = min_r, max_r do
-            local hex = {q = q, r = r}
+            hex.q = q
+            hex.r = r
             if axial.does_hex_overlap_rect(hex, hex_grid_scale, hex_grid_rotation, tl, br) then
-                table.insert(overlapping_hexes, hex)
+                table.insert(overlapping_hexes, {q = q, r = r})
             end
         end
     end
@@ -473,21 +471,12 @@ function axial._get_overlapping_hexes(rect_top_left, rect_bottom_right, hex_grid
     return overlapping_hexes
 end
 
--- Get all hexes that overlap a rectangular area
-function axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
-    local result = lib.get_at_multi_index(storage.cached, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
-    if result then return result end
-    result = axial._get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
-    lib.set_at_multi_index(storage.cached, result, "overlapping-chunks", hex_pos.q, hex_pos.r, hex_grid_scale, hex_grid_rotation)
-    return result
-end
-
 ---Return a normally indexed table of chunk positions which overlap with the given hex.
 ---@param hex_pos {q: int, r: int}
 ---@param hex_grid_scale number
 ---@param hex_grid_rotation number
 ---@return {[int]: {x: int, y: int}}
-function axial._get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
+function axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)
     local chunks = {}
     local minx, miny, maxx, maxy
     for _, vertex in pairs(axial.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)) do
@@ -561,10 +550,12 @@ function axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation
 
     -- Collect all integer positions within the hex, excluding border
     local positions = {}
+    local point = {}
 
     for x = min_x, max_x do
         for y = min_y, max_y do
-            local point = {x = x, y = y}
+            point.x = x
+            point.y = y
 
             -- Check if the point is inside the hex
             if core_math.is_point_in_polygon(point, corners) then
@@ -610,6 +601,8 @@ function axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke
     stroke_width = stroke_width - 1
     stroke_width = stroke_width * 1.25 -- dividing by the 0.8 factor for tile overlap
 
+    local max_w = math.ceil(stroke_width * 1.25)
+
     -- For each edge of the hex, place water tiles along it
     for i = 1, 6 do
         local next_i = i % 6 + 1
@@ -636,17 +629,19 @@ function axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke
             local base_y = start.y + dir_y * t
 
             -- Create tiles for the stroke width
-            for w = -1, math.ceil(stroke_width * 1.25) do
+            for w = -1, max_w do
                 -- Offset in the perpendicular direction
                 -- We want the stroke to go inward from the edge
                 local offset = w * 0.8  -- 0.8 factor for tile overlap
                 local x = math.floor(base_x + perp_x * offset + 0.5)
                 local y = math.floor(base_y + perp_y * offset + 0.5)
 
-                if not added[x] then
-                    added[x] = {}
+                local X = added[x]
+                if not X then
+                    X = {}
+                    added[x] = X
                 end
-                added[x][y] = true
+                X[y] = true
             end
         end
     end

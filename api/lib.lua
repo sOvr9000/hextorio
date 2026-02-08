@@ -1458,9 +1458,11 @@ end
 ---@return MapPosition[]
 function lib.flattened_position_array(arr)
     local flat = {}
+    local idx = 1
     for x, Y in pairs(arr) do
         for y, _ in pairs(Y) do
-            table.insert(flat, {x = x, y = y})
+            flat[idx] = {x = x, y = y}
+            idx = idx + 1
         end
     end
     return flat

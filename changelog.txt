@@ -20,7 +20,12 @@ Date: 7/2/26
     - Fixed that the /summon command would only spawn units on Nauvis.
     - Fixed incompatibilities with some quality mods.
   Optimizations:
-    - Optimized hex core and trade processing.
+    - Slightly optimized hex core processing/iteration.
+    - Slightly optimized trade processing.
+    - Optimized some hexagonal math calculations.
+    - Greatly optimized all chunk generation (setting tile types more efficiently).
+        There's now significantly less time wasted on GC (memory stuff).
+    - Optimized dungeon hex generation.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.7
 Date: 4/2/26

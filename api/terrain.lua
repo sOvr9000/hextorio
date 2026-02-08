@@ -43,12 +43,23 @@ function terrain.set_tiles(surface, positions, tile_type, ignore_tiles, quality)
     end
 
     local tiles = {}
-    for _, position in pairs(positions) do
-        local cur_tile = surface.get_tile(position.x or position[1], position.y or position[2])
-        if not cur_tile.valid or not ignore_tiles[cur_tile.name] then
-            table.insert(tiles, {name = tile_type, position = position})
+    local tile_idx = 1
+
+    if next(ignore_tiles) then
+        for _, position in pairs(positions) do
+            local cur_tile = surface.get_tile(position.x or position[1], position.y or position[2])
+            if not cur_tile.valid or not ignore_tiles[cur_tile.name] then
+                tiles[tile_idx] = {name = tile_type, position = position}
+                tile_idx = tile_idx + 1
+            end
+        end
+    else
+        for _, position in pairs(positions) do
+            tiles[tile_idx] = {name = tile_type, position = position}
+            tile_idx = tile_idx + 1
         end
     end
+
     surface.set_tiles(tiles)
 
     if tile_names.can_spawn_fish(tile_type) then
