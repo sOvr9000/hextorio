@@ -1050,10 +1050,10 @@ end
 ---@param input_items QualityItemCounts|nil The total amount of items in the input inventory. Calculated automatically if not provided.
 ---@param input_coin Coin|nil The total amount of coins in the input inventory. Calculated automatically if not provided.
 ---@param cargo_wagons LuaEntity[]|nil If either the input or output inventory is a LuaTrain, then these are the cargo wagons closest to the train stop where the train had stopped.
----@return QualityItemCounts, QualityItemCounts, QualityItemCounts, Coin, Coin
+---@return QualityItemCounts|nil, QualityItemCounts|nil, QualityItemCounts|nil, Coin|nil, Coin|nil tuple total removed, total inserted, remaining items to insert (if inventory_output is full), remaining coins in inventory_input, coins added to inventory_output
 function trades.trade_items(inventory_input, inventory_output, trade, num_batches, quality, quality_cost_mult, input_items, input_coin, cargo_wagons)
     if not trade.active or num_batches < 1 then
-        return {}, {}, {}, input_coin or coin_tiers.new(), coin_tiers.new()
+        return nil, nil, nil, nil, nil
     end
 
     local is_train_input = inventory_input.object_name == "LuaTrain"
@@ -1095,10 +1095,17 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     end
 
     local remaining_coin
+    local coins_removed_values = coin_tiers.new_coin_values()
+    local coins_removed
     if trade.has_coins_in_input then
         local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
-        local coins_removed = coin_tiers.multiply(trade_coin, num_batches)
-        remaining_coin = coin_tiers.subtract(input_coin, coins_removed)
+        coin_tiers.multiply_into(coins_removed_values, trade_coin.values, num_batches, input_coin.tier_scaling)
+        coins_removed = coin_tiers.new(coins_removed_values)
+
+        local remaining_coin_values = coin_tiers.new_coin_values()
+        coin_tiers.subtract_into(remaining_coin_values, input_coin.values, coins_removed_values, input_coin.tier_scaling)
+        remaining_coin = coin_tiers.new(remaining_coin_values)
+
         inventories.remove_coin_from_inventory(inventory_input, coins_removed, cargo_wagons)
         flow_statistics.on_flow("hex-coin", -coin_tiers.to_base_value(coins_removed))
     else
@@ -1110,7 +1117,9 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local coins_added
     if trade.has_coins_in_output and total_output_batches >= 1 then
         local trade_coin = trades.get_output_coins_of_trade(trade, quality)
-        coins_added = coin_tiers.multiply(trade_coin, total_output_batches)
+        local coins_added_values = coin_tiers.new_coin_values()
+        coin_tiers.multiply_into(coins_added_values, trade_coin.values, total_output_batches, trade_coin.tier_scaling)
+        coins_added = coin_tiers.new(coins_added_values)
         inventories.add_coin_to_inventory(inventory_output, coins_added, cargo_wagons)
         flow_statistics.on_flow("hex-coin", coin_tiers.to_base_value(coins_added))
     else
@@ -2813,32 +2822,34 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
                     local rounded_prod = math.floor(0.5 + prod * 1000) * 0.001 -- This is what's displayed in GUI, so even if the prod is slightly less than what's shown, allow the shown value to be used to conditionally rank up items (trade in precision for fewer confusing situations)
 
                     gameplay_statistics.increment("sell-item-of-quality", num_batches, quality)
-                    total_batches = total_batches + 1
+                    total_batches = total_batches + num_batches
 
                     local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin, cargo_wagons)
-                    input_coin = remaining_coin
+                    if total_removed and total_inserted and remaining_to_insert and remaining_coin and coins_added then
+                        input_coin = remaining_coin
 
-                    -- Accumulate without normalization for performance
-                    coin_tiers.accumulate(total_coins_added_values, coins_added)
+                        -- Accumulate without normalization for performance
+                        coin_tiers.accumulate(total_coins_added_values, coins_added)
 
-                    if not _total_inserted[quality] then _total_inserted[quality] = {} end
-                    for item_name, amount in pairs(total_inserted[quality] or {}) do
-                        _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
-                        all_items_quality[item_name] = (all_items_quality[item_name] or 0) + amount
-                        trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "receive", rounded_prod)
-                    end
+                        if not _total_inserted[quality] then _total_inserted[quality] = {} end
+                        for item_name, amount in pairs(total_inserted[quality] or {}) do
+                            _total_inserted[quality][item_name] = (_total_inserted[quality][item_name] or 0) + amount
+                            all_items_quality[item_name] = (all_items_quality[item_name] or 0) + amount
+                            trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "receive", rounded_prod)
+                        end
 
-                    if not _total_removed[quality] then _total_removed[quality] = {} end
-                    for item_name, amount in pairs(total_removed[quality] or {}) do
-                        _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
-                        all_items_quality[item_name] = math.max(0, (all_items_quality[item_name] or 0) - amount)
-                        trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "give", rounded_prod)
-                    end
+                        if not _total_removed[quality] then _total_removed[quality] = {} end
+                        for item_name, amount in pairs(total_removed[quality] or {}) do
+                            _total_removed[quality][item_name] = (_total_removed[quality][item_name] or 0) + amount
+                            all_items_quality[item_name] = math.max(0, (all_items_quality[item_name] or 0) - amount)
+                            trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "give", rounded_prod)
+                        end
 
-                    if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
-                    for item_name, amount in pairs(remaining_to_insert[quality] or {}) do
-                        _remaining_to_insert[quality][item_name] = (_remaining_to_insert[quality][item_name] or 0) + amount
-                        trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "receive", rounded_prod)
+                        if not _remaining_to_insert[quality] then _remaining_to_insert[quality] = {} end
+                        for item_name, amount in pairs(remaining_to_insert[quality] or {}) do
+                            _remaining_to_insert[quality][item_name] = (_remaining_to_insert[quality][item_name] or 0) + amount
+                            trades._handle_item_in_trade(surface_uniquely_traded_items, prod_reqs, item_name, "receive", rounded_prod)
+                        end
                     end
                 end
             end

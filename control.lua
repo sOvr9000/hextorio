@@ -272,13 +272,6 @@ script.on_nth_tick(20, function()
 end)
 
 script.on_event(defines.events.on_tick, function (event)
-    if reinit_guis then
-        -- There's likely a better way to handle this.
-        lib.log("Reinitializing GUIs for all players.")
-        gui.reinitialize_everything()
-        reinit_guis = false
-    end
-
     if storage.initialization.has_game_started and not storage.initialization.intro_finished then
         if event.tick == storage.initialization.game_start_tick + 60 then
             game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
@@ -459,26 +452,11 @@ script.on_event(defines.events.on_entity_died, function (event)
 end)
 
 script.on_event(defines.events.on_entity_damaged, function (event)
-    if not event.entity.valid then return end
-
-    if event.entity.type == "character" then
-        if event.source and event.source.valid then
-            if event.source.type == "lightning" then
-                event_system.trigger("lightning-struck-character", event.entity)
-            end
-        end
+    -- Event filter ensures entity is always a character, no need to check
+    if event.source and event.source.valid and event.source.type == "lightning" then
+        event_system.trigger("lightning-struck-character", event.entity)
     end
-end)
-
--- script.on_event(defines.events.on_pre_player_died, function (event)
---     local player = game.get_player(event.player_index)
---     if not player then return end
-
---     event_system.trigger("pre-player-died", player)
---     if event.cause and event.cause.valid then
---         event_system.trigger("pre-player-died-to-entity", player, event.cause)
---     end
--- end)
+end, {{filter = "type", type = "character"}})
 
 script.on_event(defines.events.on_resource_depleted, function (event)
     event_system.trigger("resource-depleted", event.entity)
