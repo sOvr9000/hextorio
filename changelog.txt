@@ -26,7 +26,7 @@ Date: 7/2/26
     - Greatly optimized all chunk generation (setting tile types more efficiently).
         There's now significantly less time wasted on GC (memory stuff).
     - Optimized dungeon hex generation.
-    - Massively optimized UPS (by orders of magnitude) when hundreds of turrets are shooting strongboxes.
+    - Massively improved UPS when hundreds of turrets are shooting strongboxes.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.7
 Date: 4/2/26
