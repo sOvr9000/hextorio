@@ -4,17 +4,23 @@
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 
-
+local function estimate_radius(total_hexes)
+    local radius = (-3 + math.sqrt(3 * (4 * total_hexes - 1))) / 6
+    return math.max(1, math.floor(radius + 0.5))
+end
 
 return function(params)
-    local radius = params.radius or 30
+    local total_hexes = params.total_hexes or 2800
     local fill_ratio = params.fill_ratio or 0.866
+
+    local target_size = math.ceil(total_hexes / fill_ratio)
+    local radius = estimate_radius(target_size)
 
     -- Initialize hex set.
     local set = hex_sets.new()
     local current_size = 0
     local max_size = 3 * radius * (radius + 1) + 1
-    local target_size = math.ceil(max_size * fill_ratio)
+    target_size = math.min(target_size, max_size)
 
     -- Initialize the open set.
     local open_list = {}

@@ -4,12 +4,18 @@
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 
-
+local function estimate_radius(total_hexes)
+    local radius = (-3 + math.sqrt(3 * (4 * total_hexes - 1))) / 6
+    return math.max(1, math.floor(radius + 0.5))
+end
 
 return function(params)
-    local radius = params.radius or 30
-    local spacing = params.spacing or 2
+    local total_hexes = params.total_hexes or 2800
+    local spacing = params.spacing or 3
     local s = spacing + 1
+
+    local target_total_hexes = total_hexes * s * s / (3 * spacing + 1)
+    local radius = estimate_radius(target_total_hexes)
 
     local island = hex_sets.new()
     for q = -radius, radius do

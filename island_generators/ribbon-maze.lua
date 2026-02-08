@@ -4,14 +4,18 @@
 local hex_sets = require "api.hex_sets"
 local hex_maze = require "api.hex_maze"
 
-
+local function estimate_radius(total_hexes, width)
+    return math.max(1, math.floor(total_hexes / width / 2))
+end
 
 return function(params)
-    local radius = params.radius or 30
+    local total_hexes = params.total_hexes or 2800
     local width = params.width or 7
     local algorithm = params.algorithm or "kruskal"
 
     local dilation_factor = 2
+    local target_total_hexes = total_hexes * dilation_factor
+    local radius = estimate_radius(target_total_hexes, width)
     local div_radius = math.ceil(radius / dilation_factor)
     local div_width = math.ceil(width / dilation_factor)
 

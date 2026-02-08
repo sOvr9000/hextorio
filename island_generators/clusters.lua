@@ -1,16 +1,29 @@
 
 -- Generates several large interconnected hexagons.
 
+local lib = require "api.lib"
 local axial = require "api.axial"
 local bezier = require "api.bezier"
 local hex_sets = require "api.hex_sets"
 
-
+local function estimate_cluster_count_and_spacing(total_hexes, min_cluster_size, max_cluster_size)
+    local avg_cluster_size = (min_cluster_size + max_cluster_size) / 2
+    local avg_cluster_hexes = 3 * avg_cluster_size * (avg_cluster_size + 1) + 1
+    local num_clusters = math.max(1, math.floor(total_hexes / avg_cluster_hexes + 0.5))
+    local spacing = math.max(15, math.floor(math.sqrt(total_hexes / num_clusters) * 2))
+    return num_clusters, spacing
+end
 
 return function(params)
-    local radius = params.radius or 30
-    local cluster_size = params.cluster_size or 5
-    local spacing = params.spacing or 15
+    local total_hexes = params.total_hexes or 2800
+    local min_cluster_size = params.min_cluster_size or 2
+    local max_cluster_size = params.max_cluster_size or 5
+
+    max_cluster_size = math.max(max_cluster_size, min_cluster_size)
+
+    local num_clusters, spacing = estimate_cluster_count_and_spacing(total_hexes, min_cluster_size, max_cluster_size)
+
+    local radius = math.ceil(math.sqrt(num_clusters) * spacing / 2)
 
     local lattice_points = {}
     for q = -radius, radius, spacing do
@@ -28,7 +41,7 @@ return function(params)
     for _, point in ipairs(lattice_points) do
         local offset_q = math.random(-max_displacement, max_displacement)
         local offset_r = math.random(-max_displacement, max_displacement)
-        local size = math.max(2, cluster_size + math.random(-2, 2))
+        local size = math.random(min_cluster_size, max_cluster_size)
 
         local center = {
             q = point.q + offset_q,
@@ -167,6 +180,8 @@ return function(params)
 
         if not found then break end
     end
+
+    lib.log("island_generators.clusters: Generated " .. #valid_centers .. " clusters")
 
     return island
 end

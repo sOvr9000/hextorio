@@ -23,6 +23,21 @@ local tile_names_for_hexes = {
     "acid-refined-concrete",
 }
 
+local world_gen_types = {
+    "standard",
+    "spiral",
+    "triangular",
+    "maze",
+    "ribbon",
+    "ribbon-maze",
+    "spider-web",
+    "lattice",
+    "clusters",
+    "donut",
+    "solid",
+}
+
+
 
 data:extend({
     -- HIGH GAMEPLAY IMPACT SETTINGS
@@ -42,15 +57,6 @@ data:extend({
     },
 
     -- STARTUP SETTINGS
-    {
-        type = "int-setting",
-        name = "hextorio-planet-size-nauvis",
-        setting_type = "startup",
-        default_value = 48,
-        minimum_value = 1,
-        maximum_value = 100,
-        order = "h[hex-grid]-d[terrain]-s[planet-size]-p[nauvis]",
-    },
     {
         type = "string-setting",
         name = "hextorio-grid-rotation-mode-nauvis",
@@ -76,15 +82,6 @@ data:extend({
         minimum_value = 2,
         maximum_value = 32,
         order="h[hex-grid]-d[terrain]-s[stroke-width]-p[nauvis]",
-    },
-    {
-        type = "int-setting",
-        name = "hextorio-planet-size-vulcanus",
-        setting_type = "startup",
-        default_value = 30,
-        minimum_value = 1,
-        maximum_value = 100,
-        order = "h[hex-grid]-d[terrain]-s[planet-size]-p[vulcanus]",
     },
     {
         type = "string-setting",
@@ -113,15 +110,6 @@ data:extend({
         order="h[hex-grid]-d[terrain]-s[stroke-width]-p[vulcanus]",
     },
     {
-        type = "int-setting",
-        name = "hextorio-planet-size-fulgora",
-        setting_type = "startup",
-        default_value = 30,
-        minimum_value = 1,
-        maximum_value = 100,
-        order = "h[hex-grid]-d[terrain]-s[planet-size]-q[fulgora]",
-    },
-    {
         type = "string-setting",
         name = "hextorio-grid-rotation-mode-fulgora",
         setting_type = "startup",
@@ -148,15 +136,6 @@ data:extend({
         order="h[hex-grid]-d[terrain]-s[stroke-width]-q[fulgora]",
     },
     {
-        type = "int-setting",
-        name = "hextorio-planet-size-gleba",
-        setting_type = "startup",
-        default_value = 36,
-        minimum_value = 1,
-        maximum_value = 100,
-        order = "h[hex-grid]-d[terrain]-s[planet-size]-q[gleba]",
-    },
-    {
         type = "string-setting",
         name = "hextorio-grid-rotation-mode-gleba",
         setting_type = "startup",
@@ -181,15 +160,6 @@ data:extend({
         minimum_value = 2,
         maximum_value = 32,
         order="h[hex-grid]-d[terrain]-s[stroke-width]-q[gleba]",
-    },
-    {
-        type = "int-setting",
-        name = "hextorio-planet-size-aquilo",
-        setting_type = "startup",
-        default_value = 24,
-        minimum_value = 1,
-        maximum_value = 100,
-        order = "h[hex-grid]-d[terrain]-s[planet-size]-r[aquilo]",
     },
     {
         type = "string-setting",
@@ -374,13 +344,91 @@ data:extend({
         minimum_value = 1.0,
         order="h[hex-grid]-k[quality]-s[tiles-per-quality]-r[aquilo]",
     },
+
     {
         type = "string-setting",
-        name = "hextorio-world-generation-mode",
+        name = "hextorio-world-generation-mode-nauvis",
         setting_type = "runtime-global",
-        allowed_values = {"standard", "spiral", "triangular", "maze", "ribbon", "ribbon-maze", "spider-web", "lattice", "clusters", "donut", "solid"},
+        allowed_values = world_gen_types,
         default_value = "standard",
-        order = "v[world-gen]-g[world-generation-mode]",
+        order = "v[world-gen]-p[nauvis]-g[world-generation-mode]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-total-hexes-nauvis",
+        setting_type = "runtime-global",
+        default_value = 7000,
+        minimum_value = 100,
+        maximum_value = 10000,
+        order = "v[world-gen]-p[nauvis]-h[total-hexes]",
+    },
+    {
+        type = "string-setting",
+        name = "hextorio-world-generation-mode-vulcanus",
+        setting_type = "runtime-global",
+        allowed_values = world_gen_types,
+        default_value = "lattice",
+        order = "v[world-gen]-p[vulcanus]-g[world-generation-mode]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-total-hexes-vulcanus",
+        setting_type = "runtime-global",
+        default_value = 2800,
+        minimum_value = 100,
+        maximum_value = 10000,
+        order = "v[world-gen]-p[vulcanus]-h[total-hexes]",
+    },
+    {
+        type = "string-setting",
+        name = "hextorio-world-generation-mode-fulgora",
+        setting_type = "runtime-global",
+        allowed_values = world_gen_types,
+        default_value = "maze",
+        order = "v[world-gen]-q[fulgora]-g[world-generation-mode]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-total-hexes-fulgora",
+        setting_type = "runtime-global",
+        default_value = 3200,
+        minimum_value = 100,
+        maximum_value = 10000,
+        order = "v[world-gen]-q[fulgora]-h[total-hexes]",
+    },
+    {
+        type = "string-setting",
+        name = "hextorio-world-generation-mode-gleba",
+        setting_type = "runtime-global",
+        allowed_values = world_gen_types,
+        default_value = "clusters",
+        order = "v[world-gen]-q[gleba]-g[world-generation-mode]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-total-hexes-gleba",
+        setting_type = "runtime-global",
+        default_value = 4000,
+        minimum_value = 100,
+        maximum_value = 10000,
+        order = "v[world-gen]-q[gleba]-h[total-hexes]",
+    },
+    {
+        type = "string-setting",
+        name = "hextorio-world-generation-mode-aquilo",
+        setting_type = "runtime-global",
+        allowed_values = world_gen_types,
+        default_value = "donut",
+        order = "v[world-gen]-r[aquilo]-g[world-generation-mode]",
+    },
+    {
+        type = "int-setting",
+        name = "hextorio-total-hexes-aquilo",
+        setting_type = "runtime-global",
+        default_value = 1800,
+        minimum_value = 100,
+        maximum_value = 10000,
+        order = "v[world-gen]-r[aquilo]-h[total-hexes]",
     },
     {
         type = "string-setting",

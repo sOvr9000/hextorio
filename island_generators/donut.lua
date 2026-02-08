@@ -1,14 +1,20 @@
 
--- Generates a large circle (not a hexagon).
+-- Generates a huge ring (circular, not hexagonal).
 
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 
-
+local function estimate_radius(total_hexes, width)
+    -- For a hexagonal ring: hexes = 3*width*(2*r - width + 1)
+    -- Solving for r: r = total_hexes/(6*width) + width/2 - 1/2
+    local radius = total_hexes / (6 * width) + width / 2 - 0.5
+    return math.max(width + 2, math.floor(radius + 0.5))
+end
 
 return function(params)
-    local radius = params.radius or 30
+    local total_hexes = params.total_hexes or 2800
     local width = params.width or 5
+    local radius = estimate_radius(total_hexes, width - 2)
 
     local function axial_to_cartesian(pos)
         local x = math.sqrt(3) * pos.q + math.sqrt(3) / 2 * pos.r

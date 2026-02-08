@@ -3,11 +3,14 @@
 
 local hex_sets = require "api.hex_sets"
 
-
+local function estimate_radius(total_hexes, width)
+    return math.max(1, math.floor(total_hexes / width / 2))
+end
 
 return function(params)
-    local radius = params.radius or 30
+    local total_hexes = params.total_hexes or 2800
     local width = params.width or 5
+    local radius = estimate_radius(total_hexes, width)
 
     local island = hex_sets.new()
     local direction = math.random(1, 3)

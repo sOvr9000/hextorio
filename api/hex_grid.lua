@@ -218,8 +218,8 @@ function hex_grid.register_events()
 
 
     event_system.register("command-tp-to-edge", function(player, params)
-        local planet_size = lib.startup_setting_value("planet-size-" .. player.surface.name)
-        local edge_pos = {q = planet_size, r = 0}
+        local island_extent = hex_island.get_island_extent(player.surface.name)
+        local edge_pos = {q = island_extent, r = 0}
         local transformation = terrain.get_surface_transformation(player.surface)
         local center = axial.get_hex_center(edge_pos, transformation.scale, transformation.rotation)
         player.teleport(center)
@@ -1020,7 +1020,6 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         return
     end
 
-    local planet_size = lib.startup_setting_value("planet-size-" .. surface.name)
     local dist = axial.distance(hex_pos, {q=0, r=0})
     local is_starting_hex = dist == 0
 
@@ -2404,7 +2403,7 @@ function hex_grid.add_initial_trades(state)
             end
         end
     else
-        local planet_size = lib.startup_setting_value("planet-size-" .. state.hex_core.surface.name)
+        local island_extent = hex_island.get_island_extent(state.hex_core.surface.name)
         local trades_per_hex = lib.runtime_setting_value("trades-per-hex-" .. state.hex_core.surface.name)
 
         local guaranteed_trades = lib.get_at_multi_index(storage.trades.guaranteed_trades, state.hex_core.surface.name, state.position.q, state.position.r)
@@ -2422,9 +2421,9 @@ function hex_grid.add_initial_trades(state)
 
             -- These two parameters are for scaling volume by distance
             local base = hex_grid.get_trade_volume_base(state.hex_core.surface.name)
-            local exponent = (max_item_value * 0.5 / base) ^ (1 / planet_size)
+            local exponent = (max_item_value * 0.5 / base) ^ (1 / island_extent)
 
-            local dist_factor = dist / planet_size
+            local dist_factor = dist / island_extent
 
             for _ = 1, trades_per_hex do
                 local r = math.random()

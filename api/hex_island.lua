@@ -10,7 +10,7 @@ local hex_island = {}
 
 
 ---@class IslandConfig
----@field radius int The radius of the hexagonal island in hex tiles
+---@field total_hexes int Target number of hexes in the island
 ---@field fill_ratio number The proportion of hexes within the radius that should be land (0.0 to 1.0)
 ---@field algorithm string The island generation algorithm to use
 ---@field seed int|nil Optional random seed for reproducible island generation
@@ -66,15 +66,8 @@ function hex_island.process_surface_creation(surface)
         storage.hex_island.islands = {}
     end
 
-    local planet_size = lib.startup_setting_value("planet-size-" .. surface.name)
-
-    if not planet_size then
-        lib.log_error("hex_island.init: Could not find planet size setting value for " .. surface.name)
-        return
-    end
-
-    ---@cast planet_size int
-    local generator_name = lib.runtime_setting_value_as_string "world-generation-mode"
+    local total_hexes = lib.runtime_setting_value_as_int("total-hexes-" .. surface.name)
+    local generator_name = lib.runtime_setting_value_as_string("world-generation-mode-" .. surface.name)
     local maze_algorithm = lib.runtime_setting_value_as_string "maze-generation-algorithm"
     local params
 
@@ -105,56 +98,56 @@ function hex_island.process_surface_creation(surface)
         end
 
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
             fill_ratio = land_chance,
         }
     elseif generator_name == "maze" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
             algorithm = maze_algorithm,
         }
     elseif generator_name == "spiral" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
         }
     elseif generator_name == "triangular" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
         }
     elseif generator_name == "ribbon" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
             width = 5,
         }
     elseif generator_name == "ribbon-maze" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
             width = 7,
             algorithm = maze_algorithm,
         }
     elseif generator_name == "spider-web" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
         }
     elseif generator_name == "lattice" then
         params = {
-            radius = planet_size,
-            spacing = 2,
+            total_hexes = total_hexes,
+            spacing = 3,
         }
     elseif generator_name == "solid" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
         }
     elseif generator_name == "donut" then
         params = {
-            radius = planet_size,
+            total_hexes = total_hexes,
             width = 5,
         }
     elseif generator_name == "clusters" then
         params = {
-            radius = planet_size,
-            cluster_size = 5,
-            spacing = 15,
+            total_hexes = total_hexes,
+            min_cluster_size = 2,
+            max_cluster_size = 5,
         }
     end
 
@@ -167,7 +160,11 @@ function hex_island.process_surface_creation(surface)
         storage.hex_island.max_distances = {}
     end
 
-    storage.hex_island.max_distances[surface.name] = calculate_max_distance(island)
+    local max_distance = calculate_max_distance(island)
+    storage.hex_island.max_distances[surface.name] = max_distance
+
+    local actual_hex_count = #hex_sets.to_array(island)
+    lib.log(string.format("hex_island.process_surface_creation: Generated %d hexes for %s (target: %d, extent: %d)", actual_hex_count, surface.name, total_hexes, max_distance))
 
     event_system.trigger("hex-island-generated", surface, island)
 end

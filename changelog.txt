@@ -5,12 +5,16 @@ Date: 8/2/26
     - Added world generation modes "Triangular", "Ribbon", "Ribbon Maze", "Spider Web", "Lattice", "Clusters", "Donut", and "Solid".
     - Added maze generation algorithm setting with the options "Kruskal", "Recursive Backtracker", "Wilson", and "Binary Tree".
         For use with world generation modes that generate mazes.
+    - Added "Total Hexes" settings for all planets, which control approximately how many hexes (and proprtionally trades) are generated for the respective planet.
   Changes:
     - Spiral world generation mode can now generate with either orientation of a spiral (clockwise or counterclockwise).
     - Properly adapted hexaprism spawning conditions to all world generation modes (even ones injected by other mods).
     - Revised the English description of the "Hex Span" quest condition type to more clearly describe that it measures "straight line" distance as opposed to "path through claims" distance.
+    - Removed "Planet Size" settings for all planets.
+    - Changed default island shapes on Vulcanus, Fulgora, Gleba, and Aquilo, each adjustable in mod settings.
   Balancing:
     - A hex containing sulfuric acid geysers (on Vulcanus) or crude oil wells (on Nauvis) is now guaranteed to exist near the spawn hex.
+    - All world generation modes now produce islands with a configurable number of total hexes (in settings) so that Maze mode doesn't have too few hexes/trades and Solid mode doesn't have too many (for example).
   Bugfixes:
     - Fixed that "Hex Span" types of conditions for quests were not being calculated correctly.
     - Fixed biter ramming crash.
@@ -18,7 +22,7 @@ Date: 8/2/26
     - Fixed that the guaranteed trades on Nauvis could be put in water hexes, where they would never be found.
     - Fixed that the piggy bank was deleting coins when your inventory is full.
     - Fixed that trade productivity would be displayed as being high enough for item rank-ups but they weren't when attempted.
-    - Fixed that hextreme quality not showing up in trade quality selection.
+    - Fixed that hextreme quality was not showing up in trade quality selection.
     - Fixed that the /summon command would only spawn units on Nauvis.
     - Fixed incompatibilities with some quality mods.
   Optimizations:
