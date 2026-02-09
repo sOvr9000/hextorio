@@ -6,6 +6,8 @@ Date: 9/2/26
     - Added maze generation algorithm setting with the options "Kruskal", "Recursive Backtracker", "Wilson", and "Binary Tree".
         For use with world generation modes that generate mazes.
     - Added "Total Hexes" settings for all planets, which control approximately how many hexes (and proprtionally trades) are generated for the respective planet.
+  Minor Features:
+    - Added hotkey for quickly picking up all dropped items on the ground.  Useful when coin spillage occurs by accident.
   Changes:
     - Spiral world generation mode can now generate with either orientation of a spiral (clockwise or counterclockwise).
     - Properly adapted hexaprism spawning conditions to all world generation modes (even ones injected by other mods).

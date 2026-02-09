@@ -171,4 +171,59 @@ end)
 --     event_system.trigger("favorite-trade-key-pressed", player)
 -- end)
 
+script.on_event("pickup-nearby-items", function(event)
+    ---@cast event {player_index: int}
+    local player = game.get_player(event.player_index)
+    if not player then return end
+    if not player.character then return end
+
+    local pickup_radius = 20
+    local player_position = player.character.position
+    local surface = player.character.surface
+
+    local search_area = {
+        {player_position.x - pickup_radius, player_position.y - pickup_radius},
+        {player_position.x + pickup_radius, player_position.y + pickup_radius}
+    }
+
+    local items_on_ground = surface.find_entities_filtered {
+        area = search_area,
+        type = "item-entity",
+    }
+
+    local total_picked_up = 0
+    local items_left_behind = 0
+
+    for _, item_entity in pairs(items_on_ground) do
+        if item_entity.valid then
+            local stack = item_entity.stack
+            local inserted = player.insert(stack)
+
+            if inserted > 0 then
+                total_picked_up = total_picked_up + inserted
+                if inserted == stack.count then
+                    item_entity.destroy()
+                else
+                    stack.count = stack.count - inserted
+                    item_entity.stack = stack
+                    items_left_behind = items_left_behind + stack.count
+                end
+            else
+                items_left_behind = items_left_behind + stack.count
+            end
+        end
+    end
+
+    if total_picked_up > 0 then
+        player.create_local_flying_text {
+            text = {"", "[img=entity.item-on-ground] +", total_picked_up},
+            create_at_cursor = false,
+            position = player_position,
+        }
+        if items_left_behind > 0 then
+            player.print({"", "[color=yellow]Picked up ", total_picked_up, " items. ", items_left_behind, " items left behind (inventory full).[/color]"})
+        end
+    end
+end)
+
 
