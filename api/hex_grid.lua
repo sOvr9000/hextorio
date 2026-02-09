@@ -3703,13 +3703,15 @@ function hex_grid.process_hexlight(state)
     if not state.hexlight or not hex_core then return end
 
     -- TODO: Check if this really saves UPS.  Idea is to not check for (and add) six signal values if no red or green signals exist at all.
-    if not hex_core.get_circuit_network(defines.wire_connector_id.circuit_red) and not hex_core.get_circuit_network(defines.wire_connector_id.circuit_green) then
+    if not state.claimed or not hex_core.get_circuit_network(defines.wire_connector_id.circuit_red) and not hex_core.get_circuit_network(defines.wire_connector_id.circuit_green) then
+        local col
         if state.is_dungeon then
-            state.hexlight.color = storage.hex_grid.dungeon_hexlight_color
+            col = storage.hex_grid.dungeon_hexlight_color
         else
-            state.hexlight.color = storage.hex_grid.default_hexlight_color[hex_core.surface.name]
+            col = storage.hex_grid.default_hexlight_color[hex_core.surface.name]
         end
-        state.hexlight2.color = state.hexlight.color
+        state.hexlight.color = col
+        state.hexlight2.color = col
         return
     end
 
@@ -3717,8 +3719,16 @@ function hex_grid.process_hexlight(state)
     local G = math.min(255, math.max(0, hex_core.get_signal({type = "virtual", name = "signal-green"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)))
     local B = math.min(255, math.max(0, hex_core.get_signal({type = "virtual", name = "signal-blue"}, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green)))
 
-    state.hexlight.color = {R, G, B}
-    state.hexlight2.color = {R, G, B}
+    if R == 0 and G == 0 and B == 0 then
+        local col = storage.hex_grid.default_hexlight_color[hex_core.surface.name]
+        state.hexlight.color = col
+        state.hexlight2.color = col
+        return
+    end
+
+    local col = {R / 255, G / 255, B / 255}
+    state.hexlight.color = col
+    state.hexlight2.color = col
 end
 
 function hex_grid.add_to_output_buffer(state, items)
