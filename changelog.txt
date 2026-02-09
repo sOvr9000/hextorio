@@ -18,6 +18,7 @@ Date: 9/2/26
     - A hex containing sulfuric acid geysers (on Vulcanus) or crude oil wells (on Nauvis) is now guaranteed to exist near the spawn hex.
     - All world generation modes now produce islands with a configurable number of total hexes (in settings) so that Maze mode doesn't have too few hexes/trades and Solid mode doesn't have too many (for example).
     - The highest valued items on each planet now show up at 30% of the distance from spawn to the edge of the island, based on "path through claims" distance.
+    - Increased the default "Vault Chance" setting value from 0.02 to 0.05 to compensate for the altered default island shape of Fulgora.
   Bugfixes:
     - Fixed that "Hex Span" types of conditions for quests were not being calculated correctly.
     - Fixed biter ramming crash.
