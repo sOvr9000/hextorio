@@ -13,6 +13,7 @@ Date: 8/2/26
     - Removed "Planet Size" settings for all planets.
     - Changed default island shapes on Vulcanus, Fulgora, Gleba, and Aquilo, each adjustable in mod settings.
     - Hex claim costs are now based on "path through claims" distance from spawn rather than "straight line" distance.
+    - Trade volumes (total item values in trades) are now based on "path through claims" distance instead of "straight line" distance.
   Balancing:
     - A hex containing sulfuric acid geysers (on Vulcanus) or crude oil wells (on Nauvis) is now guaranteed to exist near the spawn hex.
     - All world generation modes now produce islands with a configurable number of total hexes (in settings) so that Maze mode doesn't have too few hexes/trades and Solid mode doesn't have too many (for example).
