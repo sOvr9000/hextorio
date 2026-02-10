@@ -49,6 +49,7 @@ local gameplay_statistics = {}
 ---| "create-trade-map-tag"
 ---| "total-unique-items-traded"
 ---| "fastest-ship-speed"
+---| "give-hexlight-color"
 
 ---@alias GameplayStatisticValue string|number|(string|number)[]
 

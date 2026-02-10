@@ -338,6 +338,32 @@ return {
             prerequisites = {"exploration"},
         },
         {
+            name = "color-coding",
+            conditions = {
+                -- NOTE: FOR PERFORMANCE REASONS, THESE VALUES ARE HARDCODED IN THE CONDITIONALS THAT CHECK FOR QUEST COMPLETION
+                -- IF YOU CHANGE THESE VALUES OR ADD MORE CONDITIONS OF THIS TYPE FOR ANY QUEST, YOU MUST MAKE IDENTICAL CHANGES ACCORDINGLY (in hex_grid.process_hexlight() probably)
+                {type = "give-hexlight-color", value = {"red", 64}, progress_requirement = 1},
+
+                -- NOTE: FOR PERFORMANCE REASONS, THESE VALUES ARE HARDCODED IN THE CONDITIONALS THAT CHECK FOR QUEST COMPLETION
+                -- IF YOU CHANGE THESE VALUES OR ADD MORE CONDITIONS OF THIS TYPE FOR ANY QUEST, YOU MUST MAKE IDENTICAL CHANGES ACCORDINGLY (in hex_grid.process_hexlight() probably)
+                {type = "give-hexlight-color", value = {"green", 255}, progress_requirement = 1},
+
+                -- NOTE: FOR PERFORMANCE REASONS, THESE VALUES ARE HARDCODED IN THE CONDITIONALS THAT CHECK FOR QUEST COMPLETION
+                -- IF YOU CHANGE THESE VALUES OR ADD MORE CONDITIONS OF THIS TYPE FOR ANY QUEST, YOU MUST MAKE IDENTICAL CHANGES ACCORDINGLY (in hex_grid.process_hexlight() probably)
+                {type = "give-hexlight-color", value = {"blue", 128}, progress_requirement = 1},
+            },
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "cluster-grenade", count = 20, quality = "uncommon"},
+                        {name = "hex-coin", count = 50},
+                    },
+                },
+            },
+            prerequisites = {"trades-in-circuitry"},
+        },
+        {
             name = "look-at-my-score",
             conditions = {{type = "reach-hex-rank", progress_requirement = 300}},
             rewards = {{type = "unlock-feature", value = "hex-rank"}},

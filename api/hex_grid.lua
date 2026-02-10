@@ -3729,6 +3729,18 @@ function hex_grid.process_hexlight(state)
     local col = {R / 255, G / 255, B / 255}
     state.hexlight.color = col
     state.hexlight2.color = col
+
+    if not quests.is_complete "color-coding" then
+        if R == 64 then
+            gameplay_statistics.set("give-hexlight-color", 1, {"red", 64})
+        end
+        if G == 255 then
+            gameplay_statistics.set("give-hexlight-color", 1, {"green", 255})
+        end
+        if B == 128 then
+            gameplay_statistics.set("give-hexlight-color", 1, {"blue", 128})
+        end
+    end
 end
 
 function hex_grid.add_to_output_buffer(state, items)

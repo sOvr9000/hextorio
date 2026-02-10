@@ -3,6 +3,7 @@ Version: 1.6.9
 Date: 10/2/26
   Features:
     - On game start or first time joining a server, you are now shown a GUI explaining the very basics of the mod.
+    - Added quest "Color Coding"
   Changes:
     - Moved the "Too Many Belts" quest behind the "Trades Galore" quest.
   Gui:
