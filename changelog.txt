@@ -9,6 +9,9 @@ Date: 10/2/26
     - Moved the "Too Many Belts" quest behind the "Trades Galore" quest.
   Gui:
     - Potentially fixed the big vertical scroll bar issue for displays with dense DPIs.
+  Bugfixes:
+    - Fixed hex core iteration (some hex cores got ignored randomly, causing some trades to stop working in seemingly random order).
+    - Fixed rare issue where some states could randomly disappear from the hex core processing pools (unprecendented as of yet).
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.8
 Date: 9/2/26

@@ -3117,12 +3117,29 @@ function hex_grid.process_hex_core_pool()
         return
     end
 
+    -- (DEBUGGING) Pool size versus total claimed hex cores validation
+    -- local total_states = 0
+    -- for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+    --     for _, s in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
+    --         if s.claimed and s.hex_core and s.hex_core.valid then
+    --             total_states = total_states + 1
+    --         end
+    --     end
+    -- end
+    -- local total_pool = 0
+    -- for _, pool in pairs(storage.hex_grid.pool) do
+    --     total_pool = total_pool + lib.table_length(pool)
+    -- end
+    -- if total_pool ~= total_states then
+    --     log("ERROR: TOTAL CLAIMED HEX CORES: " .. total_states .. " | TOTAL STATES IN POOL: " .. total_pool)
+    -- end
+
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
 
     storage.hex_grid.cur_pool_idx = (storage.hex_grid.cur_pool_idx or 0) % #storage.hex_grid.pool + 1
     local pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
 
-    for _, pool_params in ipairs(pool) do
+    for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
         if state then
             hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
@@ -3256,7 +3273,7 @@ function hex_grid.remove_from_pool(state, pool_idx, idx_in_pool)
 
     if not idx_in_pool then
         for idx2, pool_params in pairs(pool) do
-            if pool_params.surface_id == surface_id then
+            if pool_params.surface_id == surface_id and axial.equals(pool_params.hex_pos, state.position) then
                 idx_in_pool = idx2
                 break
             end
