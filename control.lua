@@ -58,6 +58,7 @@ require "handle_keybinds"
 require "handle_selections"
 require "handle_coin_splitting"
 
+local data_intro_gui = require "data.intro_gui"
 local data_constants = require "data.constants"
 local data_initialization = require "data.initialization"
 local data_item_values = require "data.item_values"
@@ -89,6 +90,7 @@ script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
     storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
 
+    storage.intro_gui = data_intro_gui
     storage.constants = data_constants
     storage.initialization = data_initialization
     storage.item_values = data_item_values
@@ -361,6 +363,7 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     lib.unstuck_player(player)
     gui.reinitialize_everything(player)
     quests.check_player_receive_items(player)
+    event_system.trigger("player-joined", player)
 end)
 
 script.on_event(defines.events.on_built_entity, function(event)
@@ -591,7 +594,21 @@ script.on_event(defines.events.on_player_display_scale_changed, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    event_system.trigger("player-display-scaled-changed", player)
+    event_system.trigger("player-display-scale-changed", player)
+end)
+
+script.on_event(defines.events.on_player_display_resolution_changed, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("player-display-resolution-changed", player)
+end)
+
+script.on_event(defines.events.on_player_display_density_scale_changed, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("player-display-density-scale-changed", player)
 end)
 
 script.on_configuration_changed(function(handler)

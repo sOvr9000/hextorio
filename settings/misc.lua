@@ -60,4 +60,11 @@ data:extend({
         default_value = "research-completed",
         order = "x[misc]-u[quest-completion-sound]",
     },
+    {
+        type = "bool-setting",
+        setting_type = "runtime-per-user",
+        name = "hextorio-show-intro",
+        default_value = false,
+        order = "x[misc]-u[show-intro]",
+    },
 })

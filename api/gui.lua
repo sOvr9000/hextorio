@@ -1,6 +1,7 @@
 
 local gui = {
     core_gui = require "api.gui.core_gui",
+    intro_gui = require "api.gui.intro_gui",
     questbook = require "api.gui.questbook_gui",
     trade_overview = require "api.gui.trade_overview_gui",
     hex_rank = require "api.gui.hex_rank_gui",

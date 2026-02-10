@@ -5,6 +5,7 @@ local coin_tiers        = require "api.coin_tiers"
 local hex_util          = require "api.hex_util"
 local hex_island        = require "api.hex_island"
 local hex_sets          = require "api.hex_sets"
+local event_system      = require "api.event_system"
 
 local initialization = {}
 
@@ -61,6 +62,8 @@ function initialization.on_game_started()
         game.forces.player.add_chart_tag("nauvis", {position = {0, 0}, text = "Join the Discord to ask questions, report bugs, share your ideas, or just hang out!"})
         game.forces.player.add_chart_tag("nauvis", {position = {0, 4}, text = "https://discord.gg/huJY7QK6UG"})
     end
+
+    event_system.trigger "game-started"
 end
 
 -- Called when the player is on Nauvis and the origin chunk on the temporary surface is generated
