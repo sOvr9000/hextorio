@@ -50,6 +50,7 @@ local gameplay_statistics = {}
 ---| "total-unique-items-traded"
 ---| "fastest-ship-speed"
 ---| "give-hexlight-color"
+---| "claim-farthest-hex-on"
 
 ---@alias GameplayStatisticValue string|number|(string|number)[]
 

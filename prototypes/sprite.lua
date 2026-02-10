@@ -403,10 +403,11 @@ local data_quests = require "data.quests"
 local quest_sprites = {}
 for _, quest_def in pairs(data_quests.quest_defs) do
     if quest_def.has_img == nil or quest_def.has_img then
+        local img_name = quest_def.img_name or quest_def.name
         table.insert(quest_sprites, {
             type = "sprite",
             name = "quest-" .. quest_def.name,
-            filename = "__hextorio__/graphics/quest/" .. quest_def.name .. ".png",
+            filename = "__hextorio__/graphics/quest/" .. img_name .. ".png",
             width = 256,
             height = 256,
             flags = {"no-crop"},

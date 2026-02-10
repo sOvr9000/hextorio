@@ -1851,6 +1851,8 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         end
     end
 
+    local dist = hex_island.get_distance_from_spawn(surface_name, hex_pos)
+
     local spent_last_free_claim = false
     if spend_free_claims then
         if hex_grid.get_free_hex_claims(surface_name) == 1 then
@@ -1941,6 +1943,12 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
 
     hex_grid.check_hex_span(surface, hex_pos)
     hex_grid.spawn_adjacent_hex_cores(surface, hex_pos)
+
+    -- Check for distance stuff
+    local extent = hex_island.get_island_extent(surface_name)
+    if dist == extent then
+        gameplay_statistics.set("claim-farthest-hex-on", 1, surface_name)
+    end
 
     gameplay_statistics.increment "total-hexes-claimed"
     gameplay_statistics.increment("claimed-hexes-on", 1, surface_name)

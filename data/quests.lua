@@ -215,6 +215,20 @@ return {
             prerequisites = {"exploration"},
         },
         {
+            name = "grabbing-the-milk-nauvis",
+            conditions = {{type = "claim-farthest-hex-on", value = "nauvis", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "express-loader", count = 1},
+                    },
+                },
+            },
+            prerequisites = {"sprawling-base"},
+            img_name = "grabbing-the-milk",
+        },
+        {
             name = "too-many-hex-cores",
             conditions = {{type = "total-hexes-claimed", progress_requirement = 50}},
             rewards = {{type = "unlock-feature", value = "hex-core-deletion"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
@@ -479,6 +493,20 @@ return {
             prerequisites = {"copper-flavored-lava"},
         },
         {
+            name = "grabbing-the-milk-vulcanus",
+            conditions = {{type = "claim-farthest-hex-on", value = "vulcanus", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "foundry", count = 5, quality = "legendary"},
+                    },
+                },
+            },
+            prerequisites = {"this-is-fine"},
+            img_name = "grabbing-the-milk",
+        },
+        {
             name = "stepping-on-ants",
             conditions = {{type = "kill-entity", value = "small-demolisher", progress_requirement = 3}},
             rewards = {
@@ -523,6 +551,20 @@ return {
             conditions = {{type = "claimed-hexes-on", value = "fulgora", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"fulgora", 10}}},
             prerequisites = {"visit-fulgora"},
+        },
+        {
+            name = "grabbing-the-milk-fulgora",
+            conditions = {{type = "claim-farthest-hex-on", value = "fulgora", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "electromagnetic-plant", count = 5, quality = "legendary"},
+                    },
+                },
+            },
+            prerequisites = {"my-hair-feels-funny"},
+            img_name = "grabbing-the-milk",
         },
         {
             name = "electrocution",
@@ -578,6 +620,20 @@ return {
             conditions = {{type = "claimed-hexes-on", value = "gleba", progress_requirement = 40}},
             rewards = {{type = "claim-free-hexes", value = {"gleba", 10}}},
             prerequisites = {"visit-gleba"},
+        },
+        {
+            name = "grabbing-the-milk-gleba",
+            conditions = {{type = "claim-farthest-hex-on", value = "gleba", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "biochamber", count = 5, quality = "legendary"},
+                    },
+                },
+            },
+            prerequisites = {"yummy-co"},
+            img_name = "grabbing-the-milk",
         },
         {
             name = "five-legs-werent-enough",
@@ -648,6 +704,20 @@ return {
             conditions = {{type = "visit-planet", value = "aquilo", show_progress_bar = false}},
             rewards = {},
             prerequisites = {"visit-vulcanus", "visit-fulgora", "visit-gleba"},
+        },
+        {
+            name = "grabbing-the-milk-aquilo",
+            conditions = {{type = "claim-farthest-hex-on", value = "aquilo", progress_requirement = 1}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "cryogenic-plant", count = 5, quality = "hextreme"},
+                    },
+                },
+            },
+            prerequisites = {"visit-aquilo"},
+            img_name = "grabbing-the-milk",
         },
         {
             name = "i-am-the-demolisher",
