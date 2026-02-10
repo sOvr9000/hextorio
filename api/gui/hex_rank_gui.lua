@@ -87,9 +87,9 @@ function hex_rank_gui.register_events()
         end
     end)
 
-    event_system.register("player-display-scaled-changed", function(player)
-        hex_rank_gui.reinitialize(player)
-    end)
+    event_system.register("player-display-scale-changed", hex_rank_gui.reinitialize_hud)
+    event_system.register("player-display-density-scale-changed", hex_rank_gui.reinitialize_hud)
+    event_system.register("player-display-resolution-changed", hex_rank_gui.reinitialize_hud)
 end
 
 ---Reinitialize the hex rank GUI for the given player, or all players if no player is provided.
@@ -108,11 +108,17 @@ function hex_rank_gui.reinitialize(player)
     local button = player.gui.top["hex-rank-button"]
     if button then button.destroy() end
 
-    local hud = player.gui.center["hex-rank-hud"]
-    if hud then hud.destroy() end
-
     hex_rank_gui.init_hex_rank_button(player)
     hex_rank_gui.init_hex_rank(player)
+
+    hex_rank_gui.reinitialize_hud(player)
+end
+
+---Reinitialize the hex rank HUD for the given player, particularly important when display changes.
+---@param player LuaPlayer
+function hex_rank_gui.reinitialize_hud(player)
+    local hud = player.gui.center["hex-rank-hud"]
+    if hud then hud.destroy() end
     hex_rank_gui.init_hex_rank_hud(player)
 end
 
@@ -244,7 +250,7 @@ function hex_rank_gui.init_hex_rank_hud(player)
 
     local resolution = player.display_resolution
     hud.style.vertically_stretchable = true
-    hud.style.height = resolution.height * 0.98 / player.display_scale
+    hud.style.height = resolution.height * 0.98 / (player.display_scale * player.display_density_scale)
     hud.style.vertically_squashable = true
 
     local hex_rank_label = hud.add {
