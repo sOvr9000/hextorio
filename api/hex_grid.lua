@@ -3134,6 +3134,21 @@ function hex_grid.process_hex_core_pool()
     --     log("ERROR: TOTAL CLAIMED HEX CORES: " .. total_states .. " | TOTAL STATES IN POOL: " .. total_pool)
     -- end
 
+    -- (DEBUGGING) Validate actual total active state count versus tracked total active state count
+    -- for idx, pool in pairs(storage.hex_grid.pool) do
+    --     total_states = 0
+    --     for _, params in pairs(pool) do
+    --         local state = hex_grid.get_hex_state_from_pool_params(params)
+    --         if state and state.is_active then
+    --             total_states = total_states + 1
+    --         end
+    --     end
+    --     local tracked = hex_grid.get_pool_active_count(idx)
+    --     if tracked ~= total_states then
+    --         log("ERROR: pool_idx = " .. idx .. ": ACTUAL ACTIVE HEX STATES = " .. total_states .. ", TRACKED = " .. tracked)
+    --     end
+    -- end
+
     local quality_cost_multipliers = lib.get_quality_cost_multipliers()
 
     storage.hex_grid.cur_pool_idx = (storage.hex_grid.cur_pool_idx or 0) % #storage.hex_grid.pool + 1
@@ -3412,28 +3427,13 @@ function hex_grid.increment_pool_active_count(pool_idx, delta)
     storage.hex_grid.pool_active_counts[pool_idx] = (storage.hex_grid.pool_active_counts[pool_idx] or 0) + delta
 end
 
-function hex_grid.has_active_hexes_fewer_than(pool, limit)
-    local total = 0
-
-    for _, params in pairs(pool) do
-        local state = hex_grid.get_hex_state_from_pool_params(params)
-        if state and state.is_active then
-            total = total + 1
-            if total >= limit then
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
 ---Set whether a hex core state is active in the pool processing.  Return whether the change in activity caused a swapping in pool indices.
 ---@param state HexState
 ---@param flag boolean
 ---@return boolean
 function hex_grid._set_state_active(state, flag)
-    if not state.hex_core then return false end
+    local hex_core = state.hex_core
+    if not hex_core then return false end
 
     local prev = state.is_active
     if flag ~= prev then
@@ -3441,7 +3441,7 @@ function hex_grid._set_state_active(state, flag)
     end
 
     if flag == prev then return false end
-    if not state.hex_core.valid then return false end
+    if not hex_core.valid then return false end
 
     local this_pool_idx = storage.hex_grid.cur_pool_idx
     if flag then
@@ -3459,13 +3459,13 @@ function hex_grid._set_state_active(state, flag)
     -- swap places with an inactive hex.
 
     local this_pool = storage.hex_grid.pool[this_pool_idx]
-    local this_index_in_pool = hex_grid.get_index_in_pool(this_pool, state.hex_core.surface.index, state.position)
+    local this_index_in_pool = hex_grid.get_index_in_pool(this_pool, hex_core.surface.index, state.position)
     if this_index_in_pool == -1 then
         lib.log_error("hex_grid._set_state_active: parameters not found in pool for load balancing")
         return false
     end
 
-    for i, params in ipairs(this_pool) do
+    for i, params in pairs(this_pool) do
         local other = hex_grid.get_hex_state_from_pool_params(params)
         if other and not other.is_active then
             -- Bubble down all active hex cores over time, towards the front of the pool for fastest processing in the loop below.
@@ -3478,18 +3478,19 @@ function hex_grid._set_state_active(state, flag)
     local num_active_here = hex_grid.get_pool_active_count(this_pool_idx)
     local active_threshold = num_active_here - 2
 
-    local min_pool_idx, min_active, target_index_in_pool
+    local min_pool_idx, target_index_in_pool
+    local min_active = num_active_here
     for pool_idx, pool in pairs(storage.hex_grid.pool) do
         if pool_idx ~= this_pool_idx then
             local num_active_there = hex_grid.get_pool_active_count(pool_idx)
 
             if num_active_there <= active_threshold then
-                if not min_pool_idx or num_active_there < min_active then
+                if num_active_there < min_active then
                     min_pool_idx = pool_idx
                     min_active = num_active_there
                     target_index_in_pool = nil
 
-                    for i, params in ipairs(pool) do
+                    for i, params in pairs(pool) do
                         local other = hex_grid.get_hex_state_from_pool_params(params)
                         if other and not other.is_active then
                             target_index_in_pool = i
@@ -3525,9 +3526,37 @@ end
 ---@param pool_idx2 int
 ---@param index_in_pool2 int
 function hex_grid.swap_params_in_pool(pool_idx1, index_in_pool1, pool_idx2, index_in_pool2)
-    -- log("Swapping: " .. serpent.line({pool_idx1 = pool_idx1, index_in_pool1 = index_in_pool1, pool_idx2 = pool_idx2, index_in_pool2 = index_in_pool2}))
-    storage.hex_grid.pool[pool_idx1][index_in_pool1], storage.hex_grid.pool[pool_idx2][index_in_pool2] = storage.hex_grid.pool[pool_idx2][index_in_pool2], storage.hex_grid.pool[pool_idx1][index_in_pool1]
-    -- log("New pool active hexes: " .. hex_grid.count_active_hexes(storage.hex_grid.pool[pool_idx1]) .. ", " .. hex_grid.count_active_hexes(storage.hex_grid.pool[pool_idx2]))
+    local pool1 = storage.hex_grid.pool[pool_idx1]
+    local pool2 = storage.hex_grid.pool[pool_idx2]
+
+    local params1 = pool1[index_in_pool1]
+    local params2 = pool2[index_in_pool2]
+
+    local state1 = hex_grid.get_hex_state_from_pool_params(params1)
+    local state2 = hex_grid.get_hex_state_from_pool_params(params2)
+
+    local active1 = false
+    if state1 then
+        active1 = state1.is_active
+    end
+
+    local active2 = false
+    if state2 then
+        active2 = state2.is_active
+    end
+
+    if active1 ~= active2 then
+        -- Tracked active counts must account for this swap
+        if active1 then
+            hex_grid.increment_pool_active_count(pool_idx1, -1)
+            hex_grid.increment_pool_active_count(pool_idx2, 1)
+        else
+            hex_grid.increment_pool_active_count(pool_idx1, 1)
+            hex_grid.increment_pool_active_count(pool_idx2, -1)
+        end
+    end
+
+    pool1[index_in_pool1], pool2[index_in_pool2] = params2, params1
 end
 
 ---@param pool HexPoolParameters[]
@@ -3535,7 +3564,7 @@ end
 ---@param hex_pos HexPos
 ---@return integer
 function hex_grid.get_index_in_pool(pool, surface_id, hex_pos)
-    for i, params in ipairs(pool) do
+    for i, params in pairs(pool) do
         if params.surface_id == surface_id and params.hex_pos.q == hex_pos.q and params.hex_pos.r == hex_pos.r then
             return i
         end
