@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.10
-Date: 10/2/26
+Date: 11/2/26
+  Bugfixes:
+    - Fixed that trades wouldn't work in hex cores that didn't contain a non-coin item of the same quality as the trade's current quality setting.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.9
 Date: 10/2/26
