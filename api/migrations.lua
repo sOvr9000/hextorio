@@ -97,6 +97,7 @@ local versions = {
     "1.6.8",
     "1.6.9",
     "1.6.10",
+    "1.6.11",
 }
 
 local version_stepping = {}
