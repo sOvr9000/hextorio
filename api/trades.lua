@@ -971,18 +971,28 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     if max_items_per_output < 1 then return 0 end -- Probably won't ever happen, but if it ever does, it's an optimization.
 
     local input_items_quality = input_items[quality]
-    if not input_items_quality then return 0 end
+    if not input_items_quality and coin_tiers.is_zero(input_coin) then return 0 end
+
+    local num_batches = math.huge
 
     -- Initial calculation by comparing item counts in input inventory and trade inputs.
-    local num_batches = math.huge
-    for _, input_item in pairs(trade.input_items) do
-        if not lib.is_coin(input_item.name) then
-            local available = input_items_quality[input_item.name] or 0
-            if available == 0 then return 0 end
-            num_batches = math.min(math.floor(available / input_item.count), num_batches)
-            if num_batches == 0 then return 0 end
+    if input_items_quality then
+        for _, input_item in pairs(trade.input_items) do
+            if not lib.is_coin(input_item.name) then
+                local available = input_items_quality[input_item.name] or 0
+                if available == 0 then return 0 end
+                num_batches = math.min(math.floor(available / input_item.count), num_batches)
+                if num_batches == 0 then return 0 end
+            end
         end
     end
+
+    -- Limit by number of coins in inventory and what the trade requires
+    if trade.has_coins_in_input then
+        local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
+        num_batches = math.min(math.floor(coin_tiers.divide_coins(input_coin, trade_coin)), num_batches)
+    end
+    if num_batches == 0 then return 0 end
 
     -- Limit by max output batches
     local total_prod
@@ -1029,12 +1039,6 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
         end
         approximate_stacks_output = trades.scale_value_with_productivity(approximate_stacks_output, total_prod)
         num_batches = math.min(math.floor(inventory_output_size / approximate_stacks_output), num_batches)
-        if num_batches == 0 then return 0 end
-    end
-
-    if trade.has_coins_in_input then
-        local trade_coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
-        num_batches = math.min(math.floor(coin_tiers.divide_coins(input_coin, trade_coin)), num_batches)
     end
 
     return num_batches
@@ -1073,23 +1077,27 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
 
+    local quality_items = input_items[quality]
+
     local total_removed = {} ---@type QualityItemCounts
-    for _, input_item in pairs(trade.input_items) do
-        if not lib.is_coin(input_item.name) then
-            local to_remove = math.min(input_item.count * num_batches, input_items[quality][input_item.name] or 0)
-            if to_remove >= 1 then
-                local actually_removed
-                if is_train_input then
-                    actually_removed = lib.remove_from_train(cargo_wagons or {}, {name = input_item.name, count = to_remove, quality = quality}, storage.item_buffs.train_trading_capacity)
-                else
-                    actually_removed = inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
+    if quality_items then
+        local quality_items_removed = {}
+        total_removed[quality] = quality_items_removed
+        for _, input_item in pairs(trade.input_items) do
+            if not lib.is_coin(input_item.name) then
+                local to_remove = math.min(input_item.count * num_batches, quality_items[input_item.name] or 0)
+                if to_remove >= 1 then
+                    local actually_removed
+                    if is_train_input then
+                        actually_removed = lib.remove_from_train(cargo_wagons or {}, {name = input_item.name, count = to_remove, quality = quality}, storage.item_buffs.train_trading_capacity)
+                    else
+                        actually_removed = inventory_input.remove {name = input_item.name, count = to_remove, quality = quality}
+                    end
+
+                    quality_items_removed[input_item.name] = (quality_items_removed[input_item.name] or 0) + actually_removed
+                    trades.increment_total_sold(input_item.name, actually_removed)
+                    flow_statistics.on_flow({name = input_item.name, quality = quality}, -actually_removed)
                 end
-
-                if not total_removed[quality] then total_removed[quality] = {} end
-
-                total_removed[quality][input_item.name] = (total_removed[quality][input_item.name] or 0) + actually_removed
-                trades.increment_total_sold(input_item.name, actually_removed)
-                flow_statistics.on_flow({name = input_item.name, quality = quality}, -actually_removed)
             end
         end
     end
@@ -1121,6 +1129,8 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
     local remaining_to_insert = {}
 
     if total_output_batches >= 1 then
+        local quality_items_inserted = {}
+        total_inserted[quality] = quality_items_inserted
         for _, output_item in pairs(trade.output_items) do
             if not lib.is_coin(output_item.name) then
                 local to_insert = output_item.count * total_output_batches
@@ -1132,11 +1142,7 @@ function trades.trade_items(inventory_input, inventory_output, trade, num_batche
                     actually_inserted = inventory_output.insert {name = output_item.name, count = math.min(1000000000, to_insert), quality = quality}
                 end
 
-                if not total_inserted[quality] then
-                    total_inserted[quality] = {}
-                end
-
-                total_inserted[quality][output_item.name] = (total_inserted[quality][output_item.name] or 0) + actually_inserted
+                quality_items_inserted[output_item.name] = (quality_items_inserted[output_item.name] or 0) + actually_inserted
 
                 if actually_inserted < to_insert then
                     if not remaining_to_insert[quality] then remaining_to_insert[quality] = {} end
