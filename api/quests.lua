@@ -98,6 +98,7 @@ function quests.register_events()
     end)
 
     event_system.register("entity-killed-entity", quests.on_entity_killed_entity)
+    event_system.register("post-entity-killed-entity", quests.on_post_entity_killed_entity)
     -- event_system.register("pre-player-died-to-entity", quests.on_pre_player_died_to_entity)
     event_system.register("player-respawned", quests.on_player_respawned)
     event_system.register("lightning-struck-character", quests.on_lightning_struck_character)
@@ -1319,14 +1320,21 @@ function quests.on_entity_killed_entity(entity_that_died, entity_that_caused, da
             end
         end
     end
+end
+
+---@param event EventData.on_entity_died
+function quests.on_post_entity_killed_entity(event)
+    local entity_that_died = event.entity
+    if not entity_that_died or not entity_that_died.valid then return end
+
+    local entity_that_caused = event.cause
+    if not entity_that_caused or not entity_that_caused.valid then return end
 
     if entity_that_died.name == "biter-spawner" or entity_that_died.name == "spitter-spawner" then
         if entity_that_caused.name == "car" or entity_that_caused.name == "tank" then
             gameplay_statistics.increment "biter-ramming"
         end
     end
-    -- NOTE: Completing the "biter-ramming" quest (above) can cause entity_that_died to become invalid, starting
-    -- \/\/ FROM HERE AND BELOW. \/\/
 end
 
 ---@param player LuaPlayer

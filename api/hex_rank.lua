@@ -125,8 +125,6 @@ end
 function hex_rank.register_events()
     event_system.register("hex-rank-factor-changed", hex_rank.recalculate_hex_rank)
     event_system.register("gameplay-statistic-changed", hex_rank.on_gameplay_statistic_changed)
-
-    event_system.register("entity-killed-entity", hex_rank.on_entity_killed_entity)
 end
 
 ---Set up the factor metadata for runtime. Modifies the table in place.

@@ -451,6 +451,9 @@ script.on_event(defines.events.on_entity_died, function (event)
 
     if event.cause and event.cause.valid and event.entity.valid then
         event_system.trigger("entity-killed-entity", event.entity, event.cause, event.damage_type)
+
+        -- Separate event for callbacks which critically alter data such as LuaEntity.valid (reducing risk of invalid API call crashes)
+        event_system.trigger("post-entity-killed-entity", event)
     end
 end)
 
