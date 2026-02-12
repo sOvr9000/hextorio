@@ -985,6 +985,12 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
                 if num_batches == 0 then return 0 end
             end
         end
+    else
+        if not trade.has_coins_in_input then
+            -- No quality-matching items in inventory, no coins in trade, nothing can be exchanged.
+            -- (without this conditional return, num batches remains unlimited until the inventory capacity check; leads to free trade procs)
+            return 0
+        end
     end
 
     -- Limit by number of coins in inventory and what the trade requires
