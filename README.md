@@ -366,7 +366,7 @@ These are tentative ideas, which may or may not be added at some point. They are
 - Refactoring:
   - Some files consist of thousands of lines of code, which is unnecessary.
   - Some modules can make better use of the event system to split up logic into multiple files or reduce `require` frequency.
-  - Some modules contain some (but a lot of) logic that should more appropriately exist in another module.
+  - Some modules contain some (but not a lot of) logic that should more appropriately exist in another module.
   - The event system would be better implemented as executing callbacks on the raw EventData that Factorio provides instead of pre-parsing and passing multiple arguments. Doing this also comes with a small optimization for rapidly triggered events such as `on_entity_damaged` because it will avoid argument unpacking (a slow operation and harsh on Lua's GC).
 - Finish adding LuaLS typing
   - to the early functions that were written without it
