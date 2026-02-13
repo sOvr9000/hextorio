@@ -8,9 +8,37 @@ local quests = {}
 
 
 
+-- TODO: QuestConditionType is obsolete; switch to GameplayStatisticType
 ---@alias QuestConditionType "total-hexes-claimed"|"make-trades"|"ping-trade"|"create-trade-map-tag"|"reach-hex-rank"|"trades-found"|"biter-ramming"|"items-at-rank"|"total-item-rank"|"hex-span"|"coins-in-inventory"|"hex-cores-in-mode"|"loot-dungeons-on"|"loot-dungeons-off-planet"|"visit-planet"|"place-entity-on-planet"|"kill-entity"|"claimed-hexes-on"|"die-to-damage-type"|"use-capsule"|"kill-with-damage-type"|"mine-entity"|"die-to-railgun"|"place-tile"|"sell-item-of-quality"|"place-entity"|"favorite-trade"|"total-strongbox-level"|"hex-core-trades-read"|"cover-ores-on"
----@alias QuestRewardType "unlock-feature"|"receive-items"|"claim-free-hexes"|"reduce-biters"|"all-trades-productivity"|"receive-spaceship"
----@alias FeatureName "trade-overview"|"catalog"|"hex-rank"|"hexports"|"supercharging"|"resource-conversion"|"quantum-bazaar"|"trade-configuration"|"item-buffs"|"teleportation"|"teleportation-cross-planet"|"hex-core-deletion"|"generator-mode"|"sink-mode"|"locomotive-trading"|"quick-trading"|"item-buff-enhancement"|"enhance-all"|"piggy-bank"
+
+---@alias QuestRewardType
+---| "unlock-feature"
+---| "receive-items"
+---| "claim-free-hexes"
+---| "reduce-biters"
+---| "all-trades-productivity"
+---| "receive-spaceship"
+
+---@alias FeatureName
+---| "trade-overview"
+---| "catalog"
+---| "hex-rank"
+---| "hexports"
+---| "supercharging"
+---| "resource-conversion"
+---| "quantum-bazaar"
+---| "trade-configuration"
+---| "item-buffs"
+---| "teleportation"
+---| "teleportation-cross-planet"
+---| "hex-core-deletion"
+---| "generator-mode"
+---| "sink-mode"
+---| "locomotive-trading"
+---| "quick-trading"
+---| "item-buff-enhancement"
+---| "enhance-all"
+---| "piggy-bank"
 
 ---@alias SingleQuestConditionValue string|number
 ---@alias SingleQuestRewardValue string|number|ItemStackIdentification
