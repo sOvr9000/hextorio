@@ -114,6 +114,10 @@ local all_commands = {
         usage = "/reload-item-buff-effects",
     },
     {
+        name = "solve-item-values",
+        usage = "/solve-item-values",
+    },
+    {
         name = "export-item-values",
         usage = "/export-item-values",
     },

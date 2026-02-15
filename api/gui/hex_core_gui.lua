@@ -13,6 +13,7 @@ local quests = require "api.quests"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
 local trades_gui = require "api.gui.trades_gui"
 local inventories = require "api.inventories"
+local item_values = require "api.item_values"
 
 local hex_core_gui = {}
 
@@ -444,6 +445,21 @@ function hex_core_gui.update_hex_core(player)
 
     -- local quality_dropdown = frame["trades-header"]["quality-dropdown"]
     -- local quality_name = core_gui.get_quality_name_from_dropdown(quality_dropdown)
+
+    local label = frame["awaiting-solver"]
+    if label then
+        label.destroy()
+    end
+    if not item_values.is_ready() then
+        -- Solver is still running
+        label = frame.add {
+            type = "label",
+            name = "awaiting-solver",
+            caption = {"hex-core-gui.waiting-for-solver"},
+        }
+        label.style.single_line = false
+        return
+    end
 
     local show_quality_bounds = false
     if state.claimed then

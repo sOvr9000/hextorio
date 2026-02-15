@@ -30,10 +30,12 @@ local passive_coin_buff = require "api.passive_coin_buff"
 local hex_rank = require "api.hex_rank"
 local gameplay_statistics = require "api.gameplay_statistics"
 local gsr = require "api.gameplay_statistics_recalculators"
+local item_value_solver = require "api.item_value_solver"
 
 migrations.load_handlers()
 
 item_values.register_events()
+loot_tables.register_events()
 hex_grid.register_events()
 trades.register_events()
 item_ranks.register_events()
@@ -49,6 +51,7 @@ inventories.register_events()
 hex_rank.register_events()
 gameplay_statistics.register_events()
 gsr.register_events()
+item_value_solver.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -298,6 +301,7 @@ script.on_event(defines.events.on_tick, function (event)
     trades.process_trade_sorting_jobs()
     trades.process_trade_export_jobs()
     quests.process_lightning_acceleration()
+    item_value_solver.process_step()
 
     if storage.debug_spider then
         if not storage.debug_spider.valid then

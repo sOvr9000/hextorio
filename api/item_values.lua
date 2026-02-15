@@ -161,6 +161,10 @@ function item_values.register_events()
             player.print {"hextorio.item-values-imported"}
         end
     end)
+
+    event_system.register("item-values-recalculated", function()
+        storage.item_values.awaiting_solver = nil
+    end)
 end
 
 function item_values.init()
@@ -199,6 +203,12 @@ function item_values.init_coin_values(surface_vals)
     end
 end
 
+---Return whether the values have been calculated at least once.
+---@return boolean
+function item_values.is_ready()
+    return storage.item_values.awaiting_solver == nil
+end
+
 ---Get the value of an item on a given surface.
 ---@param surface_name string
 ---@param item_name string
@@ -211,16 +221,12 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
         return 1
     end
 
-    if allow_interplanetary == nil then
-        allow_interplanetary = true
-    end
-
     if not quality_name then
         quality_name = "normal"
     end
     local quality_mult = lib.get_quality_value_scale(quality_name)
 
-    local surface_vals = item_values.get_item_values_for_surface(surface_name)
+    local surface_vals = item_values.get_item_values_for_surface(surface_name, true)
     if not surface_vals then
         lib.log_error("item_values.get_item_value: No item values for surface " .. surface_name .. ", defaulting to 1")
         return 1
@@ -232,12 +238,8 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
             item_values.init_coin_values(surface_vals)
             return surface_vals[item_name] * quality_mult
         end
-        if allow_interplanetary then
-            val = item_values.get_interplanetary_item_value(surface_name, item_name)
-        else
-            lib.log("item_values.get_item_value: Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
-            val = 1
-        end
+        lib.log("item_values.get_item_value: Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
+        val = 1
     end
 
     if val then
@@ -250,26 +252,6 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
     end
 
     return val * quality_mult
-end
-
--- Get the value of an item for any surface.
--- The returned value is a large multiple of the minimum value of the item across all surfaces.
-function item_values.get_interplanetary_item_value(surface_name, item_name)
-    if storage.item_values.interplanetary_values[item_name] then
-        return storage.item_values.interplanetary_values[item_name]
-    end
-
-    local min_value = item_values.get_minimal_item_value(item_name)
-
-    local mult
-    if surface_name == "aquilo" then
-        mult = lib.runtime_setting_value "interplanetary-mult-aquilo"
-    else
-        mult = lib.runtime_setting_value "interplanetary-mult"
-    end
-
-    storage.item_values.interplanetary_values[item_name] = min_value * mult
-    return storage.item_values.interplanetary_values[item_name]
 end
 
 ---Get the lowest value of an item across all surfaces.
@@ -310,7 +292,7 @@ function item_values.has_item_value(surface_name, item_name, allow_interplanetar
         return false
     end
 
-    local surface_vals = item_values.get_item_values_for_surface(surface_name)
+    local surface_vals = item_values.get_item_values_for_surface(surface_name, allow_interplanetary)
     if not surface_vals then
         lib.log_error("item_values.has_item_value: No item values for surface " .. surface_name)
         return false
@@ -344,12 +326,18 @@ function item_values.get_interplanetary_item_values(surface_name, items_only, al
         lib.log_error("item_values.get_interplanetary_item_values: No values found for surface " .. surface_name)
         return {}
     end
+
     local values = {}
-    for _surface_name, _ in pairs(storage.item_values.values) do
+    if not storage.item_values.is_tradable or not storage.item_values.is_tradable[surface_name] then
+        return values
+    end
+
+    local tradable = storage.item_values.is_tradable[surface_name]
+    for _surface_name, _surface_vals in pairs(storage.item_values.values) do
         if _surface_name ~= surface_name then
-            for _, name in pairs(item_values.get_items_sorted_by_value(_surface_name, items_only, allow_coins)) do
-                if not surface_vals[name] then
-                    values[name] = item_values.get_item_value(surface_name, name, true, quality)
+            for item_name, _ in pairs(_surface_vals) do
+                if not tradable[item_name] and not values[item_name] then
+                    values[item_name] = item_values.get_item_value(surface_name, item_name, true, quality)
                 end
             end
         end
@@ -358,8 +346,28 @@ function item_values.get_interplanetary_item_values(surface_name, items_only, al
     return values
 end
 
+---Return whether an item on a surface can only be obtained by importing from some other surface.
+---@param surface_name string
+---@param item_name string
+---@return boolean
 function item_values.is_item_interplanetary(surface_name, item_name)
-    return not item_values.has_item_value(surface_name, item_name)
+    local ip = storage.item_values.is_interplanetary
+    if not ip then return false end
+    local surface_ip = ip[surface_name]
+    return surface_ip ~= nil and surface_ip[item_name] == true
+end
+
+---Return whether an item can be traded on a surface. An item is tradable if it's
+---locally produceable, or if no planet can produce it from local raws and this
+---planet has a recipe for it.
+---@param surface_name string
+---@param item_name string
+---@return boolean
+function item_values.is_item_tradable(surface_name, item_name)
+    local t = storage.item_values.is_tradable
+    if not t then return false end
+    local surface_t = t[surface_name]
+    return surface_t ~= nil and surface_t[item_name] == true
 end
 
 function item_values.get_item_sell_value_bonus_from_rank(surface_name, item_name, rank_tier)
@@ -378,7 +386,11 @@ function item_values.get_boosted_item_value(surface_name, item_name, rank_tier)
     return item_values.get_item_value(surface_name, item_name) + item_values.get_item_value_bonus_from_rank(surface_name, item_name, rank_tier)
 end
 
-function item_values.get_item_values_for_surface(surface_name)
+---Return the mapping of all items to their values for a given surface.
+---@param surface_name string
+---@param allow_interplanetary boolean|nil Defaults to false
+---@return {[string]: number}|nil
+function item_values.get_item_values_for_surface(surface_name, allow_interplanetary)
     if not surface_name then
         lib.log_error("item_values.get_item_values_for_surface: surface_name is nil")
         return
@@ -390,38 +402,27 @@ function item_values.get_item_values_for_surface(surface_name)
         return
     end
 
-    return surface_vals
-end
-
----Get all item values in the game, valued for the given surface.
----@param surface_name string
----@return {[string]: number}
-function item_values.get_expanded_item_values_for_surface(surface_name)
-    if not lib.is_vanilla_planet_name(surface_name) then
-        lib.log_error("item_values.get_expanded_item_values_for_surface: surface not supported: " .. surface_name)
-        return {}
-    end
-
-    if not storage.item_values.expanded_values then
-        storage.item_values.expanded_values = {}
-    end
-
-    local surface_vals = storage.item_values.expanded_values[surface_name]
-    if surface_vals then
-        return surface_vals
-    end
-
-    surface_vals = table.deepcopy(item_values.get_item_values_for_surface(surface_name)) or {}
-
-    for _, _surface_vals in pairs(storage.item_values.values) do
-        for item_name, _ in pairs(_surface_vals) do
-            if not surface_vals[item_name] then
-                surface_vals[item_name] = item_values.get_item_value(surface_name, item_name, true)
-            end
+    if not allow_interplanetary then
+        local local_items_storage = storage.item_values.local_items
+        if not local_items_storage then
+            local_items_storage = {}
+            storage.item_values.local_items = local_items_storage
         end
-    end
 
-    storage.item_values.expanded_values[surface_name] = surface_vals
+        local surface_local_items = local_items_storage[surface_name]
+        if not surface_local_items then
+            -- Filter out interplanetary items
+            surface_local_items = {}
+            for item_name, value in pairs(surface_vals) do
+                if not item_values.is_item_interplanetary(surface_name, item_name) then
+                    surface_local_items[item_name] = value
+                end
+            end
+            local_items_storage[surface_name] = surface_local_items
+        end
+
+        return surface_local_items
+    end
 
     return surface_vals
 end
@@ -429,10 +430,11 @@ end
 ---Get a list of item names sorted by their values on a given surface.
 ---@param surface_name string
 ---@param items_only boolean|nil Defaults to false
+---@param tradable_only boolean|nil Defaults to false
 ---@param allow_coins boolean|nil Defaults to true
 ---@param allow_spoilable boolean|nil Defaults to true
 ---@return string[]
-function item_values.get_items_sorted_by_value(surface_name, items_only, allow_coins, allow_spoilable)
+function item_values.get_items_sorted_by_value(surface_name, items_only, tradable_only, allow_coins, allow_spoilable)
     if not lib.is_vanilla_planet_name(surface_name) then
         lib.log_error("item_values.get_items_sorted_by_value: surface not supported: " .. surface_name)
         return {}
@@ -445,7 +447,12 @@ function item_values.get_items_sorted_by_value(surface_name, items_only, allow_c
         allow_spoilable = true
     end
 
-    local surface_vals = item_values.get_item_values_for_surface(surface_name)
+    local surface_vals
+    if tradable_only then
+        surface_vals = item_values.get_tradable_items(surface_name)
+    else
+        surface_vals = item_values.get_item_values_for_surface(surface_name, false)
+    end
     if not surface_vals then
         lib.log_error("item_values.get_items_sorted_by_value: No item values for surface " .. surface_name .. ", defaulting to empty table")
         return {}
@@ -461,6 +468,7 @@ function item_values.get_items_sorted_by_value(surface_name, items_only, allow_c
     end
 
     table.sort(sorted_items, function(a, b) return item_values.get_item_value(surface_name, a) < item_values.get_item_value(surface_name, b) end)
+    -- log("sorted item values on " .. surface_name .. " (tradable only = " .. tostring(tradable_only) .. "):\n" .. serpent.block(sorted_items))
 
     return sorted_items
 end
@@ -479,15 +487,10 @@ function item_values.get_items_near_value(surface_name, center_value, max_ratio,
         return {}
     end
 
-    if allow_interplanetary == nil then allow_interplanetary = false end
+    if allow_interplanetary == nil then allow_interplanetary = true end
     if allow_coins == nil then allow_coins = true end
 
-    local surface_vals
-    if allow_interplanetary then
-        surface_vals = item_values.get_expanded_item_values_for_surface(surface_name)
-    else
-        surface_vals = item_values.get_item_values_for_surface(surface_name)
-    end
+    local surface_vals = item_values.get_item_values_for_surface(surface_name, allow_interplanetary)
 
     if not surface_vals then
         lib.log_error("item_values.get_items_near_value: No item values for surface " .. surface_name .. ", defaulting to empty table")
@@ -544,6 +547,30 @@ function item_values.get_all_items_with_value(include_coins)
     return item_names
 end
 
+---Return the set of all tradable items on a surface.
+---@param surface_name string
+---@return {[string]: boolean}
+function item_values.get_tradable_items(surface_name)
+    local tradable_storage = storage.item_values.tradable_items
+    if not tradable_storage then
+        tradable_storage = {}
+        storage.item_values.tradable_items = tradable_storage
+    end
+
+    local surface_tradable_items = tradable_storage[surface_name]
+    if not surface_tradable_items then
+        surface_tradable_items = {}
+        for item_name, flag in pairs((storage.item_values.is_tradable or {})[surface_name] or {}) do
+            if flag then
+                surface_tradable_items[item_name] = true
+            end
+        end
+        tradable_storage[surface_name] = surface_tradable_items
+    end
+
+    return surface_tradable_items
+end
+
 function item_values.is_item_for_surface(item_name, surface_name)
     if not surface_name then
         return true
@@ -558,17 +585,13 @@ end
 
 ---Reset cached data in storage.item_values so that changed values have an effect.
 function item_values.reset_storage()
-    storage.item_values.expanded_values = {}
-    storage.item_values.interplanetary_values = {}
     storage.item_values.minimal_values = {}
     storage.item_values.all_items_with_value = nil
+    storage.item_values.local_items = nil
+    storage.item_values.tradable_items = nil
 end
 
 function item_values.migrate_old_data()
-    if not storage.item_values.minimal_values then
-        item_values.reset_storage()
-    end
-
     item_values.init()
 end
 

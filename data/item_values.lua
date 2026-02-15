@@ -7,15 +7,15 @@ return {
         aquilo = 2,
     },
 
-    interplanetary_values = {}, -- constant for each surface, calculated from values below
-    minimal_values = {}, -- also constant, representing lowest value of any surface
+    minimal_values = {}, -- constant, representing lowest value of any surface
+    awaiting_solver = true, -- gets set to nil once the item value solver finishes on new game start
 
     value_multipliers = {
         nauvis = 1,
-        vulcanus = 4,
-        fulgora = 8,
-        gleba = 16,
-        aquilo = 512,
+        vulcanus = 1,
+        fulgora = 1,
+        gleba = 1,
+        aquilo = 1,
     },
 
     values = {

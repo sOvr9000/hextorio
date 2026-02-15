@@ -6,6 +6,7 @@ local hex_util          = require "api.hex_util"
 local hex_island        = require "api.hex_island"
 local hex_sets          = require "api.hex_sets"
 local event_system      = require "api.event_system"
+local item_value_solver = require "api.item_value_solver"
 
 local initialization = {}
 
@@ -73,6 +74,8 @@ function initialization.on_nauvis_generating()
         lib.log_error("Temporary surface does not exist")
         return
     end
+
+    item_value_solver.run()
 
     -- Teleport players to temporary surface
     for _, player in pairs(game.connected_players) do

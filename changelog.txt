@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.6.12
+Date: 13/2/26
+  Features:
+    - Added /set-raw-item-value command, which tells the item value solver which items are raw resources.
+    - Added /solve-item-values command, which can be ran after changing raw item values.
+---------------------------------------------------------------------------------------------------
 Version: 1.6.11
 Date: 11/2/26
   Bugfixes:

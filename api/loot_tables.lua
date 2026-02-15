@@ -4,6 +4,7 @@
 local lib = require "api.lib"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
+local event_system= require "api.event_system"
 
 local loot_tables = {}
 
@@ -23,6 +24,10 @@ local loot_tables = {}
 
 
 
+function loot_tables.register_events()
+    event_system.register("item-values-recalculated", loot_tables.init)
+end
+
 ---Initialize loot tables.
 function loot_tables.init()
     storage.loot_tables = {
@@ -30,12 +35,14 @@ function loot_tables.init()
     }
 
     for surface_name, _ in pairs(storage.item_values.values) do
-        local item_names = item_values.get_items_sorted_by_value(surface_name, true, false, false)
+        local item_names = item_values.get_items_sorted_by_value(surface_name, true, true, false, false)
         storage.loot_tables.surface_loot_tables[surface_name] = {
             dungeon = loot_tables.new(surface_name, item_names, 1, 6)
         }
     end
 end
+
+
 
 ---Get a loot table for a surface.
 ---@param surface_name string

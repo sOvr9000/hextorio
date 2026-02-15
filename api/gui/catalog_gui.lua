@@ -108,13 +108,15 @@ function catalog_gui.register_events()
         end
         catalog_gui.show_catalog(player)
     end)
+
+    event_system.register("item-values-recalculated", catalog_gui.reinitialize)
 end
 
 ---Reinitialize the catalog GUI for the given player, or all players if no player is provided.
 ---@param player LuaPlayer|nil
 function catalog_gui.reinitialize(player)
     if not player then
-        for _, p in pairs(game.players) do
+        for _, p in pairs(game.connected_players) do
             catalog_gui.reinitialize(p)
         end
         return
@@ -176,7 +178,7 @@ function catalog_gui.init_catalog(player)
         "gleba",
         "aquilo",
     } do
-        local items_sorted_by_value = item_values.get_items_sorted_by_value(surface_name, true)
+        local items_sorted_by_value = item_values.get_items_sorted_by_value(surface_name, true, true, false, true)
 
         if i > 1 then
             scroll_pane.add {type = "line", direction = "horizontal"}
@@ -201,7 +203,7 @@ function catalog_gui.init_catalog(player)
             pb_ranks.style.horizontally_squashable = true
         end
 
-        local catalog_table = scroll_pane.add {type = "table", name = "table-" .. surface_name, column_count = 13}
+        local catalog_table = scroll_pane.add {type = "table", name = "table-" .. surface_name, column_count = 13, tags = {surface_name = surface_name}}
         gui.auto_width(catalog_table)
 
         local n = 1
@@ -215,6 +217,7 @@ function catalog_gui.init_catalog(player)
                     type = "flow",
                     name = "rank-flow-" .. item_name,
                     direction = "vertical",
+                    tags = {item_name = item_name},
                 }
 
                 rank_flow.style.top_margin = 20
@@ -263,9 +266,9 @@ function catalog_gui.update_catalog(player)
             local discovered_items = 0
             local achieved_ranks = {0, 0, 0, 0}
 
-            local surface_name = tab.name:sub(7)
+            local surface_name = tab.tags.surface_name or "nauvis"
             for _, rank_flow in pairs(tab.children) do
-                local item_name = rank_flow.name:sub(11)
+                local item_name = rank_flow.tags.item_name or "stone"
                 if trades.is_item_discovered(item_name) then
                     local rank = item_ranks.get_item_rank(item_name)
                     discovered_items = discovered_items + 1
@@ -756,14 +759,22 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
     local elem_filter_items = sets.new()
     for _, surface in pairs(game.surfaces) do
         if not lib.is_space_platform(surface) then
-            local values = item_values.get_expanded_item_values_for_surface(surface.name)
-            for name, _ in pairs(values) do
-                if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then
-                    sets.add(elem_filter_items, name)
+            local values = item_values.get_item_values_for_surface(surface.name, true)
+            if values then
+                for name, _ in pairs(values) do
+                    if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then
+                        sets.add(elem_filter_items, name)
+                    end
                 end
             end
         end
     end
+
+    if not next(elem_filter_items) then
+        lib.log_error("catalog_gui.build_quantum_bazaar: Failed to find valid items")
+        return
+    end
+
     local elem_filters = {}
     for name, _ in pairs(elem_filter_items) do
         table.insert(elem_filters, {filter = "name", name = name})

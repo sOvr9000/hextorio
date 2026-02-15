@@ -356,6 +356,7 @@ function hex_grid.register_events()
     event_system.register("runtime-setting-changed-unresearched-penalty", hex_grid.on_setting_changed_unresearched_penalty)
     event_system.register("player-rotated-entity", hex_grid.on_player_rotated_entity)
     event_system.register("hex-island-generated", hex_grid.on_hex_island_generated)
+    event_system.register("post-item-values-recalculated", hex_grid.on_item_values_recalculated)
 end
 
 ---Get the state of a hex from a hex core entity
@@ -545,7 +546,7 @@ function hex_grid.apply_extra_trades_bonus(state)
     if not state or not state.hex_core or not state.trades then return end
     local surface = state.hex_core.surface
     if lib.is_space_platform(surface) then return end
-    local surface_values = item_values.get_item_values_for_surface(surface.name)
+    local surface_values = item_values.get_item_values_for_surface(surface.name, false)
     if not surface_values then return end
 
     local added_trades = {}
@@ -2395,6 +2396,8 @@ end
 
 ---@param state HexState
 function hex_grid.add_initial_trades(state)
+    if not item_values.is_ready() then return end
+
     local dist = hex_island.get_distance_from_spawn(state.hex_core.surface.name, state.position)
     if not dist then
         lib.log_error("hex_grid.add_initial_trades: Could not get BFS distance from spawn, falling back to axial distance")
@@ -2449,9 +2452,14 @@ function hex_grid.add_initial_trades(state)
         ]]
 
         if trades_per_hex >= 1 then
-            local items_sorted_by_value = item_values.get_items_sorted_by_value(surface_name, true, false)
-            local max_item_value = item_values.get_item_value(surface_name, items_sorted_by_value[#items_sorted_by_value])
+            local items_sorted_by_value = item_values.get_items_sorted_by_value(surface_name, true, true, false, true)
 
+            if not items_sorted_by_value or not next(items_sorted_by_value) then
+                lib.log_error("hex_grid.add_initial_trades: Failed to get item values list")
+                return
+            end
+
+            local max_item_value = item_values.get_item_value(surface_name, items_sorted_by_value[#items_sorted_by_value])
             -- This is the distance from spawn after which the most expensive items can be found
             local threshold_dist = island_extent * 0.3
 
@@ -4168,7 +4176,7 @@ function hex_grid.get_trade_volume_base(surface_name)
     end
     local val = storage.trades.trade_volume_base[surface_name]
     if val then return val end
-    local min_item = item_values.get_items_sorted_by_value(surface_name, true, false)[1]
+    local min_item = item_values.get_items_sorted_by_value(surface_name, true, true, false, true)[1]
     if not min_item then
         lib.log_error("hex_grid.get_trade_volume_base: No minimal item found, defaulting to 1")
         return 1
@@ -4413,6 +4421,24 @@ function hex_grid.on_hex_island_generated(surface, island)
 
         local pos = table.remove(candidates, math.random(1, #candidates))
         hex_sets.add(gh, pos)
+    end
+end
+
+function hex_grid.on_item_values_recalculated()
+    for _, surface in pairs(game.surfaces) do
+        if lib.is_vanilla_planet_name(surface.name) then
+            for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
+                if state.hex_core and state.generated then
+                    if not state.trades or not next(state.trades) then
+                        hex_grid.add_initial_trades(state)
+                    else
+                        -- TODO: update trade item counts such that each trade's target efficiency matches the original value (e.g. sinks still have 10:1 efficiency, etc.)
+                        -- for _, trade_id in pairs(state.trades) do
+                        -- end
+                    end
+                end
+            end
+        end
     end
 end
 
