@@ -68,6 +68,9 @@ local raw_values = {
 --- Multiplier to item value per km traveled between planets. The multiplier is `1 + distance * DISTANCE_FACTOR`, where distance is measured in kilometers.
 local DISTANCE_FACTOR = 0.0002
 
+--- Multiplier to item value from stack sizes on space ships, where smaller stack sizes result in greater multipliers. The multiplier is `1 + STACK_SIZE_FACTOR / stack_size`.
+local STACK_SIZE_FACTOR = 4
+
 local INITIAL_VALUE = math.huge
 local MAX_TICKS = 10000
 local COLLECT_BATCH = 100
@@ -207,7 +210,8 @@ local function import_cost(s, src_planet, dst_planet, item_name, src_val)
     local dist = s.distances[src_planet] and s.distances[src_planet][dst_planet]
     if not dist or dist >= math.huge then return INITIAL_VALUE end
     local launch_cost = s.rocket_parts_per_launch * rp_val / capacity
-    return (src_val + launch_cost) * (1 + dist * DISTANCE_FACTOR)
+    local stack_size = s.stack_sizes[item_name] or 1
+    return (src_val + launch_cost) * (1 + dist * DISTANCE_FACTOR) * (1 + STACK_SIZE_FACTOR / stack_size)
 end
 
 ---Find the cheapest cost for an item on a planet.
