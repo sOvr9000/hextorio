@@ -65,7 +65,8 @@ local raw_values = {
     },
 }
 
-local DISTANCE_FACTOR = 0.5
+--- Multiplier to item value per km traveled between planets. The multiplier is `1 + distance * DISTANCE_FACTOR`, where distance is measured in kilometers.
+local DISTANCE_FACTOR = 0.0002
 
 local INITIAL_VALUE = math.huge
 local MAX_TICKS = 10000
@@ -191,36 +192,22 @@ local function get_valid_planets(surface_conditions)
 end
 
 ---Compute the cost of importing one unit of an item from a source planet.
----Cost = source_value + rocket_launch_cost + (distance * DISTANCE_FACTOR / stack_size)
+---Cost = (source_value + rocket_launch_cost) * (1 + distance * DISTANCE_FACTOR)
 ---@param s table
 ---@param src_planet string
 ---@param dst_planet string
 ---@param item_name string
 ---@param src_val number
 ---@return number
-local _import_diag_done = {}
 local function import_cost(s, src_planet, dst_planet, item_name, src_val)
     local capacity = s.rocket_capacities[item_name]
     if not capacity then return INITIAL_VALUE end
     local rp_val = s.values[src_planet]["rocket-part"]
-    if not rp_val or rp_val >= INITIAL_VALUE then
-        -- One-shot diagnostic for key items
-        local dkey = item_name .. ":" .. src_planet .. "→" .. dst_planet
-        if not _import_diag_done[dkey] and (item_name == "holmium-plate"
-        or item_name == "rocket-part" or item_name == "lithium") then
-            _import_diag_done[dkey] = true
-            lib.log("Solver: [diag] import_cost BLOCKED " .. dkey
-                .. " | rocket-part on " .. src_planet .. " = "
-                .. tostring(rp_val) .. " (need finite)")
-        end
-        return INITIAL_VALUE
-    end
+    if not rp_val or rp_val >= INITIAL_VALUE then return INITIAL_VALUE end
     local dist = s.distances[src_planet] and s.distances[src_planet][dst_planet]
     if not dist or dist >= math.huge then return INITIAL_VALUE end
     local launch_cost = s.rocket_parts_per_launch * rp_val / capacity
-    local stack_size = s.stack_sizes[item_name] or 1
-    local travel_cost = dist * DISTANCE_FACTOR / stack_size
-    return src_val + launch_cost + travel_cost
+    return (src_val + launch_cost) * (1 + dist * DISTANCE_FACTOR)
 end
 
 ---Find the cheapest cost for an item on a planet.
