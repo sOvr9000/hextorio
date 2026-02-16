@@ -7,6 +7,19 @@ local solver = {}
 
 
 
+---@alias ItemValueSourceType
+---| "raw"
+---| "recipe"
+---| "import"
+
+---@class ItemValueSource
+---@field type ItemValueSourceType
+---@field recipe_name string|nil The recipe which led the item having its given value, if type == "recipe"
+---@field import_path string[]|nil The sequence of planet names representing a space platform's flight path when importing the item, if type == "import"
+---@field distance number|nil The total length of the import path in kilometers, if type == "import"
+
+
+
 local ALL_PLANETS = {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
 
 local planet_configs = {
@@ -636,7 +649,7 @@ local function phase_build(s)
         is_raw[planet] = {}
         for item_name, val in pairs(raw_values[planet] or {}) do
             values[planet][item_name] = val
-            sources[planet][item_name] = "raw"
+            sources[planet][item_name] = {type = "raw"}
             is_raw[planet][item_name] = true
         end
         for item_name in pairs(all_items) do
@@ -772,7 +785,7 @@ local function phase_solve(s)
                                 local implied = per_product / prod.amount
                                 if implied < values[planet][prod.name] then
                                     values[planet][prod.name] = implied
-                                    sources[planet][prod.name] = recipe.label
+                                    sources[planet][prod.name] = {type = "recipe", recipe_name = recipe.label}
                                     s.pass_updates = s.pass_updates + 1
                                 end
                             end
@@ -809,9 +822,7 @@ local function phase_solve(s)
                                         table.insert(path, cur)
                                     end
                                     local dist = s.distances[src][planet]
-                                    sources[planet][item_name] = "import: "
-                                        .. table.concat(path, " -> ")
-                                        .. " (" .. dist .. " km)"
+                                    sources[planet][item_name] = {type = "import", import_path = path, distance = dist}
                                 end
                             end
                         end
@@ -902,11 +913,13 @@ local function phase_finalize(s)
 
     storage.item_values.interplanetary = interplanetary
     storage.item_values.is_interplanetary = s.is_interplanetary
+    storage.item_values.sources = s.sources
     item_values.reset_storage()
 
     -- Log final values with provenance per planet
     local total = 0
     local unresolved = {}
+    local str = ""
     for _, planet in pairs(ALL_PLANETS) do
         local planet_values = storage.item_values.values[planet]
         local ip_count = table_size(interplanetary[planet])
@@ -922,12 +935,11 @@ local function phase_finalize(s)
         end
         table.sort(sorted, function(a, b) return a.value < b.value end)
 
-        lib.log("Solver: --- " .. planet .. " (" .. count .. " items, "
-            .. ip_count .. " interplanetary) ---")
+        str = str .. "\nSolver: --- " .. planet .. " (" .. count .. " items, " .. ip_count .. " interplanetary) ---"
         for _, entry in pairs(sorted) do
-            local src = sources[planet][entry.name] or "raw"
-            lib.log(string.format("  %-48s %20.3f  [%s]", entry.name, entry.value, src))
+            str = str .. string.format("  %-48s %20.3f", entry.name, entry.value)
         end
+        lib.log(str)
     end
 
     -- Collect unresolved items (no value on any planet)

@@ -1213,6 +1213,76 @@ function lib.is_catalog_item(item_name)
     return not lib.is_coin(item_name) and lib.is_item(item_name)
 end
 
+---Get rich text formatting for an fluid, entity, item, recipe, or surface, in that order of precedence.
+---@param object_name string
+---@return string|nil
+function lib.get_rich_text(object_name)
+    if prototypes.fluid[object_name] then
+        return "[fluid=" .. object_name .. "]"
+    end
+    if prototypes.entity[object_name] then
+        return "[entity=" .. object_name .. "]"
+    end
+    if prototypes.item[object_name] then
+        return "[item=" .. object_name .. "]"
+    end
+    if prototypes.recipe[object_name] then
+        return "[recipe=" .. object_name .. "]"
+    end
+    if prototypes.space_location[object_name] then
+        return "[space-location=" .. object_name .. "]"
+    end
+    lib.log_error("lib.get_rich_text: object name " .. object_name .. " not recognized")
+end
+
+---Get rich text formatting for an fluid, entity, item, recipe, or surface, in that order of precedence. The returned string is for the icon image alone, followed by no extra text.
+---@param object_name string
+---@return string|nil
+function lib.get_icon_rich_text(object_name)
+    if prototypes.fluid[object_name] then
+        return "[img=fluid." .. object_name .. "]"
+    end
+    if prototypes.entity[object_name] then
+        return "[img=entity." .. object_name .. "]"
+    end
+    if prototypes.item[object_name] then
+        return "[img=item." .. object_name .. "]"
+    end
+    if prototypes.recipe[object_name] then
+        return "[img=recipe." .. object_name .. "]"
+    end
+    if prototypes.space_location[object_name] then
+        return "[img=space-location." .. object_name .. "]"
+    end
+    lib.log_error("lib.get_icon_rich_text: object name " .. object_name .. " not recognized")
+end
+
+---Get a localized string for an item value source object.
+---@param source ItemValueSource|nil
+---@return LocalisedString
+function lib.get_item_value_source_string(source)
+    if not source then
+        return {"hextorio.value-source-unknown"}
+    end
+
+    if source.type == "raw" then
+        return {"hextorio.value-source-raw"}
+    elseif source.type == "recipe" then
+        return {"hextorio.value-source-recipe", lib.get_rich_text(source.recipe_name) or "unknown"}
+    elseif source.type == "import" then
+        local path_str = {""}
+        for i, planet_name in ipairs(source.import_path or {}) do
+            if i > 1 then
+                table.insert(path_str, "[img=virtual-signal.right-arrow]")
+            end
+            table.insert(path_str, lib.get_icon_rich_text(planet_name))
+        end
+        return {"hextorio.value-source-import", path_str}
+    else
+        return {"hextorio.value-source-unknown"}
+    end
+end
+
 function lib.format_percentage(x, decimal_places, include_symbol, include_sign)
     if include_symbol == nil then include_symbol = true end
     local p = 10 ^ decimal_places

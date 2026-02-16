@@ -35,7 +35,7 @@ function item_values.register_events()
 
         event_system.trigger("post-set-item-value-command", player, params)
 
-        player.print {"hextorio.new-item-value-set", item_name, surface_name, coin_tiers.coin_to_text(coin_tiers.from_base_value(value), false, 4)}
+        player.print {"hextorio.new-item-value-set", lib.get_rich_text(item_name), lib.get_rich_text(surface_name), coin_tiers.coin_to_text(coin_tiers.from_base_value(value), false, 4)}
     end)
 
     event_system.register("command-get-item-value", function(player, params)
@@ -54,11 +54,15 @@ function item_values.register_events()
         end
 
         local value = item_values.get_item_value(surface_name, item_name, true, quality) / item_values.get_item_value("nauvis", "hex-coin")
-        player.print {"hextorio.get-item-value-result", item_name, surface_name, coin_tiers.coin_to_text(coin_tiers.from_base_value(value), false, 4)}
+        local source = (storage.item_values.sources and storage.item_values.sources[surface_name] or {})[item_name]
 
-        if item_values.is_item_interplanetary(surface_name, item_name) then
-            player.print {"hextorio.value-is-interplanetary"}
-        end
+        local str = {"",
+            {"hextorio.get-item-value-result", lib.get_rich_text(item_name), lib.get_rich_text(surface_name), coin_tiers.coin_to_text(coin_tiers.from_base_value(value), false, 4)},
+            "\n",
+            lib.get_item_value_source_string(source)
+        }
+
+        player.print(str)
     end)
 
     event_system.register("command-remove-item-value", function(player, params)
@@ -86,7 +90,7 @@ function item_values.register_events()
         end
 
         if #surface_names == 1 then
-            player.print {"hextorio.removed-value", item_name, surface_names[1]}
+            player.print {"hextorio.removed-value", lib.get_rich_text(item_name), lib.get_rich_text(surface_names[1])}
         else
             player.print {"hextorio.removed-all-values", item_name}
         end
