@@ -48,9 +48,9 @@ local planet_configs = {
         spoilable_coefficient = 0.5,
     },
     aquilo = {
-        energy_coefficient = 0.18,
-        complexity_coefficient = 0.4,
-        raw_multiplier = 0.85,
+        energy_coefficient = 0.03, -- fusion power becomes available
+        complexity_coefficient = 0.5, -- heat pipes complicate logistics massively
+        raw_multiplier = 1.0, -- endgame scaling
         spoilable_coefficient = 1.25,
     },
 }
@@ -73,8 +73,8 @@ local raw_values = {
         ["wood"] = 5, ["pentapod-egg"] = 64,
     },
     aquilo = {
-        ["ammoniacal-solution"] = 120, ["fluorine"] = 480, ["lithium-brine"] = 600,
-        ["crude-oil"] = 24, ["promethium-asteroid-chunk"] = 8000,
+        ["ammoniacal-solution"] = 0.01, ["fluorine"] = 10, ["lithium-brine"] = 100,
+        ["crude-oil"] = 1, ["promethium-asteroid-chunk"] = 10000,
     },
 }
 
