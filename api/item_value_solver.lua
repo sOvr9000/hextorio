@@ -36,16 +36,16 @@ local planet_configs = {
         spoilable_coefficient = 0.75,
     },
     fulgora = {
-        energy_coefficient = 0.12,
-        complexity_coefficient = 0.24,
-        raw_multiplier = 0.8,
+        energy_coefficient = 0.08,
+        complexity_coefficient = 0.18,
+        raw_multiplier = 0.65,
         spoilable_coefficient = 0.75,
     },
     gleba = {
-        energy_coefficient = 0.08,
-        complexity_coefficient = 0.2,
-        raw_multiplier = 0.75,
-        spoilable_coefficient = 0.5,
+        energy_coefficient = 0.07,
+        complexity_coefficient = 0.17,
+        raw_multiplier = 0.7,
+        spoilable_coefficient = 0.3,
     },
     aquilo = {
         energy_coefficient = 0.03, -- fusion power becomes available
