@@ -74,7 +74,7 @@ local raw_values = {
     },
     aquilo = {
         ["ammoniacal-solution"] = 0.01, ["fluorine"] = 10, ["lithium-brine"] = 100,
-        ["crude-oil"] = 1, ["promethium-asteroid-chunk"] = 10000,
+        ["crude-oil"] = 1,
     },
 }
 
@@ -191,13 +191,16 @@ local function get_valid_planets(surface_conditions)
             local all_met = true
             for _, cond in pairs(surface_conditions) do
                 local val = props[cond.property]
-                if val then
+                if val ~= nil then
                     local cmin = cond.min or 0
                     local cmax = cond.max or math.huge
                     if val < cmin or val > cmax then
                         all_met = false
                         break
                     end
+                else
+                    all_met = false
+                    break
                 end
             end
             if all_met then valid[planet_name] = true end
@@ -306,7 +309,7 @@ end
 ---Find fuel-consuming recipe categories (e.g. captive-spawner-process) and
 ---the fuel items that power them. Returns a mapping from recipe category to
 ---fuel info: the available fuel items, machine energy usage, and burner effectivity.
----@return table<string, {fuel_items: table[], energy_usage: number, effectivity: number}>
+---@return table<string, {fuel_items: table[], energy_usage: number, effectivity: number, surface_conditions: SurfaceCondition[]|nil}>
 local function find_fuel_categories(collected_recipes)
     -- Identify categories with 0-ingredient recipes
     local zero_cats = {}
@@ -356,6 +359,58 @@ local function find_fuel_categories(collected_recipes)
     return result
 end
 
+---Build a map from recipe category to valid planets based on crafting machine surface conditions.
+---For each category, finds all entities that can craft it and unions their valid planets.
+---If no entity restricts the category, returns nil (meaning all planets).
+---@param collected_recipes table<string, table>
+---@return table<string, table<string, boolean>|nil>
+local function build_category_valid_planets(collected_recipes)
+    local categories = {}
+    for _, data in pairs(collected_recipes) do
+        if data.category then categories[data.category] = true end
+    end
+
+    local result = {}
+    for category in pairs(categories) do
+        local ok, entities = pcall(prototypes.get_entity_filtered,
+            {{filter = "crafting-category", crafting_category = category}})
+        if not ok or not entities then entities = {} end
+
+        local has_entities = false
+        local union = {}
+        for _, entity in pairs(entities) do
+            has_entities = true
+            local ok_sc, sc = pcall(function() return entity.surface_conditions end)
+            local entity_vp = get_valid_planets(ok_sc and sc or nil)
+            if not entity_vp then
+                -- At least one machine has no restrictions, so the category is unrestricted
+                union = nil
+                break
+            end
+            for p in pairs(entity_vp) do union[p] = true end
+        end
+
+        if has_entities and union then
+            result[category] = next(union) and union or nil
+        end
+    end
+    return result
+end
+
+---Intersect two valid-planet sets. nil means "all planets".
+---@param a table<string, boolean>|nil
+---@param b table<string, boolean>|nil
+---@return table<string, boolean>|nil
+local function intersect_valid_planets(a, b)
+    if not a then return b end
+    if not b then return a end
+    local result = {}
+    for p in pairs(a) do
+        if b[p] then result[p] = true end
+    end
+    return next(result) and result or nil
+end
+
 ---Phase 1: Process recipes, add spoil/burnt/fuel pseudo-recipes, compute multipliers, initialize values.
 ---@param s table
 local function phase_build(s)
@@ -363,9 +418,14 @@ local function phase_build(s)
     local all_items = {}
 
     local fuel_categories = find_fuel_categories(s.collect.recipes)
+    local category_valid_planets = build_category_valid_planets(s.collect.recipes)
 
     for recipe_name, data in pairs(s.collect.recipes) do
         local fuel_info = #data.ingredients == 0 and fuel_categories[data.category] or nil
+
+        log(recipe_name)
+        local recipe_vp = get_valid_planets(data.surface_conditions)
+        local cat_vp = category_valid_planets[data.category]
 
         if fuel_info then
             -- Fuel-consuming recipe (e.g. captive-spawner-process): expand into one
@@ -374,17 +434,9 @@ local function phase_build(s)
             -- Valid planets = intersection of recipe and entity surface conditions.
             for _, prod in pairs(data.products) do all_items[prod.name] = true end
 
-            local recipe_vp = get_valid_planets(data.surface_conditions)
             local entity_vp = get_valid_planets(fuel_info.surface_conditions)
-            local valid_planets
-            if recipe_vp and entity_vp then
-                valid_planets = {}
-                for p in pairs(entity_vp) do
-                    if recipe_vp[p] then valid_planets[p] = true end
-                end
-            else
-                valid_planets = entity_vp or recipe_vp
-            end
+            local valid_planets = intersect_valid_planets(
+                intersect_valid_planets(recipe_vp, entity_vp), cat_vp)
 
             for _, fuel in pairs(fuel_info.fuel_items) do
                 local fuel_amount = (fuel_info.energy_usage * data.energy * 60)
@@ -412,12 +464,13 @@ local function phase_build(s)
                     if lib.is_spoilable(ing.name) then spoilable_count = spoilable_count + 1 end
                 end
 
+                local vps = intersect_valid_planets(recipe_vp, cat_vp)
                 table.insert(recipes, {
                     label = recipe_name,
                     ingredients = data.ingredients,
                     products = data.products,
                     multipliers = compute_multipliers(data.energy, #data.ingredients, spoilable_count),
-                    valid_planets = get_valid_planets(data.surface_conditions),
+                    valid_planets = vps,
                 })
             end
         end
@@ -682,7 +735,13 @@ local function phase_build(s)
         .. table_size(rocket_capacities) .. " transportable")
 
     -- Diagnostic: dump producing recipes and interplanetary status for key items
-    local diag_items = {"rocket-part", "holmium-plate", "lithium", "mech-armor", "spidertron"}
+    local diag_items = {
+        -- "rocket-part",
+        -- "holmium-plate",
+        -- "lithium",
+        -- "mech-armor",
+        -- "spidertron",
+    }
     for _, diag_name in pairs(diag_items) do
         if all_items[diag_name] then
             local producing = {}
@@ -714,24 +773,6 @@ local function phase_build(s)
                 .. " | capacity: " .. tostring(rocket_capacities[diag_name] or "nil"))
             for _, r in pairs(producing) do
                 lib.log("  recipe: " .. r)
-            end
-        end
-    end
-
-    -- Diagnostic: log rocket-part raw values and distances
-    for _, planet in pairs(ALL_PLANETS) do
-        local rp_raw = raw_values[planet] and raw_values[planet]["rocket-part"]
-        local rp_ip = is_interplanetary[planet]["rocket-part"] and "IP" or "local"
-        lib.log("Solver: [diag] rocket-part on " .. planet .. ": " .. rp_ip
-            .. ", raw=" .. tostring(rp_raw))
-    end
-    for _, a in pairs(ALL_PLANETS) do
-        for _, b in pairs(ALL_PLANETS) do
-            if a ~= b then
-                local d = distances[a] and distances[a][b] or "nil"
-                if d and d < math.huge then
-                    lib.log("Solver: [diag] dist " .. a .. " → " .. b .. " = " .. d)
-                end
             end
         end
     end
@@ -835,7 +876,12 @@ local function phase_solve(s)
 
         -- Diagnostic: track key items per pass (first 10 passes only)
         if s.iteration <= 10 then
-            local diag = {"rocket-part", "holmium-plate", "lithium", "mech-armor"}
+            local diag = {
+                -- "rocket-part",
+                -- "holmium-plate",
+                -- "lithium",
+                -- "mech-armor",
+            }
             for _, dname in pairs(diag) do
                 local parts = {}
                 for _, planet in pairs(ALL_PLANETS) do
@@ -937,7 +983,7 @@ local function phase_finalize(s)
 
         str = str .. "\nSolver: --- " .. planet .. " (" .. count .. " items, " .. ip_count .. " interplanetary) ---"
         for _, entry in pairs(sorted) do
-            str = str .. string.format("  %-48s %20.3f", entry.name, entry.value)
+            str = str .. string.format("\n  %-48s %20.3f", entry.name, entry.value)
         end
         lib.log(str)
     end
