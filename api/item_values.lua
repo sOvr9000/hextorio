@@ -97,7 +97,45 @@ function item_values.register_events()
     end)
 
     event_system.register("command-export-item-values", function(player, params)
-        local json = helpers.table_to_json(storage.item_values.values)
+        local sources = storage.item_values.sources or {}
+
+        local function filter_coins(planet_table)
+            local filtered = {}
+            for item_name, v in pairs(planet_table) do
+                if not lib.is_coin(item_name) then
+                    filtered[item_name] = v
+                end
+            end
+            return filtered
+        end
+
+        local filtered_values = {}
+        local filtered_sources = {}
+        for planet, planet_vals in pairs(storage.item_values.values) do
+            filtered_values[planet] = filter_coins(planet_vals)
+            if sources[planet] then
+                filtered_sources[planet] = filter_coins(sources[planet])
+            end
+        end
+
+        local recipe_tree = lib.get_recipe_tree()
+        local used_recipes = {}
+        for _, planet_sources in pairs(filtered_sources) do
+            for _, source in pairs(planet_sources) do
+                if source.type == "recipe" and source.recipe_name and recipe_tree[source.recipe_name] then
+                    used_recipes[source.recipe_name] = recipe_tree[source.recipe_name]
+                end
+            end
+        end
+
+        local export_data = {
+            version = 2,
+            values = filtered_values,
+            sources = filtered_sources,
+            recipes = used_recipes,
+        }
+
+        local json = helpers.table_to_json(export_data)
         local str = helpers.encode_string(json)
 
         local filename = "all-item-values-encoded-json.txt"
@@ -118,6 +156,15 @@ function item_values.register_events()
         if not t or type(t) ~= "table" then
             player.print {"hextorio.command-invalid-encoded-string"}
             return
+        end
+
+        -- Unwrap versioned exports
+        if t.version and t.version >= 2 then
+            t = t.values
+            if not t or type(t) ~= "table" then
+                player.print {"hextorio.command-invalid-encoded-string"}
+                return
+            end
         end
 
         -- Verify integrity
