@@ -1178,12 +1178,12 @@ function lib.get_rank_img_str(rank, left_half)
     return ""
 end
 
-function lib.get_trade_img_str(trade, is_interplanetary)
+function lib.get_trade_img_str(trade, has_interplanetary)
     local s = ""
     for _, item in pairs(trade.input_items) do
         s = s .. "[img=item." .. item.name .. "]"
     end
-    if is_interplanetary then
+    if has_interplanetary then
         s = s .. "[img=interplanetary-trade-arrow]"
     else
         s = s .. "[img=trade-arrow]"
@@ -1209,8 +1209,37 @@ function lib.is_item(item_name)
     return prototypes.item[item_name] ~= nil
 end
 
-function lib.is_catalog_item(item_name)
-    return not lib.is_coin(item_name) and lib.is_item(item_name)
+---Return whether an item on a surface is shown in the catalog GUI.
+---@param surface_name string|nil If not provided, check all surfaces and return true if any.
+---@param item_name string
+---@return boolean
+function lib.is_catalog_item(surface_name, item_name)
+    if lib.is_coin(item_name) or not lib.is_item(item_name) then
+        return false
+    end
+
+    -- Need to also check tradability
+    local tradable_storage = storage.item_values.is_tradable
+    if not tradable_storage then
+        return false
+    end
+
+    if surface_name then
+        local surface_tradable_items = tradable_storage[surface_name]
+        if not surface_tradable_items then
+            return false
+        end
+
+        return surface_tradable_items[item_name] == true
+    else
+        for _, surface_tradable_items in pairs(tradable_storage) do
+            if surface_tradable_items[item_name] then
+                return true
+            end
+        end
+
+        return false
+    end
 end
 
 ---Get rich text formatting for an fluid, entity, item, recipe, or surface, in that order of precedence.
@@ -2362,6 +2391,125 @@ function lib.is_localized_string(obj)
     end
 
     return true
+end
+
+
+
+-- ── Shared planet / recipe helpers (used by item_value_solver & item_tradability_solver) ──
+
+lib.ALL_PLANETS = {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
+
+---Extract normalized recipe data from a LuaRecipePrototype.
+---@param recipe LuaRecipePrototype
+---@return {energy: number, category: string, ingredients: table[], products: table[], surface_conditions: SurfaceCondition[]|nil}|nil
+function lib.extract_recipe_data(recipe)
+    local ingredients = {}
+    for _, ing in pairs(recipe.ingredients) do
+        table.insert(ingredients, {name = ing.name, amount = ing.amount})
+    end
+    local products = {}
+    for _, prod in pairs(recipe.products) do
+        local amount = prod.amount
+        if not amount and prod.amount_min and prod.amount_max then
+            amount = (prod.amount_min + prod.amount_max) / 2
+        end
+        if amount and amount > 0 then
+            local prob = prod.probability or 1
+            table.insert(products, {name = prod.name, amount = amount * prob})
+        end
+    end
+    if #products == 0 then return nil end
+
+    local ok, sc = pcall(function() return recipe.surface_conditions end)
+    return {
+        energy = recipe.energy,
+        category = recipe.category,
+        ingredients = ingredients,
+        products = products,
+        surface_conditions = ok and sc or nil,
+    }
+end
+
+---Determine which planets a recipe/entity can be used on based on surface conditions.
+---Returns nil if unrestricted (usable everywhere).
+---@param surface_conditions SurfaceCondition[]|nil
+---@return table<string, boolean>|nil
+function lib.get_valid_planets(surface_conditions)
+    if not surface_conditions or #surface_conditions == 0 then return nil end
+
+    local valid = {}
+    for _, planet_name in pairs(lib.ALL_PLANETS) do
+        local planet_proto = prototypes.space_location[planet_name]
+        if not planet_proto then
+            valid[planet_name] = true
+        else
+            local props = planet_proto.surface_properties or {}
+            local all_met = true
+            for _, cond in pairs(surface_conditions) do
+                local val = props[cond.property]
+                if val ~= nil then
+                    local cmin = cond.min or 0
+                    local cmax = cond.max or math.huge
+                    if val < cmin or val > cmax then
+                        all_met = false
+                        break
+                    end
+                else
+                    all_met = false
+                    break
+                end
+            end
+            if all_met then valid[planet_name] = true end
+        end
+    end
+
+    return valid
+end
+
+---Build a map from recipe category to valid planets based on crafting machine surface conditions.
+---For each category, finds all entities that can craft it and unions their valid planets.
+---If no entity restricts the category, returns nil for that category (meaning all planets).
+---@param categories table<string, boolean>
+---@return table<string, table<string, boolean>|nil>
+function lib.build_category_valid_planets(categories)
+    local result = {}
+    for category in pairs(categories) do
+        local ok, entities = pcall(prototypes.get_entity_filtered,
+            {{filter = "crafting-category", crafting_category = category}})
+        if not ok or not entities then entities = {} end
+
+        local has_entities = false
+        local union = {}
+        for _, entity in pairs(entities) do
+            has_entities = true
+            local ok_sc, sc = pcall(function() return entity.surface_conditions end)
+            local entity_vp = lib.get_valid_planets(ok_sc and sc or nil)
+            if not entity_vp then
+                union = nil
+                break
+            end
+            for p in pairs(entity_vp) do union[p] = true end
+        end
+
+        if has_entities and union then
+            result[category] = next(union) and union or nil
+        end
+    end
+    return result
+end
+
+---Intersect two valid-planet sets. nil means "all planets".
+---@param a table<string, boolean>|nil
+---@param b table<string, boolean>|nil
+---@return table<string, boolean>|nil
+function lib.intersect_valid_planets(a, b)
+    if not a then return b end
+    if not b then return a end
+    local result = {}
+    for p in pairs(a) do
+        if b[p] then result[p] = true end
+    end
+    return next(result) and result or nil
 end
 
 

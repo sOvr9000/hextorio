@@ -30,8 +30,10 @@ function item_values.register_events()
             return
         end
 
-        storage.item_values.values[surface_name][item_name] = value * item_values.get_item_value("nauvis", "hex-coin") / storage.item_values.value_multipliers[surface_name]
-        item_values.reset_storage()
+        storage.item_values.values[surface_name][item_name] = value * (storage.item_values.base_coin_value or 10)
+
+        -- TODO: Optimize by keeping current minimal values but update accordingly when any new item value is set (put this in some kind of item_values.set_item_value() function)
+        storage.item_values.minimal_values = nil
 
         event_system.trigger("post-set-item-value-command", player, params)
 
@@ -53,7 +55,7 @@ function item_values.register_events()
             return
         end
 
-        local value = item_values.get_item_value(surface_name, item_name, true, quality) / item_values.get_item_value("nauvis", "hex-coin")
+        local value = item_values.get_item_value(surface_name, item_name, true, quality) / (storage.item_values.base_coin_value or 10)
         local source = (storage.item_values.sources and storage.item_values.sources[surface_name] or {})[item_name]
 
         local str = {"",
@@ -201,8 +203,7 @@ function item_values.register_events()
             end
         end
 
-        storage.item_values.values = t
-        item_values.reset_storage()
+        item_values.set_item_values(t)
 
         event_system.trigger("post-import-item-values-command", player, params)
 
@@ -216,29 +217,6 @@ function item_values.register_events()
     event_system.register("item-values-recalculated", function()
         storage.item_values.awaiting_solver = nil
     end)
-end
-
-function item_values.init()
-    for _, surface_vals in pairs(storage.item_values.values) do
-        item_values.init_coin_values(surface_vals)
-    end
-
-
-
-    -- FOR EXTRANEOUS TOOLS
-
-    -- storage.item_values.recipe_tree = lib.get_recipe_tree()
-    -- storage.item_values.recipe_graph = lib.get_recipe_graph(storage.item_values.recipe_tree)
-    -- log(serpent.block(storage.item_values.recipe_tree))
-
-    -- Log spoilable items.
-    -- local spoilable = {}
-    -- for _, item_name in pairs(storage.item_values.recipe_graph.all_items) do
-    --     if lib.is_spoilable(item_name) then
-    --         table.insert(spoilable, item_name)
-    --     end
-    -- end
-    -- log(serpent.block(spoilable))
 end
 
 ---Automatically calculate item values for coins on a given surface.
@@ -293,71 +271,68 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
         val = 1
     end
 
-    if val then
-        if not lib.is_coin(item_name) then
-            val = val * (storage.item_values.value_multipliers[surface_name] or 1)
-        end
-    else
-        lib.log("item_values.get_item_value: Could not find interplanetary value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
-        val = 1
-    end
-
     return val * quality_mult
 end
 
 ---Get the lowest value of an item across all surfaces.
 ---@param item_name string
----@return number
+---@return number|nil
 function item_values.get_minimal_item_value(item_name)
-    if storage.item_values.minimal_values[item_name] then
-        return storage.item_values.minimal_values[item_name]
-    end
+    local min_vals = storage.item_values.minimal_values
+    if not min_vals then
+        if storage.item_values.awaiting_solver then
+            lib.log_error("item_values.get_minimal_item_value: Cannot calculate minimal item values until item value solver finishes")
+            return
+        end
 
-    local min_value = math.huge
-    for surface_name, surface_vals in pairs(storage.item_values.values) do
-        local val = surface_vals[item_name]
-        if val then
-            val = val * (storage.item_values.value_multipliers[surface_name] or 1)
-            if val < min_value then
-                min_value = val
+        -- Need to compute min values for all items
+        min_vals = {}
+        for _, surface_vals in pairs(storage.item_values.values) do
+            for _item_name, val in pairs(surface_vals) do
+                min_vals[_item_name] = math.min(min_vals[_item_name] or val, val)
             end
         end
+        storage.item_values.minimal_values = min_vals
     end
 
-    if min_value == math.huge then
-        lib.log_error("item_values.get_interplanetary_item_value: No item value found for item " .. item_name .. ", defaulting to 1")
-        return 1
+    local min_val = min_vals[item_name]
+    if not min_val then
+        lib.log_error("item_values.get_minimal_item_value: No item value found for " .. item_name .. " on any surface")
+        return
     end
 
-    storage.item_values.minimal_values[item_name] = min_value
-    return min_value
+    return min_val
 end
 
 ---Return whether an item has a defined value on the given surface.  If allow_interplanetary, check all surfaces for a value (use surface_name="nauvis" as a dummy value).
 ---@param surface_name string
 ---@param item_name string
----@param allow_interplanetary boolean|nil
+---@param allow_untradable boolean|nil Defaults to true
 ---@return boolean
-function item_values.has_item_value(surface_name, item_name, allow_interplanetary)
+function item_values.has_item_value(surface_name, item_name, allow_untradable)
     if not lib.is_vanilla_planet_name(surface_name) then
         return false
     end
 
-    local surface_vals = item_values.get_item_values_for_surface(surface_name, allow_interplanetary)
+    local surface_vals = item_values.get_item_values_for_surface(surface_name)
     if not surface_vals then
         lib.log_error("item_values.has_item_value: No item values for surface " .. surface_name)
         return false
     end
 
-    if not allow_interplanetary then
-        return surface_vals[item_name] ~= nil and surface_vals[item_name] > 0
-    end
+    if allow_untradable == nil then allow_untradable = true end
 
-    for _, values in pairs(storage.item_values.values) do
-        if values[item_name] and values[item_name] > 0 then
+    if not allow_untradable then
+        if not item_values.is_item_tradable(surface_name, item_name) then
+            return false
+        end
+    else
+        local min_val = item_values.get_minimal_item_value(item_name)
+        if min_val and min_val > 0 then
             return true
         end
     end
+
 
     return false
 end
@@ -397,7 +372,7 @@ function item_values.get_interplanetary_item_values(surface_name, items_only, al
     return values
 end
 
----Return whether an item on a surface can only be obtained by importing from some other surface.
+---Return whether an item on a surface can only be obtained by importing an item from some other surface.
 ---@param surface_name string
 ---@param item_name string
 ---@return boolean
@@ -439,7 +414,7 @@ end
 
 ---Return the mapping of all items to their values for a given surface.
 ---@param surface_name string
----@param allow_interplanetary boolean|nil Defaults to false
+---@param allow_interplanetary boolean|nil Defaults to true
 ---@return {[string]: number}|nil
 function item_values.get_item_values_for_surface(surface_name, allow_interplanetary)
     if not surface_name then
@@ -452,6 +427,8 @@ function item_values.get_item_values_for_surface(surface_name, allow_interplanet
         lib.log_error("item_values.get_item_values_for_surface: No item values for surface " .. surface_name)
         return
     end
+
+    if allow_interplanetary == nil then allow_interplanetary = true end
 
     if not allow_interplanetary then
         local local_items_storage = storage.item_values.local_items
@@ -561,43 +538,6 @@ function item_values.get_items_near_value(surface_name, center_value, max_ratio,
     return item_names
 end
 
----Return a list of all items have a defined value on any surface, including coins.
----@param include_coins boolean Whether to include coin names.
-function item_values.get_all_items_with_value(include_coins)
-    if include_coins then
-        if storage.item_values.all_items_with_value_include_coins then
-            return storage.item_values.all_items_with_value_include_coins
-        end
-    else
-        if storage.item_values.all_items_with_value then
-            return storage.item_values.all_items_with_value
-        end
-    end
-
-    local all_item_names = {}
-    for surface_name, values in pairs(storage.item_values.values) do
-        for item_name, _ in pairs(values) do
-            all_item_names[item_name] = true
-        end
-    end
-
-    local coin_set = sets.new(storage.coin_tiers.COIN_NAMES)
-    if include_coins then
-        all_item_names = sets.union(all_item_names, coin_set)
-    else
-        all_item_names = sets.difference(all_item_names, coin_set)
-    end
-
-    local item_names = sets.to_array(all_item_names)
-    if include_coins then
-        storage.item_values.all_items_with_value_include_coins = item_names
-    else
-        storage.item_values.all_items_with_value = item_names
-    end
-
-    return item_names
-end
-
 ---Return the set of all tradable items on a surface.
 ---@param surface_name string
 ---@return {[string]: boolean}
@@ -634,12 +574,11 @@ function item_values.is_item_for_surface(item_name, surface_name)
     return surface_items[item_name]
 end
 
----Reset cached data in storage.item_values so that changed values have an effect.
-function item_values.reset_storage()
-    storage.item_values.minimal_values = {}
-    storage.item_values.all_items_with_value = nil
-    storage.item_values.local_items = nil
-    storage.item_values.tradable_items = nil
+---Set all item values to the given data.
+---@param new_item_values {[string]: {[string]: number}}
+function item_values.set_item_values(new_item_values)
+    storage.item_values.values = new_item_values
+    storage.item_values.minimal_values = nil
 end
 
 function item_values.migrate_old_data()

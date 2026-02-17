@@ -9,8 +9,6 @@ local data_item_values = require "data.item_values"
 
 return function()
     storage.item_buffs.item_buffs = data_item_buffs.item_buffs
-
-    item_values.reset_storage()
     storage.item_values.values = data_item_values.values
 
     storage.initialization = storage.events

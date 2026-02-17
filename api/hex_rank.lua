@@ -36,19 +36,22 @@ function hex_rank.init()
 
     local total_techs = lib.table_length(game.forces.player.technologies)
 
-    local total_items
-    if storage.coin_tiers and storage.coin_tiers.COIN_TIERS_BY_NAME then
-        -- TODO: to better support modded items, either check if an item has a defined value here or actually define modded item values so that it's safe to assume that any item has a value (which makes it possible to rank them up)
-        total_items = 0
-        for item_name, _ in pairs(prototypes.item) do
-            if lib.is_catalog_item(item_name) then
-                total_items = total_items + 1
+    local total_tradable_items
+    if storage.item_values and storage.item_values.is_tradable then
+        total_tradable_items = 0
+        for _, surface_tradable_items in pairs(storage.item_values.is_tradable) do
+            for item_name, flag in pairs(surface_tradable_items) do
+                if flag and not lib.is_coin(item_name) and lib.is_item(item_name) then
+                    total_tradable_items = total_tradable_items + 1
+                end
             end
         end
     else
-        total_items = 200 -- heuristic if hex_rank.init() is somehow ran before control on_init is
-        lib.log_error("hex_rank.init: Coin tiers data not yet set")
+        total_tradable_items = 200 -- heuristic if hex_rank.init() is somehow ran before control on_init is
+        lib.log_error("hex_rank.init: Item tradability info not yet populated")
     end
+
+    local NUM_PLANETS = 5 -- For now this is hardcoded, until somehow modded planet support gets added
 
     -- These factors aren't necessarily a 1:1 copy of all possible gameplay statistics types; instead, this is just a list of the ones that go into computing hex rank
     ---@type HexRankFactorMetadataMap
@@ -78,7 +81,7 @@ function hex_rank.init()
             coefficient = 2,
         },
         ["total-unique-items-traded"] = {
-            goal_stat = total_items * 5, -- once for each item on each planet
+            goal_stat = total_tradable_items * NUM_PLANETS,
             coefficient = 3,
         },
         ["total-resources-depleted"] = {
@@ -94,7 +97,7 @@ function hex_rank.init()
             coefficient = 1,
         },
         ["total-item-rank"] = {
-            goal_stat = total_items * 4,
+            goal_stat = total_tradable_items * 4,
             coefficient = 1.2,
         },
         ["fastest-ship-speed"] = {

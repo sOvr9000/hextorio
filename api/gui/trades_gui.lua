@@ -391,7 +391,7 @@ function trades_gui.update_trade_elements(player, trade_flow, trade, quality)
         sprite_name = sprite_name .. "-favorited"
     end
 
-    if trades.is_interplanetary_trade(trade) then
+    if trades.trade_has_untradable_items(trade) then
         sprite_name = "interplanetary-" .. sprite_name
     end
 
@@ -496,7 +496,7 @@ function trades_gui.on_ping_button_clicked(player, elem)
     local trade = core_gui.get_trade_from_trade_flow(player, flow)
     if not trade or not trade.hex_core_state or not trade.hex_core_state.hex_core then return end
 
-    local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
+    local trade_str = lib.get_trade_img_str(trade, trades.trade_has_untradable_items(trade))
     local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
 
     game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})

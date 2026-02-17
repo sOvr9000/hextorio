@@ -209,7 +209,9 @@ function catalog_gui.init_catalog(player)
         local n = 1
         for j = 1, #items_sorted_by_value do
             local item_name = items_sorted_by_value[j]
-            if lib.is_catalog_item(item_name) then
+            if lib.is_catalog_item(surface_name, item_name) then
+                log("create catalog entry for " .. item_name .. " on " .. surface_name)
+
                 n = n + 1
                 local rank = item_ranks.get_item_rank(item_name)
 
@@ -259,6 +261,7 @@ function catalog_gui.update_catalog(player)
 
     local scroll_pane = frame["flow"]["catalog-frame"]["scroll-pane"]
 
+    log("update catalog entry sprites")
     for _, tab in pairs(scroll_pane.children) do
         -- lib.log(tab.name)
         if tab.type == "table" then
@@ -267,9 +270,12 @@ function catalog_gui.update_catalog(player)
             local achieved_ranks = {0, 0, 0, 0}
 
             local surface_name = tab.tags.surface_name or "nauvis"
+            log("surface " .. surface_name)
             for _, rank_flow in pairs(tab.children) do
                 local item_name = rank_flow.tags.item_name or "stone"
+                log("item " .. item_name)
                 if trades.is_item_discovered(item_name) then
+                    log("DISCOVERED")
                     local rank = item_ranks.get_item_rank(item_name)
                     discovered_items = discovered_items + 1
                     for i = 1, rank - 1 do
@@ -281,6 +287,7 @@ function catalog_gui.update_catalog(player)
                     rank_flow["rank-stars"].visible = true
                     gui.give_item_tooltip(player, surface_name, rank_flow["catalog-item"])
                 else
+                    log("NOT DISCOVERED")
                     rank_flow["catalog-item"].sprite = "utility/questionmark"
                     rank_flow["catalog-item"].ignored_by_interaction = true
                     rank_flow["rank-stars"].visible = false
@@ -626,8 +633,8 @@ function catalog_gui.build_rank_bonuses(player, rank_obj, frame)
             caption = {"", {"hextorio-gui.rank-bonus-unique-" .. i, lib.format_percentage(lib.runtime_setting_value("rank-" .. i .. "-effect"), 1, false), color_text, "heading-2", selection.item_name}}
         elseif i == 3 then
             local planets_text = {""}
-            for surface_name, _ in pairs(storage.item_values.values) do
-                if item_values.is_item_interplanetary(surface_name, selection.item_name) then
+            for surface_name, _ in pairs(storage.SUPPORTED_PLANETS) do
+                if not item_values.is_item_tradable(surface_name, selection.item_name) then
                     table.insert(planets_text, "[planet=" .. surface_name .. "]")
                 end
             end
@@ -748,21 +755,22 @@ function catalog_gui.build_quantum_bazaar(player, rank_obj, frame)
 
     local sell_inv_coin, buy_one_coin
     if player.character then
-        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / (storage.item_values.base_coin_value or 10))
         sell_inv_coin = inventories.get_total_coin_value(player.character.surface.name, lib.get_player_inventory(player), 5)
     else
-        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / (storage.item_values.base_coin_value or 10))
         sell_inv_coin = inventories.get_total_coin_value("nauvis", lib.get_player_inventory(player), 5)
     end
     buy_one_coin = coin_tiers.ceil(buy_one_coin)
 
     local elem_filter_items = sets.new()
     for _, surface in pairs(game.surfaces) do
+        local surface_name = surface.name
         if not lib.is_space_platform(surface) then
             local values = item_values.get_item_values_for_surface(surface.name, true)
             if values then
                 for name, _ in pairs(values) do
-                    if lib.is_catalog_item(name) and item_ranks.get_item_rank(name) >= 5 then
+                    if lib.is_catalog_item(surface_name, name) and item_ranks.get_item_rank(name) >= 5 then
                         sets.add(elem_filter_items, name)
                     end
                 end
@@ -992,7 +1000,7 @@ function catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
 
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
-    local purchaseable = math.floor(coin_tiers.divide_coins(inv_coin, coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin"))))
+    local purchaseable = math.floor(coin_tiers.divide_coins(inv_coin, coin_tiers.from_base_value(item_value / (storage.item_values.base_coin_value or 10))))
 
     return purchaseable
 end
@@ -1020,7 +1028,7 @@ function catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
     local selection = catalog_gui.get_catalog_selection(player)
 
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
-    local total_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / item_values.get_item_value("nauvis", "hex-coin")))
+    local total_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / (storage.item_values.base_coin_value or 10)))
 
     local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
@@ -1143,9 +1151,9 @@ function catalog_gui.update_quantum_bazaar(player)
 
     local buy_one_coin
     if player.character then
-        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality) / (storage.item_values.base_coin_value or 10))
     else
-        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / item_values.get_item_value("nauvis", "hex-coin"))
+        buy_one_coin = coin_tiers.from_base_value(item_values.get_item_value("nauvis", selection.item_name, true, selection.bazaar_quality) / (storage.item_values.base_coin_value or 10))
     end
     buy_one_coin = coin_tiers.ceil(buy_one_coin)
 
@@ -1249,7 +1257,7 @@ function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, elem)
     if not inv then return end
 
     local item_value = item_values.get_item_value(player.character.surface.name, item_stack.name, true, item_stack.quality.name) * item_stack.count
-    local received_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value / item_values.get_item_value("nauvis", "hex-coin")))
+    local received_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value / (storage.item_values.base_coin_value or 10)))
 
     inventories.add_coin_to_inventory(inv, received_coin, nil, quests.is_feature_unlocked "piggy-bank")
     item_stack.clear()

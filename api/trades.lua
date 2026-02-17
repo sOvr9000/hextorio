@@ -39,6 +39,7 @@ local trades = {}
 ---@field current_prod_value StringAmounts Indexed by quality name, the current progress towards filling the productivity bar (red or purple).
 ---@field max_items_per_output number|nil The maximum number of items to be output by this trade, per output item type.
 ---@field is_interplanetary boolean Cached flag for quickly checking whether this trade contains an interplanetary item in either its inputs or outputs.
+---@field has_untradable_items boolean Cached flag for quickly checking whether this trade contains any items that are initially untradable on its planet. Silver-ranked items bypass tradability and set this flag to true.
 ---@field has_coins_in_input boolean Cached flag for quickly checking whether this trade contains coins in its inputs.
 ---@field has_coins_in_output boolean Cached flag for quickly checking whether this trade contains coins in its outputs.
 ---@field input_items TradeItem[] List of item names and counts representing the inputs of the trade.
@@ -118,26 +119,31 @@ local trades = {}
 
 
 function trades.register_events()
-    local function discover_all(player, params, trigger_post)
+    local function discover_all(player, params)
+        log("running discover all - tradable items right now:")
+        log(serpent.block(storage.item_values.is_tradable))
+        if storage.item_values.awaiting_solver then
+            lib.log_error("Skipped discovering all items: item value solver has not yet finished")
+            return
+        end
+
         local items_list = {}
         for surface_name, vals in pairs(storage.item_values.values) do
             for item_name, _ in pairs(vals) do
-                if not lib.is_coin(item_name) and lib.is_item(item_name) then
+                if lib.is_catalog_item(surface_name, item_name) then
                     table.insert(items_list, item_name)
+                else
+                    log("skip " .. item_name .. " on " .. surface_name)
                 end
             end
         end
 
         trades.discover_items(items_list)
-
-        if trigger_post then
-            event_system.trigger("post-discover-all-command", player, params)
-        end
     end
 
     -- Automatically discover all items when ranking up all items.
-    event_system.register("command-discover-all", function(player, params) discover_all(player, params, true) end)
-    event_system.register("command-rank-up-all", function(player, params) discover_all(player, params, false) end)
+    event_system.register("command-discover-all", function(player, params) discover_all(player, params) event_system.trigger("post-discover-all-command", player, params) end) -- TODO: just fire an event `post-<command>` for all commands, even though it is "wasteful" as most of such events would never be used; it's probably okay because commands are infrequent events
+    event_system.register("command-rank-up-all", function(player, params) discover_all(player, params) end)
 
     event_system.register("command-refresh-all-trades", function(player, params)
         trades.recalculate_researched_items()
@@ -271,6 +277,7 @@ function trades.initialize_trade_state(trade)
     ---@cast output_items TradeItem[]
 
     local is_interplanetary = false
+    local has_untradable_items = false
     local has_coins_in_input = false
     for _, input_item in pairs(input_items) do
         if lib.is_coin(input_item.name) then
@@ -278,6 +285,9 @@ function trades.initialize_trade_state(trade)
         end
         if item_values.is_item_interplanetary(trade.surface_name, input_item.name) then
             is_interplanetary = true
+        end
+        if not item_values.is_item_tradable(trade.surface_name, input_item.name) then
+            has_untradable_items = true
         end
     end
 
@@ -289,6 +299,9 @@ function trades.initialize_trade_state(trade)
         end
         if item_values.is_item_interplanetary(trade.surface_name, output_item.name) then
             is_interplanetary = true
+        end
+        if not item_values.is_item_tradable(trade.surface_name, output_item.name) then
+            has_untradable_items = true
         end
     end
 
@@ -305,6 +318,7 @@ function trades.initialize_trade_state(trade)
         productivity = 0,
         current_prod_value = {},
         is_interplanetary = is_interplanetary,
+        has_untradable_items = has_untradable_items,
     }
 
     trades.check_productivity(new)
@@ -497,7 +511,7 @@ function trades.generator_solve_item_counts(surface_name, trade, params)
     total_output_value = total_output_value * num
 
     -- Scale up if total values are under one hex coin
-    local min_total_value = item_values.get_item_value("nauvis", "hex-coin")
+    local min_total_value = storage.item_values.base_coin_value or 10
     if total_input_value < min_total_value or total_output_value < min_total_value then
         local scale = math.max(math.ceil(min_total_value / total_input_value), math.ceil(min_total_value / total_output_value))
 
@@ -798,7 +812,7 @@ end
 ---@param quality string|nil
 ---@param quality_cost_mult number|nil
 function trades.get_total_values_str(trade, quality, quality_cost_mult)
-    local coin_value = item_values.get_item_value("nauvis", "hex-coin")
+    local coin_value = storage.item_values.base_coin_value or 10
     local total_input_value = trades.get_input_value(trade.surface_name, trade, quality, quality_cost_mult) / coin_value
     local total_output_value = trades.get_output_value(trade.surface_name, trade, quality) / coin_value
     local str = {"",
@@ -1348,11 +1362,10 @@ end
 ---@param item_name string
 ---@return boolean
 function trades.mark_as_discovered(item_name)
-    if not quests.is_feature_unlocked "catalog" then return false end
-    if item_name:sub(-5) == "-coin" then return false end
-    local already_discovered = trades.is_item_discovered(item_name)
+    -- if not quests.is_feature_unlocked "catalog" then return false end
+    if not lib.is_catalog_item(nil, item_name) or trades.is_item_discovered(item_name) then return false end
     storage.trades.discovered_items[item_name] = true
-    return not already_discovered
+    return true
 end
 
 ---Check whether the item is discovered.
@@ -1368,20 +1381,22 @@ end
 function trades.discover_items(items_list)
     if not items_list then return {} end
 
+    local i = 0
     local new_discoveries = {}
     for _, item_name in pairs(items_list) do
         if trades.mark_as_discovered(item_name) then
-            table.insert(new_discoveries, item_name)
+            i = i + 1
+            new_discoveries[i] = item_name
+            log("discovering " .. item_name)
+        else
+            log("failed to discover " .. item_name)
         end
     end
 
     if next(new_discoveries) then
-        local s = " "
-        for i, item_name in ipairs(new_discoveries) do
-            if i > 1 then
-                s = s .. " "
-            end
-            s = s .. "[img=item." .. item_name .. "]"
+        local s = ""
+        for _, item_name in pairs(new_discoveries) do
+            s = s .. " [img=item." .. item_name .. "]"
         end
         lib.print_notification("item-ranked-up", lib.color_localized_string({"", {"hextorio.new-catalog-items"}, s}, "green", "heading-1"))
     end
@@ -1603,14 +1618,15 @@ function trades.has_any_productivity_modifiers(trade, quality)
         return true
     end
 
+    local surface_name = trade.surface_name
     for _, item in pairs(trade.input_items) do
-        if lib.is_catalog_item(item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
+        if lib.is_catalog_item(surface_name, item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
             return true
         end
     end
 
     for _, item in pairs(trade.output_items) do
-        if lib.is_catalog_item(item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
+        if lib.is_catalog_item(surface_name, item.name) and item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) ~= 0 then
             return true
         end
         if not storage.trades.researched_items[item.name] then
@@ -1666,14 +1682,15 @@ function trades.check_productivity(trade)
     local base_prod = trades.get_base_trade_productivity_on_surface(trade.surface_name)
     trades.set_productivity(trade, base_prod)
 
+    local surface_name = trade.surface_name
     for _, item in pairs(trade.input_items) do
-        if lib.is_catalog_item(item.name) then
+        if lib.is_catalog_item(surface_name, item.name) then
             trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
         end
     end
 
     for _, item in pairs(trade.output_items) do
-        if lib.is_catalog_item(item.name) then
+        if lib.is_catalog_item(surface_name, item.name) then
             local penalty_prod = 0.0
             if not storage.trades.researched_items[item.name] then
                 penalty_prod = storage.trades.unresearched_penalty * storage.item_buffs.unresearched_penalty_multiplier
@@ -1926,7 +1943,7 @@ function trades.process_trade_filtering_jobs()
                             should_filter = true
                         end
                     end
-                    if not should_filter and filter.show_interplanetary_only and not trades.is_interplanetary_trade(trade) then
+                    if not should_filter and filter.show_interplanetary_only and trades.trade_has_untradable_items(trade) then -- TODO: relabel "interplanetary" in the GUIs to "untradable" or something, because that's the intended filter (to find trades created by the silver rank bonus)
                         should_filter = true
                     end
                     if not should_filter and filter.exclude_favorited and trades.is_trade_favorited(player, trade) then
@@ -2329,6 +2346,7 @@ function trades.process_trade_export_jobs()
                     is_dungeon = trade.hex_core_state.is_dungeon == true or trade.hex_core_state.was_dungeon == true,
                     productivity = trades.get_productivity(trade),
                     is_interplanetary = trades.is_interplanetary_trade(trade),
+                    has_untradable_items = trades.trade_has_untradable_items(trade),
                     mode = trade.hex_core_state.mode or "normal",
                     core_quality = quality,
                 })
@@ -2358,7 +2376,7 @@ end
 ---@param job TradeExportJob
 function trades.finalize_trade_export(job)
     -- Compute item values
-    local hex_coin_value_inv = 1 / item_values.get_item_value("nauvis", "hex-coin")
+    local hex_coin_value_inv = 1 / (storage.item_values.base_coin_value or 10)
     for surface_name, item_names in pairs(job.seen_items) do
         for item_name, _ in pairs(item_names) do
             job.item_value_lookup[surface_name][item_name] = item_values.get_item_value(surface_name, item_name, true, "normal") * hex_coin_value_inv
@@ -2671,7 +2689,7 @@ function trades._check_coin_names_for_volume(list, volume)
     -- Convert coin names to correct tier for trade volume
     for i, item_name in ipairs(list) do
         if lib.is_coin(item_name) then
-            list[i] = coin_tiers.get_name_of_tier(coin_tiers.get_tier_for_display(coin_tiers.from_base_value(volume / item_values.get_item_value("nauvis", "hex-coin"))))
+            list[i] = coin_tiers.get_name_of_tier(coin_tiers.get_tier_for_display(coin_tiers.from_base_value(volume / (storage.item_values.base_coin_value or 10))))
         end
     end
 end
@@ -2915,11 +2933,16 @@ end
 function trades.generate_interplanetary_trade_locations(surface_name, trades_per_item)
     if not trades_per_item then trades_per_item = 1 end
 
-    if not storage.trades.interplanetary_trade_locations then
-        storage.trades.interplanetary_trade_locations = {}
+    local ip_storage = storage.trades.interplanetary_trade_locations
+    if not ip_storage then
+        ip_storage = {}
+        storage.trades.interplanetary_trade_locations = ip_storage
     end
-    if not storage.trades.interplanetary_trade_locations[surface_name] then
-        storage.trades.interplanetary_trade_locations[surface_name] = {}
+
+    local surface_ip_locations = ip_storage[surface_name]
+    if not surface_ip_locations then
+        surface_ip_locations = {}
+        ip_storage[surface_name] = surface_ip_locations
     end
 
     local land_hexes = hex_island.get_land_hex_list(surface_name)
@@ -2930,18 +2953,22 @@ function trades.generate_interplanetary_trade_locations(surface_name, trades_per
         return
     end
 
-    local item_vals = item_values.get_interplanetary_item_values(surface_name, true, false, "normal")
-    for item_name, _ in pairs(item_vals) do
-        for i = 1, trades_per_item do
-            local hex_pos = land_hexes[math.random(1, total_land_hexes)]
-            if not storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q] then
-                storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q] = {}
+    local surface_vals = item_values.get_item_values_for_surface(surface_name, true)
+    if surface_vals then
+        for item_name, _ in pairs(surface_vals) do
+            if not item_values.is_item_tradable(surface_name, item_name) then
+                for i = 1, trades_per_item do
+                    local hex_pos = land_hexes[math.random(1, total_land_hexes)]
+                    if not surface_ip_locations[hex_pos.q] then
+                        surface_ip_locations[hex_pos.q] = {}
+                    end
+                    if not surface_ip_locations[hex_pos.q][hex_pos.r] then
+                        surface_ip_locations[hex_pos.q][hex_pos.r] = {}
+                    end
+                    surface_ip_locations[hex_pos.q][hex_pos.r][item_name] = true
+                    event_system.trigger("interplanetary-trade-generated", surface_name, item_name, hex_pos)
+                end
             end
-            if not storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q][hex_pos.r] then
-                storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q][hex_pos.r] = {}
-            end
-            storage.trades.interplanetary_trade_locations[surface_name][hex_pos.q][hex_pos.r][item_name] = true
-            event_system.trigger("interplanetary-trade-generated", surface_name, item_name, hex_pos)
         end
     end
 end
@@ -2984,7 +3011,7 @@ function trades.get_interplanetary_trade_locations_for_item(surface_name, item_n
     return locations
 end
 
----Return whether the given trade is interplanetary to its surface.
+---Return whether the given trade contains any items that can only be obtained by importing at least one item from another planet.
 ---@param trade Trade
 ---@return boolean
 function trades.is_interplanetary_trade(trade)
@@ -3005,6 +3032,31 @@ function trades.is_interplanetary_trade(trade)
     end
 
     trade.is_interplanetary = false
+    return false
+end
+
+---Return whether the given trade has items that are initially untradable on its surface.
+---Note that silver-ranked items show up on surfaces where they are normally untradable.
+---@param trade Trade
+---@return boolean
+function trades.trade_has_untradable_items(trade)
+    if trade.has_untradable_items ~= nil then return trade.has_untradable_items end
+
+    local surface_name = trade.surface_name
+    for _, input in pairs(trade.input_items) do
+        if not item_values.is_item_tradable(surface_name, input.name) then
+            trade.has_untradable_items = true
+            return true
+        end
+    end
+    for _, output in pairs(trade.output_items) do
+        if not item_values.is_item_tradable(surface_name, output.name) then
+            trade.has_untradable_items = true
+            return true
+        end
+    end
+
+    trade.has_untradable_items = false
     return false
 end
 
@@ -3098,7 +3150,7 @@ end
 ---@param surface_name string|nil
 function trades.fetch_base_trade_productivity_settings(surface_name)
     if surface_name == nil then
-        for _surface_name, _ in pairs(storage.item_values.values) do
+        for _surface_name, _ in pairs(storage.SUPPORTED_PLANETS) do
             trades.fetch_base_trade_productivity_settings(_surface_name)
         end
         return

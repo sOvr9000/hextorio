@@ -221,8 +221,12 @@ function trade_overview_gui.build_left_filter_frame(frame)
 end
 
 function trade_overview_gui.build_trade_content_filter(frame)
-    local item_names_with_value = item_values.get_all_items_with_value(true)
-    local elem_filters = {{filter = "name", name = item_names_with_value}}
+    -- Could cache this, but having to reset the cache from other events made it simpler to recalculate when needed.
+    local all_tradable_items = sets.new()
+    for _, tradable in pairs(storage.item_values.is_tradable) do
+        all_tradable_items = sets.union(all_tradable_items, tradable)
+    end
+    local elem_filters = {{filter = "name", name = sets.to_array(all_tradable_items)}}
 
     local trade_contents_flow = frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
     local trade_contents_label = trade_contents_flow.add {type = "label", name = "label", caption = {"hextorio-gui.trade-contents"}}

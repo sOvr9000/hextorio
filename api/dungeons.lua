@@ -724,7 +724,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
                         total_coin_value = total_coin_value + item_values.get_item_value(dungeon.surface.name, item_name, true, quality) * count
                     end
 
-                    local coin = coin_tiers.from_base_value(total_coin_value / (10 * item_values.get_item_value("nauvis", "hex-coin")))
+                    local coin = coin_tiers.from_base_value(total_coin_value / (10 * (storage.item_values.base_coin_value or 10))) -- multiply base coin value by 10 because coins in dungeon chests are 1/10 of total item value in them
                     inventories.add_coin_to_inventory(inv, coin)
 
                     -- Additionally roll for extra items

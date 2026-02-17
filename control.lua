@@ -31,6 +31,7 @@ local hex_rank = require "api.hex_rank"
 local gameplay_statistics = require "api.gameplay_statistics"
 local gsr = require "api.gameplay_statistics_recalculators"
 local item_value_solver = require "api.item_value_solver"
+local item_tradability_solver = require "api.item_tradability_solver"
 
 migrations.load_handlers()
 
@@ -52,6 +53,7 @@ hex_rank.register_events()
 gameplay_statistics.register_events()
 gsr.register_events()
 item_value_solver.register_events()
+item_tradability_solver.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -92,6 +94,14 @@ end
 script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
     storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
+
+    storage.SUPPORTED_PLANETS = {
+        nauvis = true,
+        vulcanus = true,
+        fulgora = true,
+        gleba = true,
+        aquilo = true,
+    }
 
     storage.intro_gui = data_intro_gui
     storage.constants = data_constants
@@ -177,7 +187,8 @@ script.on_init(function()
     temp.request_to_generate_chunks({0, 0}, 0)
 
     coin_tiers.init()
-    item_values.init()
+    item_tradability_solver.solve()
+    item_value_solver.run()
     item_ranks.init()
     quests.init()
     hex_island.init() -- Must come before trades.init() for guaranteed trades to work
@@ -623,4 +634,5 @@ script.on_configuration_changed(function(handler)
     if changes and changes.old_version ~= changes.new_version then
         migrations.on_mod_updated(changes.old_version, changes.new_version)
     end
+    item_tradability_solver.solve()
 end)

@@ -34,7 +34,7 @@ function loot_tables.init()
         surface_loot_tables = {},
     }
 
-    for surface_name, _ in pairs(storage.item_values.values) do
+    for surface_name, _ in pairs(storage.SUPPORTED_PLANETS) do
         local item_names = item_values.get_items_sorted_by_value(surface_name, true, true, false, false)
         storage.loot_tables.surface_loot_tables[surface_name] = {
             dungeon = loot_tables.new(surface_name, item_names, 1, 6)

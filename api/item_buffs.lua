@@ -524,7 +524,8 @@ function item_buffs.get_item_buff_cost(item_name)
         level_bonus = item_buffs.rounded_buff_value(storage.item_buffs.level_bonus)
     end
 
-    local coin = coin_tiers.from_base_value(item_values.get_minimal_item_value(item_name) * storage.item_buffs.cost_multiplier / item_values.get_item_value("nauvis", "hex-coin"))
+    local min_val = item_values.get_minimal_item_value(item_name) or 1
+    local coin = coin_tiers.from_base_value(min_val * storage.item_buffs.cost_multiplier / (storage.item_values.base_coin_value or 10))
 
     coin = coin_tiers.multiply(coin, storage.item_buffs.cost_scale)
     for i = level_bonus + 1, level do

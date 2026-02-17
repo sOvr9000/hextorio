@@ -20,7 +20,7 @@ local solver = {}
 
 
 
-local ALL_PLANETS = {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
+local ALL_PLANETS = lib.ALL_PLANETS
 
 local planet_configs = {
     nauvis = {
@@ -120,36 +120,6 @@ local function is_non_transportable(item_name, cache)
     return false
 end
 
----@param recipe LuaRecipePrototype
----@return table|nil
-local function extract_recipe_data(recipe)
-    local ingredients = {}
-    for _, ing in pairs(recipe.ingredients) do
-        table.insert(ingredients, {name = ing.name, amount = ing.amount})
-    end
-    local products = {}
-    for _, prod in pairs(recipe.products) do
-        local amount = prod.amount
-        if not amount and prod.amount_min and prod.amount_max then
-            amount = (prod.amount_min + prod.amount_max) / 2
-        end
-        if amount and amount > 0 then
-            local prob = prod.probability or 1
-            table.insert(products, {name = prod.name, amount = amount * prob})
-        end
-    end
-    if #products == 0 then return nil end
-
-    local ok, sc = pcall(function() return recipe.surface_conditions end)
-    return {
-        energy = recipe.energy,
-        category = recipe.category,
-        ingredients = ingredients,
-        products = products,
-        surface_conditions = ok and sc or nil,
-    }
-end
-
 ---Cancel common items between ingredients and products to prevent feedback loops.
 ---@param recipe table
 local function cancel_common_items(recipe)
@@ -172,42 +142,6 @@ local function cancel_common_items(recipe)
             end
         end
     end
-end
-
----Determine which planets a recipe can be used on based on its surface conditions.
----Returns nil if the recipe has no restrictions (usable everywhere).
----@param surface_conditions SurfaceCondition[]|nil
----@return table<string, boolean>|nil
-local function get_valid_planets(surface_conditions)
-    if not surface_conditions or #surface_conditions == 0 then return nil end
-
-    local valid = {}
-    for _, planet_name in pairs(ALL_PLANETS) do
-        local planet_proto = prototypes.space_location[planet_name]
-        if not planet_proto then
-            valid[planet_name] = true
-        else
-            local props = planet_proto.surface_properties or {}
-            local all_met = true
-            for _, cond in pairs(surface_conditions) do
-                local val = props[cond.property]
-                if val ~= nil then
-                    local cmin = cond.min or 0
-                    local cmax = cond.max or math.huge
-                    if val < cmin or val > cmax then
-                        all_met = false
-                        break
-                    end
-                else
-                    all_met = false
-                    break
-                end
-            end
-            if all_met then valid[planet_name] = true end
-        end
-    end
-
-    return valid
 end
 
 ---Compute the cost of importing one unit of an item from a source planet.
@@ -281,7 +215,7 @@ local function phase_collect(s)
         local recipe = prototypes.recipe[name]
         c.recipe_idx = c.recipe_idx + 1
         if recipe and not recipe.hidden then
-            local ok, data = pcall(extract_recipe_data, recipe)
+            local ok, data = pcall(lib.extract_recipe_data, recipe)
             if ok and data then
                 c.recipes[recipe.name] = data
             end
@@ -359,57 +293,7 @@ local function find_fuel_categories(collected_recipes)
     return result
 end
 
----Build a map from recipe category to valid planets based on crafting machine surface conditions.
----For each category, finds all entities that can craft it and unions their valid planets.
----If no entity restricts the category, returns nil (meaning all planets).
----@param collected_recipes table<string, table>
----@return table<string, table<string, boolean>|nil>
-local function build_category_valid_planets(collected_recipes)
-    local categories = {}
-    for _, data in pairs(collected_recipes) do
-        if data.category then categories[data.category] = true end
-    end
-
-    local result = {}
-    for category in pairs(categories) do
-        local ok, entities = pcall(prototypes.get_entity_filtered,
-            {{filter = "crafting-category", crafting_category = category}})
-        if not ok or not entities then entities = {} end
-
-        local has_entities = false
-        local union = {}
-        for _, entity in pairs(entities) do
-            has_entities = true
-            local ok_sc, sc = pcall(function() return entity.surface_conditions end)
-            local entity_vp = get_valid_planets(ok_sc and sc or nil)
-            if not entity_vp then
-                -- At least one machine has no restrictions, so the category is unrestricted
-                union = nil
-                break
-            end
-            for p in pairs(entity_vp) do union[p] = true end
-        end
-
-        if has_entities and union then
-            result[category] = next(union) and union or nil
-        end
-    end
-    return result
-end
-
----Intersect two valid-planet sets. nil means "all planets".
----@param a table<string, boolean>|nil
----@param b table<string, boolean>|nil
----@return table<string, boolean>|nil
-local function intersect_valid_planets(a, b)
-    if not a then return b end
-    if not b then return a end
-    local result = {}
-    for p in pairs(a) do
-        if b[p] then result[p] = true end
-    end
-    return next(result) and result or nil
-end
+local intersect_valid_planets = lib.intersect_valid_planets
 
 ---Phase 1: Process recipes, add spoil/burnt/fuel pseudo-recipes, compute multipliers, initialize values.
 ---@param s table
@@ -418,13 +302,18 @@ local function phase_build(s)
     local all_items = {}
 
     local fuel_categories = find_fuel_categories(s.collect.recipes)
-    local category_valid_planets = build_category_valid_planets(s.collect.recipes)
+
+    local categories = {}
+    for _, data in pairs(s.collect.recipes) do
+        if data.category then categories[data.category] = true end
+    end
+    local category_valid_planets = lib.build_category_valid_planets(categories)
 
     for recipe_name, data in pairs(s.collect.recipes) do
         local fuel_info = #data.ingredients == 0 and fuel_categories[data.category] or nil
 
         log(recipe_name)
-        local recipe_vp = get_valid_planets(data.surface_conditions)
+        local recipe_vp = lib.get_valid_planets(data.surface_conditions)
         local cat_vp = category_valid_planets[data.category]
 
         if fuel_info then
@@ -434,7 +323,7 @@ local function phase_build(s)
             -- Valid planets = intersection of recipe and entity surface conditions.
             for _, prod in pairs(data.products) do all_items[prod.name] = true end
 
-            local entity_vp = get_valid_planets(fuel_info.surface_conditions)
+            local entity_vp = lib.get_valid_planets(fuel_info.surface_conditions)
             local valid_planets = intersect_valid_planets(
                 intersect_valid_planets(recipe_vp, entity_vp), cat_vp)
 
@@ -945,7 +834,8 @@ local function phase_finalize(s)
         end
     end
 
-    -- Write to game storage
+    -- Write to storage
+    local new_item_values = {}
     for _, planet in pairs(ALL_PLANETS) do
         local planet_values = {}
         for item_name, val in pairs(values[planet]) do
@@ -953,14 +843,14 @@ local function phase_finalize(s)
                 planet_values[item_name] = val
             end
         end
-        storage.item_values.values[planet] = planet_values
+        new_item_values[planet] = planet_values
         item_values.init_coin_values(planet_values)
     end
 
     storage.item_values.interplanetary = interplanetary
     storage.item_values.is_interplanetary = s.is_interplanetary
     storage.item_values.sources = s.sources
-    item_values.reset_storage()
+    item_values.set_item_values(new_item_values)
 
     -- Log final values with provenance per planet
     local total = 0

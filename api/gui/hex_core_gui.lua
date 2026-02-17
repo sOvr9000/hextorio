@@ -842,7 +842,7 @@ function hex_core_gui.on_tag_button_click(player, element)
     local trade = trades.get_trade_from_id(trade_id)
     if not trade then return end
 
-    local trade_str = lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
+    local trade_str = lib.get_trade_img_str(trade, trades.trade_has_untradable_items(trade))
 
     state.tags_created = (state.tags_created or -1) + 1
 

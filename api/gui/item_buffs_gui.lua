@@ -126,7 +126,7 @@ function item_buffs_gui.update_item_buffs_frame(player)
     local buff_groups = {}
     for item_name, _ in pairs(storage.trades.discovered_items) do
         local rank = item_ranks.get_item_rank(item_name)
-        if rank >= 2 and lib.is_catalog_item(item_name) and item_buffs.is_unlocked(item_name) then
+        if rank >= 2 and item_buffs.is_unlocked(item_name) then
             local buffs = item_buffs.get_buffs(item_name)
             for _, buff in ipairs(buffs) do
                 local buff_key = buff.type
@@ -194,7 +194,7 @@ function item_buffs_gui.update_item_in_item_buffs_frame(player, item_name)
     -- Populate items for each buff group
     for discovered_item_name, _ in pairs(storage.trades.discovered_items) do
         local rank = item_ranks.get_item_rank(discovered_item_name)
-        if rank >= 2 and lib.is_catalog_item(discovered_item_name) and item_buffs.is_unlocked(discovered_item_name) then
+        if rank >= 2 and item_buffs.is_unlocked(discovered_item_name) then
             local discovered_buffs = item_buffs.get_buffs(discovered_item_name)
             for _, buff in ipairs(discovered_buffs) do
                 local buff_key = buff.type

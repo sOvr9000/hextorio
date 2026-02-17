@@ -37,7 +37,7 @@ function inventories.get_total_coin_value(surface_name, inv, min_rank)
             end
         end
     end
-    coin = coin_tiers.divide(coin, item_values.get_item_value("nauvis", "hex-coin"))
+    coin = coin_tiers.divide(coin, storage.item_values.base_coin_value or 10)
 
     return coin_tiers.normalized(coin)
 end

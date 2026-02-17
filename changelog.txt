@@ -1,10 +1,39 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.12
 Date: 13/2/26
+  Major Features:
+    - Item values are now dynamically calculated (including modded items) on game start or when the command /solve-item-values is run.
+        All modded items will follow the same value scaling rules as vanilla items based on:
+        > number of items and fluids in recipes
+        > energy (power * time) in recipes
+        > spoil rates
+        > food (like bioflux) for captive biter spawners (this gives biter eggs value, and similar modded items if present)
+        > rocket part costs (modded rocket silos and modified rocket part requirements are accounted for, and this partly determines cross-planet transport costs)
+        > stack sizes (when being sent to other planets for necessary production, e.g. holmium plates for lithium or bioflux for biter eggs)
+        > distances between planets (when production requires interplanetary imports)
+        > overall multiplier to each recipe's products based on the planet (like x1.2 on top of all other scaling factors combined)
   Features:
-    - Added /set-raw-item-value command, which tells the item value solver which items are raw resources.
+    - (TODO) Added /set-raw-item-value command, which tells the item value solver which items are raw resources.
     - Added /solve-item-values command, which can be ran after changing raw item values.
     - The /export-item-values command now also includes item value sources and recipe data for use with the Hextorio Item Value Explorer web tool.
+  Minor Features:
+    - Added the has_untradable_items field to trades in the trades JSON export, which indicates whether the trade contains any items that are initially untradable on its planet (only set to true for trades created by the silver item rank bonus).
+  Changes:
+    - The is_interplanetary field in trades in the trades JSON export now corresponds to whether the trade contains any items that can only be obtained after importing at least one item from another planet.
+    - Overhauled the system that determines which items are initially tradable on each planet.
+        It used to be based on whether items were considered "interplanetary", but it is now based on which recipes are usable on each planet and when/where they're unlocked.
+  Balancing:
+    - Rebalanced item values to be less about a planet's stage in the game progression but instead more about actual difficulty of obtainment.
+        For example, coal/iron/copper on Vulcanus is now less valuable than on Nauvis, and oil-based products on Fulgora now generally have low values.
+    - Item values are now affected by each planet's core challenges:
+        Nauvis' items are scaled "normally".
+        Vulcanus' items are scaled weakly due to having easy power scaling, plentiful resources, and open building spaces.
+        Fulgora's items are scaled strongly due to limited building space and overall complexity of (sustainable) power production.
+        Gleba's items are scaled strongly due to item spoilability (requiring special layouts to minimize loss of freshness) and overall complexity of (sustainable) power production.
+        Aquilo's items are scaled the strongest due to dependency on interplanetary items (and its distance from other planets) as well as recipe complexity / the number of items and fluids involved in each recipe (since entity heating restricts layouts and sometimes scalability).
+  Bugfixes:
+    - (TODO) Fixed coin trade "free proc" bug.
+    - (TODO) Fixed game crashing when attempting to clear the trade quality selector button's selection.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.11
 Date: 11/2/26

@@ -51,9 +51,12 @@ function hex_grid.register_events()
         if rank == 2 then
             hex_grid.apply_extra_trades_bonus_retro(item_name)
         elseif rank == 3 then
-            for surface_name, _ in pairs(storage.item_values.values) do
-                for _, hex_pos in pairs(trades.get_interplanetary_trade_locations_for_item(surface_name, item_name)) do
-                    hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
+            for _, surface in pairs(game.surfaces) do
+                local surface_name = surface.name
+                if storage.SUPPORTED_PLANETS[surface_name] then
+                    for _, hex_pos in pairs(trades.get_interplanetary_trade_locations_for_item(surface_name, item_name)) do
+                        hex_grid.apply_interplanetary_trade_bonus_retro(surface_name, item_name, hex_pos)
+                    end
                 end
             end
         elseif rank == 4 then
@@ -136,7 +139,7 @@ function hex_grid.register_events()
         local trade = trades.get_trade_from_id(state.trades[idx])
         if not trade then return end
 
-        player.print("Removed trade: " .. lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade)))
+        player.print("Removed trade: " .. lib.get_trade_img_str(trade, trades.trade_has_untradable_items(trade)))
         hex_grid.remove_trade_by_index(state, idx, false)
     end)
 
@@ -529,7 +532,7 @@ end
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.mode == "sink" or state.mode == "generator" then return end
     if not state.hex_core or not state.hex_core.valid then return end
-    if item_values.is_item_interplanetary(state.hex_core.surface.name, item_name) then return end
+    if not item_values.is_item_tradable(state.hex_core.surface.name, item_name) then return end
     if math.random() > storage.item_ranks.bronze_rank_bonus_effect then return end
 
     local trade = hex_grid.generate_random_trade(state, volume, false, item_name)
@@ -546,7 +549,8 @@ function hex_grid.apply_extra_trades_bonus(state)
     if not state or not state.hex_core or not state.trades then return end
     local surface = state.hex_core.surface
     if lib.is_space_platform(surface) then return end
-    local surface_values = item_values.get_item_values_for_surface(surface.name, false)
+    local surface_name = surface.name
+    local surface_values = item_values.get_item_values_for_surface(surface_name, false)
     if not surface_values then return end
 
     local added_trades = {}
@@ -555,7 +559,7 @@ function hex_grid.apply_extra_trades_bonus(state)
     item_names_set = sets.union(item_names_set, silver_items)
 
     for item_name, _ in pairs(item_names_set) do
-        if lib.is_catalog_item(item_name) then -- prevent defining an item rank for something that shouldn't have a rank
+        if lib.is_catalog_item(surface_name, item_name) then -- prevent defining an item rank for something that shouldn't have a rank
             local rank = item_ranks.get_item_rank(item_name)
             if rank >= 2 then
                 local trade = hex_grid.apply_extra_trade_bonus(state, item_name, item_values.get_item_value(surface.name, item_name))
@@ -577,7 +581,7 @@ function hex_grid.apply_extra_trades_bonus(state)
                 " ",
                 lib.get_gps_str_from_hex_core(state.hex_core),
                 " ",
-                lib.get_trade_img_str(trade, trades.is_interplanetary_trade(trade))
+                lib.get_trade_img_str(trade, trades.trade_has_untradable_items(trade))
             })
         end
     end
@@ -3888,7 +3892,7 @@ function hex_grid.update_hexlight_default_colors(surface_name)
 
         storage.hex_grid.dungeon_hexlight_color = dungeon_color
 
-        for _surface_name, _ in pairs(storage.item_values.values) do -- intended to iterate over ALL, not just the existing ones
+        for _surface_name, _ in pairs(storage.SUPPORTED_PLANETS) do
             hex_grid.update_hexlight_default_colors(_surface_name)
         end
 
@@ -3981,13 +3985,13 @@ function hex_grid.get_states_with_fewest_trades(surface_name, claimed_only)
 end
 
 function hex_grid.apply_extra_trades_bonus_retro(item_name)
-    if not lib.is_catalog_item(item_name) then return end
     local added_trades = {}
     for surface_id, flattened_surface_hexes in pairs(storage.hex_grid.flattened_surface_hexes) do
         local surface = game.get_surface(surface_id)
         if surface and not lib.is_space_platform(surface) then
-            local volume = item_values.get_item_value(surface.name, item_name)
-            if not item_values.is_item_interplanetary(surface.name, item_name) then
+            local surface_name = surface.name
+            if not lib.is_catalog_item(surface_name, item_name) then
+                local volume = item_values.get_item_value(surface_name, item_name)
                 for _, hex_pos in pairs(flattened_surface_hexes) do
                     local state = hex_state_manager.get_hex_state(surface, hex_pos)
                     if state and state.trades then
@@ -4068,12 +4072,10 @@ end
 function hex_grid.try_recover_trade(trade, states, notify)
     local continue = false
     for _, item_name in pairs(trades.get_item_names_in_trade(trade)) do
-        if lib.is_catalog_item(item_name) then
-            local rank = item_ranks.get_item_rank(item_name)
-            if rank >= 4 then
-                continue = true
-                break
-            end
+        local rank = item_ranks.get_item_rank(item_name)
+        if rank >= 4 then
+            continue = true
+            break
         end
     end
     if not continue then return end
@@ -4120,16 +4122,16 @@ function hex_grid.try_recover_trade(trade, states, notify)
 end
 
 function hex_grid.recover_trades_retro(item_name)
-    if not lib.is_catalog_item(item_name) then return end
-
     for _, surface in pairs(game.surfaces) do
-        if not lib.is_space_platform(surface) then
-            local states = hex_grid.get_states_with_fewest_trades(surface.name)
-            for _, trade_id in pairs(trades.get_recoverable_trades()) do
-                local trade = trades.get_trade_from_id(trade_id)
-                if trade and trade.surface_name == surface.name and trades.has_item(trade, item_name) then
-                    trades.recover_trade(trade)
-                    hex_grid.try_recover_trade(trade, states, true)
+        if not lib.is_catalog_item(surface.name, item_name) then
+            if not lib.is_space_platform(surface) then
+                local states = hex_grid.get_states_with_fewest_trades(surface.name)
+                for _, trade_id in pairs(trades.get_recoverable_trades()) do
+                    local trade = trades.get_trade_from_id(trade_id)
+                    if trade and trade.surface_name == surface.name and trades.has_item(trade, item_name) then
+                        trades.recover_trade(trade)
+                        hex_grid.try_recover_trade(trade, states, true)
+                    end
                 end
             end
         end
@@ -4260,7 +4262,7 @@ end
 ---@param surface_name string|nil
 function hex_grid.fetch_claim_cost_multiplier_settings(surface_name)
     if not surface_name then
-        for _surface_name, _ in pairs(storage.item_values.values) do
+        for _surface_name, _ in pairs(storage.SUPPORTED_PLANETS) do
             hex_grid.fetch_claim_cost_multiplier_settings(_surface_name)
         end
         return

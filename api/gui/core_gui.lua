@@ -131,18 +131,13 @@ function core_gui.give_item_tooltip(player, surface_name, element)
     local hex_coin_value = item_values.get_item_value(surface_name, "hex-coin")
     local item_count = element.number or 1
 
-    local value, location_rich_text
-    if item_values.is_item_interplanetary(surface_name, item_name) then
-        value = item_values.get_minimal_item_value(item_name)
-        location_rich_text = "[img=space-location.solar-system-edge]"
-    else
-        value = item_values.get_item_value(surface_name, item_name)
-        location_rich_text = "[img=planet-" .. surface_name .. "]"
-    end
+    local value = item_values.get_item_value(surface_name, item_name)
+    local location_rich_text = "[img=planet-" .. surface_name .. "]"
+
     local scaled_value = value / hex_coin_value * lib.get_quality_value_scale(quality)
 
     local rank_str = {""}
-    if lib.is_catalog_item(item_name) then
+    if lib.is_catalog_item(surface_name, item_name) then
         local rank = item_ranks.get_item_rank(item_name)
         local left_half
         if rank == 1 then
@@ -177,7 +172,7 @@ function core_gui.give_productivity_tooltip(element, trade, quality, quality_cos
         trades.get_total_values_str(trade, quality, quality_cost_mult),
     }
 
-    if trades.is_interplanetary_trade(trade) then
+    if trades.trade_has_untradable_items(trade) then
         table.insert(s, 2, lib.color_localized_string({"hextorio-gui.interplanetary-trade-tooltip-header"}, "cyan", "heading-2"))
         table.insert(s, 3, "\n\n")
     end

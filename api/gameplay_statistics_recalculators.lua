@@ -58,10 +58,8 @@ recalculators.define_recalculator("items-at-rank", function(stat_value)
     local rank = stat_value
     local total = 0
     for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
-        if lib.is_catalog_item(item_name) then
-            if rank_obj.rank >= rank then
-                total = total + 1
-            end
+        if rank_obj.rank >= rank then
+            total = total + 1
         end
     end
     return total
@@ -70,9 +68,7 @@ end)
 recalculators.define_recalculator("total-item-rank", function(stat_value)
     local total = 0
     for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
-        if lib.is_catalog_item(item_name) then
-            total = total + rank_obj.rank - 1
-        end
+        total = total + rank_obj.rank - 1
     end
     return total
 end)
