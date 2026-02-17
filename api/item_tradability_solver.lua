@@ -192,10 +192,12 @@ local function get_candidate_recipes(planet, recipes, recipe_valid_planets)
 end
 
 ---Forward-propagate from raw resources through candidate recipes to find all
----producible items on a planet. Nauvis-origin recipes require all ingredients
----to be available. Planet-origin recipes (matching this planet) always fire,
----since the tech tree places their products on this planet regardless of
----whether ingredients can be locally sourced.
+---producible items on a planet.
+---
+---Runs in two phases:
+---  1. Propagate without always_fire to find locally producible items.
+---  2. Propagate with always_fire, but recycling recipes only fire on
+---     locally produced inputs (not items sourced from interplanetary recipes).
 ---@param planet string
 ---@param candidates table<string, boolean>
 ---@param recipes table
@@ -209,17 +211,53 @@ local function forward_propagate(planet, candidates, recipes, always_fire)
     end
 
     local fired = {}
+
+    -- Phase 1: propagate without always_fire to find locally producible items.
     local changed = true
+    while changed do
+        changed = false
+        for recipe_name in pairs(candidates) do
+            if not fired[recipe_name] and not always_fire[recipe_name] then
+                local data = recipes[recipe_name]
+                local can_fire = true
+                for _, ing in pairs(data.ingredients) do
+                    if not available[ing.name] then
+                        can_fire = false
+                        break
+                    end
+                end
+                if can_fire then
+                    fired[recipe_name] = true
+                    for _, prod in pairs(data.products) do
+                        if not available[prod.name] then
+                            available[prod.name] = true
+                            changed = true
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    local locally_produced = {}
+    for item_name in pairs(available) do
+        locally_produced[item_name] = true
+    end
+
+    -- Phase 2: add always_fire recipes, but recycling only fires on local items.
+    changed = true
     while changed do
         changed = false
         for recipe_name in pairs(candidates) do
             if not fired[recipe_name] then
                 local data = recipes[recipe_name]
+                local is_recycling = data.category == "recycling"
                 local can_fire = always_fire[recipe_name]
                 if not can_fire then
                     can_fire = true
                     for _, ing in pairs(data.ingredients) do
-                        if not available[ing.name] then
+                        local pool = is_recycling and locally_produced or available
+                        if not pool[ing.name] then
                             can_fire = false
                             break
                         end
