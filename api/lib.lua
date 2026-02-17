@@ -2493,7 +2493,7 @@ function lib.build_category_valid_planets(categories)
         end
 
         if has_entities and union then
-            result[category] = next(union) and union or nil
+            result[category] = union
         end
     end
     return result
@@ -2510,7 +2510,7 @@ function lib.intersect_valid_planets(a, b)
     for p in pairs(a) do
         if b[p] then result[p] = true end
     end
-    return next(result) and result or nil
+    return result
 end
 
 
