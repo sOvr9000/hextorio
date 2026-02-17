@@ -153,6 +153,22 @@ local function collect_recipes_and_origins()
         end
     end
 
+    -- Add spoil and burnt_result pseudo-recipes (1:1, no surface restrictions).
+    local seed_items = {}
+    for _, data in pairs(recipes) do
+        for _, prod in pairs(data.products) do seed_items[prod.name] = true end
+        for _, ing in pairs(data.ingredients) do seed_items[ing.name] = true end
+    end
+    for _, planet_raws in pairs(RAW_ITEMS) do
+        for item_name in pairs(planet_raws) do seed_items[item_name] = true end
+    end
+    for _, p in pairs(lib.collect_spoil_burnt_chains(seed_items)) do
+        recipes[p.label] = {
+            ingredients = {{name = p.source, amount = 1}},
+            products = {{name = p.result, amount = 1}},
+        }
+    end
+
     return recipes, recipe_origin, recipe_valid_planets
 end
 

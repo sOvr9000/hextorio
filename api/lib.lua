@@ -2514,5 +2514,51 @@ function lib.intersect_valid_planets(a, b)
 end
 
 
+---Collect spoil and burnt_result pseudo-recipes starting from a set of seed items.
+---Follows chains so A→B→C are all discovered.
+---@param seed_items table<string, boolean> Set of item names to start from
+---@return {source: string, result: string, label: string}[]
+function lib.collect_spoil_burnt_chains(seed_items)
+    local pseudo_recipes = {}
+    local queue = {}
+    for item_name in pairs(seed_items) do
+        table.insert(queue, item_name)
+    end
+
+    local visited = {}
+    local idx = 1
+    while idx <= #queue do
+        local item_name = queue[idx]
+        if not visited[item_name] then
+            visited[item_name] = true
+            local proto = prototypes.item[item_name]
+            if proto and not proto.hidden then
+                if proto.spoil_result then
+                    local result = proto.spoil_result.name
+                    table.insert(pseudo_recipes, {
+                        source = item_name, result = result,
+                        label = item_name .. " spoil",
+                    })
+                    if not visited[result] then
+                        table.insert(queue, result)
+                    end
+                end
+                if proto.burnt_result then
+                    local result = proto.burnt_result.name
+                    table.insert(pseudo_recipes, {
+                        source = item_name, result = result,
+                        label = item_name .. " burnt",
+                    })
+                    if not visited[result] then
+                        table.insert(queue, result)
+                    end
+                end
+            end
+        end
+        idx = idx + 1
+    end
+
+    return pseudo_recipes
+end
 
 return lib

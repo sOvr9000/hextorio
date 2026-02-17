@@ -373,49 +373,20 @@ local function phase_build(s)
     end
 
     -- Add spoil and burnt_result pseudo-recipes (1:1, multiplier 1.0)
-    -- Uses a queue to follow chains (A spoils to B spoils to C)
     local identity_mults = {}
     for _, planet in pairs(ALL_PLANETS) do identity_mults[planet] = 1.0 end
 
-    local items_queue = {}
-    for item_name in pairs(all_items) do
-        table.insert(items_queue, item_name)
-    end
-
-    local pseudo_count = 0
-    local idx = 1
-
-    local function add_pseudo_recipe(source_name, result_name, label)
-        local result_proto = prototypes.item[result_name]
-        if not result_proto or result_proto.hidden then return end
-        if not all_items[result_name] then
-            all_items[result_name] = true
-            table.insert(items_queue, result_name)
-        end
+    local spoil_burnt = lib.collect_spoil_burnt_chains(all_items)
+    for _, p in pairs(spoil_burnt) do
+        all_items[p.result] = true
         table.insert(recipes, {
-            label = label,
-            ingredients = {{name = source_name, amount = 1}},
-            products = {{name = result_name, amount = 1}},
+            label = p.label,
+            ingredients = {{name = p.source, amount = 1}},
+            products = {{name = p.result, amount = 1}},
             multipliers = identity_mults,
         })
-        pseudo_count = pseudo_count + 1
     end
-
-    while idx <= #items_queue do
-        local item_name = items_queue[idx]
-        local proto = prototypes.item[item_name]
-        if proto and not proto.hidden then
-            if proto.spoil_result then
-                add_pseudo_recipe(item_name, proto.spoil_result.name,
-                    item_name .. " spoil")
-            end
-            if proto.burnt_result then
-                add_pseudo_recipe(item_name, proto.burnt_result.name,
-                    item_name .. " burnt")
-            end
-        end
-        idx = idx + 1
-    end
+    local pseudo_count = #spoil_burnt
 
     -- Remove hidden items from the solver, but keep items that are produced by
     -- non-hidden recipes (e.g. rocket-part: item is hidden, but the recipe is not).
