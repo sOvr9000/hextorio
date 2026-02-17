@@ -214,7 +214,7 @@ local function phase_collect(s)
         local name = c.recipe_names[c.recipe_idx]
         local recipe = prototypes.recipe[name]
         c.recipe_idx = c.recipe_idx + 1
-        if recipe and not recipe.hidden then
+        if recipe and (not recipe.hidden or recipe.category == "recycling") then
             local ok, data = pcall(lib.extract_recipe_data, recipe)
             if ok and data then
                 c.recipes[recipe.name] = data

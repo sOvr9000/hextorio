@@ -123,7 +123,7 @@ local function collect_recipes_and_origins()
     -- Build category -> valid planets from crafting machine surface conditions
     local categories = {}
     for name, recipe in pairs(prototypes.recipe) do
-        if not recipe.hidden then
+        if not recipe.hidden or recipe.category == "recycling" then
             categories[recipe.category] = true
         end
     end
@@ -131,7 +131,7 @@ local function collect_recipes_and_origins()
 
     -- Collect recipes
     for name, recipe in pairs(prototypes.recipe) do
-        if not recipe.hidden then
+        if not recipe.hidden or recipe.category == "recycling" then
             local ok, data = pcall(lib.extract_recipe_data, recipe)
             if ok and data and #data.ingredients > 0 and #data.products > 0 then
                 recipes[name] = data
