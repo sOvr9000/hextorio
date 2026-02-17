@@ -1,4 +1,41 @@
 
+--[[
+Determines a coin value for every item on every planet.
+Runs as a tick-based state machine to avoid freezing the game.
+Triggered by `/solve-item-values` and automatically at the start of the game.
+
+Every item's value comes from the cheapest way to produce it.
+All values start at infinity, then we repeatedly scan recipes.
+If a recipe's input cost leads to a cheaper value for any product, update it.
+Input cost = ingredient values scaled by a multiplier for craft time and complexity.
+Values only go down, so convergence is guaranteed (was an issue with past iterations of this solver).
+
+Items that can't be produced locally take values from other planets.
+Ingredient import cost considers rocket part value, rocket parts per launch, rocket capacity, spaceship flight distance, and stack sizes.
+Recycling recipes are considered on planets to determine cheapest item acquisition routes.
+(e.g. Fulgoran scrap -> Gleba -> recycle -> red & blue circuits -> recycle -> green circuits -> modules)
+
+Phases:
+  Collect:
+    - read recipe prototypes
+  Build:
+    - preprocess recipe data
+    - expand fuel-burning recipes into per-fuel pseudo-recipes
+    - add spoil/burnt pseudo-recipes
+    - classify items as local vs interplanetary per planet
+    - compute shortest spaceship flight routes
+    - initialize all item values (as infinity)
+  Solve:
+    - minimum-cost propagation
+    - check imports at the boundaries of iteration, until a full iteration changes nothing
+  Finalize:
+    - copy resulting values to storage
+    - log statistics
+    - trigger event on solver termination
+]]
+
+
+
 local lib = require "api.lib"
 local event_system = require "api.event_system"
 local item_values = require "api.item_values"

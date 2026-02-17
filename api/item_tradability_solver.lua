@@ -1,4 +1,36 @@
 
+--[[
+Determines which items are tradable on each planet.
+Generally, an item is tradable on a planet if it can be produced from the planet's raw resources (local producibility).
+Other constraints are applied based on which technologies unlock which recipes and where.
+(e.g. nutrients can be produced on Nauvis but are only tradable on Gleba)
+
+Each recipe gets an "origin planet" derived from the techs that unlock them.
+Nauvis-origin recipes are available everywhere, minus those that just aren't usable.
+Other recipes only exist on their original planet (e.g. productivity module 3 only tradable on Gleba, not Aquilo).
+Surface conditions and machine restrictions filter further.
+(e.g. captive biter spawner locks biter egg recipe to Nauvis, but that recipe is unlocked on Gleba, so biter eggs are completely untradable)
+
+Initially, the tradable set for each planet is the result of processing all usable recipes on raw resources and the subsequent products.
+(e.g. Fulgora: scrap -> iron gear wheel -> iron plate -> iron stick -> ...)
+
+TWO-PHASE PROPAGATION handles a complicated edge case.
+Some planet-origin recipes need to be traversed even when their ingredients aren't locally reachable.
+(e.g. biter eggs from Nauvis being used to make productivity mode 3, so that prod 3 modules can be tradable on Gleba)
+
+But how do we prevent recycling recipes on Aquilo from processing on imported items?
+
+PHASE 1 lets everything propagate naturally from raw resources and usable recipes on each planet, with recycling recipes included.
+(e.g. Fulgora's necessary recycling, or Aquilo's ammoniacal solution -> rocket fuel chain)
+
+PHASE 2 traverses the remaining planet-origin recipes with imports allowed but ignoring recycling recipes.
+(e.g. Aquilo receives holmium plates and processes only the lithium recipe, not also EM plants with other imported items)
+
+Overall, this whole system prevents weird edge cases from occurring like nutrients on Nauvis, biter eggs on Gleba, nuclear reactors on Aquilo, etc.
+]]
+
+
+
 local lib = require "api.lib"
 local sets = require "api.sets"
 -- local item_values = require "api.item_values"
@@ -9,6 +41,7 @@ local item_tradability_solver = {}
 
 
 ---Science packs mapped to their planet of origin.
+---TODO: automate this based on surface conditions of science pack recipes (better for mod compatibility)
 local SCIENCE_PACK_PLANET = {
     ["automation-science-pack"] = "nauvis",
     ["logistic-science-pack"] = "nauvis",
@@ -23,6 +56,7 @@ local SCIENCE_PACK_PLANET = {
 }
 
 ---Planet depth in the progression hierarchy.
+---TODO: automate this based on tech tree
 local PLANET_DEPTH = {
     nauvis = 0,
     vulcanus = 1,
@@ -32,6 +66,7 @@ local PLANET_DEPTH = {
 }
 
 ---Tiebreaker ordering for planets at the same depth.
+---TODO: automate
 local PLANET_TIEBREAK = {
     vulcanus = 1,
     fulgora = 2,
@@ -39,6 +74,7 @@ local PLANET_TIEBREAK = {
 }
 
 ---Items that are raw resources on each planet (used as forward propagation seeds).
+---TODO: put this and same thing from item value solver in storage.item_values
 local RAW_ITEMS = {
     nauvis = sets.new {
         "wood", "iron-ore", "copper-ore", "stone", "coal",
