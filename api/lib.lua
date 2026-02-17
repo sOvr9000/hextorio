@@ -2440,27 +2440,28 @@ function lib.get_valid_planets(surface_conditions)
     local valid = {}
     for _, planet_name in pairs(lib.ALL_PLANETS) do
         local planet_proto = prototypes.space_location[planet_name]
-        if not planet_proto then
-            valid[planet_name] = true
-        else
-            local props = planet_proto.surface_properties or {}
-            local all_met = true
-            for _, cond in pairs(surface_conditions) do
-                local val = props[cond.property]
-                if val ~= nil then
-                    local cmin = cond.min or 0
-                    local cmax = cond.max or math.huge
-                    if val < cmin or val > cmax then
-                        all_met = false
-                        break
-                    end
-                else
-                    all_met = false
-                    break
-                end
+        local props = planet_proto and planet_proto.surface_properties or {}
+        local all_met = true
+        for _, cond in pairs(surface_conditions) do
+            local val = props[cond.property]
+            if val == nil then
+                local ok, sp = pcall(function()
+                    return prototypes.surface_property[cond.property]
+                end)
+                if ok and sp then val = sp.default_value end
             end
-            if all_met then valid[planet_name] = true end
+            if val == nil then
+                all_met = false
+                break
+            end
+            local cmin = cond.min or 0
+            local cmax = cond.max or math.huge
+            if val < cmin or val > cmax then
+                all_met = false
+                break
+            end
         end
+        if all_met then valid[planet_name] = true end
     end
 
     return valid
