@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.6.12
-Date: 13/2/26
+Version: 1.7.0
+Date: 20/2/26
   Major Features:
     - Item values are now dynamically calculated (including modded items) on game start or when the command /solve-item-values is run.
         All modded items will follow the same value scaling rules as vanilla items based on:
