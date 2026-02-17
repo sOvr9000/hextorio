@@ -61,29 +61,75 @@ local RAW_ITEMS = {
 
 
 
+---Pick the deeper of two planet origins, using tiebreak for same-depth.
+---@param a string
+---@param b string
+---@return string
+local function deeper_origin(a, b)
+    local da, db = PLANET_DEPTH[a] or 0, PLANET_DEPTH[b] or 0
+    if da > db then return a end
+    if db > da then return b end
+    local ta, tb = PLANET_TIEBREAK[a] or 0, PLANET_TIEBREAK[b] or 0
+    return ta >= tb and a or b
+end
+
 ---Determine the origin planet for a technology based on its science pack requirements.
 ---Returns the planet with the deepest (hardest) non-Nauvis science pack.
 ---@param research_unit_ingredients Ingredient[]
 ---@return string planet_name
-local function get_tech_origin(research_unit_ingredients)
-    local best_planet = "nauvis"
-    local best_depth = 0
-    local best_tiebreak = 0
-
+local function get_science_origin(research_unit_ingredients)
+    local best = "nauvis"
     for _, ingredient in pairs(research_unit_ingredients) do
         local planet = SCIENCE_PACK_PLANET[ingredient.name]
         if planet then
-            local depth = PLANET_DEPTH[planet] or 0
-            local tiebreak = PLANET_TIEBREAK[planet] or 0
-            if depth > best_depth or (depth == best_depth and tiebreak > best_tiebreak) then
-                best_planet = planet
-                best_depth = depth
-                best_tiebreak = tiebreak
-            end
+            best = deeper_origin(best, planet)
         end
     end
+    return best
+end
 
-    return best_planet
+---Planet discovery technologies that act as gateway markers.
+local PLANET_DISCOVERY_TECH = {
+    ["planet-discovery-vulcanus"] = "vulcanus",
+    ["planet-discovery-fulgora"] = "fulgora",
+    ["planet-discovery-gleba"] = "gleba",
+    ["planet-discovery-aquilo"] = "aquilo",
+}
+
+---Build a table mapping tech_name -> effective origin planet.
+---A tech's effective origin is the deepest among its own science pack origin,
+---any planet discovery tech in its prerequisite chain, and all its
+---prerequisites' effective origins.
+---@return table<string, string>
+local function build_tech_origins()
+    local science_origins = {}
+    local prerequisites = {} ---@type table<string, string[]>
+    for name, tech in pairs(prototypes.technology) do
+        science_origins[name] = get_science_origin(tech.research_unit_ingredients)
+        local prereq_names = {}
+        for _, prereq in pairs(tech.prerequisites or {}) do
+            table.insert(prereq_names, prereq.name)
+        end
+        prerequisites[name] = prereq_names
+    end
+
+    local cache = {}
+    local function resolve(name)
+        if cache[name] then return cache[name] end
+        local origin = PLANET_DISCOVERY_TECH[name]
+            or science_origins[name] or "nauvis"
+        for _, prereq_name in pairs(prerequisites[name] or {}) do
+            origin = deeper_origin(origin, resolve(prereq_name))
+        end
+        cache[name] = origin
+        return origin
+    end
+
+    local result = {}
+    for name in pairs(science_origins) do
+        result[name] = resolve(name)
+    end
+    return result
 end
 
 ---Collect all recipes and determine their origin planet.
@@ -97,11 +143,10 @@ local function collect_recipes_and_origins()
     local recipe_origin = {}
     local recipe_valid_planets = {}
 
-    -- Build tech_name -> origin planet mapping
-    local tech_origin = {}
+    -- Build tech_name -> effective origin planet (considering prerequisites)
+    local tech_origin = build_tech_origins()
     local tech_unlocks_recipes = {} ---@type table<string, string[]>
     for name, tech in pairs(prototypes.technology) do
-        tech_origin[name] = get_tech_origin(tech.research_unit_ingredients)
         tech_unlocks_recipes[name] = {}
         for _, effect in pairs(tech.effects) do
             if effect.type == "unlock-recipe" then
@@ -173,19 +218,23 @@ local function collect_recipes_and_origins()
 end
 
 ---Build the set of candidate recipes for a given planet.
----A recipe is a candidate if its surface conditions (and crafting machine conditions)
----allow it on this planet, regardless of tech origin. Forward propagation handles
----balance: only items whose full ingredient chain is locally satisfiable become tradable.
+---A recipe is a candidate if its origin is "nauvis" (universal) or this planet,
+---and its surface/entity conditions allow it here. Recipes without a known origin
+---(pseudo-recipes, some recycling) are always included.
 ---@param planet string
 ---@param recipes table
+---@param recipe_origin table<string, string>
 ---@param recipe_valid_planets table<string, table<string, boolean>|nil>
 ---@return table<string, boolean>
-local function get_candidate_recipes(planet, recipes, recipe_valid_planets)
+local function get_candidate_recipes(planet, recipes, recipe_origin, recipe_valid_planets)
     local candidates = {}
     for recipe_name in pairs(recipes) do
-        local vp = recipe_valid_planets[recipe_name]
-        if not vp or vp[planet] then
-            candidates[recipe_name] = true
+        local origin = recipe_origin[recipe_name]
+        if not origin or origin == "nauvis" or origin == planet then
+            local vp = recipe_valid_planets[recipe_name]
+            if not vp or vp[planet] then
+                candidates[recipe_name] = true
+            end
         end
     end
     return candidates
@@ -212,12 +261,15 @@ local function forward_propagate(planet, candidates, recipes, always_fire)
 
     local fired = {}
 
-    -- Phase 1: propagate without always_fire to find locally producible items.
+    -- Phase 1: propagate naturally from raw resources, checking ingredients.
+    -- All candidates (including planet-origin) participate, but must earn their
+    -- way through the ingredient chain. This captures Fulgora's scrap→recycling
+    -- chains as locally produced.
     local changed = true
     while changed do
         changed = false
         for recipe_name in pairs(candidates) do
-            if not fired[recipe_name] and not always_fire[recipe_name] then
+            if not fired[recipe_name] then
                 local data = recipes[recipe_name]
                 local can_fire = true
                 for _, ing in pairs(data.ingredients) do
@@ -244,7 +296,9 @@ local function forward_propagate(planet, candidates, recipes, always_fire)
         locally_produced[item_name] = true
     end
 
-    -- Phase 2: add always_fire recipes, but recycling only fires on local items.
+    -- Phase 2: fire always_fire recipes unconditionally (for planet-origin recipes
+    -- whose ingredients aren't locally available). Recycling only fires on items
+    -- from Phase 1 to prevent decomposition cascades from unconditional products.
     changed = true
     while changed do
         changed = false
@@ -287,7 +341,7 @@ function item_tradability_solver.solve()
 
     local is_tradable = {}
     for planet, _ in pairs(storage.SUPPORTED_PLANETS) do
-        local candidates = get_candidate_recipes(planet, recipes, recipe_valid_planets)
+        local candidates = get_candidate_recipes(planet, recipes, recipe_origin, recipe_valid_planets)
 
         -- Planet-origin recipes always fire (their products belong here by tech tree).
         -- Nauvis-origin recipes must earn their way through forward propagation.
@@ -315,10 +369,6 @@ function item_tradability_solver.solve()
     end
 
     storage.item_values.is_tradable = is_tradable
-
-    for surface_name, surface_tradable_items in pairs(is_tradable) do
-        log("tradable items on surface " .. surface_name .. ":\n" .. serpent.block(surface_tradable_items))
-    end
 
     lib.log("Tradability solver: complete")
 end

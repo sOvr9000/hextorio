@@ -210,7 +210,7 @@ function catalog_gui.init_catalog(player)
         for j = 1, #items_sorted_by_value do
             local item_name = items_sorted_by_value[j]
             if lib.is_catalog_item(surface_name, item_name) then
-                log("create catalog entry for " .. item_name .. " on " .. surface_name)
+                -- log("create catalog entry for " .. item_name .. " on " .. surface_name)
 
                 n = n + 1
                 local rank = item_ranks.get_item_rank(item_name)
@@ -270,12 +270,12 @@ function catalog_gui.update_catalog(player)
             local achieved_ranks = {0, 0, 0, 0}
 
             local surface_name = tab.tags.surface_name or "nauvis"
-            log("surface " .. surface_name)
+            -- log("surface " .. surface_name)
             for _, rank_flow in pairs(tab.children) do
                 local item_name = rank_flow.tags.item_name or "stone"
-                log("item " .. item_name)
+                -- log("item " .. item_name)
                 if trades.is_item_discovered(item_name) then
-                    log("DISCOVERED")
+                    -- log("DISCOVERED")
                     local rank = item_ranks.get_item_rank(item_name)
                     discovered_items = discovered_items + 1
                     for i = 1, rank - 1 do
@@ -287,7 +287,7 @@ function catalog_gui.update_catalog(player)
                     rank_flow["rank-stars"].visible = true
                     gui.give_item_tooltip(player, surface_name, rank_flow["catalog-item"])
                 else
-                    log("NOT DISCOVERED")
+                    -- log("NOT DISCOVERED")
                     rank_flow["catalog-item"].sprite = "utility/questionmark"
                     rank_flow["catalog-item"].ignored_by_interaction = true
                     rank_flow["rank-stars"].visible = false
