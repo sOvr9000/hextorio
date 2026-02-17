@@ -157,23 +157,19 @@ local function collect_recipes_and_origins()
 end
 
 ---Build the set of candidate recipes for a given planet.
----A recipe is a candidate if:
----  1. Its origin is "nauvis" (depth 0 recipes go everywhere), OR its origin is this planet.
----  2. The recipe's surface conditions allow it on this planet.
+---A recipe is a candidate if its surface conditions (and crafting machine conditions)
+---allow it on this planet, regardless of tech origin. Forward propagation handles
+---balance: only items whose full ingredient chain is locally satisfiable become tradable.
 ---@param planet string
 ---@param recipes table
----@param recipe_origin table<string, string>
 ---@param recipe_valid_planets table<string, table<string, boolean>|nil>
 ---@return table<string, boolean>
-local function get_candidate_recipes(planet, recipes, recipe_origin, recipe_valid_planets)
+local function get_candidate_recipes(planet, recipes, recipe_valid_planets)
     local candidates = {}
-    for recipe_name, _ in pairs(recipes) do
-        local origin = recipe_origin[recipe_name]
-        if origin == "nauvis" or origin == planet then
-            local vp = recipe_valid_planets[recipe_name]
-            if not vp or vp[planet] then
-                candidates[recipe_name] = true
-            end
+    for recipe_name in pairs(recipes) do
+        local vp = recipe_valid_planets[recipe_name]
+        if not vp or vp[planet] then
+            candidates[recipe_name] = true
         end
     end
     return candidates
@@ -237,7 +233,7 @@ function item_tradability_solver.solve()
 
     local is_tradable = {}
     for planet, _ in pairs(storage.SUPPORTED_PLANETS) do
-        local candidates = get_candidate_recipes(planet, recipes, recipe_origin, recipe_valid_planets)
+        local candidates = get_candidate_recipes(planet, recipes, recipe_valid_planets)
 
         -- Planet-origin recipes always fire (their products belong here by tech tree).
         -- Nauvis-origin recipes must earn their way through forward propagation.
