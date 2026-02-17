@@ -2413,9 +2413,11 @@ function lib.extract_recipe_data(recipe)
         if not amount and prod.amount_min and prod.amount_max then
             amount = (prod.amount_min + prod.amount_max) / 2
         end
-        if amount and amount > 0 then
-            local prob = prod.probability or 1
-            table.insert(products, {name = prod.name, amount = amount * prob})
+        amount = (amount or 0) + (prod.extra_count_fraction or 0)
+        local prob = prod.probability or 1
+        local expected = amount * prob
+        if expected > 0 then
+            table.insert(products, {name = prod.name, amount = expected})
         end
     end
     if #products == 0 then return nil end
