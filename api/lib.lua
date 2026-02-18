@@ -2397,8 +2397,6 @@ end
 
 -- ── Shared planet / recipe helpers (used by item_value_solver & item_tradability_solver) ──
 
-lib.ALL_PLANETS = {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
-
 ---Extract normalized recipe data from a LuaRecipePrototype.
 ---@param recipe LuaRecipePrototype
 ---@return ItemValueSolver.CollectedRecipe|nil
@@ -2440,7 +2438,7 @@ function lib.get_valid_planets(surface_conditions)
     if not surface_conditions or #surface_conditions == 0 then return nil end
 
     local valid = {}
-    for _, planet_name in pairs(lib.ALL_PLANETS) do
+    for planet_name, _ in pairs(storage.SUPPORTED_PLANETS) do
         local planet_proto = prototypes.space_location[planet_name]
         local props = planet_proto and planet_proto.surface_properties or {}
         local all_met = true
