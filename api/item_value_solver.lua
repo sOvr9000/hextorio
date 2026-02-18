@@ -355,8 +355,6 @@ local function phase_build(s)
 
     for recipe_name, data in pairs(s.collect.recipes) do
         local fuel_info = #data.ingredients == 0 and fuel_categories[data.category] or nil
-
-        log(recipe_name)
         local recipe_vp = solver_util.get_valid_planets(data.surface_conditions)
         local cat_vp = category_valid_planets[data.category]
 
@@ -869,10 +867,23 @@ local function phase_finalize(s)
     storage.item_values.sources = s.sources
     item_values.set_item_values(new_item_values)
 
+    ---Only used in logging
+    ---@param source ItemValueSource|nil
+    ---@return string
+    local function source_string(source)
+        if not source then return "unknown" end
+        if source.type == "raw" then return "raw" end
+        if source.type == "recipe" then return "recipe: " .. (source.recipe_name or "unknown") end
+        if source.type == "import" then
+            return "import: " .. table.concat(source.import_path or {}, " → ")
+                .. " (" .. (source.distance or 0) .. " km)"
+        end
+        return "unknown"
+    end
+
     -- Log final values with provenance per planet
     local total = 0
     local unresolved = {}
-    local str = ""
     for planet, _ in pairs(all_planets) do
         local planet_values = storage.item_values.values[planet]
         local ip_count = table_size(interplanetary[planet])
@@ -888,9 +899,9 @@ local function phase_finalize(s)
         end
         table.sort(sorted, function(a, b) return a.value < b.value end)
 
-        str = str .. "\nSolver: --- " .. planet .. " (" .. count .. " items, " .. ip_count .. " interplanetary) ---"
+        local str = "Solver: --- " .. planet .. " (" .. count .. " items, " .. ip_count .. " interplanetary) ---"
         for _, entry in pairs(sorted) do
-            str = str .. string.format("\n  %-48s %20.3f", entry.name, entry.value)
+            str = str .. string.format("\n  %-48s %20.3f | %s", entry.name, entry.value, source_string(sources[planet][entry.name]))
         end
         lib.log(str)
     end
@@ -930,7 +941,7 @@ local function phase_finalize(s)
                 end
             end
             if #producing_recipes == 0 then
-                lib.log("  " .. name .. ": NO producing recipes")
+                lib.log("  " .. name .. ": no recipes")
             else
                 for _, recipe in pairs(producing_recipes) do
                     local missing = {}
