@@ -254,8 +254,8 @@ local function phase_collect(s)
         c.recipe_idx = c.recipe_idx + 1
 
         if recipe and (not recipe.hidden or recipe.category == "recycling") then
-            local ok, data = pcall(solver_util.extract_recipe_data, recipe)
-            if ok and data then
+            local data = solver_util.extract_recipe_data(recipe)
+            if data then
                 c.recipes[recipe.name] = data
             end
         end
@@ -301,9 +301,8 @@ local function find_fuel_categories(collected_recipes)
     -- For each such category, find the crafting entity and its fuel requirements
     local result = {}
     for category in pairs(zero_cats) do
-        local ok, entities = pcall(prototypes.get_entity_filtered,
+        local entities = prototypes.get_entity_filtered(
             {{filter = "crafting-category", crafting_category = category}})
-        if not ok or not entities then entities = {} end
 
         for _, entity in pairs(entities) do
             local bp = entity.burner_prototype
@@ -319,14 +318,12 @@ local function find_fuel_categories(collected_recipes)
                         end
                     end
                     if #fuel_items > 0 then
-                        local ok_sc, sc = pcall(function()
-                            return entity.surface_conditions
-                        end)
+                        local sc = entity.object_name == "LuaEntityPrototype" and entity.surface_conditions or nil
                         result[category] = {
                             fuel_items = fuel_items,
                             energy_usage = entity.energy_usage,
                             effectivity = bp.effectivity or 1,
-                            surface_conditions = ok_sc and sc or nil,
+                            surface_conditions = sc,
                         }
                         break
                     end
@@ -483,13 +480,11 @@ local function phase_build(s)
     -- Determine rocket parts required per launch by scanning entities that can
     -- craft the "rocket-building" category. Takes the minimum across all such entities.
     local rocket_parts_per_launch = 50
-    local ok_rp, rp_entities = pcall(prototypes.get_entity_filtered,
+    local rp_entities = prototypes.get_entity_filtered(
         {{filter = "crafting-category", crafting_category = "rocket-building"}})
-    if ok_rp and rp_entities then
-        for _, entity in pairs(rp_entities) do
-            if entity.rocket_parts_required and entity.rocket_parts_required > 0 then
-                rocket_parts_per_launch = math.min(rocket_parts_per_launch, entity.rocket_parts_required)
-            end
+    for _, entity in pairs(rp_entities) do
+        if entity.rocket_parts_required and entity.rocket_parts_required > 0 then
+            rocket_parts_per_launch = math.min(rocket_parts_per_launch, entity.rocket_parts_required)
         end
     end
     lib.log("Solver: rocket_parts_per_launch = " .. rocket_parts_per_launch)

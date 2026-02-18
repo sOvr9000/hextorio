@@ -199,8 +199,8 @@ local function collect_recipes_and_origins()
     -- Collect recipes
     for name, recipe in pairs(prototypes.recipe) do
         if not recipe.hidden or recipe.category == "recycling" then
-            local ok, data = pcall(solver_util.extract_recipe_data, recipe)
-            if ok and data and #data.ingredients > 0 and #data.products > 0 then
+            local data = solver_util.extract_recipe_data(recipe)
+            if data and #data.ingredients > 0 and #data.products > 0 then
                 recipes[name] = data
 
                 local tech_name = recipe_to_tech[name]

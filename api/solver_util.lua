@@ -29,13 +29,12 @@ function solver_util.extract_recipe_data(recipe)
     end
     if #products == 0 then return nil end
 
-    local ok, sc = pcall(function() return recipe.surface_conditions end)
     return {
         energy = recipe.energy,
         category = recipe.category,
         ingredients = ingredients,
         products = products,
-        surface_conditions = ok and sc or nil,
+        surface_conditions = recipe.surface_conditions,
     }
 end
 
@@ -54,10 +53,8 @@ function solver_util.get_valid_planets(surface_conditions)
         for _, cond in pairs(surface_conditions) do
             local val = props[cond.property]
             if val == nil then
-                local ok, sp = pcall(function()
-                    return prototypes.surface_property[cond.property]
-                end)
-                if ok and sp then val = sp.default_value end
+                local sp = prototypes.surface_property[cond.property]
+                if sp then val = sp.default_value end
             end
             if val == nil then
                 all_met = false
@@ -84,16 +81,15 @@ end
 function solver_util.build_category_valid_planets(categories)
     local result = {}
     for category in pairs(categories) do
-        local ok, entities = pcall(prototypes.get_entity_filtered,
+        local entities = prototypes.get_entity_filtered(
             {{filter = "crafting-category", crafting_category = category}})
-        if not ok or not entities then entities = {} end
 
         local has_entities = false
         local union = {}
         for _, entity in pairs(entities) do
             has_entities = true
-            local ok_sc, sc = pcall(function() return entity.surface_conditions end)
-            local entity_vp = solver_util.get_valid_planets(ok_sc and sc or nil)
+            local sc = entity.object_name == "LuaEntityPrototype" and entity.surface_conditions or nil
+            local entity_vp = solver_util.get_valid_planets(sc)
             if not entity_vp then
                 union = nil
                 break
