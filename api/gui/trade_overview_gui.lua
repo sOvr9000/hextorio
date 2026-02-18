@@ -226,6 +226,11 @@ function trade_overview_gui.build_trade_content_filter(frame)
     for _, tradable in pairs(storage.item_values.is_tradable) do
         all_tradable_items = sets.union(all_tradable_items, tradable)
     end
+
+    for i = #storage.coin_tiers.COIN_NAMES, 1, -1 do
+        sets.add(all_tradable_items, storage.coin_tiers.COIN_NAMES[i])
+    end
+
     local elem_filters = {{filter = "name", name = sets.to_array(all_tradable_items)}}
 
     local trade_contents_flow = frame.add {type = "flow", name = "trade-contents-flow", direction = "vertical"}
