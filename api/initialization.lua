@@ -6,9 +6,9 @@ local hex_util          = require "api.hex_util"
 local hex_island        = require "api.hex_island"
 local hex_sets          = require "api.hex_sets"
 local event_system      = require "api.event_system"
+local item_value_solver = require "api.item_value_solver"
 
 local initialization = {}
-
 
 
 
@@ -64,6 +64,7 @@ function initialization.on_game_started()
     end
 
     event_system.trigger "game-started"
+    item_value_solver.init()
 end
 
 -- Called when the player is on Nauvis and the origin chunk on the temporary surface is generated

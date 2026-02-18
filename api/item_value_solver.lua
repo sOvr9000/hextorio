@@ -40,6 +40,7 @@ local lib = require "api.lib"
 local solver_util = require "api.solver_util"
 local event_system = require "api.event_system"
 local item_values = require "api.item_values"
+local data_item_values = require "data.item_values"
 
 local solver = {}
 
@@ -1022,11 +1023,22 @@ end
 function solver.run()
     if is_active() then return end
 
+    game.print {"hextorio.solver-started"}
     storage.solver = {
         active = true,
         phase = "collect",
         ticks_elapsed = 0,
     }
+end
+
+function solver.init()
+    for surface_name, raw_vals in pairs(storage.item_values.raw_values) do
+        for resource, _ in pairs(raw_vals) do
+            storage.item_values.raw_values[surface_name][resource] = lib.runtime_setting_value_as_number("raw-value-" .. surface_name .. "-" .. resource) * storage.item_values.base_coin_value
+        end
+    end
+
+    solver.run()
 end
 
 function solver.register_events()
@@ -1037,8 +1049,20 @@ function solver.register_events()
         end
 
         solver.run()
-        game.print {"hextorio.solver-started"}
     end)
+
+    local function create_handler(surface_name, resource)
+        return function()
+            storage.item_values.raw_values[surface_name][resource] = lib.runtime_setting_value_as_number("raw-value-" .. surface_name .. "-" .. resource) * storage.item_values.base_coin_value
+            solver.run()
+        end
+    end
+
+    for surface_name, raw_vals in pairs(data_item_values.raw_values) do
+        for resource, _ in pairs(raw_vals) do
+            event_system.register("runtime-setting-changed-raw-value-" .. surface_name .. "-" .. resource, create_handler(surface_name, resource))
+        end
+    end
 end
 
 

@@ -18,5 +18,5 @@ return function()
     }
 
     item_tradability_solver.solve()
-    item_value_solver.run()
+    item_value_solver.init()
 end

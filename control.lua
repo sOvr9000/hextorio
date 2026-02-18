@@ -187,7 +187,6 @@ script.on_init(function()
 
     coin_tiers.init()
     item_tradability_solver.solve()
-    item_value_solver.run()
     item_ranks.init()
     quests.init()
     hex_island.init()
