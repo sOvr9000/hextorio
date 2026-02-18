@@ -2401,7 +2401,7 @@ lib.ALL_PLANETS = {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
 
 ---Extract normalized recipe data from a LuaRecipePrototype.
 ---@param recipe LuaRecipePrototype
----@return {energy: number, category: string, ingredients: table[], products: table[], surface_conditions: SurfaceCondition[]|nil}|nil
+---@return ItemValueSolver.CollectedRecipe|nil
 function lib.extract_recipe_data(recipe)
     local ingredients = {}
     for _, ing in pairs(recipe.ingredients) do
@@ -2435,7 +2435,7 @@ end
 ---Determine which planets a recipe/entity can be used on based on surface conditions.
 ---Returns nil if unrestricted (usable everywhere).
 ---@param surface_conditions SurfaceCondition[]|nil
----@return table<string, boolean>|nil
+---@return {[string]: boolean}|nil
 function lib.get_valid_planets(surface_conditions)
     if not surface_conditions or #surface_conditions == 0 then return nil end
 
@@ -2472,8 +2472,8 @@ end
 ---Build a map from recipe category to valid planets based on crafting machine surface conditions.
 ---For each category, finds all entities that can craft it and unions their valid planets.
 ---If no entity restricts the category, returns nil for that category (meaning all planets).
----@param categories table<string, boolean>
----@return table<string, table<string, boolean>|nil>
+---@param categories {[string]: boolean}
+---@return {[string]: {[string]: boolean}}
 function lib.build_category_valid_planets(categories)
     local result = {}
     for category in pairs(categories) do
@@ -2502,9 +2502,9 @@ function lib.build_category_valid_planets(categories)
 end
 
 ---Intersect two valid-planet sets. nil means "all planets".
----@param a table<string, boolean>|nil
----@param b table<string, boolean>|nil
----@return table<string, boolean>|nil
+---@param a {[string]: boolean}|nil
+---@param b {[string]: boolean}|nil
+---@return {[string]: boolean}|nil
 function lib.intersect_valid_planets(a, b)
     if not a then return b end
     if not b then return a end
@@ -2518,7 +2518,7 @@ end
 
 ---Collect spoil and burnt_result pseudo-recipes starting from a set of seed items.
 ---Follows chains so A→B→C are all discovered.
----@param seed_items table<string, boolean> Set of item names to start from
+---@param seed_items {[string]: boolean} Set of item names to start from
 ---@return {source: string, result: string, label: string}[]
 function lib.collect_spoil_burnt_chains(seed_items)
     local pseudo_recipes = {}

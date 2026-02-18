@@ -45,75 +45,72 @@ local solver = {}
 
 
 ---@alias ItemValueSourceType
----| "raw"
----| "recipe"
----| "import"
+---| "raw"       Item is a raw resource with a fixed value
+---| "recipe"    Item value comes from the input cost of a recipe
+---| "import"    Item is cheaper to import from another planet
+
+---@alias ItemValueSolver.Phase
+---| "collect"   Batch-reading recipe prototypes
+---| "build"     Preprocessing recipes, computing routes, initializing values
+---| "solve"     Iterating minimum-cost propagation
+---| "finalize"  Writing results and logging diagnostics
 
 ---@class ItemValueSource
----@field type ItemValueSourceType
----@field recipe_name string|nil The recipe which led the item having its given value, if type == "recipe"
----@field import_path string[]|nil The sequence of planet names representing a space platform's flight path when importing the item, if type == "import"
----@field distance number|nil The total length of the import path in kilometers, if type == "import"
+---@field type ItemValueSourceType How this item got its value
+---@field recipe_name string|nil Recipe that produced the cheapest value, if type == "recipe"
+---@field import_path string[]|nil Planet sequence for the cheapest import route, if type == "import"
+---@field distance number|nil Total flight distance in kilometers, if type == "import"
+
+---@class ItemValueSolver.State
+---@field active boolean Whether the solver is currently running
+---@field ticks_elapsed integer Number of ticks passed since solver start
+---@field phase ItemValueSolver.Phase Current phase of the solver
+---@field collect ItemValueSolver.CollectState|nil Collect phase working data (nil after collect completes)
+---@field recipes ItemValueSolver.SolverRecipe[]|nil Preprocessed recipe list
+---@field values {[string]: {[string]: number}}|nil Per-planet item values
+---@field sources {[string]: {[string]: ItemValueSource}}|nil Per-planet value provenance, indicating how items got their values
+---@field is_raw {[string]: {[string]: boolean}}|nil Per-planet sets of raw items
+---@field is_interplanetary {[string]: {[string]: boolean}}|nil Per-planet sets of interplanetary items, indicating which items require imports from other planets to be obtained
+---@field rocket_parts_per_launch number|nil Rocket parts needed per launch for any planet (TODO: make it per-planet based on modded rocket silos and rocket part recipes and their surface conditions for building and using them)
+---@field rocket_capacities {[string]: number}|nil Rocket launch capacity of items
+---@field stack_sizes {[string]: number}|nil Stack sizes of items
+---@field distances {[string]: {[string]: number}}|nil Shortest flight distances between planets
+---@field via {[string]: {[string]: string}}|nil Planet graph for spaceship flight path reconstruction
+---@field nt_cache {[string]: boolean}|nil Set of non-transportable items
+---@field recipe_idx integer|nil Current recipe index within a solve pass
+---@field pass_updates integer|nil Number of value updates in the current pass, moving the solver to the "finalize" state when calculated to be zero
+---@field iteration integer|nil Number of completed solve passes
+
+---@class ItemValueSolver.CollectState
+---@field recipe_names string[] All recipe prototype names to process
+---@field recipes {[string]: ItemValueSolver.CollectedRecipe} Recipe data indexed by name
+---@field recipe_idx integer Next index to process in recipe_names
+
+---@class ItemValueSolver.CollectedRecipe
+---@field energy number Crafting time in seconds
+---@field category string Recipe category (e.g. "crafting", "smelting", "recycling")
+---@field ingredients ItemValueSolver.ItemAmount[] Input items and amounts
+---@field products ItemValueSolver.ItemAmount[] Output items and expected amounts
+---@field surface_conditions SurfaceCondition[]|nil Surface conditions from the recipe prototype
+
+---@class ItemValueSolver.SolverRecipe
+---@field label string Display name for logging (recipe name or pseudo-recipe description)
+---@field ingredients ItemValueSolver.ItemAmount[] Input items and amounts
+---@field products ItemValueSolver.ItemAmount[] Output items and expected (average) amounts
+---@field multipliers {[string]: number} Per-planet cost multiplier (craft time, complexity, spoilables)
+---@field valid_planets {[string]: boolean}|nil Planets where this recipe can run (nil = all planets)
+
+---@class ItemValueSolver.ItemAmount
+---@field name string Item or fluid prototype name
+---@field amount number Quantity (average value if probabilistic)
+
+---@class ItemValueSolver.FuelInfo
+---@field fuel_items {name: string, fuel_value: number}[] Available fuel items and their energy content
+---@field energy_usage number Machine power draw
+---@field effectivity number Burner effectivity multiplier
+---@field surface_conditions SurfaceCondition[]|nil Surface conditions from the crafting entity
 
 
-
-local ALL_PLANETS = lib.ALL_PLANETS
-
-local planet_configs = {
-    nauvis = {
-        energy_coefficient = 0.06,
-        complexity_coefficient = 0.15,
-        raw_multiplier = 0.5,
-        spoilable_coefficient = 0.75,
-    },
-    vulcanus = {
-        energy_coefficient = 0.03,
-        complexity_coefficient = 0.13,
-        raw_multiplier = 0.6,
-        spoilable_coefficient = 0.75,
-    },
-    fulgora = {
-        energy_coefficient = 0.08,
-        complexity_coefficient = 0.18,
-        raw_multiplier = 0.65,
-        spoilable_coefficient = 0.75,
-    },
-    gleba = {
-        energy_coefficient = 0.07,
-        complexity_coefficient = 0.17,
-        raw_multiplier = 0.7,
-        spoilable_coefficient = 0.3,
-    },
-    aquilo = {
-        energy_coefficient = 0.03, -- fusion power becomes available
-        complexity_coefficient = 0.5, -- heat pipes complicate logistics massively
-        raw_multiplier = 1.0, -- endgame scaling
-        spoilable_coefficient = 1.25,
-    },
-}
-
-local raw_values = {
-    nauvis = {
-        ["wood"] = 5, ["iron-ore"] = 1, ["copper-ore"] = 0.8, ["stone"] = 0.6,
-        ["coal"] = 1.2, ["uranium-ore"] = 4, ["water"] = 0.01, ["crude-oil"] = 0.1,
-        ["raw-fish"] = 25, ["hexaprism"] = 5000000,
-    },
-    vulcanus = {
-        ["coal"] = 0.6, ["calcite"] = 2, ["tungsten-ore"] = 24,
-        ["sulfuric-acid"] = 0.5, ["lava"] = 0.02,
-    },
-    fulgora = {
-        ["heavy-oil"] = 0.06, ["scrap"] = 1,
-    },
-    gleba = {
-        ["stone"] = 1, ["water"] = 0.01, ["yumako"] = 28, ["jellynut"] = 42,
-        ["wood"] = 5, ["pentapod-egg"] = 64,
-    },
-    aquilo = {
-        ["ammoniacal-solution"] = 0.01, ["fluorine"] = 10, ["lithium-brine"] = 100,
-        ["crude-oil"] = 1,
-    },
-}
 
 --- Multiplier to item value per km traveled between planets. The multiplier is `1 + distance * DISTANCE_FACTOR`, where distance is measured in kilometers.
 local DISTANCE_FACTOR = 0.0002
@@ -158,7 +155,7 @@ local function is_non_transportable(item_name, cache)
 end
 
 ---Cancel common items between ingredients and products to prevent feedback loops.
----@param recipe table
+---@param recipe ItemValueSolver.CollectedRecipe
 local function cancel_common_items(recipe)
     for i = #recipe.ingredients, 1, -1 do
         local ing = recipe.ingredients[i]
@@ -183,7 +180,7 @@ end
 
 ---Compute the cost of importing one unit of an item from a source planet.
 ---Cost = (source_value + rocket_launch_cost) * (1 + distance * DISTANCE_FACTOR)
----@param s table
+---@param s ItemValueSolver.State
 ---@param src_planet string
 ---@param dst_planet string
 ---@param item_name string
@@ -203,7 +200,7 @@ end
 
 ---Find the cheapest cost for an item on a planet.
 ---Local items use only their local value. Interplanetary items also consider imports.
----@param s table
+---@param s ItemValueSolver.State
 ---@param planet string
 ---@param item_name string
 ---@return number
@@ -211,7 +208,7 @@ local function get_best_cost(s, planet, item_name)
     local best = s.values[planet][item_name] or INITIAL_VALUE
     if not s.is_interplanetary[planet][item_name] then return best end
     if is_non_transportable(item_name, s.nt_cache) then return best end
-    for _, src in pairs(ALL_PLANETS) do
+    for src, _ in pairs(storage.SUPPORTED_PLANETS) do
         if src ~= planet then
             local src_val = s.values[src][item_name]
             if src_val and src_val < INITIAL_VALUE then
@@ -226,7 +223,7 @@ end
 
 
 ---Phase 0: Batch-collect recipe data from prototypes.
----@param s table
+---@param s ItemValueSolver.State
 local function phase_collect(s)
     if not s.collect then
         s.collect = {
@@ -234,23 +231,27 @@ local function phase_collect(s)
             recipe_idx = 1,
             recipes = {},
         }
+
         for name in pairs(prototypes.recipe) do
             table.insert(s.collect.recipe_names, name)
         end
+
         lib.log("Solver: collecting " .. #s.collect.recipe_names .. " recipes")
         return
     end
 
-    local c = s.collect
+    local c = s.collect ---@type ItemValueSolver.CollectState
     for _ = 1, COLLECT_BATCH do
         if c.recipe_idx > #c.recipe_names then
             lib.log("Solver: collected " .. table_size(c.recipes) .. " valid recipes")
             s.phase = "build"
             return
         end
+
         local name = c.recipe_names[c.recipe_idx]
         local recipe = prototypes.recipe[name]
         c.recipe_idx = c.recipe_idx + 1
+
         if recipe and (not recipe.hidden or recipe.category == "recycling") then
             local ok, data = pcall(lib.extract_recipe_data, recipe)
             if ok and data then
@@ -264,23 +265,29 @@ end
 ---@param energy number
 ---@param ingredient_count number
 ---@param spoilable_count number
----@return table<string, number>
+---@return {[string]: number} planet_name -> multiplier
 local function compute_multipliers(energy, ingredient_count, spoilable_count)
+    local planet_configs = storage.item_values.planet_configs
+
     local mults = {}
-    for _, planet in pairs(ALL_PLANETS) do
+    for planet, _ in pairs(storage.SUPPORTED_PLANETS) do
         local c = planet_configs[planet]
-        mults[planet] = (1 + c.energy_coefficient * energy)
-                     * (1 + c.complexity_coefficient * ingredient_count)
-                     * (1 + c.spoilable_coefficient * spoilable_count)
-                     * (1 + c.raw_multiplier)
+
+        local mult = 1 + c.energy_coefficient * energy
+        mult = mult * (1 + c.complexity_coefficient * ingredient_count)
+        mult = mult * (1 + c.spoilable_coefficient * spoilable_count)
+        mult = mult * (1 + c.raw_multiplier)
+
+        mults[planet] = mult
     end
+
     return mults
 end
 
 ---Find fuel-consuming recipe categories (e.g. captive-spawner-process) and
 ---the fuel items that power them. Returns a mapping from recipe category to
 ---fuel info: the available fuel items, machine energy usage, and burner effectivity.
----@return table<string, {fuel_items: table[], energy_usage: number, effectivity: number, surface_conditions: SurfaceCondition[]|nil}>
+---@return {[string]: ItemValueSolver.FuelInfo}
 local function find_fuel_categories(collected_recipes)
     -- Identify categories with 0-ingredient recipes
     local zero_cats = {}
@@ -333,11 +340,13 @@ end
 local intersect_valid_planets = lib.intersect_valid_planets
 
 ---Phase 1: Process recipes, add spoil/burnt/fuel pseudo-recipes, compute multipliers, initialize values.
----@param s table
+---@param s ItemValueSolver.State
 local function phase_build(s)
     local recipes = {}
     local all_items = {}
 
+    local all_planets = storage.SUPPORTED_PLANETS
+    local raw_values = storage.item_values.raw_values
     local fuel_categories = find_fuel_categories(s.collect.recipes)
 
     local categories = {}
@@ -411,7 +420,7 @@ local function phase_build(s)
 
     -- Add spoil and burnt_result pseudo-recipes (1:1, multiplier 1.0)
     local identity_mults = {}
-    for _, planet in pairs(ALL_PLANETS) do identity_mults[planet] = 1.0 end
+    for planet, _ in pairs(all_planets) do identity_mults[planet] = 1.0 end
 
     local spoil_burnt = lib.collect_spoil_burnt_chains(all_items)
     for _, p in pairs(spoil_burnt) do
@@ -502,10 +511,10 @@ local function phase_build(s)
 
     -- Compute shortest paths between all planets via Floyd-Warshall
     local distances, via = {}, {}
-    for _, a in pairs(ALL_PLANETS) do
+    for a, _ in pairs(all_planets) do
         distances[a] = {}
         via[a] = {}
-        for _, b in pairs(ALL_PLANETS) do
+        for b, _ in pairs(all_planets) do
             distances[a][b] = a == b and 0 or math.huge
         end
     end
@@ -518,9 +527,9 @@ local function phase_build(s)
             via[b][a] = a
         end
     end
-    for _, k in pairs(ALL_PLANETS) do
-        for _, i in pairs(ALL_PLANETS) do
-            for _, j in pairs(ALL_PLANETS) do
+    for k, _ in pairs(all_planets) do
+        for i, _ in pairs(all_planets) do
+            for j, _ in pairs(all_planets) do
                 local d = distances[i][k] + distances[k][j]
                 if d < distances[i][j] then
                     distances[i][j] = d
@@ -531,8 +540,8 @@ local function phase_build(s)
     end
 
     -- Log discovered routes
-    for _, a in pairs(ALL_PLANETS) do
-        for _, b in pairs(ALL_PLANETS) do
+    for a, _ in pairs(all_planets) do
+        for b, _ in pairs(all_planets) do
             if a < b and distances[a][b] < math.huge then
                 local path = {a}
                 local cur = a
@@ -547,7 +556,7 @@ local function phase_build(s)
     -- Starting from each planet's raw resources, iteratively fire recipes whose
     -- ingredients are all available. Items never reached are interplanetary.
     local is_interplanetary = {}
-    for _, planet in pairs(ALL_PLANETS) do
+    for planet, _ in pairs(all_planets) do
         local available = {}
         for item_name in pairs(raw_values[planet] or {}) do
             available[item_name] = true
@@ -593,7 +602,7 @@ local function phase_build(s)
     local values = {}
     local sources = {}
     local is_raw = {}
-    for _, planet in pairs(ALL_PLANETS) do
+    for planet, _ in pairs(all_planets) do
         values[planet] = {}
         sources[planet] = {}
         is_raw[planet] = {}
@@ -660,7 +669,7 @@ local function phase_build(s)
                 end
             end
             local ip_on = {}
-            for _, planet in pairs(ALL_PLANETS) do
+            for planet, _ in pairs(all_planets) do
                 if is_interplanetary[planet][diag_name] then
                     table.insert(ip_on, planet)
                 end
@@ -680,18 +689,20 @@ end
 ---Phase 2: Minimum-cost propagation. Values can only decrease, preventing divergence.
 ---Each tick processes a batch of recipes. At pass boundaries, also checks direct imports.
 ---Converges when zero values change during a full pass (true fixed point).
----@param s table
+---@param s ItemValueSolver.State
 local function phase_solve(s)
-    local recipes = s.recipes
-    local values = s.values
-    local sources = s.sources
-    local is_raw = s.is_raw
+    local recipes = s.recipes ---@type ItemValueSolver.SolverRecipe[]
+    local values = s.values ---@type {[string]: {[string]: number}}
+    local sources = s.sources ---@type {[string]: {[string]: ItemValueSource}}
+    local is_raw = s.is_raw ---@type {[string]: {[string]: boolean}}
     local count = 0
+
+    local all_planets = storage.SUPPORTED_PLANETS
 
     while count < SOLVE_BATCH and s.recipe_idx <= #recipes do
         local recipe = recipes[s.recipe_idx]
 
-        for _, planet in pairs(ALL_PLANETS) do
+        for planet, _ in pairs(all_planets) do
             if not recipe.valid_planets or recipe.valid_planets[planet] then
                 local total_input = 0
                 local can_fire = true
@@ -739,11 +750,11 @@ local function phase_solve(s)
 
     -- Pass complete: check direct imports for interplanetary items and convergence
     if s.recipe_idx > #recipes then
-        for _, planet in pairs(ALL_PLANETS) do
+        for planet, _ in pairs(all_planets) do
             for item_name in pairs(s.is_interplanetary[planet]) do
                 if not is_non_transportable(item_name, s.nt_cache) then
                     local val = values[planet][item_name]
-                    for _, src in pairs(ALL_PLANETS) do
+                    for src, _ in pairs(all_planets) do
                         if src ~= planet then
                             local src_val = values[src][item_name]
                             if src_val and src_val < INITIAL_VALUE then
@@ -781,7 +792,7 @@ local function phase_solve(s)
             }
             for _, dname in pairs(diag) do
                 local parts = {}
-                for _, planet in pairs(ALL_PLANETS) do
+                for planet, _ in pairs(all_planets) do
                     local v = values[planet][dname]
                     if v and v < INITIAL_VALUE then
                         table.insert(parts, planet .. "=" .. string.format("%.1f", v))
@@ -810,20 +821,22 @@ local function phase_solve(s)
 end
 
 ---Phase 3: Write solved values, compute interplanetary data, log provenance.
----@param s table
+---@param s ItemValueSolver.State
 local function phase_finalize(s)
-    local values = s.values
-    local sources = s.sources
+    local values = s.values ---@type {[string]: {[string]: number}}
+    local sources = s.sources ---@type {[string]: {[string]: ItemValueSource}}
+
+    local all_planets = storage.SUPPORTED_PLANETS
 
     -- Build source planet strings for interplanetary items (cheapest import source)
-    local is_interplanetary = s.is_interplanetary
+    local is_interplanetary = s.is_interplanetary ---@type {[string]: {[string]: boolean}}
     local interplanetary = {}
-    for _, planet in pairs(ALL_PLANETS) do
+    for planet, _ in pairs(all_planets) do
         interplanetary[planet] = {}
         for item_name in pairs(is_interplanetary[planet]) do
             if not is_non_transportable(item_name, s.nt_cache) then
                 local best_src, best_cost = nil, INITIAL_VALUE
-                for _, src in pairs(ALL_PLANETS) do
+                for src, _ in pairs(all_planets) do
                     if src ~= planet then
                         local src_val = values[src][item_name]
                         if src_val and src_val < INITIAL_VALUE then
@@ -844,7 +857,7 @@ local function phase_finalize(s)
 
     -- Write to storage
     local new_item_values = {}
-    for _, planet in pairs(ALL_PLANETS) do
+    for planet, _ in pairs(all_planets) do
         local planet_values = {}
         for item_name, val in pairs(values[planet]) do
             if val < INITIAL_VALUE then
@@ -864,7 +877,7 @@ local function phase_finalize(s)
     local total = 0
     local unresolved = {}
     local str = ""
-    for _, planet in pairs(ALL_PLANETS) do
+    for planet, _ in pairs(all_planets) do
         local planet_values = storage.item_values.values[planet]
         local ip_count = table_size(interplanetary[planet])
         local count = table_size(planet_values)
@@ -890,7 +903,7 @@ local function phase_finalize(s)
     for item_name in pairs(values.nauvis) do
         if not lib.is_coin(item_name) then
             local has_value = false
-            for _, planet in pairs(ALL_PLANETS) do
+            for planet, _ in pairs(all_planets) do
                 if values[planet][item_name] and values[planet][item_name] < INITIAL_VALUE then
                     has_value = true
                     break
@@ -927,7 +940,7 @@ local function phase_finalize(s)
                     local missing = {}
                     for _, ing in pairs(recipe.ingredients) do
                         local has_any = false
-                        for _, planet in pairs(ALL_PLANETS) do
+                        for planet, _ in pairs(all_planets) do
                             if values[planet][ing.name]
                             and values[planet][ing.name] < INITIAL_VALUE then
                                 has_any = true
@@ -943,7 +956,7 @@ local function phase_finalize(s)
                         -- All ingredients have values globally, but item is unresolved.
                         -- Show per-planet get_best_cost to find the blocker.
                         lib.log("  " .. name .. " [" .. recipe.label .. "]: all ingredients have values globally! Per-planet:")
-                        for _, planet in pairs(ALL_PLANETS) do
+                        for planet, _ in pairs(all_planets) do
                             if not recipe.valid_planets or recipe.valid_planets[planet] then
                                 local blocked_ings = {}
                                 for _, ing in pairs(recipe.ingredients) do

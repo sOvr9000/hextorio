@@ -32,11 +32,20 @@ Overall, this whole system prevents weird edge cases from occurring like nutrien
 
 
 local lib = require "api.lib"
-local sets = require "api.sets"
--- local item_values = require "api.item_values"
-local event_system = require "api.event_system"
 
 local item_tradability_solver = {}
+
+
+
+---@class ItemTradabilitySolver.RecipeData
+---@field ingredients ItemTradabilitySolver.ItemAmount[] Input items and amounts
+---@field products ItemTradabilitySolver.ItemAmount[] Output items and expected (average) amounts
+---@field category string|nil Recipe category (e.g. "recycling"), nil for pseudo-recipes like burnt or spoil products
+---@field surface_conditions SurfaceCondition[]|nil Surface conditions from the recipe prototype
+
+---@class ItemTradabilitySolver.ItemAmount
+---@field name string Item or fluid prototype name
+---@field amount number Quantity (expected value if probabilistic)
 
 
 
@@ -71,28 +80,6 @@ local PLANET_TIEBREAK = {
     vulcanus = 1,
     fulgora = 2,
     gleba = 3,
-}
-
----Items that are raw resources on each planet (used as forward propagation seeds).
----TODO: put this and same thing from item value solver in storage.item_values
-local RAW_ITEMS = {
-    nauvis = sets.new {
-        "wood", "iron-ore", "copper-ore", "stone", "coal",
-        "uranium-ore", "water", "crude-oil", "raw-fish",
-    },
-    vulcanus = sets.new {
-        "coal", "calcite", "tungsten-ore", "sulfuric-acid", "lava",
-    },
-    fulgora = sets.new {
-        "heavy-oil", "scrap",
-    },
-    gleba = sets.new {
-        "stone", "water", "yumako", "jellynut",
-        "wood", "pentapod-egg", "spoilage",
-    },
-    aquilo = sets.new {
-        "ammoniacal-solution", "fluorine", "lithium-brine", "crude-oil",
-    },
 }
 
 
@@ -136,10 +123,10 @@ local PLANET_DISCOVERY_TECH = {
 ---A tech's effective origin is the deepest among its own science pack origin,
 ---any planet discovery tech in its prerequisite chain, and all its
 ---prerequisites' effective origins.
----@return table<string, string>
+---@return {[string]: string} tech_name -> origin planet
 local function build_tech_origins()
     local science_origins = {}
-    local prerequisites = {} ---@type table<string, string[]>
+    local prerequisites = {} ---@type {[string]: string[]}
     for name, tech in pairs(prototypes.technology) do
         science_origins[name] = get_science_origin(tech.research_unit_ingredients)
         local prereq_names = {}
@@ -169,11 +156,9 @@ local function build_tech_origins()
 end
 
 ---Collect all recipes and determine their origin planet.
----Returns:
----  recipes: table of normalized recipe data keyed by name
----  recipe_origin: maps recipe_name -> planet of origin
----  recipe_valid_planets: maps recipe_name -> valid planet set (from surface conditions), or nil
----@return table, table<string, string>, table<string, table<string, boolean>|nil>
+---@return {[string]: ItemTradabilitySolver.RecipeData} recipes Normalized recipe data keyed by name
+---@return {[string]: string} recipe_origin Recipe name -> origin planet
+---@return {[string]: {[string]: boolean}|nil} recipe_valid_planets Recipe name -> set of valid planets (nil = all)
 local function collect_recipes_and_origins()
     local recipes = {}
     local recipe_origin = {}
@@ -181,7 +166,7 @@ local function collect_recipes_and_origins()
 
     -- Build tech_name -> effective origin planet (considering prerequisites)
     local tech_origin = build_tech_origins()
-    local tech_unlocks_recipes = {} ---@type table<string, string[]>
+    local tech_unlocks_recipes = {} ---@type {[string]: string[]}
     for name, tech in pairs(prototypes.technology) do
         tech_unlocks_recipes[name] = {}
         for _, effect in pairs(tech.effects) do
@@ -240,7 +225,7 @@ local function collect_recipes_and_origins()
         for _, prod in pairs(data.products) do seed_items[prod.name] = true end
         for _, ing in pairs(data.ingredients) do seed_items[ing.name] = true end
     end
-    for _, planet_raws in pairs(RAW_ITEMS) do
+    for _, planet_raws in pairs(storage.item_values.raw_values) do
         for item_name in pairs(planet_raws) do seed_items[item_name] = true end
     end
     for _, p in pairs(lib.collect_spoil_burnt_chains(seed_items)) do
@@ -258,10 +243,10 @@ end
 ---and its surface/entity conditions allow it here. Recipes without a known origin
 ---(pseudo-recipes, some recycling) are always included.
 ---@param planet string
----@param recipes table
----@param recipe_origin table<string, string>
----@param recipe_valid_planets table<string, table<string, boolean>|nil>
----@return table<string, boolean>
+---@param recipes {[string]: ItemTradabilitySolver.RecipeData}
+---@param recipe_origin {[string]: string}
+---@param recipe_valid_planets {[string]: {[string]: boolean}|nil}
+---@return {[string]: boolean} candidate_set Recipe names that can run on this planet
 local function get_candidate_recipes(planet, recipes, recipe_origin, recipe_valid_planets)
     local candidates = {}
     for recipe_name in pairs(recipes) do
@@ -280,17 +265,17 @@ end
 ---producible items on a planet.
 ---
 ---Runs in two phases:
----  1. Propagate without always_fire to find locally producible items.
----  2. Propagate with always_fire, but recycling recipes only fire on
----     locally produced inputs (not items sourced from interplanetary recipes).
+---  1. Propagate naturally from raw resources — all candidates participate.
+---  2. Force-fire remaining planet-origin recipes, but recycling only fires on
+---     items from Phase 1 (prevents decomposition cascades).
 ---@param planet string
----@param candidates table<string, boolean>
----@param recipes table
----@param always_fire table<string, boolean> Planet-origin recipes that fire unconditionally
----@return table<string, boolean> available_items
+---@param candidates {[string]: boolean} Candidate recipe names for this planet
+---@param recipes {[string]: ItemTradabilitySolver.RecipeData}
+---@param always_fire {[string]: boolean} Planet-origin recipes that fire unconditionally in Phase 2
+---@return {[string]: boolean} available_items Set of all producible item names
 local function forward_propagate(planet, candidates, recipes, always_fire)
     local available = {}
-    local raw = RAW_ITEMS[planet] or {}
+    local raw = storage.item_values.raw_values[planet] or {}
     for item_name in pairs(raw) do
         available[item_name] = true
     end
@@ -407,12 +392,6 @@ function item_tradability_solver.solve()
     storage.item_values.is_tradable = is_tradable
 
     lib.log("Tradability solver: complete")
-end
-
-function item_tradability_solver.register_events()
-    -- event_system.register("post-solve-item-values", function()
-    --     tradability.solve()
-    -- end)
 end
 
 
