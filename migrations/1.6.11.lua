@@ -17,6 +17,6 @@ return function()
         base_coin_value = 10,
     }
 
-    item_tradability_solver.solve()
+    item_tradability_solver.init()
     item_value_solver.init()
 end

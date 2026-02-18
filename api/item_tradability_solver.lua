@@ -50,38 +50,222 @@ local item_tradability_solver = {}
 
 
 
----Science packs mapped to their planet of origin.
----TODO: automate this based on surface conditions of science pack recipes (better for mod compatibility)
-local SCIENCE_PACK_PLANET = {
-    ["automation-science-pack"] = "nauvis",
-    ["logistic-science-pack"] = "nauvis",
-    ["chemical-science-pack"] = "nauvis",
-    ["military-science-pack"] = "nauvis",
-    ["production-science-pack"] = "nauvis",
-    ["utility-science-pack"] = "nauvis",
-    ["metallurgic-science-pack"] = "vulcanus",
-    ["electromagnetic-science-pack"] = "fulgora",
-    ["agricultural-science-pack"] = "gleba",
-    ["cryogenic-science-pack"] = "aquilo",
-}
+---@return StringSet item_name -> true for all science pack items
+local function build_science_pack_set()
+    local science_packs = {}
+    for _, entity in pairs(prototypes.entity) do
+        local inputs = entity.lab_inputs
+        if inputs then
+            for _, item_name in pairs(inputs) do
+                science_packs[item_name] = true
+            end
+        end
+    end
+    return science_packs
+end
 
----Planet depth in the progression hierarchy.
----TODO: automate this based on tech tree
-local PLANET_DEPTH = {
-    nauvis = 0,
-    vulcanus = 1,
-    fulgora = 1,
-    gleba = 1,
-    aquilo = 2,
-}
+---@return {[string]: string[]} tech_name -> successor tech names
+local function build_tech_successors()
+    local successors = {}
+    for name in pairs(prototypes.technology) do successors[name] = {} end
+    for name, tech in pairs(prototypes.technology) do
+        for _, prereq in pairs(tech.prerequisites or {}) do
+            local list = successors[prereq.name]
+            if list then table.insert(list, name) end
+        end
+    end
+    return successors
+end
 
----Tiebreaker ordering for planets at the same depth.
----TODO: automate
-local PLANET_TIEBREAK = {
-    vulcanus = 1,
-    fulgora = 2,
-    gleba = 3,
-}
+---Find technologies that unlock a planet surface via "unlock-space-location" effects.
+---@return {[string]: string} tech_name -> planet_name
+local function find_planet_discovery_techs()
+    local result = {}
+    for name, tech in pairs(prototypes.technology) do
+        for _, effect in pairs(tech.effects or {}) do
+            if effect.type == "unlock-space-location" then
+                local loc_name = effect.space_location
+                local loc = loc_name and prototypes.space_location[loc_name]
+                if loc and loc.surface_properties then
+                    result[name] = loc_name
+                    break
+                end
+            end
+        end
+    end
+    return result
+end
+
+---Find tech names not in visited whose all prerequisites are in visited.
+---@param visited StringSet
+---@param successors {[string]: string[]}
+---@return string[]
+local function find_frontier_techs(visited, successors)
+    local frontier = {}
+    local seen = {}
+    for tech_name in pairs(visited) do
+        for _, succ in ipairs(successors[tech_name] or {}) do
+            if not visited[succ] and not seen[succ] then
+                seen[succ] = true
+                local all_v = true
+                for _, prereq in pairs(prototypes.technology[succ].prerequisites or {}) do
+                    if not visited[prereq.name] then all_v = false; break end
+                end
+                if all_v then table.insert(frontier, succ) end
+            end
+        end
+    end
+    return frontier
+end
+
+---BFS one level from start_names, treating visited_in as already-visited (not mutated).
+---Stops at planet discovery tech boundaries; records them but does not traverse past them.
+---@param start_names string[]
+---@param visited_in StringSet
+---@param successors {[string]: string[]}
+---@param pd_techs {[string]: string}
+---@param recipe_produces_sp {[string]: string[]}
+---@return StringSet found_sp
+---@return {[string]: string} found_pd  -- tech_name -> planet_name for each boundary hit
+---@return StringSet visited_out  -- visited_in union newly visited
+local function bfs_layer(start_names, visited_in, successors, pd_techs, recipe_produces_sp)
+    local visited = {}
+    for k in pairs(visited_in) do visited[k] = true end
+
+    local queue = {}
+    for _, name in ipairs(start_names) do
+        if not visited[name] then
+            visited[name] = true
+            table.insert(queue, name)
+        end
+    end
+
+    local found_sp = {}
+    local found_pd = {}
+    local i = 1
+    while i <= #queue do
+        local tech_name = queue[i]
+        i = i + 1
+        if pd_techs[tech_name] then
+            found_pd[tech_name] = pd_techs[tech_name]
+        else
+            local tech = prototypes.technology[tech_name]
+            for _, effect in pairs(tech.effects or {}) do
+                if effect.type == "unlock-recipe" then
+                    local sp_items = recipe_produces_sp[effect.recipe]
+                    if sp_items then
+                        for _, item_name in ipairs(sp_items) do found_sp[item_name] = true end
+                    end
+                end
+            end
+            for _, succ in ipairs(successors[tech_name] or {}) do
+                if not visited[succ] then
+                    local all_v = true
+                    for _, prereq in pairs(prototypes.technology[succ].prerequisites or {}) do
+                        if not visited[prereq.name] then all_v = false; break end
+                    end
+                    if all_v then visited[succ] = true; table.insert(queue, succ) end
+                end
+            end
+        end
+    end
+
+    return found_sp, found_pd, visited
+end
+
+---Auto-detect science pack planet origins, planet depths, planet tiebreaks, and planet
+---discovery technologies from entity and technology prototypes.
+---Science packs are detected via lab entity lab_inputs.
+---Planet depths and science pack origins are determined by BFS from root technologies,
+---stopping at planet-discovery tech boundaries, then recursing per planet.
+---Results are written into storage.item_values.
+local function auto_detect_planet_data()
+    local science_pack_set = build_science_pack_set()
+    local pd_techs = find_planet_discovery_techs()
+    local successors = build_tech_successors()
+
+    local recipe_produces_sp = {} ---@type {[string]: string[]}
+    for name, recipe in pairs(prototypes.recipe) do
+        for _, product in pairs(recipe.products or {}) do
+            if science_pack_set[product.name] then
+                recipe_produces_sp[name] = recipe_produces_sp[name] or {}
+                table.insert(recipe_produces_sp[name], product.name)
+            end
+        end
+    end
+
+    local sp_planet = {}
+    local planet_d = {nauvis = 0}
+    local planet_tb = {}
+    local tiebreak_counter = 1
+
+    -- Science packs from start-enabled recipes (no unlock required) belong to Nauvis
+    for _, recipe in pairs(prototypes.recipe) do
+        if recipe.enabled then
+            for _, product in pairs(recipe.products or {}) do
+                if science_pack_set[product.name] then
+                    sp_planet[product.name] = "nauvis"
+                end
+            end
+        end
+    end
+
+    local roots = {}
+    for name, tech in pairs(prototypes.technology) do
+        if not next(tech.prerequisites or {}) then table.insert(roots, name) end
+    end
+
+    local sp_0, boundaries, visited = bfs_layer(roots, {}, successors, pd_techs, recipe_produces_sp)
+    for sp in pairs(sp_0) do
+        if not sp_planet[sp] then sp_planet[sp] = "nauvis" end
+    end
+
+    local depth = 1
+    while next(boundaries) do
+        local sorted = {}
+        for tech_name, planet_name in pairs(boundaries) do
+            table.insert(sorted, {tech = tech_name, planet = planet_name})
+        end
+        table.sort(sorted, function(a, b) return a.planet < b.planet end)
+
+        local visited_base = visited
+        local next_boundaries = {}
+        local merged_new = {}
+
+        for _, entry in ipairs(sorted) do
+            if not planet_d[entry.planet] then
+                planet_d[entry.planet] = depth
+                planet_tb[entry.planet] = tiebreak_counter
+                tiebreak_counter = tiebreak_counter + 1
+            end
+            local sp, child_pd, v_out = bfs_layer({entry.tech}, visited_base, successors, pd_techs, recipe_produces_sp)
+            for sp_name in pairs(sp) do
+                if not sp_planet[sp_name] then sp_planet[sp_name] = entry.planet end
+            end
+            for t, p in pairs(child_pd) do next_boundaries[t] = next_boundaries[t] or p end
+            for k in pairs(v_out) do merged_new[k] = true end
+        end
+
+        for k in pairs(merged_new) do visited[k] = true end
+
+        -- Gap-fill: find boundaries now reachable from the merged visited set.
+        -- Handles planets whose discovery tech requires prerequisites across multiple siblings.
+        local frontier = find_frontier_techs(visited, successors)
+        if #frontier > 0 then
+            local _, gap_pd, gap_v = bfs_layer(frontier, visited, successors, pd_techs, recipe_produces_sp)
+            for t, p in pairs(gap_pd) do next_boundaries[t] = next_boundaries[t] or p end
+            for k in pairs(gap_v) do visited[k] = true end
+        end
+
+        boundaries = next_boundaries
+        depth = depth + 1
+    end
+
+    storage.item_values.science_pack_planet = sp_planet
+    storage.item_values.planet_depth = planet_d
+    storage.item_values.planet_tiebreak = planet_tb
+    storage.item_values.planet_discovery_tech = pd_techs
+end
 
 
 
@@ -90,10 +274,12 @@ local PLANET_TIEBREAK = {
 ---@param b string
 ---@return string
 local function deeper_origin(a, b)
-    local da, db = PLANET_DEPTH[a] or 0, PLANET_DEPTH[b] or 0
+    local depth = storage.item_values.planet_depth
+    local da, db = depth[a] or 0, depth[b] or 0
     if da > db then return a end
     if db > da then return b end
-    local ta, tb = PLANET_TIEBREAK[a] or 0, PLANET_TIEBREAK[b] or 0
+    local tiebreak = storage.item_values.planet_tiebreak
+    local ta, tb = tiebreak[a] or 0, tiebreak[b] or 0
     return ta >= tb and a or b
 end
 
@@ -102,9 +288,10 @@ end
 ---@param research_unit_ingredients Ingredient[]
 ---@return string planet_name
 local function get_science_origin(research_unit_ingredients)
+    local sp_planet = storage.item_values.science_pack_planet
     local best = "nauvis"
     for _, ingredient in pairs(research_unit_ingredients) do
-        local planet = SCIENCE_PACK_PLANET[ingredient.name]
+        local planet = sp_planet[ingredient.name]
         if planet then
             best = deeper_origin(best, planet)
         end
@@ -112,20 +299,13 @@ local function get_science_origin(research_unit_ingredients)
     return best
 end
 
----Planet discovery technologies that act as gateway markers.
-local PLANET_DISCOVERY_TECH = {
-    ["planet-discovery-vulcanus"] = "vulcanus",
-    ["planet-discovery-fulgora"] = "fulgora",
-    ["planet-discovery-gleba"] = "gleba",
-    ["planet-discovery-aquilo"] = "aquilo",
-}
-
 ---Build a table mapping tech_name -> effective origin planet.
 ---A tech's effective origin is the deepest among its own science pack origin,
 ---any planet discovery tech in its prerequisite chain, and all its
 ---prerequisites' effective origins.
 ---@return {[string]: string} tech_name -> origin planet
 local function build_tech_origins()
+    local pd_tech = storage.item_values.planet_discovery_tech
     local science_origins = {}
     local prerequisites = {} ---@type {[string]: string[]}
     for name, tech in pairs(prototypes.technology) do
@@ -140,8 +320,7 @@ local function build_tech_origins()
     local cache = {}
     local function resolve(name)
         if cache[name] then return cache[name] end
-        local origin = PLANET_DISCOVERY_TECH[name]
-            or science_origins[name] or "nauvis"
+        local origin = pd_tech[name] or science_origins[name] or "nauvis"
         for _, prereq_name in pairs(prerequisites[name] or {}) do
             origin = deeper_origin(origin, resolve(prereq_name))
         end
@@ -353,6 +532,11 @@ local function forward_propagate(planet, candidates, recipes, always_fire)
     end
 
     return available
+end
+
+function item_tradability_solver.init()
+    auto_detect_planet_data()
+    item_tradability_solver.solve()
 end
 
 ---Solve tradability for all planets and populate storage.item_values.is_tradable.

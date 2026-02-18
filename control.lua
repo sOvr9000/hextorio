@@ -186,7 +186,7 @@ script.on_init(function()
     temp.request_to_generate_chunks({0, 0}, 0)
 
     coin_tiers.init()
-    item_tradability_solver.solve()
+    item_tradability_solver.init()
     item_ranks.init()
     quests.init()
     hex_island.init()
