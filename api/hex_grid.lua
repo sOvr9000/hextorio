@@ -804,6 +804,7 @@ end
 ---@param hex_grid_rotation number
 ---@param hex_stroke_width number
 function hex_grid.init_dungeon_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
+    if not storage.loot_tables then return end
     dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
 end
 
@@ -840,7 +841,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     local is_land = hex_island.is_land_hex(surface.name, hex_pos)
 
     local dungeon_chance = lib.runtime_setting_value("dungeon-chance-" .. surface.name)
-    local is_dungeon = is_land and (dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 3 and math.random() < dungeon_chance))
+    local is_dungeon = storage.loot_tables ~= nil and is_land and (dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 3 and math.random() < dungeon_chance))
 
     if is_starting_hex then
         if surface.name == "fulgora" then

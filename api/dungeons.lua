@@ -277,6 +277,8 @@ end
 ---@param hex_grid_rotation number
 ---@param hex_stroke_width number
 function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
+    if not storage.loot_tables then return end
+
     local dungeon = dungeons.get_dungeon_at_hex_pos(surface_id, hex_pos, true)
     if not dungeon then return end
     local prot = dungeons.get_prototype_of_dungeon(dungeon)
@@ -665,6 +667,8 @@ end
 ---@param hex_pos HexPos
 ---@return LuaEntity[]
 function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
+    if not storage.loot_tables then return {} end
+
     local prot = dungeons.get_prototype_of_dungeon(dungeon)
     if not prot then
         lib.log_error("dungeons.spawn_loot: No prototype found for dungeon " .. dungeon.id)

@@ -49,6 +49,7 @@ end
 ---@param loot_table_name string
 ---@return LootTable|nil
 function loot_tables.get_loot_table(surface_name, loot_table_name)
+    if not storage.loot_tables then return end
     local lookup = storage.loot_tables.surface_loot_tables[surface_name]
     if not lookup then
         lib.log_error("loot_tables.get_loot_table: No loot table found for surface " .. surface_name)

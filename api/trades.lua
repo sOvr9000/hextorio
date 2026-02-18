@@ -185,9 +185,13 @@ function trades.register_events()
     end)
 
     event_system.register("entity-killed-entity", trades.on_entity_killed_entity)
+    event_system.register("item-values-recalculated", trades.generate_surrounding_trades)
 end
 
-function trades.init()
+
+
+---Generate the guaranteed trades near spawn, intended to be called only on game start after the item value solver finishes its job.
+function trades.generate_surrounding_trades()
     for surface_name, surrounding_trades in pairs(storage.trades.surrounding_trades) do
         local island_hexes = hex_island.get_island_hex_set(surface_name)
 

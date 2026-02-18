@@ -115,6 +115,8 @@ end
 ---Reinitialize the catalog GUI for the given player, or all players if no player is provided.
 ---@param player LuaPlayer|nil
 function catalog_gui.reinitialize(player)
+    if storage.item_values.awaiting_solver then return end
+
     if not player then
         for _, p in pairs(game.connected_players) do
             catalog_gui.reinitialize(p)

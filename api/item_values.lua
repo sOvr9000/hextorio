@@ -257,7 +257,7 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
 
     local surface_vals = item_values.get_item_values_for_surface(surface_name, true)
     if not surface_vals then
-        error("item_values.get_item_value: No item values for surface " .. surface_name .. ", defaulting to 1")
+        lib.log_error("item_values.get_item_value: No item values for surface " .. surface_name .. ", defaulting to 1")
         return 1
     end
 
@@ -267,7 +267,7 @@ function item_values.get_item_value(surface_name, item_name, allow_interplanetar
             item_values.init_coin_values(surface_vals)
             return surface_vals[item_name] * quality_mult
         end
-        error("item_values.get_item_value: Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
+        lib.log_error("item_values.get_item_value: Unknown item value for " .. item_name .. " on surface " .. surface_name .. ", defaulting to 1")
         val = 1
     end
 
