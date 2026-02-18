@@ -120,8 +120,6 @@ local trades = {}
 
 function trades.register_events()
     local function discover_all(player, params)
-        log("running discover all - tradable items right now:")
-        log(serpent.block(storage.item_values.is_tradable))
         if storage.item_values.awaiting_solver then
             lib.log_error("Skipped discovering all items: item value solver has not yet finished")
             return
@@ -132,8 +130,6 @@ function trades.register_events()
             for item_name, _ in pairs(vals) do
                 if lib.is_catalog_item(surface_name, item_name) then
                     table.insert(items_list, item_name)
-                else
-                    log("skip " .. item_name .. " on " .. surface_name)
                 end
             end
         end
@@ -1391,9 +1387,6 @@ function trades.discover_items(items_list)
         if trades.mark_as_discovered(item_name) then
             i = i + 1
             new_discoveries[i] = item_name
-            log("discovering " .. item_name)
-        else
-            log("failed to discover " .. item_name)
         end
     end
 
