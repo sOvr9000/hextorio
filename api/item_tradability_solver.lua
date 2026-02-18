@@ -32,6 +32,7 @@ Overall, this whole system prevents weird edge cases from occurring like nutrien
 
 
 local lib = require "api.lib"
+local solver_util = require "api.solver_util"
 
 local item_tradability_solver = {}
 
@@ -193,12 +194,12 @@ local function collect_recipes_and_origins()
             categories[recipe.category] = true
         end
     end
-    local category_vp = lib.build_category_valid_planets(categories)
+    local category_vp = solver_util.build_category_valid_planets(categories)
 
     -- Collect recipes
     for name, recipe in pairs(prototypes.recipe) do
         if not recipe.hidden or recipe.category == "recycling" then
-            local ok, data = pcall(lib.extract_recipe_data, recipe)
+            local ok, data = pcall(solver_util.extract_recipe_data, recipe)
             if ok and data and #data.ingredients > 0 and #data.products > 0 then
                 recipes[name] = data
 
@@ -212,9 +213,9 @@ local function collect_recipes_and_origins()
                     recipe_origin[name] = nil
                 end
 
-                local recipe_vp = lib.get_valid_planets(data.surface_conditions)
+                local recipe_vp = solver_util.get_valid_planets(data.surface_conditions)
                 local cat_vp = category_vp[data.category]
-                recipe_valid_planets[name] = lib.intersect_valid_planets(recipe_vp, cat_vp)
+                recipe_valid_planets[name] = solver_util.intersect_valid_planets(recipe_vp, cat_vp)
             end
         end
     end
@@ -228,7 +229,7 @@ local function collect_recipes_and_origins()
     for _, planet_raws in pairs(storage.item_values.raw_values) do
         for item_name in pairs(planet_raws) do seed_items[item_name] = true end
     end
-    for _, p in pairs(lib.collect_spoil_burnt_chains(seed_items)) do
+    for _, p in pairs(solver_util.collect_spoil_burnt_chains(seed_items)) do
         recipes[p.label] = {
             ingredients = {{name = p.source, amount = 1}},
             products = {{name = p.result, amount = 1}},

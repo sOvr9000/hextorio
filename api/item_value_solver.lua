@@ -37,6 +37,7 @@ Phases:
 
 
 local lib = require "api.lib"
+local solver_util = require "api.solver_util"
 local event_system = require "api.event_system"
 local item_values = require "api.item_values"
 
@@ -253,7 +254,7 @@ local function phase_collect(s)
         c.recipe_idx = c.recipe_idx + 1
 
         if recipe and (not recipe.hidden or recipe.category == "recycling") then
-            local ok, data = pcall(lib.extract_recipe_data, recipe)
+            local ok, data = pcall(solver_util.extract_recipe_data, recipe)
             if ok and data then
                 c.recipes[recipe.name] = data
             end
@@ -337,7 +338,7 @@ local function find_fuel_categories(collected_recipes)
     return result
 end
 
-local intersect_valid_planets = lib.intersect_valid_planets
+local intersect_valid_planets = solver_util.intersect_valid_planets
 
 ---Phase 1: Process recipes, add spoil/burnt/fuel pseudo-recipes, compute multipliers, initialize values.
 ---@param s ItemValueSolver.State
@@ -353,13 +354,13 @@ local function phase_build(s)
     for _, data in pairs(s.collect.recipes) do
         if data.category then categories[data.category] = true end
     end
-    local category_valid_planets = lib.build_category_valid_planets(categories)
+    local category_valid_planets = solver_util.build_category_valid_planets(categories)
 
     for recipe_name, data in pairs(s.collect.recipes) do
         local fuel_info = #data.ingredients == 0 and fuel_categories[data.category] or nil
 
         log(recipe_name)
-        local recipe_vp = lib.get_valid_planets(data.surface_conditions)
+        local recipe_vp = solver_util.get_valid_planets(data.surface_conditions)
         local cat_vp = category_valid_planets[data.category]
 
         if fuel_info then
@@ -369,7 +370,7 @@ local function phase_build(s)
             -- Valid planets = intersection of recipe and entity surface conditions.
             for _, prod in pairs(data.products) do all_items[prod.name] = true end
 
-            local entity_vp = lib.get_valid_planets(fuel_info.surface_conditions)
+            local entity_vp = solver_util.get_valid_planets(fuel_info.surface_conditions)
             local valid_planets = intersect_valid_planets(
                 intersect_valid_planets(recipe_vp, entity_vp), cat_vp)
 
@@ -422,7 +423,7 @@ local function phase_build(s)
     local identity_mults = {}
     for planet, _ in pairs(all_planets) do identity_mults[planet] = 1.0 end
 
-    local spoil_burnt = lib.collect_spoil_burnt_chains(all_items)
+    local spoil_burnt = solver_util.collect_spoil_burnt_chains(all_items)
     for _, p in pairs(spoil_burnt) do
         all_items[p.result] = true
         table.insert(recipes, {
