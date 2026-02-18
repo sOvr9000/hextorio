@@ -13,9 +13,8 @@ Date: 20/2/26
         > distances between planets (when production requires interplanetary imports)
         > overall multiplier to each recipe's products based on the planet (like x1.2 on top of all other scaling factors combined)
   Features:
-    - Added settings for each raw item value, allowing to configure how item values propagate during recipe evaluation.
-    - Added /solve-item-values command, which can be ran after changing raw item values.
-    - The /export-item-values command now also includes item value sources and recipe data for use with the Hextorio Item Value Explorer web tool.
+    - Added settings for configuring how item values propagate throughout recipes, namely raw item values and planet-specific scaling rates.
+    - The /export-item-values command now also includes item value sources and recipe data for use with the Hextorio Item Value Explorer (HIVE) web tool.
   Minor Features:
     - Added the has_untradable_items field to trades in the trades JSON export, which indicates whether the trade contains any items that are initially untradable on its planet (only set to true for trades created by the silver item rank bonus).
   Changes:

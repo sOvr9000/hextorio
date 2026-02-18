@@ -4,42 +4,45 @@ return {
     awaiting_solver = true, -- gets set to nil once the item value solver finishes on new game start
     base_coin_value = 10,
 
+    -- DUMMY VALUES
+    -- Will be replaced by mod setting values.
+    -- These exist to allow the item value solver to iterate over the associated config types on game start.
     planet_configs = {
         nauvis = {
-            energy_coefficient = 0.06,
-            complexity_coefficient = 0.15,
-            raw_multiplier = 0.5,
-            spoilable_coefficient = 0.75,
+            energy_coefficient = 1,
+            complexity_coefficient = 1,
+            raw_multiplier = 1,
+            spoilable_coefficient = 1,
         },
         vulcanus = {
-            energy_coefficient = 0.03,
-            complexity_coefficient = 0.13,
-            raw_multiplier = 0.6,
-            spoilable_coefficient = 0.75,
+            energy_coefficient = 1,
+            complexity_coefficient = 1,
+            raw_multiplier = 1,
+            spoilable_coefficient = 1,
         },
         fulgora = {
-            energy_coefficient = 0.08,
-            complexity_coefficient = 0.18,
-            raw_multiplier = 0.65,
-            spoilable_coefficient = 0.75,
+            energy_coefficient = 1,
+            complexity_coefficient = 1,
+            raw_multiplier = 1,
+            spoilable_coefficient = 1,
         },
         gleba = {
-            energy_coefficient = 0.07,
-            complexity_coefficient = 0.17,
-            raw_multiplier = 0.7,
-            spoilable_coefficient = 0.3,
+            energy_coefficient = 1,
+            complexity_coefficient = 1,
+            raw_multiplier = 1,
+            spoilable_coefficient = 1,
         },
         aquilo = {
-            energy_coefficient = 0.03, -- fusion power becomes available
-            complexity_coefficient = 0.5, -- heat pipes complicate logistics massively
-            raw_multiplier = 1.0, -- endgame scaling
-            spoilable_coefficient = 1.25,
+            energy_coefficient = 1,
+            complexity_coefficient = 1,
+            raw_multiplier = 1,
+            spoilable_coefficient = 1,
         },
     },
 
     -- DUMMY VALUES
     -- Will be replaced by mod setting values.
-    -- These exist to allow iteration over items expected to be considered "raw" during game start.
+    -- These exist to allow the item value solver to iterate over known "raw" items on game start.
     raw_values = {
         nauvis = {
             ["wood"] = 1,

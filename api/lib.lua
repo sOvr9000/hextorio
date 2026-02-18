@@ -2393,6 +2393,18 @@ function lib.is_localized_string(obj)
     return true
 end
 
+---Get an order category substring for a planet in a prototype's `order` field.
+---@param surface_name string
+function lib.get_planet_order_category(surface_name)
+    if surface_name == "nauvis" or surface_name == "vulcanus" then
+        return "p"
+    elseif surface_name == "fulgora" or surface_name == "gleba" then
+        return "q"
+    else
+        return "r"
+    end
+end
+
 
 
 return lib

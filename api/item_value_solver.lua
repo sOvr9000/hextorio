@@ -1038,6 +1038,16 @@ function solver.init()
         end
     end
 
+    for surface_name, config in pairs(storage.item_values.planet_configs) do
+        for config_name, _ in pairs(config) do
+            local val = lib.runtime_setting_value_as_number("planet-config-" .. surface_name .. "-" .. config_name:gsub("_", "-"))
+            if config_name == "raw_multiplier" then
+                val = val - 1
+            end
+            config[config_name] = val
+        end
+    end
+
     solver.run()
 end
 
@@ -1051,7 +1061,7 @@ function solver.register_events()
         solver.run()
     end)
 
-    local function create_handler(surface_name, resource)
+    local function create_raw_value_handler(surface_name, resource)
         return function()
             storage.item_values.raw_values[surface_name][resource] = lib.runtime_setting_value_as_number("raw-value-" .. surface_name .. "-" .. resource) * storage.item_values.base_coin_value
             solver.run()
@@ -1060,7 +1070,24 @@ function solver.register_events()
 
     for surface_name, raw_vals in pairs(data_item_values.raw_values) do
         for resource, _ in pairs(raw_vals) do
-            event_system.register("runtime-setting-changed-raw-value-" .. surface_name .. "-" .. resource, create_handler(surface_name, resource))
+            event_system.register("runtime-setting-changed-raw-value-" .. surface_name .. "-" .. resource, create_raw_value_handler(surface_name, resource))
+        end
+    end
+
+    local function create_planet_config_handler(surface_name, config_name)
+        return function()
+            local val = lib.runtime_setting_value_as_number("planet-config-" .. surface_name .. "-" .. config_name:gsub("_", "-"))
+            if config_name == "raw_multiplier" then
+                val = val - 1
+            end
+            storage.item_values.planet_configs[surface_name][config_name] = val
+            solver.run()
+        end
+    end
+
+    for surface_name, config in pairs(data_item_values.planet_configs) do
+        for config_name, _ in pairs(config) do
+            event_system.register("runtime-setting-changed-planet-config-" .. surface_name .. "-" .. config_name:gsub("_", "-"), create_planet_config_handler(surface_name, config_name))
         end
     end
 end

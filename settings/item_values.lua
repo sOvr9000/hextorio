@@ -1,3 +1,4 @@
+local lib = require "api.lib"
 
 local setting_prots = {}
 for surface_name, surface_prot_data in pairs {
@@ -39,15 +40,7 @@ for surface_name, surface_prot_data in pairs {
         {name = "lithium-brine",       default_value = 10},
     },
 } do
-    local order_category
-    if surface_name == "nauvis" or surface_name == "vulcanus" then
-        order_category = "p"
-    elseif surface_name == "fulgora" or surface_name == "gleba" then
-        order_category = "q"
-    else
-        order_category = "r"
-    end
-
+    local order_category = lib.get_planet_order_category(surface_name)
     for _, prot_data in pairs(surface_prot_data) do
         local item_name = prot_data.name
         local default_value = prot_data.default_value
@@ -59,6 +52,37 @@ for surface_name, surface_prot_data in pairs {
             order = "v[item-values]-r[raw-values]-" .. order_category .. "[" .. surface_name .. "]-n[" .. item_name .. "]",
             default_value = default_value,
             minimum_value = 0.0000001,
+        }
+    end
+end
+
+for surface_name, config_data in pairs {
+    nauvis   = {energy_coefficient = 0.06, complexity_coefficient = 0.15, raw_multiplier = 1.50, spoilable_coefficient = 0.75},
+    vulcanus = {energy_coefficient = 0.03, complexity_coefficient = 0.13, raw_multiplier = 1.60, spoilable_coefficient = 0.75},
+    fulgora  = {energy_coefficient = 0.08, complexity_coefficient = 0.18, raw_multiplier = 1.65, spoilable_coefficient = 0.75},
+    gleba    = {energy_coefficient = 0.07, complexity_coefficient = 0.17, raw_multiplier = 1.70, spoilable_coefficient = 0.30},
+    aquilo   = {energy_coefficient = 0.03, complexity_coefficient = 0.50, raw_multiplier = 2.00, spoilable_coefficient = 1.25},
+} do
+    local order_category = lib.get_planet_order_category(surface_name)
+    for config_name, default_value in pairs(config_data) do
+        local min_value = 0
+        local max_value = 2
+
+        if config_name == "raw_multiplier" then
+            min_value = 1
+        end
+        if config_name == "energy_coefficient" then
+            max_value = 0.5
+        end
+
+        setting_prots[#setting_prots+1] = {
+            type = "double-setting",
+            setting_type = "runtime-global",
+            name = "hextorio-planet-config-" .. surface_name .. "-" .. config_name:gsub("_", "-"),
+            order = "v[item-values]-q[planet-configs]-" .. order_category .. "[" .. surface_name .. "]-" .. order_category .. "[" .. config_name:gsub("_", "-") .. "]",
+            default_value = default_value,
+            minimum_value = min_value,
+            maximum_value = max_value,
         }
     end
 end
