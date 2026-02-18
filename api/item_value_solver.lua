@@ -926,11 +926,6 @@ local function phase_finalize(s)
     if #unresolved > 0 then
         table.sort(unresolved)
         lib.log("Solver: unresolved: " .. table.concat(unresolved, ", "))
-
-        -- For each unresolved item, find what's blocking it: which recipes produce it
-        -- and which ingredients are missing values?
-        local unresolved_set = {}
-        for _, name in pairs(unresolved) do unresolved_set[name] = true end
         for _, name in pairs(unresolved) do
             local producing_recipes = {}
             for _, recipe in pairs(s.recipes) do
