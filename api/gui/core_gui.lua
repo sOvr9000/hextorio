@@ -113,7 +113,7 @@ function core_gui.give_item_tooltip(player, surface_name, element)
         return
     end
 
-    if not item_values.has_item_value(surface_name, item_name, true) then
+    if not item_values.has_item_value(surface_name, item_name) then
         -- Lots of room for improvement here.  Would be nice to directly clone the default item tooltips.
         element.tooltip = {"",
             prototypes[rich_type][item_name].localised_name,

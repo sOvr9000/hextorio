@@ -46,7 +46,7 @@ function item_values.register_events()
             return
         end
 
-        if not item_values.has_item_value("nauvis", item_name, true) then
+        if not item_values.has_item_value("nauvis", item_name) then
             player.print {"hextorio.no-value-found", item_name}
             return
         end
@@ -86,7 +86,7 @@ function item_values.register_events()
             if (storage.item_values.raw_values[sn] or {})[item_name] then has_raw = true; break end
         end
 
-        if not has_raw and not item_values.has_item_value("nauvis", item_name, true) then
+        if not has_raw and not item_values.has_item_value("nauvis", item_name) then
             player.print {"hextorio.no-value-found", item_name}
             return
         end

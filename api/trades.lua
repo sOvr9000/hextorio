@@ -374,7 +374,7 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
 
     local input_items = {}
     for _, item_name in pairs(input_item_names) do
-        if not item_values.has_item_value(surface_name, item_name, false) then
+        if not item_values.has_item_value(surface_name, item_name) then
             lib.log_error("trades.from_item_names: Tried to generate a trade with an undefined value for " .. item_name .. " in input items: " .. serpent.line(input_item_names))
             return
         end
@@ -386,7 +386,7 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
 
     local output_items = {}
     for _, item_name in pairs(output_item_names) do
-        if not item_values.has_item_value(surface_name, item_name, false) then
+        if not item_values.has_item_value(surface_name, item_name) then
             lib.log_error("trades.from_item_names: Tried to generate a trade with an undefined value for " .. item_name .. " in output items: " .. serpent.line(output_item_names))
             return
         end
