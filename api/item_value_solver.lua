@@ -1029,7 +1029,11 @@ end
 function solver.init()
     for surface_name, raw_vals in pairs(storage.item_values.raw_values) do
         for resource, _ in pairs(raw_vals) do
-            storage.item_values.raw_values[surface_name][resource] = lib.runtime_setting_value_as_number("raw-value-" .. surface_name .. "-" .. resource) * storage.item_values.base_coin_value
+            -- Only overwrite entries that have a corresponding mod setting.
+            -- Custom entries (set via /set-item-value) have no setting and are preserved.
+            if settings.global["hextorio-raw-value-" .. surface_name .. "-" .. resource] then
+                raw_vals[resource] = lib.runtime_setting_value_as_number("raw-value-" .. surface_name .. "-" .. resource) * storage.item_values.base_coin_value
+            end
         end
     end
 

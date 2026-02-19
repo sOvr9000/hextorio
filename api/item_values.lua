@@ -11,9 +11,9 @@ local item_values = {}
 
 function item_values.register_events()
     event_system.register("command-set-item-value", function(player, params)
-        local item_name = params[1]
-        local value = params[2]
-        local surface_name = params[3] or "nauvis"
+        local surface_name = params[1]
+        local item_name = params[2]
+        local value = params[3]
 
         if lib.is_coin(item_name) then
             player.print {"hextorio.command-cannot-modify-coin-value"}
@@ -25,24 +25,20 @@ function item_values.register_events()
             return
         end
 
-        if not storage.item_values.values[surface_name] then
+        if not storage.SUPPORTED_PLANETS[surface_name] then
             player.print {"hextorio.command-invalid-surface"}
             return
         end
 
-        storage.item_values.values[surface_name][item_name] = value * (storage.item_values.base_coin_value or 10)
+        storage.item_values.raw_values[surface_name] = storage.item_values.raw_values[surface_name] or {}
+        storage.item_values.raw_values[surface_name][item_name] = value * (storage.item_values.base_coin_value or 10)
 
-        -- TODO: Optimize by keeping current minimal values but update accordingly when any new item value is set (put this in some kind of item_values.set_item_value() function)
-        storage.item_values.minimal_values = nil
-
-        event_system.trigger("post-set-item-value-command", player, params)
-
-        player.print {"hextorio.new-item-value-set", lib.get_rich_text(item_name), lib.get_rich_text(surface_name), coin_tiers.coin_to_text(coin_tiers.from_base_value(value), false, 4)}
+        player.print {"hextorio.new-raw-value-set", lib.get_rich_text(item_name), lib.get_rich_text(surface_name), coin_tiers.coin_to_text(coin_tiers.from_base_value(value), false, 4)}
     end)
 
     event_system.register("command-get-item-value", function(player, params)
-        local item_name = params[1]
-        local surface_name = params[2]
+        local surface_name = params[1]
+        local item_name = params[2]
         local quality = params[3] or "normal"
 
         if not storage.item_values.values[surface_name] then
@@ -68,27 +64,38 @@ function item_values.register_events()
     end)
 
     event_system.register("command-remove-item-value", function(player, params)
-        local item_name = params[1]
+        local surface_name = params[1]
+        local item_name = params[2]
 
-        if params[2] and not storage.item_values.values[params[2]] then
+        if lib.is_coin(item_name) then return end
+
+        if surface_name and not storage.SUPPORTED_PLANETS[surface_name] then
             player.print {"hextorio.command-invalid-surface"}
             return
         end
 
         local surface_names
-        if not params[2] then
-            surface_names = {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"}
+        if not surface_name then
+            surface_names = sets.to_array(storage.SUPPORTED_PLANETS)
         else
-            surface_names = {params[2]}
+            surface_names = {surface_name}
         end
 
-        if not item_values.has_item_value("nauvis", item_name, true) then
+        local has_raw = false
+        for _, sn in pairs(surface_names) do
+            if (storage.item_values.raw_values[sn] or {})[item_name] then has_raw = true; break end
+        end
+
+        if not has_raw and not item_values.has_item_value("nauvis", item_name, true) then
             player.print {"hextorio.no-value-found", item_name}
             return
         end
 
-        for _, surface_name in pairs(surface_names) do
-            storage.item_values.values[surface_name][item_name] = nil
+        for _, _surface_name in pairs(surface_names) do
+            storage.item_values.values[_surface_name][item_name] = nil
+            if storage.item_values.raw_values[_surface_name] then
+                storage.item_values.raw_values[_surface_name][item_name] = nil
+            end
         end
 
         if #surface_names == 1 then

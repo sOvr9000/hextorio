@@ -116,6 +116,7 @@ local all_commands = {
     {
         name = "solve-item-values",
         usage = "/solve-item-values",
+        requires_confirmation = true,
     },
     {
         name = "export-item-values",
@@ -128,29 +129,19 @@ local all_commands = {
     },
     {
         name = "get-item-value",
-        usage = "/get-item-value <item_name> <planet> [quality]",
+        usage = "/get-item-value <planet> <item_name> [quality]",
         params = {"string", "string", "string?"},
         examples = {"/get-item-value carbon-fiber gleba", "/get-item-value agricultural-science-pack nauvis", "/get-item-value long-handed-inserter aquilo rare", "/get-item-value [color=yellow]in-hand[.color] [color=pink]here[.color]"},
     },
     {
         name = "set-item-value",
-        usage = "/set-item-value <item_name> <value> [planet]",
-        params = {"string", "number", "string?"},
-        examples = {
-            "/set-item-value iron-plate 0.01\n    Sets the value of 1x [img=item.iron-plate] to 0.01x [img=item.hex-coin] on [img=space-location.nauvis].",
-            "\n/set-item-value holmium-plate 20000000 aquilo\n    Sets the value of 1x [img=item.holmium-plate] to 200x [img=item.gravity-coin] on [img=space-location.aquilo].",
-            "\n/set-item-value tin-plate 40\n    Sets the value of one tin-plate, if a mod adds an item by that name, to 40x [img=item.hex-coin] on [img=space-location.nauvis].",
-            "\n/set-item-value [color=yellow]in-hand[.color] 1000 [color=pink]here[.color]\n    Sets the value of the item in your hand to 1000x [img=item.hex-coin] on your character's current planet."
-        },
+        usage = "/set-item-value <planet> <item_name> <value>",
+        params = {"string", "string", "number"},
     },
     {
         name = "remove-item-value",
-        usage = "/remove-item-value <item_name> [planet]",
-        params = {"string", "string?"},
-        examples = {
-            "/remove-item-value iron-plate\n\tRemoves the value of [img=item.iron-plate] from all planets, keeping it from showing up in trades anywhere.",
-            "\n/remove-item-value water-barrel nauvis\n\tRemoves the value of [img=item.water-barrel] from [planet=nauvis] only, allowing it to still show up in trades on [img=space-location.vulcanus][img=space-location.fulgora][img=space-location.gleba].",
-        },
+        usage = "/remove-item-value <planet> <item_name>",
+        params = {"string", "string"},
     },
 }
 

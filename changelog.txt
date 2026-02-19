@@ -15,12 +15,16 @@ Date: 20/2/26
   Features:
     - Added settings for configuring how item values propagate throughout recipes, namely raw item values and planet-specific scaling rates.
     - The /export-item-values command now also includes item value sources and recipe data for use with the Hextorio Item Value Explorer (HIVE) web tool.
+    - Added the /solve-item-values command.
   Minor Features:
     - Added the has_untradable_items field to trades in the trades JSON export, which indicates whether the trade contains any items that are initially untradable on its planet (only set to true for trades created by the silver item rank bonus).
   Changes:
     - The is_interplanetary field in trades in the trades JSON export now corresponds to whether the trade contains any items that can only be obtained after importing at least one item from another planet.
     - Overhauled the system that determines which items are initially tradable on each planet.
         It used to be based on whether items were considered "interplanetary", but it is now based on which recipes are usable on each planet and when/where they're unlocked.
+    - The command /set-item-value now marks an item as a raw resource on a planet rather than overriding its computed value directly.
+        Useful for quickly integrating custom modded raw resources to compute their entire item value graph.
+    - The command /remove-item-value now also clears the raw value entry set by /set-item-value, preventing it from reappearing after a solver run.
   Balancing:
     - Rebalanced item values to be less about a planet's stage in the game progression but instead more about actual difficulty of obtainment.
         For example, coal/iron/copper on Vulcanus is now less valuable than on Nauvis, and oil-based products on Fulgora now generally have low values.
