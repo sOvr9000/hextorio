@@ -417,9 +417,9 @@ end
 
 ---Return the mapping of all items to their values for a given surface.
 ---@param surface_name string
----@param allow_interplanetary boolean|nil Defaults to true
+---@param allow_untradable boolean|nil Defaults to true
 ---@return {[string]: number}|nil
-function item_values.get_item_values_for_surface(surface_name, allow_interplanetary)
+function item_values.get_item_values_for_surface(surface_name, allow_untradable)
     if not surface_name then
         lib.log_error("item_values.get_item_values_for_surface: surface_name is nil")
         return
@@ -431,9 +431,9 @@ function item_values.get_item_values_for_surface(surface_name, allow_interplanet
         return
     end
 
-    if allow_interplanetary == nil then allow_interplanetary = true end
+    if allow_untradable == nil then allow_untradable = true end
 
-    if not allow_interplanetary then
+    if not allow_untradable then
         local local_items_storage = storage.item_values.local_items
         if not local_items_storage then
             local_items_storage = {}
@@ -445,7 +445,7 @@ function item_values.get_item_values_for_surface(surface_name, allow_interplanet
             -- Filter out interplanetary items
             surface_local_items = {}
             for item_name, value in pairs(surface_vals) do
-                if not item_values.is_item_interplanetary(surface_name, item_name) then
+                if item_values.is_item_tradable(surface_name, item_name) then
                     surface_local_items[item_name] = value
                 end
             end
@@ -510,18 +510,19 @@ end
 ---@param max_ratio number
 ---@param items_only boolean|nil Defaults to false
 ---@param allow_coins boolean|nil Defaults to true
----@param allow_interplanetary boolean|nil Defaults to true
+---@param allow_untradable boolean|nil Defaults to false
 ---@return string[]
-function item_values.get_items_near_value(surface_name, center_value, max_ratio, items_only, allow_coins, allow_interplanetary)
+function item_values.get_items_near_value(surface_name, center_value, max_ratio, items_only, allow_coins, allow_untradable)
     if not lib.is_vanilla_planet_name(surface_name) then
         lib.log_error("item_values.get_items_near_value: surface not supported: " .. surface_name)
         return {}
     end
 
-    if allow_interplanetary == nil then allow_interplanetary = true end
+    if items_only == nil then items_only = false end
+    if allow_untradable == nil then allow_untradable = false end
     if allow_coins == nil then allow_coins = true end
 
-    local surface_vals = item_values.get_item_values_for_surface(surface_name, allow_interplanetary)
+    local surface_vals = item_values.get_item_values_for_surface(surface_name, allow_untradable)
 
     if not surface_vals then
         lib.log_error("item_values.get_items_near_value: No item values for surface " .. surface_name .. ", defaulting to empty table")
@@ -538,6 +539,7 @@ function item_values.get_items_near_value(surface_name, center_value, max_ratio,
             table.insert(item_names, item_name)
         end
     end
+
     return item_names
 end
 

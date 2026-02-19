@@ -1191,12 +1191,12 @@ end
 ---@param surface_name string
 ---@param volume number
 ---@param params TradeGenerationParameters|nil
----@param allow_interplanetary boolean|nil
+---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
 ---@param include_item string|nil An item name to be forcefully included in the returned input or output items.
 ---@return string[], string[]
-function trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary, include_item)
+function trades.random_trade_item_names(surface_name, volume, params, allow_untradable, include_item)
     if not params then params = {} end
-    if allow_interplanetary == nil then allow_interplanetary = false end
+    if allow_untradable == nil then allow_untradable = false end
 
     trades.set_trade_generation_parameter_defaults(params)
 
@@ -1207,7 +1207,7 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_inte
         ratio = 10 / params.target_efficiency
     end
 
-    local possible_items = item_values.get_items_near_value(surface_name, volume, ratio, true, false, allow_interplanetary)
+    local possible_items = item_values.get_items_near_value(surface_name, volume, ratio, true, false, allow_untradable)
 
     -- Apply whitelist filter
     if params.item_sampling_filters.whitelist then
@@ -1313,11 +1313,11 @@ end
 ---@param surface_name string
 ---@param volume number
 ---@param params TradeGenerationParameters
----@param allow_interplanetary boolean|nil
+---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
 ---@param include_item string|nil
 ---@return Trade|nil
-function trades.random(surface_name, volume, params, allow_interplanetary, include_item)
-    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, params, allow_interplanetary, include_item)
+function trades.random(surface_name, volume, params, allow_untradable, include_item)
+    local input_item_names, output_item_names = trades.random_trade_item_names(surface_name, volume, params, allow_untradable, include_item)
 
     if not next(output_item_names) and not next(input_item_names) then
         lib.log("trades.random: Not enough items centered around the value " .. volume)
