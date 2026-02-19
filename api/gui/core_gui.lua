@@ -297,7 +297,7 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward)
             name = "back",
             style = "frame_action_button",
             sprite = "utility/backward_arrow",
-            tooltip = {"gui.back-instruction"},
+            tooltip = {"hextorio-gui.back-instruction"},
             tags = {
                 handlers = {["gui-clicked"] = "gui-back"},
                 linked_handler_parent_idx = 3, -- This makes the event system trigger "gui-back" on the third parent up from this element.
@@ -308,7 +308,7 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward)
             name = "forward",
             style = "frame_action_button",
             sprite = "utility/forward_arrow",
-            tooltip = {"gui.forward-instruction"},
+            tooltip = {"hextorio-gui.forward-instruction"},
             tags = {
                 handlers = {["gui-clicked"] = "gui-forward"},
                 linked_handler_parent_idx = 3, -- This makes the event system trigger "gui-forward" on the third parent up from this element.

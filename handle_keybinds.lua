@@ -231,7 +231,7 @@ script.on_event("hextorio-control-gui-back", function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    event_system.trigger "control-gui-back"
+    event_system.trigger("control-gui-back", player)
 end)
 
 script.on_event("hextorio-control-gui-forward", function(event)
@@ -239,7 +239,7 @@ script.on_event("hextorio-control-gui-forward", function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    event_system.trigger "control-gui-forward"
+    event_system.trigger("control-gui-forward", player)
 end)
 
 

@@ -44,13 +44,11 @@ data:extend({
     {
         type = "custom-input",
         name = "hextorio-control-gui-back",
-        key_sequence = "",
-        linked_game_control = "back",
+        key_sequence = "SHIFT + LEFT",
     },
     {
         type = "custom-input",
         name = "hextorio-control-gui-forward",
-        key_sequence = "",
-        linked_game_control = "forward",
+        key_sequence = "SHIFT + RIGHT",
     },
 })
