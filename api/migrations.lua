@@ -128,7 +128,6 @@ function migrations.on_mod_updated(old_version, new_version)
     storage.coin_tiers.COIN_NAMES = data_coin_tiers.COIN_NAMES
     storage.coin_tiers.TIER_SCALING = data_coin_tiers.TIER_SCALING
     coin_tiers.init()
-    item_values.migrate_old_data() -- Update coin values and some other things. (should never change)
 
     -- And trade data as well
     trades.migrate_old_data()

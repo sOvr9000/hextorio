@@ -588,10 +588,6 @@ function item_values.set_item_values(new_item_values)
     storage.item_values.minimal_values = nil
 end
 
-function item_values.migrate_old_data()
-    -- item_values.init()
-end
-
 
 
 return item_values
