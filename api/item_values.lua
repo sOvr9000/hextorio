@@ -589,7 +589,7 @@ function item_values.set_item_values(new_item_values)
 end
 
 function item_values.migrate_old_data()
-    item_values.init()
+    -- item_values.init()
 end
 
 
