@@ -635,6 +635,19 @@ local function phase_build(s)
         .. table_size(all_items) .. " items, "
         .. table_size(rocket_capacities) .. " transportable")
 
+    local planet_count = table_size(all_planets)
+    local per_planet_total = 0
+    for _, recipe in pairs(recipes) do
+        if recipe.valid_planets then
+            for p in pairs(recipe.valid_planets) do
+                if all_planets[p] then per_planet_total = per_planet_total + 1 end
+            end
+        else
+            per_planet_total = per_planet_total + planet_count
+        end
+    end
+    game.print({"hextorio.solver-recipe-count", per_planet_total})
+
     -- Diagnostic: dump producing recipes and interplanetary status for key items
     local diag_items = {
         -- "rocket-part",
