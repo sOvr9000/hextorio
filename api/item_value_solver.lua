@@ -868,7 +868,7 @@ local function phase_finalize(s)
     for planet, _ in pairs(all_planets) do
         local planet_values = {}
         for item_name, val in pairs(values[planet]) do
-            if val < INITIAL_VALUE then
+            if val > 0 and val < INITIAL_VALUE then
                 planet_values[item_name] = val
             end
         end

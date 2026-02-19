@@ -32,7 +32,9 @@ Overall, this whole system prevents weird edge cases from occurring like nutrien
 
 
 local lib = require "api.lib"
+local item_values = require "api.item_values"
 local solver_util = require "api.solver_util"
+local event_system = require "api.event_system"
 
 local item_tradability_solver = {}
 
@@ -539,6 +541,10 @@ function item_tradability_solver.init()
     item_tradability_solver.solve()
 end
 
+function item_tradability_solver.register_events()
+    event_system.register("item-values-recalculated", item_tradability_solver.solve)
+end
+
 ---Solve tradability for all planets and populate storage.item_values.is_tradable.
 function item_tradability_solver.solve()
     lib.log("Tradability solver: starting")
@@ -564,7 +570,7 @@ function item_tradability_solver.solve()
         local count = 0
         for item_name in pairs(available) do
             local has_proto = prototypes.item[item_name] or prototypes.fluid[item_name]
-            if has_proto then
+            if has_proto and item_values.has_item_value(planet, item_name, false) then
                 planet_tradable[item_name] = true
                 count = count + 1
             end

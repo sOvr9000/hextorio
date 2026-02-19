@@ -109,7 +109,7 @@ function catalog_gui.register_events()
         catalog_gui.show_catalog(player)
     end)
 
-    event_system.register("item-values-recalculated", catalog_gui.reinitialize)
+    event_system.register("post-item-values-recalculated", catalog_gui.reinitialize)
 end
 
 ---Reinitialize the catalog GUI for the given player, or all players if no player is provided.

@@ -181,7 +181,7 @@ function trades.register_events()
     end)
 
     event_system.register("entity-killed-entity", trades.on_entity_killed_entity)
-    event_system.register("item-values-recalculated", trades.generate_surrounding_trades)
+    event_system.register("post-item-values-recalculated", trades.generate_surrounding_trades)
 end
 
 
@@ -374,6 +374,10 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
 
     local input_items = {}
     for _, item_name in pairs(input_item_names) do
+        if not item_values.has_item_value(surface_name, item_name, false) then
+            lib.log_error("trades.from_item_names: Tried to generate a trade with an undefined value for " .. item_name .. " in input items: " .. serpent.line(input_item_names))
+            return
+        end
         local input_item = {
             name = item_name,
         }
@@ -382,6 +386,10 @@ function trades.from_item_names(surface_name, input_item_names, output_item_name
 
     local output_items = {}
     for _, item_name in pairs(output_item_names) do
+        if not item_values.has_item_value(surface_name, item_name, false) then
+            lib.log_error("trades.from_item_names: Tried to generate a trade with an undefined value for " .. item_name .. " in output items: " .. serpent.line(output_item_names))
+            return
+        end
         local output_item = {
             name = item_name,
             -- leave count unset for automatic calculation

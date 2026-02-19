@@ -53,6 +53,7 @@ hex_rank.register_events()
 gameplay_statistics.register_events()
 gsr.register_events()
 item_value_solver.register_events()
+item_tradability_solver.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()

@@ -221,7 +221,7 @@ function item_values.register_events()
         end
     end)
 
-    event_system.register("item-values-recalculated", function()
+    event_system.register("post-item-values-recalculated", function()
         storage.item_values.awaiting_solver = nil
     end)
 end
