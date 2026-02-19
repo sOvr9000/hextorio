@@ -143,7 +143,6 @@ function hex_rank_gui.init_hex_rank(player)
     local frame = player.gui.screen.add {type = "frame", name = "hex-rank", direction = "vertical"}
     frame.style.size = {width = 600, height = 800}
     frame.visible = false
-    frame.tags = {handlers = {["gui-closed"] = "hex-rank"}}
 
     core_gui.add_titlebar(frame, {"hextorio-gui.hex-rank"})
 

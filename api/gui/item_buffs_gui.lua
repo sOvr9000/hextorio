@@ -54,7 +54,6 @@ function item_buffs_gui.init_item_buffs_frame(player)
     local frame = player.gui.screen.add {
         type = "frame",
         name = "item-buffs",
-        tags = {handlers = {["gui-closed"] = "item-buffs"}},
         direction = "vertical",
     }
     frame.style.width = 1200

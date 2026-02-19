@@ -152,7 +152,6 @@ function catalog_gui.init_catalog(player)
         type = "frame",
         name = "catalog",
         direction = "vertical",
-        tags = {handlers = {["gui-closed"] = "catalog"}},
     }
     frame.style.width = 1200
     frame.style.height = 800

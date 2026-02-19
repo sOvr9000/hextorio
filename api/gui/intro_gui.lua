@@ -62,7 +62,6 @@ function intro_gui.show(player)
     frame = player.gui.screen.add {
         type = "frame",
         name = "hextorio-intro",
-        tags = {handlers = {["gui-closed"] = "hextorio-intro"}},
         direction = "vertical",
     }
     frame.style.width = 800 / display_density_scale
