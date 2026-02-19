@@ -287,7 +287,7 @@ function questbook_gui.update_questbook(player, quest_name)
 
     quest_conditions_scroll_pane.clear()
     for _, condition in pairs(quest.conditions) do
-        questbook_gui.add_condition_elements(quest_conditions_scroll_pane, quest, condition, i)
+        questbook_gui.add_condition_elements(quest_conditions_scroll_pane, quest, condition)
     end
 
     quest_rewards_scroll_pane.clear()
