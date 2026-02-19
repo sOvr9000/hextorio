@@ -66,6 +66,8 @@ function trade_overview_gui.register_events()
     event_system.register_gui("gui-switch-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-clicked", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-clicked", "swap-filters", trade_overview_gui.swap_trade_overview_content_filters)
+    event_system.register_gui("gui-back", "trade-overview", trade_overview_gui.on_gui_back)
+    event_system.register_gui("gui-forward", "trade-overview", trade_overview_gui.on_gui_forward)
 
     -- Listen to trade job events
     event_system.register("trade-collection-progress", trade_overview_gui.on_trade_collection_progress)
@@ -153,7 +155,6 @@ function trade_overview_gui.init_trade_overview(player)
         type = "frame",
         name = "trade-overview",
         direction = "vertical",
-        tags = {handlers = {["gui-closed"] = "trade-overview"}},
     }
     frame.style.width = 900
     frame.style.height = 900
@@ -1150,6 +1151,18 @@ function trade_overview_gui.on_trade_export_complete(player, to_export)
     -- log(prof)
 
     player.print({"hextorio.trades-exported", "Factorio/script-output/" .. filename})
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_gui_back(player, elem)
+    log("back")
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_gui_forward(player, elem)
+    log("forward")
 end
 
 

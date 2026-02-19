@@ -1,5 +1,15 @@
 
----@alias GuiEventName "gui-opened"|"gui-closed"|"gui-confirmed"|"gui-clicked"|"gui-switch-changed"|"gui-selection-changed"|"gui-elem-changed"|"gui-slider-changed"
+---@alias GuiEventName
+---| "gui-opened"
+---| "gui-closed"
+---| "gui-confirmed"
+---| "gui-clicked"
+---| "gui-switch-changed"
+---| "gui-selection-changed"
+---| "gui-elem-changed"
+---| "gui-slider-changed"
+---| "gui-back"
+---| "gui-forward"
 
 ---@alias HexPosMap {[int]: {[int]: any}}
 ---@alias IndexMap {[int]: {[int]: int}}

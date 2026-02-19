@@ -298,6 +298,10 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward)
             style = "frame_action_button",
             sprite = "utility/backward_arrow",
             tooltip = {"gui.back-instruction"},
+            tags = {
+                handlers = {["gui-clicked"] = "gui-back"},
+                linked_handler_parent_idx = 3, -- This makes the event system trigger "gui-back" on the third parent up from this element.
+            },
         }
         flow.add {
             type = "sprite-button",
@@ -305,6 +309,10 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward)
             style = "frame_action_button",
             sprite = "utility/forward_arrow",
             tooltip = {"gui.forward-instruction"},
+            tags = {
+                handlers = {["gui-clicked"] = "gui-forward"},
+                linked_handler_parent_idx = 3, -- This makes the event system trigger "gui-forward" on the third parent up from this element.
+            },
         }
     end
 
@@ -318,6 +326,20 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward)
         tooltip = {"gui.close-instruction"},
     }
     close_button.tags = {handlers = {["gui-clicked"] = "close-button"}}
+
+    local tags = frame.tags
+    if not tags.handlers then
+        tags.handlers = {}
+    end
+    tags.handlers["gui-closed"] = frame.name
+
+    if include_back_and_forward then
+        -- These get triggered on back/forward button click because of linked handlers
+        tags.handlers["gui-back"] = frame.name
+        tags.handlers["gui-forward"] = frame.name
+    end
+
+    frame.tags = tags
 
     return titlebar
 end

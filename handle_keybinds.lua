@@ -226,4 +226,20 @@ script.on_event("pickup-nearby-items", function(event)
     end
 end)
 
+script.on_event("hextorio-control-gui-back", function(event)
+    ---@cast event {player_index: int}
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger "control-gui-back"
+end)
+
+script.on_event("hextorio-control-gui-forward", function(event)
+    ---@cast event {player_index: int}
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger "control-gui-forward"
+end)
+
 

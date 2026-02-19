@@ -41,4 +41,16 @@ data:extend({
         key_sequence = "CONTROL + mouse-button-2",
         linked_game_control = "fast-entity-split",
     },
+    {
+        type = "custom-input",
+        name = "hextorio-control-gui-back",
+        key_sequence = "",
+        linked_game_control = "back",
+    },
+    {
+        type = "custom-input",
+        name = "hextorio-control-gui-forward",
+        key_sequence = "",
+        linked_game_control = "forward",
+    },
 })
