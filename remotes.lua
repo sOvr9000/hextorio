@@ -36,6 +36,8 @@ for _, api_name in pairs{
     "inventories",
     "item_buffs",
     "item_ranks",
+    "item_tradability_solver",
+    "item_value_solver",
     "item_values",
     "lib",
     "loot_tables",
