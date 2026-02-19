@@ -74,6 +74,45 @@ Other than through trading, they are acquired through some other features of the
 The mod does not handle coins of a quality higher than normal (although quality coins can be cheated in anyway).\
 Each quality tier increases an item's coin value by 9x, where normal quality is 1x value.
 
+### Item Value Solver
+All items in the game (including those from other mods) are assigned coin values automatically.\
+This is done by propagating values of each planet's raw resources throughout the planet's respective usable, unlockable recipes.\
+Several factors are considered:
+- stack sizes
+- item spoil rates
+- recipe crafting time
+- number of unique items and fluids in recipes
+- food (like bioflux) for captive biter spawners
+- rocket part costs (and thus interplanetary import costs)
+- distances between planets (when production requires interplanetary imports)
+- planet-specific overall multipliers to each stepping from ingredients to products
+
+This results in finished products tending toward larger values than the sums of their ingredients, which is intended to reward setting up automated production as opposed to relying solely on trading to "produce" items.
+
+A full description of how the item value solver works is documented at the top of [its module](api/item_value_solver.lua).
+
+### Item Tradability Solver
+To preserve gameplay balance, items that are producible on a planet but are only unlocked from later planets must not be tradable.\
+For example, `productivty-module-3` is producible on Nauvis, but it is unlocked on Gleba, so that item should not be tradable on Nauvis.
+
+This is to prevent players from buying such items before they're unlocked through Space Age's intended progression path.\
+This is also to prevent players from buying items like `holmium-plate` on Aquilo to skip the otherwise necessary interplanetary logistics.\
+The item tradability solver targets that issue.
+
+It primarily relies on the tech tree and detecting where and when recipes get unlocked for each planet.\
+It works perfectly well with vanilla Space Age, although as more recipes get added by other mods, gameplay balance becomes less stable even with this solver.
+
+This is handled as a fully separate system from item coin value calculation due to certain edge cases that can emerge.\
+An example of one such edge case in vanilla Space Age:
+- `biter-egg` is unlocked on Gleba, but is only producible on Nauvis.
+- `biter-egg` must not be tradable on Nauvis due to the tech tree's implied progression path.
+- `biter-egg` must not be tradable on Gleba due to the restriction that it is only producible on Nauvis.
+- `biter-egg` must be given an item value, *while not being flagged as tradable on any planet*, in order to determine a value for `productivity-module-3` so that it can be tradable on Gleba.
+
+Item tradability implies associated coin values, but associated coin values do not imply item tradability.
+
+A full description of how the item tradability solver works is documented at the top of [its module](api/item_tradability_solver.lua).
+
 ### Questing System
 In the quest book GUI, there are quests which can be completed by performing a diverse set of actions.\
 Some serve as guides like a tutorial. Others serve as relatively difficult challenges.
