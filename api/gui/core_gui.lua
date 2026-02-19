@@ -256,7 +256,12 @@ function core_gui.auto_center_horizontally(element, add_params)
     return centered_element
 end
 
-function core_gui.add_titlebar(frame, caption)
+---Create a flow with a title label, a draggable bar, and a close button.
+---@param frame LuaGuiElement
+---@param caption LocalisedString
+---@param include_back_and_forward boolean|nil Whether to include two buttons with left and right arrows like those in the Factoriopedia.
+---@return LuaGuiElement flow The flow containing the title label
+function core_gui.add_titlebar(frame, caption, include_back_and_forward)
     local titlebar = frame.add{type = "flow"}
     titlebar.drag_target = frame
 
@@ -278,6 +283,31 @@ function core_gui.add_titlebar(frame, caption)
     filler.style.height = 24
     filler.style.horizontally_stretchable = true
 
+    if include_back_and_forward then
+        local flow = titlebar.add {
+            type = "flow",
+            name = "back-and-forward",
+            style = "packed_horizontal_flow",
+            direction = "horizontal",
+        }
+        flow.style.right_padding = 5
+
+        flow.add {
+            type = "sprite-button",
+            name = "back",
+            style = "frame_action_button",
+            sprite = "utility/backward_arrow",
+            tooltip = {"gui.back-instruction"},
+        }
+        flow.add {
+            type = "sprite-button",
+            name = "forward",
+            style = "frame_action_button",
+            sprite = "utility/forward_arrow",
+            tooltip = {"gui.forward-instruction"},
+        }
+    end
+
     local close_button = titlebar.add{
         type = "sprite-button",
         name = "frame-close-button",
@@ -288,6 +318,8 @@ function core_gui.add_titlebar(frame, caption)
         tooltip = {"gui.close-instruction"},
     }
     close_button.tags = {handlers = {["gui-clicked"] = "close-button"}}
+
+    return titlebar
 end
 
 function core_gui.add_info(element, info_id, name)

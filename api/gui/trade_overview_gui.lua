@@ -159,7 +159,7 @@ function trade_overview_gui.init_trade_overview(player)
     frame.style.height = 900
     frame.visible = false
 
-    gui.add_titlebar(frame, {"hex-core-gui.trade-overview"})
+    gui.add_titlebar(frame, {"hex-core-gui.trade-overview"}, true)
 
     local filter_frame = frame.add {type = "flow", name = "filter-frame", direction = "horizontal"}
     filter_frame.style.vertically_stretchable = false
