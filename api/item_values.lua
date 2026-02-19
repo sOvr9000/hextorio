@@ -311,35 +311,31 @@ function item_values.get_minimal_item_value(item_name)
     return min_val
 end
 
----Return whether an item has a defined value on the given surface.  If allow_interplanetary, check all surfaces for a value (use surface_name="nauvis" as a dummy value).
+---Return whether an item has a defined value on the given surface.
 ---@param surface_name string
 ---@param item_name string
----@param allow_untradable boolean|nil Defaults to true
 ---@return boolean
-function item_values.has_item_value(surface_name, item_name, allow_untradable)
-    if not lib.is_vanilla_planet_name(surface_name) then
+function item_values.has_item_value(surface_name, item_name)
+    if not storage.SUPPORTED_PLANETS[surface_name] then
         return false
     end
 
-    local surface_vals = item_values.get_item_values_for_surface(surface_name)
+    local surface_vals = storage.item_values.values[surface_name]
     if not surface_vals then
-        lib.log_error("item_values.has_item_value: No item values for surface " .. surface_name)
+        lib.log_error("item_values.get_item_values_for_surface: No item values for surface " .. surface_name)
         return false
     end
 
-    if allow_untradable == nil then allow_untradable = true end
+    -- Check all planets?
+    -- local min_val = item_values.get_minimal_item_value(item_name)
+    -- if min_val and min_val > 0 then
+    --     return true
+    -- end
 
-    if not allow_untradable then
-        if not item_values.is_item_tradable(surface_name, item_name) then
-            return false
-        end
-    else
-        local min_val = item_values.get_minimal_item_value(item_name)
-        if min_val and min_val > 0 then
-            return true
-        end
+    local val = surface_vals[item_name]
+    if val and val > 0 and val < math.huge then
+        return true
     end
-
 
     return false
 end
