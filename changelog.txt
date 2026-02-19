@@ -13,6 +13,7 @@ Date: 20/2/26
         > distances between planets (when production requires interplanetary imports)
         > overall multiplier to each recipe's products based on the planet (like x1.2 on top of all other scaling factors combined)
   Features:
+    - Added buttons to the trade overview (to the left of the "close" button) for cycling through past filter combinations, alternatively activated by hotkey.
     - Added settings for configuring how item values propagate throughout recipes, namely raw item values and planet-specific scaling rates.
     - The /export-item-values command now also includes item value sources and recipe data for use with the Hextorio Item Value Explorer (HIVE) web tool.
     - Added the /solve-item-values command.

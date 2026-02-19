@@ -12,6 +12,7 @@ local quests = require "api.quests"
 local gui_stack = require "api.gui.gui_stack"
 local core_gui = require "api.gui.core_gui"
 local trades_gui = require "api.gui.trades_gui"
+local history    = require "api.history"
 
 local trade_overview_gui = {}
 
@@ -485,7 +486,11 @@ function trade_overview_gui.build_trade_table_frame(frame)
     local trade_table = scroll_pane.add {type = "flow", name = "table", direction = "vertical"}
 end
 
-function trade_overview_gui.update_trade_overview(player)
+---@param player LuaPlayer
+---@param add_to_history boolean|nil
+function trade_overview_gui.update_trade_overview(player, add_to_history)
+    if add_to_history == nil then add_to_history = true end
+
     local frame = player.gui.screen["trade-overview"]
     if not frame then
         trade_overview_gui.init_trade_overview(player)
@@ -500,7 +505,7 @@ function trade_overview_gui.update_trade_overview(player)
 
     local filter = trade_overview_gui.get_player_trade_overview_filter(player)
 
-    trade_overview_gui.update_player_trade_overview_filters(player)
+    trade_overview_gui.update_player_trade_overview_filters(player, add_to_history)
     trade_overview_gui.update_filter_max_items(player, true)
 
     local trade_contents_frame = filter_frame["left"]["trade-contents-flow"]["frame"]
@@ -610,6 +615,38 @@ function trade_overview_gui.update_trade_overview(player)
     end
 
     trades.queue_trade_collection_job(player, trades_set, filter, not use_batch_processing)
+end
+
+---Get a player's history of past filter settings.
+---@param player LuaPlayer
+---@return {data: TradeOverviewFilterSettings[], index: int, capacity: int}
+function trade_overview_gui.get_filter_history(player)
+    local filter_history_storage = storage.trade_overview.filter_history
+    if not filter_history_storage then
+        filter_history_storage = {}
+        storage.trade_overview.filter_history = filter_history_storage
+    end
+
+    local filter_history = filter_history_storage[player.index]
+    if not filter_history then
+        filter_history = history.new("TradeOverviewFilterSettings", 32)
+        filter_history_storage[player.index] = filter_history
+    end
+
+    return filter_history
+end
+
+---Add a player's filter settings to their history.
+---@param player LuaPlayer
+---@param filters TradeOverviewFilterSettings
+function trade_overview_gui.add_filter_history(player, filters)
+    local filter_history = trade_overview_gui.get_filter_history(player)
+
+    -- TODO: store only non-default values from filter settings to minimize data which can bloat save times (don't know if it's enough data to care about, though, the hex grid data is far more abundant)
+    -- e.g. don't store "show interplanetary = false" but store "show interplanetary = true", and infer default values on fetch
+    local new_data = table.deepcopy(filters)
+
+    history.add(filter_history, new_data)
 end
 
 function trade_overview_gui.on_trade_collection_progress(player, progress, current, total)
@@ -862,12 +899,96 @@ function trade_overview_gui.get_player_trade_overview_filter(player)
     return filters[player.name]
 end
 
-function trade_overview_gui.update_player_trade_overview_filters(player)
+---Set a player's trade overview filters and update their GUI.
+---@param player LuaPlayer
+---@param filters TradeOverviewFilterSettings
+function trade_overview_gui.set_player_trade_overview_filters(player, filters)
+    storage.trade_overview.filters[player.name] = table.deepcopy(filters)
+    trade_overview_gui.reconcile_gui_with_filter_settings(player)
+
+    -- Then immediately recollect the data into the filter settings to do the post-processing (TODO: refactor for clearer function task designation)
+    trade_overview_gui.update_trade_overview(player, false)
+end
+
+---Update the GUI elements in a player's trade overview to exactly match their current stored trade overview filter settings.
+---@param player LuaPlayer
+function trade_overview_gui.reconcile_gui_with_filter_settings(player)
     local frame = player.gui.screen["trade-overview"]
     if not frame then return end
 
     local filter_frame = frame["filter-frame"]
     if not filter_frame then return end
+
+    local filter = trade_overview_gui.get_player_trade_overview_filter(player)
+
+    local left_frame = filter_frame["left"]
+    local right_frame = filter_frame["right"]
+
+    local trade_contents_frame = left_frame["trade-contents-flow"]["frame"]
+    local trade_inputs = trade_contents_frame["inputs"]
+    local trade_outputs = trade_contents_frame["outputs"]
+
+    if filter.planets then
+        for _, planet_button in pairs(left_frame["planet-flow"].children) do
+            if filter.planets[planet_button.name] ~= nil then
+                planet_button.toggled = filter.planets[planet_button.name]
+            end
+        end
+    end
+
+    for i = 1, 3 do
+        trade_inputs["choose-elems"]["input-item-" .. i].elem_value = filter.input_items and filter.input_items[i] or nil
+        trade_outputs["choose-elems"]["output-item-" .. i].elem_value = filter.output_items and filter.output_items[i] or nil
+    end
+
+    trade_inputs["exact-inputs-match"]["checkbox"].state = filter.exact_inputs_match or false
+    trade_outputs["exact-outputs-match"]["checkbox"].state = filter.exact_outputs_match or false
+    if filter.num_item_bounds then
+        trade_inputs["max-inputs-flow"]["slider"].slider_value = filter.num_item_bounds.inputs.max
+        trade_outputs["max-outputs-flow"]["slider"].slider_value = filter.num_item_bounds.outputs.max
+    end
+
+    trade_contents_frame["center"]["trade-arrow"].sprite = filter.show_favorited_only and "trade-arrow-favorited" or "trade-arrow"
+
+    right_frame["show-only-claimed"]["checkbox"].state = filter.show_claimed_only or false
+    right_frame["show-only-interplanetary"]["checkbox"].state = filter.show_interplanetary_only or false
+    right_frame["exclude-favorited"]["checkbox"].state = filter.exclude_favorited or false
+    right_frame["exclude-dungeons"]["checkbox"].state = filter.exclude_dungeons or false
+    right_frame["exclude-sinks-generators"]["checkbox"].state = filter.exclude_sinks_generators or false
+
+    if filter.sorting then
+        local sorting_dropdown = right_frame["sort-method"]["dropdown"]
+        for i = 1, #sorting_dropdown.items do
+            if sorting_dropdown.get_item(i)[1]:sub(19) == filter.sorting.method then
+                sorting_dropdown.selected_index = i
+                break
+            end
+        end
+        right_frame["sort-direction"].switch_state = filter.sorting.ascending and "left" or "right"
+    end
+
+    if filter.max_trades then
+        local max_trades_dropdown = right_frame["max-trades-flow"]["dropdown"]
+        for i = 1, #max_trades_dropdown.items do
+            if tonumber(max_trades_dropdown.items[i][2]) == filter.max_trades then
+                max_trades_dropdown.selected_index = i
+                break
+            end
+        end
+    end
+end
+
+---Fetch a player's trade overview filter settings from the current GUI states in their trade overview.
+---@param player LuaPlayer
+---@param add_to_history boolean|nil Whether to add the new filter settings obtained from GUI states to the player's history. Defaults to true.
+function trade_overview_gui.update_player_trade_overview_filters(player, add_to_history)
+    local frame = player.gui.screen["trade-overview"]
+    if not frame then return end
+
+    local filter_frame = frame["filter-frame"]
+    if not filter_frame then return end
+
+    if add_to_history == nil then add_to_history = true end
 
     local filter = trade_overview_gui.get_player_trade_overview_filter(player)
     local trade_contents_frame = filter_frame["left"]["trade-contents-flow"]["frame"]
@@ -959,9 +1080,15 @@ function trade_overview_gui.update_player_trade_overview_filters(player)
         max_trades = math.huge
     else
         local selected = max_trades_dropdown.items[max_trades_dropdown.selected_index]
-        max_trades = tonumber(selected[2])
+        if selected then
+            max_trades = tonumber(selected[2])
+        end
     end
     filter.max_trades = max_trades or 100
+
+    if add_to_history then
+        trade_overview_gui.add_filter_history(player, filter)
+    end
 end
 
 ---@param player LuaPlayer
@@ -1156,13 +1283,21 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function trade_overview_gui.on_gui_back(player, elem)
-    log("back")
+    local filter_history = trade_overview_gui.get_filter_history(player)
+    local filters = history.step(filter_history, -1)
+    if not filters then filters = {} end
+    trade_overview_gui.set_player_trade_overview_filters(player, filters)
 end
 
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function trade_overview_gui.on_gui_forward(player, elem)
-    log("forward")
+    local filter_history = trade_overview_gui.get_filter_history(player)
+    if history.is_current(filter_history) then return end
+
+    local filters = history.step(filter_history, 1)
+    if not filters then filters = {} end
+    trade_overview_gui.set_player_trade_overview_filters(player, filters)
 end
 
 
