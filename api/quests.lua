@@ -629,55 +629,55 @@ function quests.get_quests_revealed_by(quest)
 end
 
 ---@param quest Quest
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_quest_localized_title(quest)
     return {"quest-title." .. quest.name}
 end
 
 ---@param quest Quest
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_quest_localized_description(quest)
     return {"quest-description." .. quest.name}
 end
 
 ---@param condition QuestCondition
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_condition_localized_name(condition)
     return {"quest-condition-name." .. condition.type}
 end
 
 ---@param condition QuestCondition
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_condition_localized_description(condition, ...)
     return {"quest-condition-description." .. condition.type, ...}
 end
 
 ---@param reward QuestReward
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_reward_localized_name(reward)
     return {"quest-reward-name." .. reward.type}
 end
 
 ---@param reward QuestReward
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_reward_localized_description(reward, ...)
     return {"quest-reward-description." .. reward.type, ...}
 end
 
 ---@param note_name string
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_localized_note(note_name)
     return {"questbook-note." .. note_name}
 end
 
 ---@param feature_name FeatureName
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_feature_localized_name(feature_name)
     return {"feature-name." .. feature_name}
 end
 
 ---@param feature_name FeatureName
----@return LocalisedString
+---@return {[1]: string}
 function quests.get_feature_localized_description(feature_name)
     return {"feature-description." .. feature_name}
 end

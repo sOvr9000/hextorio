@@ -286,139 +286,168 @@ function questbook_gui.update_questbook(player, quest_name)
     end
 
     quest_conditions_scroll_pane.clear()
-    for i, condition in ipairs(quest.conditions) do
-        local condition_frame = quest_conditions_scroll_pane.add {
-            type = "frame",
-            name = "condition-" .. i,
-            direction = "vertical",
-            caption = quests.get_condition_localized_name(condition),
-        }
-        condition_frame.style.horizontally_squashable = false
-
-        local condition_str = condition.progress_requirement
-        if condition.type == "coins-in-inventory" then
-            condition_str = coin_tiers.base_coin_value_to_text(condition.progress_requirement)
-        elseif condition.type == "visit-planet" then
-            condition_str = condition.value
-        end
-
-        local caption
-        if condition.value and condition.type ~= "visit-planet" then
-            local condition_value = condition.value
-            if type(condition.value) ~= "table" then
-                condition_value = {condition_value}
-            end
-            local t = {table.unpack(condition_value)}
-            if condition.type == "kill-entity" or condition.type == "place-entity" or condition.type == "mine-entity" or condition.type == "place-entity-on-planet" then
-                table.insert(t, lib.get_true_localized_name(t[1], "entity"))
-            elseif condition.type == "use-capsule" then
-                table.insert(t, lib.get_true_localized_name(t[1], "item"))
-            elseif condition.type == "place-tile" then
-                table.insert(t, {"item-name." .. t[1]}) -- could possibly have to change this, but it might be fine
-            elseif condition.type == "sell-item-of-quality" then
-                table.insert(t, {"quality-name." .. t[1]})
-            elseif condition.type == "kill-with-damage-type" or condition.type == "die-to-damage-type" then
-                t[1] = {"damage-type-name." .. t[1]}
-            end
-            table.insert(t, "green")
-            table.insert(t, "heading-2") -- Lua table.unpack() and ... is weird, so this is necessary
-            caption = quests.get_condition_localized_description(condition, condition_str, table.unpack(t))
-        else
-            if condition.type == "reach-hex-rank" then
-                condition_str = "[img=hex-rank] [font=count-font][color=192,32,255]" .. condition.progress_requirement .. "[.color][.font]"
-                caption = quests.get_condition_localized_description(condition, condition_str)
-            else
-                caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2")
-            end
-        end
-
-        local condition_desc = condition_frame.add {
-            type = "label",
-            name = "desc",
-            caption = caption,
-        }
-        condition_desc.style.single_line = false
-        gui.auto_width(condition_desc)
-
-        if condition.notes then
-            for j, note_name in ipairs(condition.notes) do
-                gui.add_info(condition_frame, quests.get_localized_note(note_name), "info-" .. j)
-            end
-        end
-
-        if condition.show_progress_bar then
-            local progress_bar = condition_frame.add {
-                type = "progressbar",
-                name = "progressbar",
-                value = quests.get_condition_progress(quest, condition),
-            }
-            gui.auto_width(progress_bar)
-            local r, g, b = lib.hsv_to_rgb(progress_bar.value * 0.3333, 1, 1)
-            progress_bar.style.color = {r, g, b}
-            progress_bar.tooltip = condition.progress .. " / " .. condition.progress_requirement
-        end
+    for _, condition in pairs(quest.conditions) do
+        questbook_gui.add_condition_elements(quest_conditions_scroll_pane, quest, condition, i)
     end
 
     quest_rewards_scroll_pane.clear()
-    for i, reward in ipairs(quest.rewards) do
-        local reward_frame = quest_rewards_scroll_pane.add {
-            type = "frame",
-            name = "reward-" .. i,
-            direction = "vertical",
-            caption = quests.get_reward_localized_name(reward),
-        }
-        reward_frame.style.horizontally_squashable = false
-        local caption
-        if reward.type == "unlock-feature" then
-            caption = quests.get_reward_localized_description(reward, "orange", "heading-2", quests.get_feature_localized_name(reward.value))
-        elseif reward.type == "receive-items" then
-            caption = quests.get_reward_localized_description(reward)
-        elseif type(reward.value) == "table" then
-            caption = quests.get_reward_localized_description(reward, "green", "heading-2", table.unpack(reward.value))
-        else
-            caption = quests.get_reward_localized_description(reward, "green", "heading-2", reward.value)
-        end
-        local reward_desc = reward_frame.add {
-            type = "label",
-            name = "desc",
-            caption = caption,
-        }
-        reward_desc.style.single_line = false
-        gui.auto_width(reward_desc)
-        if reward.type == "unlock-feature" then
-            local feature_desc = reward_frame.add {
-                type = "label",
-                name = "feature-desc",
-                caption = lib.color_localized_string(quests.get_feature_localized_description(reward.value), "orange"),
-            }
-            feature_desc.style.single_line = false
-            gui.auto_width(feature_desc)
-        elseif reward.type == "receive-items" then
-            local receive_items_flow = reward_frame.add {
-                type = "flow",
-                name = "receive-items-flow",
-                direction = "horizontal",
-            }
-            gui.add_sprite_buttons(receive_items_flow, reward.value, "receive-items-", true)
-        end
-        if reward.notes then
-            for j, note_name in ipairs(reward.notes) do
-                gui.add_info(reward_frame, quests.get_localized_note(note_name), "info-" .. j)
-            end
-        end
+    for _, reward in pairs(quest.rewards) do
+        questbook_gui.add_reward_elements(quest_rewards_scroll_pane, reward)
     end
 
     -- Ensure that the selected index of the corresponding list is accurate to the displayed quest.
-    for idx, item in ipairs(incomplete_list.items) do
+    for idx, item in pairs(incomplete_list.items) do
         if item[1] == localized_quest_title[1] and incomplete_list.selected_index ~= idx then
             incomplete_list.selected_index = idx
             return
         end
     end
-    for idx, item in ipairs(complete_list.items) do
+    for idx, item in pairs(complete_list.items) do
         if item[1] == localized_quest_title[1] and complete_list.selected_index ~= idx then
             complete_list.selected_index = idx
             return
+        end
+    end
+end
+
+---@param elem LuaGuiElement
+---@param quest Quest
+---@param condition QuestCondition
+function questbook_gui.add_condition_elements(elem, quest, condition)
+    local condition_frame = elem.add {
+        type = "frame",
+        name = "condition-" .. (#elem.children + 1),
+        direction = "vertical",
+        caption = quests.get_condition_localized_name(condition),
+    }
+    condition_frame.style.horizontally_squashable = false
+
+    local condition_str = tostring(condition.progress_requirement)
+    if condition.type == "coins-in-inventory" then
+        condition_str = coin_tiers.base_coin_value_to_text(condition.progress_requirement)
+    elseif condition.type == "visit-planet" then
+        condition_str = tostring(condition.value)
+    end
+
+    local caption
+    if condition.value and condition.type ~= "visit-planet" then
+        local condition_value
+        if type(condition.value) == "table" then
+            condition_value = condition.value
+        else
+            condition_value = {condition.value}
+        end
+        ---@cast condition_value table
+
+        local t = {table.unpack(condition_value)}
+        if condition.type == "kill-entity" or condition.type == "place-entity" or condition.type == "mine-entity" or condition.type == "place-entity-on-planet" then
+            table.insert(t, lib.get_true_localized_name(t[1], "entity"))
+        elseif condition.type == "use-capsule" then
+            table.insert(t, lib.get_true_localized_name(t[1], "item"))
+        elseif condition.type == "place-tile" then
+            table.insert(t, {"item-name." .. t[1]}) -- could possibly have to change this, but it might be fine
+        elseif condition.type == "sell-item-of-quality" then
+            table.insert(t, {"quality-name." .. t[1]})
+        elseif condition.type == "kill-with-damage-type" or condition.type == "die-to-damage-type" then
+            t[1] = {"damage-type-name." .. t[1]}
+        end
+
+        table.insert(t, "green")
+        table.insert(t, "heading-2") -- Lua table.unpack() and ... is weird, so this is necessary
+
+        caption = quests.get_condition_localized_description(condition, condition_str, table.unpack(t))
+    else
+        if condition.type == "reach-hex-rank" then
+            condition_str = "[img=hex-rank] [font=count-font][color=192,32,255]" .. condition.progress_requirement .. "[.color][.font]"
+            caption = quests.get_condition_localized_description(condition, condition_str)
+        else
+            caption = quests.get_condition_localized_description(condition, condition_str, "green", "heading-2")
+        end
+    end
+
+    local condition_desc = condition_frame.add {
+        type = "label",
+        name = "desc",
+        caption = caption,
+    }
+    condition_desc.style.single_line = false
+    gui.auto_width(condition_desc)
+
+    if condition.notes then
+        for j, note_name in ipairs(condition.notes) do
+            gui.add_info(condition_frame, quests.get_localized_note(note_name), "info-" .. j)
+        end
+    end
+
+    if condition.show_progress_bar then
+        local progress_bar = condition_frame.add {
+            type = "progressbar",
+            name = "progressbar",
+            value = quests.get_condition_progress(quest, condition),
+        }
+        gui.auto_width(progress_bar)
+        local r, g, b = lib.hsv_to_rgb(progress_bar.value * 0.3333, 1, 1)
+        progress_bar.style.color = {r, g, b}
+        progress_bar.tooltip = condition.progress .. " / " .. condition.progress_requirement
+    end
+end
+
+---@param elem LuaGuiElement
+---@param reward QuestReward
+function questbook_gui.add_reward_elements(elem, reward)
+    local reward_type = reward.type
+    local reward_value = reward.value
+
+    local reward_frame = elem.add {
+        type = "frame",
+        name = "reward-" .. (#elem.children + 1),
+        direction = "vertical",
+        caption = quests.get_reward_localized_name(reward),
+    }
+    reward_frame.style.horizontally_squashable = false
+
+    local caption
+    if reward_type == "unlock-feature" then
+        ---@cast reward_value FeatureName
+        caption = quests.get_reward_localized_description(reward, "orange", "heading-2", quests.get_feature_localized_name(reward_value))
+    elseif reward_type == "receive-items" then
+        caption = quests.get_reward_localized_description(reward)
+    elseif type(reward_value) == "table" then
+        caption = quests.get_reward_localized_description(reward, "green", "heading-2", table.unpack(reward_value))
+    else
+        caption = quests.get_reward_localized_description(reward, "green", "heading-2", reward.value)
+    end
+
+    local reward_desc = reward_frame.add {
+        type = "label",
+        name = "desc",
+        caption = caption,
+    }
+    reward_desc.style.single_line = false
+
+    gui.auto_width(reward_desc)
+
+    if reward_type == "unlock-feature" then
+        ---@cast reward_value FeatureName
+        local feature_desc = reward_frame.add {
+            type = "label",
+            name = "feature-desc",
+            caption = lib.color_localized_string(quests.get_feature_localized_description(reward_value), "orange"),
+        }
+        feature_desc.style.single_line = false
+        gui.auto_width(feature_desc)
+    elseif reward_type == "receive-items" then
+        local receive_items_flow = reward_frame.add {
+            type = "flow",
+            name = "receive-items-flow",
+            direction = "horizontal",
+        }
+        gui.add_sprite_buttons(receive_items_flow, reward.value, "receive-items-", true)
+    end
+
+    if reward.notes then
+        for j, note_name in ipairs(reward.notes) do
+            gui.add_info(reward_frame, quests.get_localized_note(note_name), "info-" .. j)
         end
     end
 end
