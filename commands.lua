@@ -200,11 +200,34 @@ function convert_params(player, params)
             end
         elseif param_type == "string" then
             if param == "in-hand" then
-                if not player.cursor_stack or not player.cursor_stack.valid_for_read then
+                local cursor_prot, cursor_quality
+                if player.cursor_ghost then
+                    local prot = player.cursor_ghost.name
+                    if prot then
+                        if type(prot) == "string" then
+                            cursor_prot = prot
+                        else
+                            cursor_prot = prot.name
+                        end
+                    end
+                    local q = player.cursor_ghost.quality
+                    if q then
+                        cursor_quality = q.name
+                    end
+                elseif player.cursor_stack and player.cursor_stack.valid_for_read then
+                    cursor_prot = player.cursor_stack.prototype.name
+                    cursor_quality = player.cursor_stack.quality.name
+                end
+                if not cursor_prot then
                     player.print {"hextorio.command-no-item-in-hand"}
                     return false
                 end
-                params[i] = player.cursor_stack.prototype.name
+                if not cursor_quality then
+                    cursor_quality = "normal"
+                end
+                log(cursor_prot)
+                params[i] = cursor_prot
+                -- TODO: also consider the quality I guess
             elseif param == "here" then
                 if not player.character then
                     player.print {"hextorio.command-no-character-found"}

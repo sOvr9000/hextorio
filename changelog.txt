@@ -46,6 +46,7 @@ Date: 20/2/26
     - Fixed coin trade "free proc" bug.
     - Fixed game crashing when attempting to clear the trade quality selector button's selection.
     - Fixed that changing the claim cost settings wouldn't apply the changes to currently existing hexes that don't yet have hex cores.
+    - Fixed that the command alias "in-hand" didn't work for ghost objects held in cursor.
   Modding:
     - Flagged mods as incompatible: Warp Drive Machine, Voidcraft, Simple Seablock.
 ---------------------------------------------------------------------------------------------------
