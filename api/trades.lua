@@ -2350,7 +2350,7 @@ function trades.process_trade_export_jobs()
                     claimed = trade.hex_core_state.claimed == true,
                     is_dungeon = trade.hex_core_state.is_dungeon == true or trade.hex_core_state.was_dungeon == true,
                     productivity = trades.get_productivity(trade),
-                    is_interplanetary = trades.is_interplanetary_trade(trade),
+                    is_interplanetary = trades.trade_has_interplanetary_items(trade),
                     has_untradable_items = trades.trade_has_untradable_items(trade),
                     mode = trade.hex_core_state.mode or "normal",
                     core_quality = quality,
@@ -3019,7 +3019,7 @@ end
 ---Return whether the given trade contains any items that can only be obtained by importing at least one item from another planet.
 ---@param trade Trade
 ---@return boolean
-function trades.is_interplanetary_trade(trade)
+function trades.trade_has_interplanetary_items(trade)
     if trade.is_interplanetary ~= nil then return trade.is_interplanetary end
 
     local surface_name = trade.surface_name

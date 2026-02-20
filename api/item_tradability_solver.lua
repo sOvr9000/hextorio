@@ -580,6 +580,13 @@ function item_tradability_solver.solve()
         lib.log("Tradability solver: " .. planet .. " — " .. count .. " tradable items")
     end
 
+    for planet, _ in pairs(storage.SUPPORTED_PLANETS) do
+        local planet_tradable = is_tradable[planet]
+        for _, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
+            planet_tradable[coin_name] = true
+        end
+    end
+
     storage.item_values.is_tradable = is_tradable
 
     lib.log("Tradability solver: complete")

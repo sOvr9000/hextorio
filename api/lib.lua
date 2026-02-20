@@ -1121,19 +1121,19 @@ function lib.ticks_to_string(ticks)
     local seconds = math.floor(ticks / 60)
 
     -- Calculate days
-    local days = math.floor(seconds / 86400)  -- 86400 = seconds in a day (24*60*60)
+    local days = math.floor(seconds / 86400)
     local remainder = seconds % 86400
-    
+
     -- Calculate hours
-    local hours = math.floor(remainder / 3600)  -- 3600 = seconds in an hour (60*60)
+    local hours = math.floor(remainder / 3600)
     remainder = remainder % 3600
-    
+
     -- Calculate minutes
     local minutes = math.floor(remainder / 60)
-    
+
     -- Calculate remaining seconds
     local secs = remainder % 60
-    
+
     -- Build the formatted string, only including non-zero components
     local parts = {}
     if days > 0 then
@@ -1148,7 +1148,7 @@ function lib.ticks_to_string(ticks)
     if secs > 0 or #parts == 0 then  -- Always include seconds if it's the only component
         table.insert(parts, secs .. "s")
     end
-    
+
     -- Join the parts with commas and spaces
     return table.concat(parts, " ")
 end
@@ -1178,12 +1178,12 @@ function lib.get_rank_img_str(rank, left_half)
     return ""
 end
 
-function lib.get_trade_img_str(trade, has_interplanetary)
+function lib.get_trade_img_str(trade, has_untradable)
     local s = ""
     for _, item in pairs(trade.input_items) do
         s = s .. "[img=item." .. item.name .. "]"
     end
-    if has_interplanetary then
+    if has_untradable then
         s = s .. "[img=interplanetary-trade-arrow]"
     else
         s = s .. "[img=trade-arrow]"
