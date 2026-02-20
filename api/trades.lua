@@ -2136,9 +2136,22 @@ function trades.process_trade_sorting_jobs()
                 job.metrics = {}
 
                 if filter.sorting.method == "distance-from-spawn" then
+                    local dists = storage.hex_island.distances
                     for trade_id, trade in pairs(job.filtered_trades) do
-                        if trade.hex_core_state then
-                            job.metrics[trade_id] = axial.distance(trade.hex_core_state.position, {q=0, r=0})
+                        local state = trade.hex_core_state
+                        if state then
+                            local pos = state.position
+                            local Q = dists[pos.q]
+                            if Q then
+                                local dist = Q[pos.r]
+                                if dist then
+                                    job.metrics[trade_id] = dist
+                                else
+                                    job.metrics[trade_id] = 0
+                                end
+                            else
+                                job.metrics[trade_id] = 0
+                            end
                         else
                             job.metrics[trade_id] = 0
                         end

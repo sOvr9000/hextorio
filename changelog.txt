@@ -21,6 +21,7 @@ Date: 20/2/26
   Minor Features:
     - Added the has_untradable_items field to trades in the trades JSON export, which indicates whether the trade contains any items that are initially untradable on its planet (only set to true for trades created by the silver item rank bonus).
   Changes:
+    - The trade overview sorting method "Distance from spawn" now compares the pathing distances from spawn for each trade, not the straight-line distances that would go over unclaimable hexes.
     - The is_interplanetary field in trades in the trades JSON export now corresponds to whether the trade contains any items that can only be obtained after importing at least one item from another planet.
     - Overhauled the system that determines which items are initially tradable on each planet.
         It used to be based on whether items were considered "interplanetary", but it is now based on which recipes are usable on each planet and when/where they're unlocked.
