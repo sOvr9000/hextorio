@@ -43,7 +43,7 @@ Date: 20/2/26
         Gleba's items are scaled strongly due to item spoilability (requiring special layouts to minimize loss of freshness) and overall complexity of (sustainable) power production.
         Aquilo's items are scaled the strongest due to dependency on interplanetary items (and its distance from other planets) as well as recipe complexity / the number of items and fluids involved in each recipe (since entity heating restricts layouts and sometimes scalability).
   Bugfixes:
-    - (TODO) Fixed coin trade "free proc" bug.
+    - Fixed coin trade "free proc" bug.
     - (TODO) Fixed game crashing when attempting to clear the trade quality selector button's selection.
   Modding:
     - Flagged mods as incompatible: Warp Drive Machine, Voidcraft, Simple Seablock.

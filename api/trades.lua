@@ -41,7 +41,9 @@ local trades = {}
 ---@field is_interplanetary boolean Cached flag for quickly checking whether this trade contains an interplanetary item in either its inputs or outputs.
 ---@field has_untradable_items boolean Cached flag for quickly checking whether this trade contains any items that are initially untradable on its planet. Silver-ranked items bypass tradability and set this flag to true.
 ---@field has_coins_in_input boolean Cached flag for quickly checking whether this trade contains coins in its inputs.
+---@field has_items_in_input boolean Cached flag for quickly checking whether this trade contains non-coin items in its inputs.
 ---@field has_coins_in_output boolean Cached flag for quickly checking whether this trade contains coins in its outputs.
+---@field has_items_in_output boolean Cached flag for quickly checking whether this trade contains non-coin items in its outputs.
 ---@field input_items TradeItem[] List of item names and counts representing the inputs of the trade.
 ---@field output_items TradeItem[] List of item names and counts representing the outputs of the trade.
 
@@ -279,9 +281,12 @@ function trades.initialize_trade_state(trade)
     local is_interplanetary = false
     local has_untradable_items = false
     local has_coins_in_input = false
+    local has_items_in_input = false
     for _, input_item in pairs(input_items) do
         if lib.is_coin(input_item.name) then
             has_coins_in_input = true
+        else
+            has_items_in_input = true
         end
         if item_values.is_item_interplanetary(trade.surface_name, input_item.name) then
             is_interplanetary = true
@@ -292,10 +297,12 @@ function trades.initialize_trade_state(trade)
     end
 
     local has_coins_in_output = false
+    local has_items_in_output = false
     for _, output_item in pairs(output_items) do
         if lib.is_coin(output_item.name) then
             has_coins_in_output = true
-            break
+        else
+            has_items_in_output = true
         end
         if item_values.is_item_interplanetary(trade.surface_name, output_item.name) then
             is_interplanetary = true
@@ -313,7 +320,9 @@ function trades.initialize_trade_state(trade)
         output_items = output_items,
         active = true,
         has_coins_in_input = has_coins_in_input,
+        has_items_in_input = has_items_in_input,
         has_coins_in_output = has_coins_in_output,
+        has_items_in_output = has_items_in_output,
         allowed_qualities = {"normal"},
         productivity = 0,
         current_prod_value = {},
@@ -998,7 +1007,7 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     local num_batches = math.huge
 
     -- Initial calculation by comparing item counts in input inventory and trade inputs.
-    if input_items_quality then
+    if input_items_quality and next(input_items_quality) then
         for _, input_item in pairs(trade.input_items) do
             if not lib.is_coin(input_item.name) then
                 local available = input_items_quality[input_item.name] or 0
@@ -1008,9 +1017,9 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
             end
         end
     else
-        if not trade.has_coins_in_input then
-            -- No quality-matching items in inventory, no coins in trade, nothing can be exchanged.
-            -- (without this conditional return, num batches remains unlimited until the inventory capacity check; leads to free trade procs)
+        if trade.has_items_in_input then
+            -- No quality-matching items in inventory but trade requires items, nothing can be exchanged.
+            -- (without this conditional return, trades can be "free")
             return 0
         end
     end
