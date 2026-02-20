@@ -4287,10 +4287,8 @@ function hex_grid.update_all_hex_claim_costs(surface_name)
     local surface = game.get_surface(surface_name)
     if not surface then return end
     for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
-        if state.hex_core then
-            -- Claim cost affects delete core cost, so also check claimed hexes
-            state.claim_price = hex_grid.calculate_hex_claim_price(surface, state.position)
-        end
+        -- Claim cost affects delete core cost, so also check claimed hexes
+        state.claim_price = hex_grid.calculate_hex_claim_price(surface, state.position)
     end
 end
 

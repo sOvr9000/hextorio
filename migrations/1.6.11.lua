@@ -38,9 +38,7 @@ return function()
 
     for _, surface in pairs(game.surfaces) do
         if storage.SUPPORTED_PLANETS[surface.name] then
-            for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
-                state.claim_price = hex_grid.calculate_hex_claim_price(surface, state.position)
-            end
+            hex_grid.update_all_hex_claim_costs(surface.name)
         end
     end
 end
