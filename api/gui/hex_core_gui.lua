@@ -888,7 +888,8 @@ function hex_core_gui._reset_quality(element, hex_core_quality)
     if hex_core_quality then
         quality_tier = math.min(quality_tier, lib.get_quality_tier(hex_core_quality))
     end
-    element.elem_value = {type = "quality", name = lib.get_quality_at_tier(quality_tier)}
+    local q = lib.get_quality_at_tier(quality_tier)
+    element.elem_value = "pseudo-signal-quality-" .. q
 end
 
 ---@param player LuaPlayer
