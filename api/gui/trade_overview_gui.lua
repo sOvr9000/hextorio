@@ -829,6 +829,7 @@ function trade_overview_gui.reconcile_filter_settings_with_gui(player, add_to_hi
     filter.max_trades = max_trades or 100
 
     trade_overview_gui.post_process_filter_data(filter)
+    trade_overview_gui.reconcile_gui_with_filter_settings(player) -- This is needed to ensure logical coherence in GUI elements (e.g. force-enable "exclude dungeons" if "show claimed only" is toggled on)
 
     if add_to_history then
         trade_overview_gui.add_filter_history(player, filter)
