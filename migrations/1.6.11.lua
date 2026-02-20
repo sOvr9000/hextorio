@@ -3,6 +3,8 @@ local item_value_solver = require "api.item_value_solver"
 local item_tradability_solver = require "api.item_tradability_solver"
 local trades                  = require "api.trades"
 local lib                     = require "api.lib"
+local hex_grid                = require "api.hex_grid"
+local hex_state_manager       = require "api.hex_state_manager"
 
 local data_item_values = require "data.item_values"
 
@@ -30,6 +32,14 @@ return function()
         for _, item in pairs(trade.output_items or {}) do
             if not lib.is_coin(item.name) then
                 trade.has_items_in_output = true
+            end
+        end
+    end
+
+    for _, surface in pairs(game.surfaces) do
+        if storage.SUPPORTED_PLANETS[surface.name] then
+            for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
+                state.claim_price = hex_grid.calculate_hex_claim_price(surface, state.position)
             end
         end
     end
