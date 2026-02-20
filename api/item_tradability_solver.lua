@@ -538,7 +538,6 @@ end
 
 function item_tradability_solver.init()
     auto_detect_planet_data()
-    item_tradability_solver.solve()
 end
 
 function item_tradability_solver.register_events()

@@ -114,6 +114,12 @@ function trade_overview_gui.register_events()
         -- might be annoying if updated each time?
         -- trade_overview_gui.update_trade_overview(player)
     end)
+
+    event_system.register("post-item-values-recalculated", function()
+        for _, player in pairs(game.players) do
+            trade_overview_gui.init_trade_overview(player)
+        end
+    end)
 end
 
 ---Reinitialize the trade overview GUI for the given player, or all players if no player is provided.
@@ -150,6 +156,8 @@ function trade_overview_gui.init_trade_overview_button(player)
 end
 
 function trade_overview_gui.init_trade_overview(player)
+    if storage.item_values.awaiting_solver then return end
+
     local frame = player.gui.screen.add {
         type = "frame",
         name = "trade-overview",
