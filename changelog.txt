@@ -30,6 +30,9 @@ Date: 20/2/26
     - The number of items required to be ranked up for the quest "Catalog Completionist" is now dynamic, including rankable modded items.
   Balancing:
     - Changed default sink/generator trade efficiency from 10% to 25%.
+    - Reduced default setting "Total Hexes" for Nauvis from 7000 to 5000.
+    - Reduced default setting "Total Hexes" for Gleba from 4000 to 1800.
+    - Reduced default setting "Total Hexes" for Aquilo from 1800 to 600.
     - Rebalanced item values to be less about a planet's stage in the game progression but instead more about actual difficulty of obtainment.
         For example, coal/iron/copper on Vulcanus is now less valuable than on Nauvis, and oil-based products on Fulgora now generally have low values.
     - Item values are now affected by each planet's core challenges:
