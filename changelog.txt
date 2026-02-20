@@ -26,6 +26,7 @@ Date: 20/2/26
     - The command /set-item-value now marks an item as a raw resource on a planet rather than overriding its computed value directly.
         Useful for quickly integrating custom modded raw resources to compute their entire item value graph.
     - The command /remove-item-value now also clears the raw value entry set by /set-item-value, preventing it from reappearing after a solver run.
+    - The number of items required to be ranked up for the quest "Catalog Completionist" is now dynamic, including rankable modded items.
   Balancing:
     - Rebalanced item values to be less about a planet's stage in the game progression but instead more about actual difficulty of obtainment.
         For example, coal/iron/copper on Vulcanus is now less valuable than on Nauvis, and oil-based products on Fulgora now generally have low values.

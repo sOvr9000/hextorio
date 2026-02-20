@@ -57,12 +57,24 @@ end)
 recalculators.define_recalculator("items-at-rank", function(stat_value)
     local rank = stat_value
     local total = 0
-    for item_name, rank_obj in pairs(storage.item_ranks.item_ranks) do
+    for _, rank_obj in pairs(storage.item_ranks.item_ranks) do
         if rank_obj.rank >= rank then
             total = total + 1
         end
     end
     return total
+end)
+
+recalculators.define_recalculator("all-items-at-rank", function(stat_value)
+    local rank = stat_value
+    local progress = 1
+    for _, rank_obj in pairs(storage.item_ranks.item_ranks) do
+        if rank_obj.rank < rank then
+            progress = 0
+            break
+        end
+    end
+    return progress
 end)
 
 recalculators.define_recalculator("total-item-rank", function(stat_value)

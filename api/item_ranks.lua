@@ -145,12 +145,25 @@ function item_ranks.rank_up(item_name)
     if rank.rank >= 5 then return false end
     if rank.rank <= 0 then return false end
 
-    rank.rank = rank.rank + 1
+    local new_rank = rank.rank + 1
+    rank.rank = new_rank
 
-    lib.print_notification("item-ranked-up", lib.color_localized_string({"", {"hextorio.item-rank-up"}, " [img=item." .. item_name .. "]", lib.get_rank_img_str(rank.rank - 1), "->", lib.get_rank_img_str(rank.rank), "[img=item." .. item_name .. "]"}, storage.item_ranks.rank_colors[rank.rank], "heading-1"))
+    lib.print_notification("item-ranked-up", lib.color_localized_string({"", {"hextorio.item-rank-up"}, " [img=item." .. item_name .. "]", lib.get_rank_img_str(new_rank - 1), "->", lib.get_rank_img_str(new_rank), "[img=item." .. item_name .. "]"}, storage.item_ranks.rank_colors[new_rank], "heading-1"))
     event_system.trigger("item-rank-up", item_name)
 
-    gameplay_statistics.increment("items-at-rank", 1, rank.rank)
+    gameplay_statistics.increment("items-at-rank", 1, new_rank)
+    if gameplay_statistics.get("all-items-at-rank", new_rank) < 1 then
+        local completed = true
+        for _, rank_obj in pairs(storage.item_ranks.item_ranks) do
+            if rank_obj.rank < new_rank then
+                completed = false
+                break
+            end
+        end
+        if completed then
+            gameplay_statistics.set("all-items-at-rank", 1, new_rank)
+        end
+    end
 
     -- Used to verify how many items in total can be ranked up.
     -- if item_ranks.get_item_rank("iron-ore") == 3 then

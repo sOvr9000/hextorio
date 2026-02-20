@@ -21,6 +21,7 @@ local gameplay_statistics = {}
 ---| "total-rockets-launched"
 ---| "claimed-hexes-on"
 ---| "items-at-rank"
+---| "all-items-at-rank"
 ---| "total-item-rank"
 ---| "visit-planet"
 ---| "cover-ores-on"
