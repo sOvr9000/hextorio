@@ -45,6 +45,15 @@ data:extend({
         order = "t[trades]-c[sell-trade-chance]",
     },
     {
+        type = "double-setting",
+        name = "hextorio-sink-generator-efficiency",
+        setting_type = "runtime-global",
+        default_value = 0.25,
+        minimum_value = 0.1,
+        maximum_value = 10.0,
+        order = "t[trades]-c[sink-generator-efficiency]",
+    },
+    {
         type = "int-setting",
         name = "hextorio-trades-per-hex-nauvis",
         setting_type = "runtime-global",

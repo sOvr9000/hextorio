@@ -137,7 +137,7 @@ Features unlocked from quests are the following exhaustive list:
 - *Cross-Surface Teleportation* - upgraded form of *Teleportation* which allows teleporting to other planets if all teleporting inventories are empty
 - *Hexports* - freely powered roboports built into hex core entities extending remote visibility and logistic network coverage
 - *Quantum Bazaar* - buy and sell maximally ranked items at a one-to-one value exchange rate
-- *Sink/Generator Mode* - two separate unlocks for converting all trades in a hex to use coins as the medium of exchange but at a 10:1 (bad) exchange rate in either direction
+- *Sink/Generator Mode* - two separate unlocks for converting all trades in a hex to use coins as the medium of exchange but at a poor exchange rate in either direction
 - *Item Buffs* - allows spending coins to unlock new item-specific bonuses
 - *Item Buff Enhancement* - allows spending coins to upgrade any unlocked item-specific bonuses
 - *Enhance All Item Buffs* - click a single button to spend as many coins as possible to enhance or unlock all affordable item buffs

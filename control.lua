@@ -125,14 +125,12 @@ script.on_init(function()
     trades.fetch_base_trade_productivity_settings()
     trades.fetch_base_trade_efficiency_settings()
 
-    local penalty = lib.runtime_setting_value "unresearched-penalty"
-    ---@cast penalty number
-
-    storage.trades.unresearched_penalty = penalty
-    storage.trades.batch_processing_threshold = lib.runtime_setting_value "trade-batching-threshold"
-    storage.trades.collection_batch_size = lib.runtime_setting_value "trade-collection-batch-size"
-    storage.trades.filtering_batch_size = lib.runtime_setting_value "trade-filtering-batch-size"
-    storage.trades.sorting_batch_size = lib.runtime_setting_value "trade-sorting-batch-size"
+    storage.hex_grid.sink_generator_efficiency = lib.runtime_setting_value_as_number "sink-generator-efficiency"
+    storage.trades.unresearched_penalty = lib.runtime_setting_value_as_number "unresearched-penalty"
+    storage.trades.batch_processing_threshold = lib.runtime_setting_value_as_int "trade-batching-threshold"
+    storage.trades.collection_batch_size = lib.runtime_setting_value_as_int "trade-collection-batch-size"
+    storage.trades.filtering_batch_size = lib.runtime_setting_value_as_int "trade-filtering-batch-size"
+    storage.trades.sorting_batch_size = lib.runtime_setting_value_as_int "trade-sorting-batch-size"
     trades.recalculate_researched_items()
 
     storage.hex_grid.pool_size = lib.runtime_setting_value_as_int "hex-pool-size"

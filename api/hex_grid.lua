@@ -354,6 +354,11 @@ function hex_grid.register_events()
         hex_grid.set_pool_size(size)
     end)
 
+    event_system.register("runtime-setting-changed-sink-generator-efficiency", function()
+        local eff = lib.runtime_setting_value_as_number "sink-generator-efficiency"
+        storage.hex_grid.sink_generator_efficiency = eff
+    end)
+
     event_system.register("train-arrived-at-stop", hex_grid.on_train_arrived_at_stop)
     event_system.register("entity-built", hex_grid.on_entity_built)
     event_system.register("runtime-setting-changed-unresearched-penalty", hex_grid.on_setting_changed_unresearched_penalty)
@@ -630,7 +635,7 @@ function hex_grid.switch_hex_core_mode(state, mode)
             output_names = {"hex-coin"}
         end
 
-        local params = {target_efficiency = storage.trades.base_trade_efficiency * 0.1, allow_nil_return = false}
+        local params = {target_efficiency = storage.trades.base_trade_efficiency * (storage.hex_grid.sink_generator_efficiency or 0.25), allow_nil_return = false}
         local trade = trades.from_item_names(state.hex_core.surface.name, input_names, output_names, params)
         ---@cast trade Trade
         -- trade cannot be nil because params.allow_nil_return = false
@@ -4435,7 +4440,7 @@ function hex_grid.on_item_values_recalculated()
                     if not state.trades or not next(state.trades) then
                         hex_grid.add_initial_trades(state)
                     else
-                        -- TODO: update trade item counts such that each trade's target efficiency matches the original value (e.g. sinks still have 10:1 efficiency, etc.)
+                        -- TODO: update trade item counts such that each trade's target efficiency matches the original value (e.g. sinks still have low efficiency, etc.)
                         -- for _, trade_id in pairs(state.trades) do
                         -- end
                     end
