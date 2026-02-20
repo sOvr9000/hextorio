@@ -41,6 +41,8 @@ Date: 20/2/26
   Bugfixes:
     - (TODO) Fixed coin trade "free proc" bug.
     - (TODO) Fixed game crashing when attempting to clear the trade quality selector button's selection.
+  Modding:
+    - Flagged mods as incompatible: Warp Drive Machine, Voidcraft, Simple Seablock.
 ---------------------------------------------------------------------------------------------------
 Version: 1.6.11
 Date: 11/2/26
