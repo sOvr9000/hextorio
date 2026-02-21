@@ -30,6 +30,7 @@ Date: 20/2/26
         Useful for quickly integrating custom modded raw resources to compute their entire item value graph.
     - The command /remove-item-value now also clears the raw value entry set by /set-item-value, preventing it from reappearing after a solver run.
     - The number of items required to be ranked up for the quest "Catalog Completionist" is now dynamic, including rankable modded items.
+    - Revised the tooltips for the item buffs "All Buffs Cost Reduced", "Unresearched Penalty Reduced", and "Strongbox Loot".
   Balancing:
     - Changed all exponential item buff scaling to linear.
     - Changed default sink/generator trade efficiency from 10% to 25%.
