@@ -378,8 +378,6 @@ These are tentative ideas, which may or may not be added at some point. They are
   - Make it so that quests cannot be completed until revealed, but their conditions can be completed while hidden and then the quest gets auto-completed immediately upon reveal. So, rewards are properly gated behind ordered quest completion.
 
 ### Tweaks
-- Make it so that the quest which requires ranking up all items to the maximal rank is not based on total number of items at that rank but instead a single flag which gets set to true once it is automatically detected that all items have reached the maximum rank.
-  - Avoids discrepancies when the number of items in the catalog is unknown, such as when automatic item value calculation finally gets implemented and works for modded items.
 - Dungeon loot chests contain more varied amounts of loot instead of staying mostly constant for each dungeon prototype.
   - Something like a +/- 15% variation of total loot value per chest would be nice to see for a change.
 
