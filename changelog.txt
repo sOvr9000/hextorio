@@ -20,6 +20,7 @@ Date: 20/2/26
     - Added setting for configuring sink/generator trade efficiency.
   Minor Features:
     - Added the has_untradable_items field to trades in the trades JSON export, which indicates whether the trade contains any items that are initially untradable on its planet (only set to true for trades created by the silver item rank bonus).
+    - Added item buffs for: burner mining drill, hazard concrete, spoilage, nutrients.
   Changes:
     - The trade overview sorting method "Distance from spawn" now compares the pathing distances from spawn for each trade, not the straight-line distances that would go over unclaimable hexes.
     - The is_interplanetary field in trades in the trades JSON export now corresponds to whether the trade contains any items that can only be obtained after importing at least one item from another planet.
@@ -30,6 +31,7 @@ Date: 20/2/26
     - The command /remove-item-value now also clears the raw value entry set by /set-item-value, preventing it from reappearing after a solver run.
     - The number of items required to be ranked up for the quest "Catalog Completionist" is now dynamic, including rankable modded items.
   Balancing:
+    - Changed all exponential item buff scaling to linear.
     - Changed default sink/generator trade efficiency from 10% to 25%.
     - Reduced default setting "Total Hexes" for Nauvis from 7000 to 5000.
     - Reduced default setting "Total Hexes" for Gleba from 4000 to 1800.
