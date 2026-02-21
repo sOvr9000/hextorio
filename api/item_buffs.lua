@@ -840,8 +840,6 @@ function item_buffs.force_reset(new_data, reset_tech)
         storage.item_buffs.is_nonlinear = new_data.is_nonlinear
         storage.item_buffs.has_linear_effect_scaling = new_data.has_linear_effect_scaling
         storage.item_buffs.item_buffs = new_data.item_buffs
-
-        log(serpent.block(storage.item_buffs.has_linear_effect_scaling))
     end
 
     -- Re-apply all buffs with new parameters
