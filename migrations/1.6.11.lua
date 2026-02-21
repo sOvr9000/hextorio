@@ -1,12 +1,14 @@
 
-local item_value_solver = require "api.item_value_solver"
-local item_tradability_solver = require "api.item_tradability_solver"
-local trades                  = require "api.trades"
 local lib                     = require "api.lib"
+local trades                  = require "api.trades"
 local hex_grid                = require "api.hex_grid"
+local item_buffs              = require "api.item_buffs"
 local hex_state_manager       = require "api.hex_state_manager"
+local item_value_solver       = require "api.item_value_solver"
+local item_tradability_solver = require "api.item_tradability_solver"
 
-local data_item_values = require "data.item_values"
+local data_item_buffs         = require "data.item_buffs"
+local data_item_values        = require "data.item_values"
 
 return function()
     storage.SUPPORTED_PLANETS = {
@@ -41,4 +43,6 @@ return function()
             hex_grid.update_all_hex_claim_costs(surface.name)
         end
     end
+
+    item_buffs.migrate_buff_changes(data_item_buffs)
 end
