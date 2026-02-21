@@ -1664,13 +1664,13 @@ end
 
 ---Update the reference to the strongbox entity that the given hex state holds.
 ---@param state HexState
----@param sb_entity LuaEntity
+---@param sb_entity LuaEntity|nil If not provided, just remove any invalid entity from the current associated of strongboxes.
 function hex_grid.update_strongbox_entity(state, sb_entity)
     if not state.strongboxes then state.strongboxes = {} end
     for i = #state.strongboxes, 1, -1 do
         local sb = state.strongboxes[i]
         if sb then
-            if not sb.valid or lib.tables_equal(sb.position, sb_entity.position) then
+            if not sb.valid or sb_entity and sb_entity.valid and sb == sb_entity then
                 table.remove(state.strongboxes, i)
                 if sb.valid then
                     sb.destroy()
@@ -1678,7 +1678,9 @@ function hex_grid.update_strongbox_entity(state, sb_entity)
             end
         end
     end
-    table.insert(state.strongboxes, sb_entity)
+    if sb_entity and sb_entity.valid then
+        table.insert(state.strongboxes, sb_entity)
+    end
 end
 
 ---Remove all strongboxes from this hex core, destroying the entities.
@@ -1688,12 +1690,33 @@ function hex_grid.remove_strongboxes(state)
 
     for i = #state.strongboxes, 1, -1 do
         local sb_entity = state.strongboxes[i]
-        if sb_entity.valid then
+        if sb_entity and sb_entity.valid then
             hex_state_manager.unmap_entity(sb_entity.unit_number)
             sb_entity.destroy()
         end
+    end
 
-        state.strongboxes[i] = nil
+    state.strongboxes = nil
+end
+
+---Remove a strongbox from this hex core, destroying the entity.
+---@param state HexState
+---@param sb_entity LuaEntity
+function hex_grid.remove_strongbox(state, sb_entity)
+    if not state.strongboxes then return end
+
+    for i = #state.strongboxes, 1, -1 do
+        local _sb_entity = state.strongboxes[i]
+        if _sb_entity and _sb_entity.valid then
+            if _sb_entity == sb_entity then
+                hex_state_manager.unmap_entity(sb_entity.unit_number)
+                sb_entity.destroy()
+            end
+        else
+            state.strongboxes[i] = nil
+        end
+
+        table.remove(state.strongboxes, i)
     end
 end
 
@@ -4377,6 +4400,8 @@ function hex_grid.on_strongbox_killed(sb_entity)
             hex_state_manager.map_entity_to_hex_state(new_sb_entity.unit_number, new_sb_entity.surface.name, state.position)
             hex_grid.update_strongbox_entity(state, new_sb_entity)
         end
+    else
+        hex_grid.remove_strongbox(state, sb_entity)
     end
 
     gameplay_statistics.increment "total-strongbox-level"
