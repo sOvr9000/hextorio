@@ -1644,8 +1644,7 @@ function hex_grid.try_generate_strongbox(state)
     local clear_pos = surface.find_non_colliding_position("strongbox-tier-1", pos, 10, 1, true)
     if not clear_pos then return end
 
-    local loot_scale = hex_grid.get_planet_coin_scaling(surface.name)
-    local sb_entity = strongboxes.try_spawn(surface, clear_pos, loot_scale)
+    local sb_entity = strongboxes.try_spawn(surface, clear_pos)
     if not sb_entity or not sb_entity.valid then return end
 
     if not state.strongboxes then

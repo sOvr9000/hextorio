@@ -42,23 +42,18 @@ end
 ---Attempt to spawn a strongbox at a given pos.
 ---@param surface LuaSurface
 ---@param pos MapPosition
----@param loot_scale number|nil
 ---@return LuaEntity|nil
-function strongboxes.try_spawn(surface, pos, loot_scale)
+function strongboxes.try_spawn(surface, pos)
     if math.random() > storage.strongboxes.spawn_chance then return end
-    if not loot_scale then loot_scale = 1 end
-    return strongboxes.spawn(surface, pos, 1, loot_scale)
+    return strongboxes.spawn(surface, pos, 1)
 end
 
 ---Forcibly spawn a strongbox at a given pos.
 ---@param surface LuaSurface
 ---@param pos MapPosition
 ---@param tier int
----@param loot_scale number|nil
 ---@return LuaEntity|nil
-function strongboxes.spawn(surface, pos, tier, loot_scale)
-    if not loot_scale then loot_scale = 1 end
-
+function strongboxes.spawn(surface, pos, tier)
     local sb_entity = surface.create_entity {
         name = "strongbox-tier-" .. tier,
         position = pos,
