@@ -9,6 +9,7 @@ local item_tradability_solver = require "api.item_tradability_solver"
 
 local data_item_buffs         = require "data.item_buffs"
 local data_item_values        = require "data.item_values"
+local data_strongboxes        = require "data.strongboxes"
 
 return function()
     storage.SUPPORTED_PLANETS = {
@@ -20,6 +21,7 @@ return function()
     }
 
     storage.item_values = data_item_values
+    storage.strongboxes.max_tier = data_strongboxes.max_tier
 
     game.print("Migrating Hextorio version [color=blue]1.6.11[.color] to [color=blue]1.7.0[.color].  [color=pink]Significant changes have been made.[.color]")
     item_tradability_solver.init()

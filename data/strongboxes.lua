@@ -3,7 +3,7 @@
 -- ln(max_sb_health) = 3 + scaling_rate * (sb_tier - 1)
 -- (ln(max_sb_health) - 3) / scaling_rate + 1 = sb_tier
 
-local max_sb_health = 1000000000
+local max_sb_health = 50000000
 local scaling_rate = 0.5
 local max_tier = math.floor((math.log(max_sb_health) - 3) / scaling_rate - 0.5)
 

@@ -3762,10 +3762,10 @@ end
 function hex_grid.process_strongboxes(state)
     if not state.hex_core or not state.strongboxes or not next(state.strongboxes) then return end
 
-    local planet_loot_scale = hex_grid.get_planet_coin_scaling(state.hex_core.surface.name)
+    -- local planet_loot_scale = hex_grid.get_planet_coin_scaling(state.hex_core.surface.name)
     for _, sb_entity in pairs(state.strongboxes) do
         if sb_entity.valid then
-            strongboxes.insert_loot(sb_entity, planet_loot_scale)
+            strongboxes.insert_loot(sb_entity)
         end
     end
 end
@@ -4369,13 +4369,14 @@ function hex_grid.on_strongbox_killed(sb_entity)
 
     hex_state_manager.unmap_entity(sb_entity.unit_number)
 
-    -- Respawn chest :D
-    local planet_loot_scale = hex_grid.get_planet_coin_scaling(sb_entity.surface.name)
-    local new_sb_entity = strongboxes.spawn(sb_entity.surface, sb_entity.position, next_tier, planet_loot_scale)
-
-    if new_sb_entity and new_sb_entity.valid then
-        hex_state_manager.map_entity_to_hex_state(new_sb_entity.unit_number, new_sb_entity.surface.name, state.position)
-        hex_grid.update_strongbox_entity(state, new_sb_entity)
+    if cur_tier < storage.strongboxes.max_tier then
+        -- Respawn chest :D
+        -- local planet_loot_scale = hex_grid.get_planet_coin_scaling(sb_entity.surface.name)
+        local new_sb_entity = strongboxes.spawn(sb_entity.surface, sb_entity.position, next_tier)
+        if new_sb_entity and new_sb_entity.valid then
+            hex_state_manager.map_entity_to_hex_state(new_sb_entity.unit_number, new_sb_entity.surface.name, state.position)
+            hex_grid.update_strongbox_entity(state, new_sb_entity)
+        end
     end
 
     gameplay_statistics.increment "total-strongbox-level"

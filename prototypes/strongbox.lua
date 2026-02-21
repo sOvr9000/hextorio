@@ -4,6 +4,14 @@ local strongboxes = {}
 
 
 
+-- e ^ (3 + scaling_rate * (sb_tier - 1)) = max_sb_health
+-- ln(max_sb_health) = 3 + scaling_rate * (sb_tier - 1)
+-- (ln(max_sb_health) - 3) / scaling_rate + 1 = sb_tier
+
+local max_sb_health = 50000000
+local scaling_rate = 0.5
+local max_tier = math.floor((math.log(max_sb_health) - 3) / scaling_rate - 0.5)
+
 local strongbox_base = table.deepcopy(data.raw["container"]["steel-chest"])
 strongbox_base.is_military_target = true
 strongbox_base.inventory_type = "normal"
@@ -17,17 +25,9 @@ strongbox_base.hide_resistances = true
 strongbox_base.resistances = {}
 strongbox_base.minable = nil
 strongbox_base.inventory_size = 10
-strongbox_base.localised_description = {"entity-description.strongbox"}
+strongbox_base.localised_description = {"entity-description.strongbox", tostring(max_tier)}
 strongbox_base.flags = {"breaths-air"} -- Don't give immunity to poison / plague rockets
 strongbox_base.surface_conditions = nil
-
--- e ^ (3 + scaling_rate * (sb_tier - 1)) = max_sb_health
--- ln(max_sb_health) = 3 + scaling_rate * (sb_tier - 1)
--- (ln(max_sb_health) - 3) / scaling_rate + 1 = sb_tier
-
-local max_sb_health = 2000000000
-local scaling_rate = 0.5
-local max_tier = math.floor((math.log(max_sb_health) - 3) / scaling_rate - 0.5)
 
 lib.log("Creating " .. max_tier .. " tiers of strongboxes.")
 for sb_tier = 1, max_tier do
