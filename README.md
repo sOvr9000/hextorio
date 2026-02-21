@@ -359,8 +359,6 @@ These are tentative ideas, which may or may not be added at some point. They are
 
 # Planned Changes
 ### Rebalancing
-- Item buffs:
-  - Change all or almost all effects from item buffs from exponential growth to linear.
 - Strongboxes:
   - Change from constant coin rewards per strongbox level to flat bonuses to passive coin income, up to a maximum level such as 10 (after which the strongbox is destroyed permanently).
   - Rebalance HP to more accurately reflect what's possible throughout the game.
@@ -378,9 +376,6 @@ These are tentative ideas, which may or may not be added at some point. They are
   - Also, make dungeon chests irreplacable with other chest entities, which will patch out the exploit of using build distance buffs to freely loot dungeons while standing outside of them.
 - Quests:
   - Make it so that quests cannot be completed until revealed, but their conditions can be completed while hidden and then the quest gets auto-completed immediately upon reveal. So, rewards are properly gated behind ordered quest completion.
-- Item values:
-  - The current solver at https://github.com/sOvr9000/factorio-item-value-solver fails to produce appropriate values for items on Aquilo. The production chains on Aquilo are too complex for its current algorithm. It needs to be improved to handle Aquilo's recipes and interplanetary dependencies such that the item values are more reasonable.
-  - When this is fixed up to be compatible with most mods, it should be built directly into the mod itself as opposed to making the mod rely on external tools like this. It would be dropped into the data stage and produce a `ModData` object to store information about item values so that it can carry over into runtime logic.
 
 ### Tweaks
 - Make it so that the quest which requires ranking up all items to the maximal rank is not based on total number of items at that rank but instead a single flag which gets set to true once it is automatically detected that all items have reached the maximum rank.
