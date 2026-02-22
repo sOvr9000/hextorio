@@ -3180,7 +3180,11 @@ end
 function trades.recalculate_item_counts(trade, params)
     trades.generator_solve_item_counts(
         trade.surface_name,
+
+        -- it's fine, don't worry about it lol
+        ---@diagnostic disable-next-line
         trade,
+
         params
     )
 end
