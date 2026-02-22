@@ -4332,7 +4332,7 @@ function hex_grid.reevaluate_trades(state)
         max_count_per_item = nil,
     }
 
-    if hex_grid.get_hex_core_mode(state) == "sink" then
+    if hex_grid.get_hex_core_mode(state) == "sink" or hex_grid.get_hex_core_mode(state) == "generator" then
         params.target_efficiency = params.target_efficiency * storage.hex_grid.sink_generator_efficiency
     end
 
