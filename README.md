@@ -359,9 +359,6 @@ These are tentative ideas, which may or may not be added at some point. They are
 
 # Planned Changes
 ### Rebalancing
-- Hexadic Resonators:
-  - Also change stack sizes per hexadic resonator tier so that the SOVR Enrichment Process does not result in tons of chests full of tier 1s.
-  - Also reduce the effectiveness of each resonator by a factor of two: tier 1s require two to be used at once (and use two at a time) to upgrade one item buff, tier 2s only need one to be used but still only upgrade one item buff, etc.
 - Dungeons:
   - Prevent auto-claim (upon successful looting of the dungeon) from occurring until at least one adjacent hex is claimed.
   - This will prevent players from being able to claim remote hexes, completely disconnected from the spawn hex.
