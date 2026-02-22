@@ -111,13 +111,9 @@ end
 function strongboxes.dish_out_rewards_retro(net_coins_diff)
     if net_coins_diff <= 0 then return end
 
-    log("net: " .. net_coins_diff)
-
     local total_defeated = gameplay_statistics.get "total-strongbox-level"
     local coin_diff = total_defeated * strongboxes.get_coin_reward_from_net_coin_production(net_coins_diff)
     local coin_to_insert = coin_tiers.from_base_value(coin_diff)
-
-    log("to insert: " .. coin_diff)
 
     -- TODO: This is repeated code from hex_grid.on_strongbox_killed().  Put this coin insertion logic in one place and reuse it.
     local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
