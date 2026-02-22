@@ -196,11 +196,18 @@ function item_buffs.register_events()
 
         local tier = capsule_name:sub(24)
 
-        item_buffs.add_free_buffs(2 ^ (tier - 1))
+        local to_add = 2 ^ (tier - 1)
+        item_buffs.add_free_buffs(to_add)
+        game.print {"hextorio.new-free-item-buffs", "[font=heading-2][color=green]" .. to_add .. "[.color][.font]", "[font=heading-2][color=green]" .. storage.item_buffs.free_buffs_remaining .. "[.color][.font]"}
     end)
 
     event_system.register("command-reload-item-buff-effects", function(player, params)
         item_buffs.force_reset()
+    end)
+
+    event_system.register("gameplay-statistic-changed", function(stat_type, stat_value, prev, new_value)
+        if stat_type ~= "net-coin-production" then return end
+        storage.item_buffs.max_cost_of_free_upgrade = coin_tiers.from_base_value(new_value * 60)
     end)
 end
 
@@ -726,9 +733,9 @@ function item_buffs.add_free_buffs(amount)
 end
 
 function item_buffs.process_free_buffs()
-    if storage.item_buffs.free_buffs_remaining <= 0 then return end
+    local max_cost = storage.item_buffs.max_cost_of_free_upgrade or coin_tiers.new()
 
-    if not storage.item_buffs.free_buffs_list then
+    if not storage.item_buffs.free_buffs_list and not storage.item_buffs.is_free_buffs_processing then
         storage.item_buffs.free_buffs_list = item_buffs.get_buffable_items()
     end
 
@@ -736,36 +743,38 @@ function item_buffs.process_free_buffs()
         storage.item_buffs.free_buffs_enhanced_items = {}
     end
 
-    local item_name, _ = item_buffs.get_cheapest_item_buff(storage.item_buffs.free_buffs_list)
-    if item_name then
-        storage.item_buffs.free_buffs_enhanced_items[item_name] = (storage.item_buffs.free_buffs_enhanced_items[item_name] or 0) + 1
-        item_buffs.set_item_buff_level(
-            item_name,
-            item_buffs.get_item_buff_level(item_name) + 1
-        )
+    if storage.item_buffs.free_buffs_remaining > 0 then
+        local item_name, _ = item_buffs.get_cheapest_item_buff(storage.item_buffs.free_buffs_list, max_cost)
+        if item_name then
+            storage.item_buffs.free_buffs_enhanced_items[item_name] = (storage.item_buffs.free_buffs_enhanced_items[item_name] or 0) + 1
+            item_buffs.set_item_buff_level(
+                item_name,
+                item_buffs.get_item_buff_level(item_name) + 1
+            )
+
+            storage.item_buffs.free_buffs_remaining = storage.item_buffs.free_buffs_remaining - 1
+            storage.item_buffs.is_free_buffs_processing = true
+        else
+            storage.item_buffs.is_free_buffs_processing = false
+        end
     else
-        lib.log_error("item_buffs.process_free_buffs: No items able to be buffed")
+        storage.item_buffs.is_free_buffs_processing = false
     end
 
-    storage.item_buffs.free_buffs_remaining = storage.item_buffs.free_buffs_remaining - 1
-    if storage.item_buffs.free_buffs_remaining <= 0 then
-        if next(storage.item_buffs.free_buffs_enhanced_items) then
-            local str = format_enhanced_items(storage.item_buffs.free_buffs_enhanced_items)
+    if not storage.item_buffs.is_free_buffs_processing and next(storage.item_buffs.free_buffs_enhanced_items) then
+        local str = format_enhanced_items(storage.item_buffs.free_buffs_enhanced_items)
 
-            ---@diagnostic disable-next-line: cast-local-type
-            str = {
-                "",
-                lib.color_localized_string({"hextorio.item-buffs-enhanced"}, "yellow", "heading-2"),
-                str,
-            }
+        ---@diagnostic disable-next-line: cast-local-type
+        str = {
+            "",
+            lib.color_localized_string({"hextorio.item-buffs-enhanced"}, "yellow", "heading-2"),
+            str,
+        }
 
-            game.print(str)
-        else
-            -- TODO: maybe give the hexadic resonator back to the player
-        end
+        game.print(str)
 
         storage.item_buffs.free_buffs_list = nil
-        storage.item_buffs.free_buffs_enhanced_items = nil
+        storage.item_buffs.free_buffs_enhanced_items = {}
     end
 end
 
