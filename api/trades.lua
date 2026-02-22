@@ -1957,7 +1957,7 @@ function trades.process_trade_filtering_jobs()
                             should_filter = true
                         end
                     end
-                    if not should_filter and filter.show_interplanetary_only and trades.trade_has_untradable_items(trade) then -- TODO: relabel "interplanetary" in the GUIs to "untradable" or something, because that's the intended filter (to find trades created by the silver rank bonus)
+                    if not should_filter and filter.show_interplanetary_only and not trades.trade_has_untradable_items(trade) then -- TODO: relabel "interplanetary" in the GUIs to "untradable" or something, because that's the intended filter (to find trades created by the silver rank bonus)
                         should_filter = true
                     end
                     if not should_filter and filter.exclude_favorited and trades.is_trade_favorited(player, trade) then
