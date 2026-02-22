@@ -10,7 +10,7 @@ for surface_name, surface_prot_data in pairs {
         {name = "stone",               default_value = 0.06},
         {name = "coal",                default_value = 0.12},
         {name = "uranium-ore",         default_value = 0.4},
-        {name = "hexaprism",           default_value = 500000},
+        {name = "hexaprism",           default_value = 5000000},
         {name = "water",               default_value = 0.001},
         {name = "crude-oil",           default_value = 0.01},
     },
