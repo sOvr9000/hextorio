@@ -13,6 +13,7 @@ Date: 20/2/26
         > distances between planets (when production requires interplanetary imports)
         > overall multiplier to each recipe's products based on the planet (like x1.2 on top of all other scaling factors combined)
   Features:
+    - Added quest "Too Useful Hex Cores".
     - Added buttons to the trade overview (to the left of the "close" button) for cycling through past filter combinations, alternatively activated by hotkey.
     - Added settings for configuring how item values propagate throughout recipes, namely raw item values and planet-specific scaling rates.
     - The /export-item-values command now also includes item value sources and recipe data for use with the Hextorio Item Value Explorer (HIVE) web tool.
@@ -38,6 +39,7 @@ Date: 20/2/26
     - Reduced hex claim costs on all planets except Nauvis to reflect the item value rebalancing.
     - Changed quest rewards that give gravity coins to give less due to item value rebalancing.
     - Changed stack sizes of hexadic resonators.
+    - Changed minimum allowed setting for "Total Hexes" for Nauvis from 100 to 1000 (to prevent the quest "Too Useful Hex Cores" from being impossible to complete).
   Balancing:
     - Changed all exponential item buff scaling to linear.
     - Changed default sink/generator trade efficiency from 10% to 25%.

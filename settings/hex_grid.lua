@@ -361,7 +361,7 @@ data:extend({
         name = "hextorio-total-hexes-nauvis",
         setting_type = "runtime-global",
         default_value = 5000,
-        minimum_value = 100,
+        minimum_value = 1000,
         maximum_value = 10000,
         order = "v[world-gen]-p[nauvis]-h[total-hexes]",
     },
