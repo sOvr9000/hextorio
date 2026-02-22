@@ -3174,6 +3174,17 @@ function trades.recalculate_researched_items()
     storage.trades.researched_items = researched_items
 end
 
+---Redetermine item counts in a trade given a new target efficiency
+---@param trade Trade
+---@param params TradeGenerationParameters
+function trades.recalculate_item_counts(trade, params)
+    trades.generator_solve_item_counts(
+        trade.surface_name,
+        trade,
+        params
+    )
+end
+
 ---@param surface_name string|nil
 function trades.fetch_base_trade_productivity_settings(surface_name)
     if surface_name == nil then

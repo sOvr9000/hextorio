@@ -365,6 +365,7 @@ function hex_grid.register_events()
     event_system.register("player-rotated-entity", hex_grid.on_player_rotated_entity)
     event_system.register("hex-island-generated", hex_grid.on_hex_island_generated)
     event_system.register("post-item-values-recalculated", hex_grid.on_item_values_recalculated)
+    event_system.register("post-runtime-setting-changed-base-trade-efficiency", hex_grid.on_post_base_trade_efficiency_changed)
 end
 
 ---Get the state of a hex from a hex core entity
@@ -4314,6 +4315,46 @@ function hex_grid.update_all_hex_claim_costs(surface_name)
     end
 end
 
+---Reevaluate trades in the given hex state, changing their item counts but not item types.
+---@param state HexState
+function hex_grid.reevaluate_trades(state)
+    if not state.trades then return end
+
+    ---@type TradeGenerationParameters
+    local params = {
+        target_efficiency = storage.trades.base_trade_efficiency,
+        allow_nil_return = false,
+
+        -- use defaults for now?
+        target_efficiency_epsilon = nil,
+        item_sampling_filters = nil,
+        max_stacks_per_item = nil,
+        max_count_per_item = nil,
+    }
+
+    if hex_grid.get_hex_core_mode(state) == "sink" then
+        params.target_efficiency = params.target_efficiency * storage.hex_grid.sink_generator_efficiency
+    end
+
+    for _, trade_id in pairs(state.trades) do
+        local trade = trades.get_trade_from_id(trade_id)
+        if trade then
+            trades.recalculate_item_counts(trade, params)
+        end
+    end
+end
+
+---Reevaluate all trades in all hex states, changing their item counts but not item types.
+function hex_grid.reevaluate_all_trades()
+    for _, surface in pairs(game.surfaces) do
+        if storage.SUPPORTED_PLANETS[surface.name] then
+            for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
+                hex_grid.reevaluate_trades(state)
+            end
+        end
+    end
+end
+
 ---@param train LuaTrain
 ---@param train_stop LuaEntity
 function hex_grid.on_train_arrived_at_stop(train, train_stop)
@@ -4462,14 +4503,16 @@ function hex_grid.on_item_values_recalculated()
                     if not state.trades or not next(state.trades) then
                         hex_grid.add_initial_trades(state)
                     else
-                        -- TODO: update trade item counts such that each trade's target efficiency matches the original value (e.g. sinks still have low efficiency, etc.)
-                        -- for _, trade_id in pairs(state.trades) do
-                        -- end
+                        hex_grid.reevaluate_trades(state)
                     end
                 end
             end
         end
     end
+end
+
+function hex_grid.on_post_base_trade_efficiency_changed()
+    hex_grid.reevaluate_all_trades()
 end
 
 
