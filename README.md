@@ -359,15 +359,7 @@ These are tentative ideas, which may or may not be added at some point. They are
 
 # Planned Changes
 ### Rebalancing
-- Strongboxes:
-  - Change from constant coin rewards per strongbox level to flat bonuses to passive coin income, up to a maximum level such as 10 (after which the strongbox is destroyed permanently).
-  - Rebalance HP to more accurately reflect what's possible throughout the game.
-  - This will keep turret spam from having to be operated forever while still getting to have fun coming up with ways to turret spam.
 - Hexadic Resonators:
-  - Prohibit use if the cheapest item buff is more expensive than 10 hours of your global net coin production (as seen in Hex Rank statistics).
-  - This prevents runaway costs reaching ridiculous levels.
-  - Problem can be mitigated by defining buffs for more item types.
-  - Also, maybe reduce the number of them given by dungeons since it can easily get out of hand (don't want too many to become useless given the balancing change above).
   - Also change stack sizes per hexadic resonator tier so that the SOVR Enrichment Process does not result in tons of chests full of tier 1s.
   - Also reduce the effectiveness of each resonator by a factor of two: tier 1s require two to be used at once (and use two at a time) to upgrade one item buff, tier 2s only need one to be used but still only upgrade one item buff, etc.
 - Dungeons:
