@@ -690,6 +690,7 @@ function trade_overview_gui.reconcile_gui_with_filter_settings(player)
     if not filter_frame then return end
 
     local filter = trade_overview_gui.get_player_trade_overview_filter(player)
+    trade_overview_gui.post_process_filter_data(filter)
 
     local left_frame = filter_frame["left"]
     local right_frame = filter_frame["right"]
