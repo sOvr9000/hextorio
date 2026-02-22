@@ -4241,11 +4241,11 @@ end
 ---Get the mutiplier of the strongbox loot value and claim costs on a given surface.
 ---@param surface_name string
 function hex_grid.get_planet_coin_scaling(surface_name)
-    --TODO: optimize this function (cache results, they are constant)
+    -- TODO: cache and reuse planet depths that are calculated from api/item_tradability_solver.lua
     if lib.is_t2_planet(surface_name) then
-        return storage.coin_tiers.TIER_SCALING
+        return 100
     elseif lib.is_t3_planet(surface_name) then
-        return storage.coin_tiers.TIER_SCALING ^ 1.5
+        return 100000
     end
     return 1
 end
@@ -4393,7 +4393,6 @@ function hex_grid.on_strongbox_killed(sb_entity)
 
     if cur_tier < storage.strongboxes.max_tier then
         -- Respawn chest :D
-        -- local planet_loot_scale = hex_grid.get_planet_coin_scaling(sb_entity.surface.name)
         local new_sb_entity = strongboxes.spawn(sb_entity.surface, sb_entity.position, next_tier)
         if new_sb_entity and new_sb_entity.valid then
             hex_state_manager.map_entity_to_hex_state(new_sb_entity.unit_number, new_sb_entity.surface.name, state.position)

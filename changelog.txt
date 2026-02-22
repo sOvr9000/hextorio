@@ -33,6 +33,7 @@ Date: 20/2/26
     - Revised the tooltips for the item buffs "All Buffs Cost Reduced", "Unresearched Penalty Reduced", and "Strongbox Loot".
     - Reduced the total number of strongbox levels from 36 to 28.
     - Strongboxes at the maximum level no longer respawn when destroyed.
+    - Reduced hex claim costs on all planets except Nauvis to reflect the item value rebalancing.
   Balancing:
     - Changed all exponential item buff scaling to linear.
     - Changed default sink/generator trade efficiency from 10% to 25%.
