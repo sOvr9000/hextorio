@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.0
-Date: 20/2/26
+Date: 22/2/26
   Major Features:
     - Item values are now dynamically calculated (including modded items) on game start or when the command /solve-item-values is run.
         All modded items will follow the same value scaling rules as vanilla items based on:
@@ -40,6 +40,7 @@ Date: 20/2/26
     - Changed quest rewards that give gravity coins to give less due to item value rebalancing.
     - Changed stack sizes of hexadic resonators.
     - Changed minimum allowed setting for "Total Hexes" for Nauvis from 100 to 1000 (to prevent the quest "Too Useful Hex Cores" from being impossible to complete).
+    - Added more fluid hexes to the "Standard" world generation mode.
   Balancing:
     - Changed all exponential item buff scaling to linear.
     - Changed default sink/generator trade efficiency from 10% to 25%.
