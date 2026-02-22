@@ -127,6 +127,12 @@ function migrations.on_mod_updated(old_version, new_version)
     -- Handle coin updates for ALL versions. These are central to almost everything in the mod, so it gets to be updated on each release without instruction.
     storage.coin_tiers.COIN_NAMES = data_coin_tiers.COIN_NAMES
     storage.coin_tiers.TIER_SCALING = data_coin_tiers.TIER_SCALING
+
+    -- For migrating to 1.7.0
+    if not storage.SUPPORTED_PLANETS then
+        storage.SUPPORTED_PLANETS = {["nauvis"] = true, ["vulcanus"] = true, ["fulgora"] = true, ["gleba"] = true, ["aquilo"] = true}
+    end
+
     coin_tiers.init()
 
     -- And trade data as well
