@@ -26,6 +26,9 @@ local tile_names_for_hexes = {
 local world_gen_types = {
     "standard",
     "spiral",
+    "double-spiral",
+    "triple-spiral",
+    "double-triple-spiral",
     "triangular",
     "maze",
     "ribbon",

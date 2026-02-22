@@ -25,6 +25,9 @@ for _, generator_name in pairs {
     "standard",
     "maze",
     "spiral",
+    "double-spiral",
+    "triple-spiral",
+    "double-triple-spiral",
     "triangular",
     "ribbon",
     "ribbon-maze",
@@ -109,6 +112,18 @@ function hex_island.process_surface_creation(surface)
             algorithm = maze_algorithm,
         }
     elseif generator_name == "spiral" then
+        params = {
+            total_hexes = total_hexes,
+        }
+    elseif generator_name == "double-spiral" then
+        params = {
+            total_hexes = total_hexes,
+        }
+    elseif generator_name == "triple-spiral" then
+        params = {
+            total_hexes = total_hexes,
+        }
+    elseif generator_name == "double-triple-spiral" then
         params = {
             total_hexes = total_hexes,
         }

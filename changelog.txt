@@ -18,6 +18,7 @@ Date: 20/2/26
     - The /export-item-values command now also includes item value sources and recipe data for use with the Hextorio Item Value Explorer (HIVE) web tool.
     - Added the /solve-item-values command.
     - Added setting for configuring sink/generator trade efficiency.
+    - Added world generation modes: "Double Spiral", "Triple Spiral", and "Double-Triple Spiral".
   Minor Features:
     - Added the has_untradable_items field to trades in the trades JSON export, which indicates whether the trade contains any items that are initially untradable on its planet (only set to true for trades created by the silver item rank bonus).
     - Added item buffs for: burner mining drill, hazard concrete, spoilage, nutrients.

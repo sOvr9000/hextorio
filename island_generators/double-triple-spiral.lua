@@ -1,5 +1,5 @@
 
--- Generates a spiral (one spiral arm).
+-- Generates a hexaspiral (six spiral arms).
 
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
@@ -24,14 +24,17 @@ return function(params)
         orientiation = -2 -- clockwise
     end
 
-    local dir = math.random(1, 6)
-    local done = false
-    for i = 1, 999 do
-        if done then break end
-        for j = 1, 3 do
+    local start_dir = math.random(1, 6)
+    local dir = start_dir
+
+    for j = 1, 6 do
+        local done = false
+        for i = 1, 999 do
+            if done then break end
             dir = 1 + (dir + orientiation) % 6
             local offset = axial.get_adjacency_offset(dir)
-            for n = 1, i do
+            local u = math.max(2, i + i - 2)
+            for n = 1, u do
                 pos = axial.add(pos, offset)
                 if axial.distance(pos, {q=0, r=0}) > radius then
                     done = true
@@ -41,6 +44,8 @@ return function(params)
             end
             if done then break end
         end
+        dir = 1 + (start_dir + j - 1) % 6
+        pos = {q = 0, r = 0}
     end
 
     return island
