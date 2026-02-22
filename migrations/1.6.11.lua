@@ -22,6 +22,7 @@ return function()
 
     storage.item_values = data_item_values
     storage.strongboxes.max_tier = data_strongboxes.max_tier
+    storage.hex_grid.sink_generator_efficiency = lib.runtime_setting_value_as_number "sink-generator-efficiency"
 
     game.print("Migrating Hextorio version [color=blue]1.6.11[.color] to [color=blue]1.7.0[.color].  [color=pink]Significant changes have been made.[.color]")
     item_tradability_solver.init()
