@@ -568,8 +568,8 @@ function item_tradability_solver.solve()
         local planet_tradable = {}
         local count = 0
         for item_name in pairs(available) do
-            local has_proto = prototypes.item[item_name] or prototypes.fluid[item_name]
-            if has_proto and item_values.has_item_value(planet, item_name) then
+            local item_prot = prototypes.item[item_name]
+            if item_prot and not item_prot.hidden and item_values.has_item_value(planet, item_name) then
                 planet_tradable[item_name] = true
                 count = count + 1
             end
