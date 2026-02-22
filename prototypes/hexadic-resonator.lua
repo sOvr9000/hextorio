@@ -14,7 +14,7 @@ for i = 1, 6 do
     hexadic_resonator.spoil_result = nil
     hexadic_resonator.spoil_ticks = nil
     hexadic_resonator.weight = 10000
-    hexadic_resonator.stack_size = 10
+    hexadic_resonator.stack_size = 2 ^ (8 - i)
     hexadic_resonator.send_to_orbit_mode = "not-sendable"
     hexadic_resonator.order = "x[hexadic-resonator]-t[tier-" .. i .. "]"
 

@@ -35,6 +35,7 @@ Date: 20/2/26
     - Reduced the total number of strongbox levels from 36 to 28.
     - Strongboxes at the maximum level no longer respawn when destroyed.
     - Reduced hex claim costs on all planets except Nauvis to reflect the item value rebalancing.
+    - Changed stack sizes of hexadic resonators.
   Balancing:
     - Changed all exponential item buff scaling to linear.
     - Changed default sink/generator trade efficiency from 10% to 25%.
