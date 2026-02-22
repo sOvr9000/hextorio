@@ -206,9 +206,6 @@ There's also an extra quality tier called "Hextreme", following legendary.
 - *Fractal* - Could either be a Sierpinski triangle or some kind of Koch Snowflake type of thing.
 - *Circular* - The hexes visually approximate a circle, like the current *Donut* world generation mode but with the center filled-in.
 - *Organic* - Something produced via cellular automaton iteration, or perhaps Perlin noise.
-- *Double Spiral* - Same as the current *Spiral* world generation mode, but two spiral arms originating from the spawn hex instead of one.
-- *Triple Spiral* - Same as *Double Spiral*, but three arms instead of two.
-- *Double-Triple Spiral* - Technically a hexaspiral, but this sounds way cooler.
 
 ### Add more item buffs
 Many items are missing item buffs, but it is intended for *all* items to give buffs once unlocked.
