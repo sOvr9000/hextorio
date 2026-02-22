@@ -41,6 +41,7 @@ Date: 20/2/26
     - Reduced default setting "Total Hexes" for Nauvis from 7000 to 5000.
     - Reduced default setting "Total Hexes" for Gleba from 4000 to 1800.
     - Reduced default setting "Total Hexes" for Aquilo from 1800 to 600.
+    - Reduced the frequency of hexadic resonators showing up in dungeon chests.
     - Free item buff enhancements/unlocks from hexadic resonators now only work when an hour of your net coin production (60x what is seen in the hex rank GUI) is greater than the cost of the buff that would be enhanced/unlocked.
         If the cheapest item buff exceeds this limit, free item buffs are queued (still consuming the hexadic resonator) until net coin production is high enough to support it.
     - Strongbox coins are now based on the maximum achieved net coin production.

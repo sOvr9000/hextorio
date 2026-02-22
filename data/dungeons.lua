@@ -1,10 +1,10 @@
 
 local BASE_HEX_RES_CHANCE = {
-    NAUVIS = 0.5,
-    VULCANUS = 0.7,
-    FULGORA = 0.8,
-    GLEBA = 0.9,
-    AQUILO = 1.5,
+    NAUVIS = 0.2,
+    VULCANUS = 0.3,
+    FULGORA = 0.4,
+    GLEBA = 0.5,
+    AQUILO = 0.75,
 }
 
 return {
