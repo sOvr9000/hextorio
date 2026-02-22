@@ -463,7 +463,7 @@ return {
                     value = {
                         {name = "big-mining-drill", count = 1, quality = "rare"},
                         {name = "efficiency-module-2", count = 1, quality = "rare"},
-                        {name = "gravity-coin", count = 2},
+                        {name = "hex-coin", count = 20000},
                         {name = "tungsten-ore", count = 50},
                     },
                 },
@@ -577,7 +577,7 @@ return {
                     value = {
                         {name = "recycler", count = 1, quality = "rare"},
                         {name = "efficiency-module-2", count = 1, quality = "rare"},
-                        {name = "gravity-coin", count = 2},
+                        {name = "hex-coin", count = 20000},
                     },
                 },
             },
@@ -663,7 +663,7 @@ return {
                     value = {
                         {name = "biochamber", count = 1, quality = "epic"},
                         {name = "efficiency-module-2", count = 1, quality = "epic"},
-                        {name = "gravity-coin", count = 2},
+                        {name = "hex-coin", count = 20000},
                     },
                 },
             },
