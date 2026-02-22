@@ -31,7 +31,7 @@ function hex_rank.init()
         total_quests = lib.table_length(storage.quests.quest_defs)
     else
         total_quests = 50 -- heuristic if hex_rank.init() is somehow ran before control on_init is
-        lib.log_error("hex_rank.init: Quest data not yet set")
+        error("hex_rank.init: Quest data not yet set")
     end
 
     local total_techs = lib.table_length(game.forces.player.technologies)
@@ -48,7 +48,7 @@ function hex_rank.init()
         end
     else
         total_tradable_items = 200 -- heuristic if hex_rank.init() is somehow ran before control on_init is
-        lib.log_error("hex_rank.init: Item tradability info not yet populated")
+        error("hex_rank.init: Item tradability info not yet populated")
     end
 
     local NUM_PLANETS = 5 -- For now this is hardcoded, until somehow modded planet support gets added
@@ -243,6 +243,11 @@ end
 ---@param prev_value int
 ---@param new_value int
 function hex_rank.on_gameplay_statistic_changed(stat_type, prev_value, new_value)
+    if not storage.quests or not storage.quests.quest_defs or not storage.item_values or not storage.item_values.is_tradable then
+        lib.log_error("hex_rank.on_gameplay_statistic_changed: Hex rank not yet ready to initialize; awaiting item tradability solver or quest initialization")
+        return
+    end
+
     local factors = (storage.hex_rank or {}).factor_metadata
     if not factors then
         hex_rank.init()
