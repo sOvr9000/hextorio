@@ -29,20 +29,26 @@ return function(params)
     -- Guarantee some nonland tiles
     local blacklist = hex_sets.new()
 
-    for i = 1, 5 do
+    for i = 1, radius do
         local ring = axial.ring({q=0, r=0}, i)
+
+        if i > 1 then
+            -- omit main axes
+            for j = #ring, 1, -1 do
+                local pos = ring[j]
+                if pos.q == -pos.r or pos.q ~= 0 and pos.r == 0 or pos.r ~= 0 and pos.q == 0 then
+                    table.remove(ring, j)
+                end
+            end
+        end
+
         local idx = math.random(1, #ring)
         local pos = ring[idx]
-        if i > 1 and (pos.q == -pos.r or pos.q ~= 0 and pos.r == 0 or pos.r ~= 0 and pos.q == 0) then
-            -- The randomly selected hex on the ring is on a line going out to a vertex of the giant hex island
-            if math.random() < 0.5 then
-                idx = idx + 1
-            else
-                idx = idx - 1
-            end
-            pos = ring[1 + (idx - 1) % #ring]
+        for j = math.ceil(i * 0.5), 1, -1 do
+            local n = 1 + (idx + j - 1) % #ring
+            pos = ring[n]
+            hex_sets.add(blacklist, pos)
         end
-        hex_sets.add(blacklist, pos)
     end
 
     -- Misc parameters
