@@ -155,9 +155,9 @@ local public_commands = sets.new {
 local function add_cheat_coins(inv)
     local values = coin_tiers.new_coin_values()
     for i = 1, #values - 1 do
-        values[i] = 1000
+        values[i] = storage.coin_tiers.TIER_SCALING / 10
     end
-    values[#values] = 100000
+    values[#values] = storage.coin_tiers.TIER_SCALING
 
     inventories.add_coin_to_inventory(inv, coin_tiers.new(values))
 end

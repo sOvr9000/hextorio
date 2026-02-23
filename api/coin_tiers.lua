@@ -508,7 +508,7 @@ end
 ---@param tier_scaling number|nil
 ---@return number
 function coin_tiers.get_scale_of_tier(tier, tier_scaling)
-    return (tier_scaling or 100000) ^ (tier - 1)
+    return (tier_scaling or storage.coin_tiers.TIER_SCALING) ^ (tier - 1)
 end
 
 ---Get the name of the coin at the given tier.
