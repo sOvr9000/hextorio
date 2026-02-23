@@ -491,7 +491,7 @@ function coin_tiers.get_tier_for_display(coin)
     coin = coin_tiers.normalized(coin)
     local passed = false
     for i = coin.max_coin_tier, 1, -1 do
-        if coin.values[i] > 1000 then
+        if coin.values[i] > 10 then
             return i
         elseif coin.values[i] > 0 then
             if passed then

@@ -5,6 +5,7 @@ Date: 21/2/26
     - Revised the descriptions of some coins.
     - Each coin tier is now 1000x the value of the previous tier instead of 100,000x.
     - Increased the rocket capacity of coins from 1 stack to 10 stacks.
+    - Coins in trades are now shown as higher coin tiers at smaller thresholds.
   Bugfixes:
     - Fixed that dragging sliders in the trade overview GUI would store tons of duplicate filter settings in the search history, preventing cycling back to previous filters.
 ---------------------------------------------------------------------------------------------------
