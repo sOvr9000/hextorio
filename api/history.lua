@@ -1,6 +1,8 @@
 
 -- Currently only used for storing trade overview filters and revisiting past ones
 
+local lib = require "api.lib"
+
 local history = {}
 
 
@@ -35,15 +37,32 @@ end
 ---@generic T
 ---@param history_obj {data: T[], index: int, capacity: int}
 ---@param data_obj T
-function history.add(history_obj, data_obj)
+---@param allow_repeated boolean If false and the currently visited object is component-wise equivalent to `data_obj`, it is not added.
+function history.add(history_obj, data_obj, allow_repeated)
     local d = history_obj.data
-    local index = history_obj.index + 2
+    local index = history_obj.index
+
+    index = index + 2
     for i = #d, index, -1 do
         d[i] = nil
     end
 
-    d[index - 1] = data_obj
-    history_obj.index = index - 1
+    index = index - 2
+    if not allow_repeated and #d > 0 then
+        local cur = d[index]
+        if cur ~= nil then
+            log(serpent.line(cur))
+            log(serpent.line(data_obj))
+            if lib.tables_equal(cur, data_obj) then
+                log("skip")
+                return
+            end
+        end
+    end
+
+    index = index + 1
+    d[index] = data_obj
+    history_obj.index = index
 
     if #d > history_obj.capacity then
         table.remove(history_obj, 1)

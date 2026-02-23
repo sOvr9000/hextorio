@@ -672,11 +672,13 @@ end
 function trade_overview_gui.add_filter_history(player, filters)
     local filter_history = trade_overview_gui.get_filter_history(player)
 
+    trade_overview_gui.post_process_filter_data(filters)
+
     -- TODO: store only non-default values from filter settings to minimize data which can bloat save times (don't know if it's enough data to care about, though, the hex grid data is far more abundant)
     -- e.g. don't store "show interplanetary = false" but store "show interplanetary = true", and infer default values on fetch
     local new_data = table.deepcopy(filters)
 
-    history.add(filter_history, new_data)
+    history.add(filter_history, new_data, false)
 end
 
 ---Set GUI states in a player's trade overview to exactly match their current stored trade overview filter settings.
