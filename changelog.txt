@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.2
 Date: 21/2/26
+  Changes:
+    - Revised the descriptions of some coins.
   Bugfixes:
     - Fixed that dragging sliders in the trade overview GUI would store tons of duplicate filter settings in the search history, preventing cycling back to previous filters.
 ---------------------------------------------------------------------------------------------------
