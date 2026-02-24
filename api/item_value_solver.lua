@@ -866,6 +866,7 @@ local function phase_finalize(s)
 
     -- Write to storage
     local new_item_values = {}
+    local any_zero = false
     for planet, _ in pairs(all_planets) do
         local planet_values = {}
         local was_zero = {}
@@ -883,6 +884,7 @@ local function phase_finalize(s)
 
         if next(was_zero) then
             lib.log_error("Solver: [" .. planet .. "] Item values zero or too small: " .. serpent.line(was_zero))
+            any_zero = true
         end
     end
 
@@ -1010,6 +1012,10 @@ local function phase_finalize(s)
     game.print {"hextorio.solver-complete"}
     event_system.trigger "item-values-recalculated"
     event_system.trigger "post-item-values-recalculated"
+
+    if any_zero then
+        game.print(lib.color_localized_string({"hextorio.items-have-zero-value"}, "orange", "heading-2"))
+    end
 end
 
 
