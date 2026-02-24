@@ -121,6 +121,7 @@ local DISTANCE_FACTOR = 0.0002
 local STACK_SIZE_FACTOR = 4
 
 local INITIAL_VALUE = math.huge
+local MINIMUM_VALUE = 1e-5
 local MAX_TICKS = 10000
 local COLLECT_BATCH = 100
 local SOLVE_BATCH = 200
@@ -867,13 +868,22 @@ local function phase_finalize(s)
     local new_item_values = {}
     for planet, _ in pairs(all_planets) do
         local planet_values = {}
+        local was_zero = {}
         for item_name, val in pairs(values[planet]) do
-            if val > 0 and val < INITIAL_VALUE then
+            if val >= 0 and val < INITIAL_VALUE then
+                if val <= MINIMUM_VALUE then
+                    val = MINIMUM_VALUE
+                    was_zero[item_name] = item_name
+                end
                 planet_values[item_name] = val
             end
         end
         new_item_values[planet] = planet_values
         item_values.init_coin_values(planet_values)
+
+        if next(was_zero) then
+            lib.log_error("Solver: [" .. planet .. "] Item values zero or too small: " .. serpent.line(was_zero))
+        end
     end
 
     storage.item_values.interplanetary = interplanetary

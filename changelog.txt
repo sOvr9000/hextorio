@@ -8,6 +8,9 @@ Date: 21/2/26
     - Coins in trades are now shown as higher coin tiers at smaller thresholds.
   Bugfixes:
     - Fixed that dragging sliders in the trade overview GUI would store tons of duplicate filter settings in the search history, preventing cycling back to previous filters.
+    - Fixed crashes with Voidcraft and some other mods.
+  Modding:
+    - Marked Voidcraft as compatible. Note that the item value solver cannot find balanced values for items when Voidcraft's recipes are in the game.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.1
 Date: 22/2/26
