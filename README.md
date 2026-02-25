@@ -256,6 +256,15 @@ This will help to illustrate what these modes are doing before an irreversible c
 - Add a button which buys as many of your character's unfulfilled personal logistics requests as possible.
   - This can be a "smart" feature where it first tries to buy as many unique items as possible as opposed to as many of a single item type as possible, helping significantly with e.g. large blueprint builds.
 
+### Ability to disable tradability
+Some mods add numerous items which would serve next to zero purpose in trading, such as decorative tiles.\
+A way to quickly mark specific items as "untradable" (not showing up in trades anywhere) would be a nice QoL.\
+Using `choose-elem` buttons in a simple frame that's opened by a command like `/disable-tradability` would be relatively simple to implement and easy to use by the player.
+
+### Catalog search and sort feature
+As modded items populate the catalog, it becomes inreasingly annoying to have to look for a certain item.\
+A text field search and a dropdown for sorting method would be a nice QoL.
+
 ### Redesign GUIs
 **Massive** amount of work to be done here. Some common things currently causing confusion:
 - Catalog search button. It is commonly requested, and it exists already, but some people don't know it does. Current idea for a simple solution is to switch the sprite to a magnifying glass and still have it make you select an item, but the icon must always remain a magnifying glass for it to make sense.
