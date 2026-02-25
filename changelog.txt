@@ -9,6 +9,9 @@ Date: 21/2/26
   Bugfixes:
     - Fixed that dragging sliders in the trade overview GUI would store tons of duplicate filter settings in the search history, preventing cycling back to previous filters.
     - Fixed crashes with Voidcraft and some other mods.
+  Balancing:
+    - Increased the default setting value of "Coin Trade Chance" from 30% to 50%.
+    - Increased the default setting value of "Sell Trade Chance" from 40% to 50%.
   Modding:
     - Marked Voidcraft as compatible. Note that the item value solver cannot find balanced values for items when Voidcraft's recipes are in the game.
 ---------------------------------------------------------------------------------------------------
