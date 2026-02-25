@@ -735,7 +735,7 @@ end
 function item_buffs.process_free_buffs()
     local max_cost = storage.item_buffs.max_cost_of_free_upgrade or coin_tiers.new()
 
-    if not storage.item_buffs.free_buffs_list and not storage.item_buffs.is_free_buffs_processing then
+    if not storage.item_buffs.free_buffs_list and not storage.item_buffs.is_free_buffs_processing and storage.item_buffs.free_buffs_remaining > 0 then
         storage.item_buffs.free_buffs_list = item_buffs.get_buffable_items()
     end
 
@@ -744,6 +744,12 @@ function item_buffs.process_free_buffs()
     end
 
     if storage.item_buffs.free_buffs_remaining > 0 then
+        if not next(storage.item_buffs.free_buffs_list) then
+            -- Mainly fixes broken item buff processing states on 1.7.0 / 1.7.1.
+            -- But can help fix broken states if it ever happens again somehow.
+            storage.item_buffs.free_buffs_list = item_buffs.get_buffable_items()
+        end
+
         local item_name, _ = item_buffs.get_cheapest_item_buff(storage.item_buffs.free_buffs_list, max_cost)
         if item_name then
             storage.item_buffs.free_buffs_enhanced_items[item_name] = (storage.item_buffs.free_buffs_enhanced_items[item_name] or 0) + 1
