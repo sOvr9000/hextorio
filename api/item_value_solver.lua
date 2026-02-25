@@ -121,7 +121,7 @@ local DISTANCE_FACTOR = 0.0002
 local STACK_SIZE_FACTOR = 4
 
 local INITIAL_VALUE = math.huge
-local MINIMUM_VALUE = 1e-5
+local DEFAULT_THRESHOLD = 1e-5 -- Values smaller than this are considered to be effectively zero, and they default to a value of 1 for the sake of preserving playability.
 local MAX_TICKS = 10000
 local COLLECT_BATCH = 100
 local SOLVE_BATCH = 200
@@ -872,8 +872,8 @@ local function phase_finalize(s)
         local was_zero = {}
         for item_name, val in pairs(values[planet]) do
             if val >= 0 and val < INITIAL_VALUE then
-                if val <= MINIMUM_VALUE then
-                    val = MINIMUM_VALUE
+                if val <= DEFAULT_THRESHOLD then
+                    val = 1
                     was_zero[item_name] = item_name
                 end
                 planet_values[item_name] = val
