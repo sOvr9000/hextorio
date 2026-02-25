@@ -51,10 +51,7 @@ function history.add(history_obj, data_obj, allow_repeated)
     if not allow_repeated and #d > 0 then
         local cur = d[index]
         if cur ~= nil then
-            log(serpent.line(cur))
-            log(serpent.line(data_obj))
             if lib.tables_equal(cur, data_obj) then
-                log("skip")
                 return
             end
         end
