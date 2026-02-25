@@ -473,7 +473,7 @@ for _, surface_name in pairs {"nauvis", "vulcanus", "fulgora", "gleba", "aquilo"
     hexport.heating_energy = "0kJ"
     hexport.construction_radius = math.floor(hex_size * 1.5)
     hexport.logistics_radius = hex_size
-    hexport.radar_range = math.floor(hex_size / 32 + 0.5) + 1
+    hexport.radar_range = math.floor(hex_size / 32 + 0.5) + 2
 
     local hexlight = table.deepcopy(data.raw["lamp"]["small-lamp"])
     hexlight.name = "hexlight-" .. surface_name

@@ -12,6 +12,7 @@ Date: 21/2/26
   Balancing:
     - Increased the default setting value of "Coin Trade Chance" from 30% to 50%.
     - Increased the default setting value of "Sell Trade Chance" from 40% to 50%.
+    - Increased the radar coverage distance from hexports by one chunk.
   Modding:
     - Marked Voidcraft as compatible. Note that the item value solver cannot find balanced values for items when Voidcraft's recipes are in the game.
 ---------------------------------------------------------------------------------------------------
