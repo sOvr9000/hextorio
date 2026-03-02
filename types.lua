@@ -10,6 +10,9 @@
 ---| "gui-slider-changed"
 ---| "gui-back"
 ---| "gui-forward"
+---| "gui-search-button-clicked"
+---| "gui-search-text-changed"
+---| "gui-search-text-confirmed"
 
 ---@alias HexPosMap {[int]: {[int]: any}}
 ---@alias IndexMap {[int]: {[int]: int}}

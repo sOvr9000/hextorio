@@ -37,6 +37,12 @@ data:extend({
     },
     {
         type = "custom-input",
+        name = "hextorio-control-gui-find",
+        key_sequence = "",
+        linked_game_control = "focus-search",
+    },
+    {
+        type = "custom-input",
         name = "hextorio-fast-entity-split",
         key_sequence = "CONTROL + mouse-button-2",
         linked_game_control = "fast-entity-split",

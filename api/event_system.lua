@@ -172,6 +172,10 @@ function event_system.bind_gui_events()
     -- These only take effect on player.opened (root frames, no nested frames)
     event_system.register("control-gui-back", on_control_gui_back)
     event_system.register("control-gui-forward", on_control_gui_forward)
+
+    event_system.register("control-gui-find", function(event)
+        
+    end)
 end
 
 

@@ -259,10 +259,11 @@ end
 ---Create a flow with a title label, a draggable bar, and a close button.
 ---@param frame LuaGuiElement
 ---@param caption LocalisedString
----@param include_back_and_forward boolean|nil Whether to include two buttons with left and right arrows like those in the Factoriopedia.
+---@param include_back_and_forward boolean|nil Whether to include two buttons with left and right arrows like those in the Factoriopedia. Defaults to false.
+---@param include_search boolean|nil Whether to include a search button that expands to a text field. Defaults to false.
 ---@return LuaGuiElement flow The flow containing the title label
-function core_gui.add_titlebar(frame, caption, include_back_and_forward)
-    local titlebar = frame.add{type = "flow"}
+function core_gui.add_titlebar(frame, caption, include_back_and_forward, include_search)
+    local titlebar = frame.add{type = "flow", name = "titlebar"}
     titlebar.drag_target = frame
 
     titlebar.add{
@@ -282,6 +283,35 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward)
 
     filler.style.height = 24
     filler.style.horizontally_stretchable = true
+
+    if include_search then
+        local search_field = titlebar.add {
+            type = "textfield",
+            name = "search-field",
+            visible = false,
+            tags = {
+                handlers = {
+                    ["gui-text-changed"] = "gui-search-text-changed",
+                    ["gui-text-confirmed"] = "gui-search-text-confirmed",
+                },
+                linked_handler_parent_idx = 2, -- This makes the event system trigger "gui-search-text-changed" and "gui-search-text-confirmed" on the second parent up from this element.
+            },
+        }
+        search_field.style.right_padding = 5
+
+        local search = titlebar.add {
+            type = "sprite-button",
+            name = "search",
+            sprite = "utility/search",
+            style = "frame_action_button",
+            tooltip = {"gui.search"},
+            tags = {
+                handlers = {["gui-clicked"] = "gui-search-button-clicked"},
+                linked_handler_parent_idx = 2, -- This makes the event system trigger "gui-search-button-clicked" on the second parent up from this element.
+            },
+        }
+        search.style.right_padding = 5
+    end
 
     if include_back_and_forward then
         local flow = titlebar.add {
@@ -337,6 +367,12 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward)
         -- These get triggered on back/forward button click because of linked handlers
         tags.handlers["gui-back"] = frame.name
         tags.handlers["gui-forward"] = frame.name
+    end
+
+    if include_search then
+        tags.handlers["gui-search-button-clicked"] = frame.name
+        tags.handlers["gui-search-text-changed"] = frame.name
+        tags.handlers["gui-search-text-confirmed"] = frame.name
     end
 
     frame.tags = tags
@@ -540,6 +576,36 @@ function core_gui.get_buff_description_tooltip(buff_type)
         return {"item-buff-description." .. buff_type, (math.floor(0.5 + 100 * storage.item_buffs.strongbox_loot) * 0.01)}
     else
         return {"item-buff-description." .. buff_type}
+    end
+end
+
+---@param player LuaPlayer
+---@param frame LuaGuiElement
+function core_gui.handle_search_button_click(player, frame)
+    local titlebar = frame["titlebar"]
+    if not titlebar then
+        lib.log_error("core_gui.handle_search_button_click: No titlebar found")
+        return
+    end
+
+    local search_button = titlebar["search"]
+    if not search_button then
+        lib.log_error("core_gui.handle_search_button_click: No search button found")
+        return
+    end
+
+    local search_field = titlebar["search-field"]
+    if not search_field then
+        lib.log_error("core_gui.handle_search_button_click: No search field found")
+        return
+    end
+
+    if search_button.toggled or search_field.visible then
+        search_button.toggled = false
+        search_field.visible = false
+    else
+        search_button.toggled = true
+        search_field.visible = true
     end
 end
 

@@ -242,4 +242,12 @@ script.on_event("hextorio-control-gui-forward", function(event)
     event_system.trigger("control-gui-forward", player)
 end)
 
+script.on_event("hextorio-control-gui-find", function(event)
+    ---@cast event {player_index: int}
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("control-gui-find", player)
+end)
+
 

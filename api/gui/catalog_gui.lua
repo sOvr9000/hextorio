@@ -45,6 +45,10 @@ function catalog_gui.register_events()
     event_system.register_gui("gui-elem-changed", "quantum-bazaar-changed", catalog_gui.on_quantum_bazaar_changed)
     event_system.register_gui("gui-slider-changed", "quantum-bazaar-slider-changed", catalog_gui.on_quantum_bazaar_slider_changed)
 
+    -- Titlebar events
+    event_system.register_gui("gui-search-button-clicked", "catalog", gui.handle_search_button_click)
+    event_system.register_gui("gui-search-text-changed", "catalog", catalog_gui.on_search_text_changed)
+
     event_system.register("post-rank-up-command", function(player, params)
         local selection = catalog_gui.get_catalog_selection(player)
         catalog_gui.set_catalog_selection(player, "nauvis", params[1], selection.bazaar_quality)
@@ -157,7 +161,7 @@ function catalog_gui.init_catalog(player)
     frame.style.height = 800
     frame.visible = false
 
-    gui.add_titlebar(frame, {"hextorio-gui.catalog"})
+    gui.add_titlebar(frame, {"hextorio-gui.catalog"}, false, true)
 
     local flow = frame.add {type = "flow", name = "flow", direction = "horizontal"}
 
@@ -262,7 +266,6 @@ function catalog_gui.update_catalog(player)
 
     local scroll_pane = frame["flow"]["catalog-frame"]["scroll-pane"]
 
-    log("update catalog entry sprites")
     for _, tab in pairs(scroll_pane.children) do
         -- lib.log(tab.name)
         if tab.type == "table" then
@@ -271,12 +274,9 @@ function catalog_gui.update_catalog(player)
             local achieved_ranks = {0, 0, 0, 0}
 
             local surface_name = tab.tags.surface_name or "nauvis"
-            -- log("surface " .. surface_name)
             for _, rank_flow in pairs(tab.children) do
                 local item_name = rank_flow.tags.item_name or "stone"
-                -- log("item " .. item_name)
                 if trades.is_item_discovered(item_name) then
-                    -- log("DISCOVERED")
                     local rank = item_ranks.get_item_rank(item_name)
                     discovered_items = discovered_items + 1
                     for i = 1, rank - 1 do
@@ -288,7 +288,6 @@ function catalog_gui.update_catalog(player)
                     rank_flow["rank-stars"].visible = true
                     gui.give_item_tooltip(player, surface_name, rank_flow["catalog-item"])
                 else
-                    -- log("NOT DISCOVERED")
                     rank_flow["catalog-item"].sprite = "utility/questionmark"
                     rank_flow["catalog-item"].ignored_by_interaction = true
                     rank_flow["rank-stars"].visible = false
@@ -1299,6 +1298,12 @@ function catalog_gui.on_open_trade_overview_button_click(player, elem)
     local selection = catalog_gui.get_catalog_selection(player)
     local is_input = catalog_gui.get_expected_trade_overview_filter_side(selection.item_name)
     event_system.trigger("catalog-trade-overview-clicked", player, selection.item_name, is_input)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function catalog_gui.on_search_text_changed(player, elem)
+    log("search changed")
 end
 
 

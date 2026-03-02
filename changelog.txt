@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.3
 Date: 25/2/26
+  Features:
+    - (TODO) Added a text search to the catalog GUI. Press your search hotkey to activate, or press the button directly.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.2
 Date: 26/2/26
