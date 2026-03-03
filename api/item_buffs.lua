@@ -40,6 +40,12 @@ local function create_vanilla_buff_applier(key)
             lib.log_error("Tried to set a negative value for vanilla buff " .. key .. ": " .. value)
             new_value = 0
         end
+        if new_value > 4294967295 then
+            -- TODO: Maybe track the value separately so that removing the effect doesn't desync the upgrade's listed bonus and the actual applied bonus.
+            -- But this overflow shouldn't even be happening unless the player is expecting it to happen from their changes to the mod settings from the defaults, or otherwise cheating.
+            lib.log_error("Tried to set an overflow value for vanilla buff " .. key .. ": " .. value)
+            new_value = 4294967295
+        end
         game.forces.player[key] = new_value
     end
 end

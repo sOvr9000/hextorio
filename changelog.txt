@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.3
 Date: 2/3/26
+  Bugfixes:
+    - Fixed crash when item buffs give bonuses that are too large for the game, in case game balancing gets out of control.
   Gui:
     - Fixed that "Forward" was instead showing "Back" for the trade overview back and forward buttons.
   Optimizations:
