@@ -115,6 +115,9 @@ function piggy_bank_gui.on_piggy_bank_coin_clicked(player, elem)
 
     local clicked_tier = elem.name
     local withdraw_tier = stored_coin.values[lib.get_tier_of_coin_name(clicked_tier)]
+
+    withdraw_tier = math.min(withdraw_tier, 4294967295) -- Safety limit for modding API, should also integrate this in the function call (inventories.update_inventory()) around the inventory insert function, but this works for now.
+
     local to_add = coin_tiers.from_coin_values_by_name({
         [clicked_tier] = withdraw_tier,
     })
