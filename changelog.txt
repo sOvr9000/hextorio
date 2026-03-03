@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.3
 Date: 2/3/26
+  Gui:
+    - Fixed that "Forward" was instead showing "Back" for the trade overview back and forward buttons.
   Optimizations:
     - Improved UPS when free item buffs are queued.
   Translation:
