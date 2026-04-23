@@ -1,8 +1,20 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.7.3
-Date: 25/2/26
+Version: 1.7.4
+Date: 25/4/26
   Features:
     - (TODO) Added a text search to the catalog GUI. Press your search hotkey to activate, or press the button directly.
+---------------------------------------------------------------------------------------------------
+Version: 1.7.3
+Date: 2/3/26
+  Bugfixes:
+    - Fixed crash when coin amounts in the piggy bank get too large for insertion back into the main inventory.
+    - Fixed crash when item buffs give bonuses that are too large for the game, in case game balancing gets out of control.
+  Gui:
+    - Fixed that "Forward" was instead showing "Back" for the trade overview back and forward buttons.
+  Optimizations:
+    - Improved UPS when free item buffs are queued.
+  Translation:
+    - Updated RU, courtesy SanDK.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.2
 Date: 26/2/26

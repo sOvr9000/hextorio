@@ -266,6 +266,7 @@ function inventories.can_insert_coin(inventory, coin)
     local current_tiers = coin_tiers.count_nonzero_tiers(current_coin)
     local new_tiers = coin_tiers.count_nonzero_tiers(new_coin)
     if new_tiers > current_tiers then
+        -- TODO: Make this catch when coin stacks exceed available inventory space.  So, improve needed_slots calculation.
         local needed_slots = new_tiers - current_tiers
         return inventory.count_empty_stacks(false, false) >= needed_slots
     end

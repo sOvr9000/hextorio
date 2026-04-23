@@ -40,6 +40,12 @@ local function create_vanilla_buff_applier(key)
             lib.log_error("Tried to set a negative value for vanilla buff " .. key .. ": " .. value)
             new_value = 0
         end
+        if new_value > 4294967295 then
+            -- TODO: Maybe track the value separately so that removing the effect doesn't desync the upgrade's listed bonus and the actual applied bonus.
+            -- But this overflow shouldn't even be happening unless the player is expecting it to happen from their changes to the mod settings from the defaults, or otherwise cheating.
+            lib.log_error("Tried to set an overflow value for vanilla buff " .. key .. ": " .. value)
+            new_value = 4294967295
+        end
         game.forces.player[key] = new_value
     end
 end
@@ -130,6 +136,11 @@ local buff_type_actions = {
     end,
     ["all-buffs-cost-reduced"] = function(value)
         apply_nonlinear_buff("cost_multiplier", value)
+
+        if value > 0 then
+            -- Recalculate which buffs are now affordable.
+            storage.item_buffs.free_buffs_stalled = false
+        end
     end,
     ["unresearched-penalty-reduced"] = function(value)
         apply_nonlinear_buff("unresearched_penalty_multiplier", value)
@@ -208,6 +219,9 @@ function item_buffs.register_events()
     event_system.register("gameplay-statistic-changed", function(stat_type, stat_value, prev, new_value)
         if stat_type ~= "net-coin-production" then return end
         storage.item_buffs.max_cost_of_free_upgrade = coin_tiers.from_base_value(new_value * 60)
+
+        -- Recalculate which buffs are now affordable.
+        storage.item_buffs.free_buffs_stalled = false
     end)
 end
 
@@ -729,27 +743,25 @@ end
 ---Queue up a number of cheapest item buffs to upgrade for free.
 ---@param amount int
 function item_buffs.add_free_buffs(amount)
+    -- If there were no free buffs queued up and it's currently stalled, then it should no longer be stalled, just to check if anything can happen.
+    storage.item_buffs.free_buffs_stalled = storage.item_buffs.free_buffs_stalled and storage.item_buffs.free_buffs_remaining > 0
+    log(storage.item_buffs.free_buffs_stalled)
+
     storage.item_buffs.free_buffs_remaining = storage.item_buffs.free_buffs_remaining + amount
 end
 
 function item_buffs.process_free_buffs()
-    local max_cost = storage.item_buffs.max_cost_of_free_upgrade or coin_tiers.new()
-
-    if not storage.item_buffs.free_buffs_list and not storage.item_buffs.is_free_buffs_processing and storage.item_buffs.free_buffs_remaining > 0 then
-        storage.item_buffs.free_buffs_list = item_buffs.get_buffable_items()
-    end
-
+    if storage.item_buffs.free_buffs_stalled then return end
     if not storage.item_buffs.free_buffs_enhanced_items then
         storage.item_buffs.free_buffs_enhanced_items = {}
     end
 
     if storage.item_buffs.free_buffs_remaining > 0 then
-        if not next(storage.item_buffs.free_buffs_list) then
-            -- Mainly fixes broken item buff processing states on 1.7.0 / 1.7.1.
-            -- But can help fix broken states if it ever happens again somehow.
+        if not storage.item_buffs.free_buffs_list or not next(storage.item_buffs.free_buffs_list) then
             storage.item_buffs.free_buffs_list = item_buffs.get_buffable_items()
         end
 
+        local max_cost = storage.item_buffs.max_cost_of_free_upgrade or coin_tiers.new()
         local item_name, _ = item_buffs.get_cheapest_item_buff(storage.item_buffs.free_buffs_list, max_cost)
         if item_name then
             storage.item_buffs.free_buffs_enhanced_items[item_name] = (storage.item_buffs.free_buffs_enhanced_items[item_name] or 0) + 1
@@ -757,17 +769,14 @@ function item_buffs.process_free_buffs()
                 item_name,
                 item_buffs.get_item_buff_level(item_name) + 1
             )
-
             storage.item_buffs.free_buffs_remaining = storage.item_buffs.free_buffs_remaining - 1
-            storage.item_buffs.is_free_buffs_processing = true
+            return
         else
-            storage.item_buffs.is_free_buffs_processing = false
+            storage.item_buffs.free_buffs_stalled = true
         end
-    else
-        storage.item_buffs.is_free_buffs_processing = false
     end
 
-    if not storage.item_buffs.is_free_buffs_processing and next(storage.item_buffs.free_buffs_enhanced_items) then
+    if next(storage.item_buffs.free_buffs_enhanced_items) then
         local str = format_enhanced_items(storage.item_buffs.free_buffs_enhanced_items)
 
         ---@diagnostic disable-next-line: cast-local-type
