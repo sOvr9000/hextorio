@@ -88,7 +88,24 @@ function event_system.bind_gui_events()
         if event.element and event.element.valid then
             local tag = (event.element.tags.handlers or {})["gui-closed"]
             if tag and type(tag) == "string" then
-                event_system.trigger_gui("gui-closed", tag, player, event.element)
+                local found_search_field = false
+                local titlebar = event.element["titlebar"]
+                if titlebar then
+                    local search_field = titlebar["search-field"]
+                    if search_field and search_field.valid and search_field.visible then
+                        found_search_field = true
+                        search_field.visible = false
+                        search_field.text = ""
+                        local search_button = titlebar["search"]
+                        if search_button and search_button.valid then search_button.toggled = false end
+                        player.opened = event.element
+                        event_system.trigger_gui("gui-search-text-changed", tag, player, event.element)
+                        return
+                    end
+                end
+                if not found_search_field then
+                    event_system.trigger_gui("gui-closed", tag, player, event.element)
+                end
             end
         elseif event.entity and event.entity.valid then
             event_system.trigger("player-closed-entity", player, event.entity)
@@ -138,12 +155,21 @@ function event_system.bind_gui_events()
         end
     end
 
-    script.on_event(defines.events.on_gui_confirmed, create_handler "gui-confirmed")
+    local gui_confirmed_handler = create_handler "gui-confirmed"
+    local gui_text_confirmed_handler = create_handler "gui-text-confirmed"
+    script.on_event(defines.events.on_gui_confirmed, function(event)
+        gui_confirmed_handler(event)
+        if event.element.type == "textfield" or event.element.type == "text-box" then
+            gui_text_confirmed_handler(event)
+        end
+    end)
+
     script.on_event(defines.events.on_gui_click, create_handler "gui-clicked")
     script.on_event(defines.events.on_gui_elem_changed, create_handler "gui-elem-changed")
     script.on_event(defines.events.on_gui_value_changed, create_handler "gui-slider-changed")
     script.on_event(defines.events.on_gui_selection_state_changed, create_handler "gui-selection-changed")
     script.on_event(defines.events.on_gui_switch_state_changed, create_handler "gui-switch-changed")
+    script.on_event(defines.events.on_gui_text_changed, create_handler "gui-text-changed")
 
 
 

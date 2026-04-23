@@ -11,8 +11,13 @@
 ---| "gui-back"
 ---| "gui-forward"
 ---| "gui-search-button-clicked"
+---| "gui-text-changed"
+---| "gui-text-confirmed"
 ---| "gui-search-text-changed"
 ---| "gui-search-text-confirmed"
+
+-- Note that gui-text-changed is for any text field changing.  gui-search-text-changed is the specific event for a text field that is designated as a search field in a frame title bar.
+-- The delegation is done by mapping a gui-text-field tag to a gui-search-text-changed linked handler in the tags of the search button and search field when they're created in core_gui.add_titlebar().
 
 ---@alias HexPosMap {[int]: {[int]: any}}
 ---@alias IndexMap {[int]: {[int]: int}}
