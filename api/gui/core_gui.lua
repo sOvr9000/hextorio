@@ -265,15 +265,15 @@ end
 function core_gui.add_titlebar(frame, caption, include_back_and_forward, include_search)
     local titlebar = frame.add{type = "flow", name = "titlebar"}
     titlebar.drag_target = frame
+    titlebar.style.horizontal_spacing = 10 / 1.2
 
-    titlebar.add{
+    local title_label = titlebar.add{
         type = "label",
         style = "frame_title",
         caption = caption,
         ignored_by_interaction = true,
     }
-
-    titlebar.style.top_margin = -2
+    title_label.style.top_margin = -3 / 1.2
 
     local filler = titlebar.add{
         type = "empty-widget",
@@ -297,7 +297,6 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward, include
                 linked_handler_parent_idx = 2, -- This makes the event system trigger "gui-search-text-changed" and "gui-search-text-confirmed" on the second parent up from this element.
             },
         }
-        search_field.style.right_padding = 5
 
         local search = titlebar.add {
             type = "sprite-button",
@@ -310,7 +309,6 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward, include
                 linked_handler_parent_idx = 2, -- This makes the event system trigger "gui-search-button-clicked" on the second parent up from this element.
             },
         }
-        search.style.right_padding = 5
     end
 
     if include_back_and_forward then
@@ -320,7 +318,6 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward, include
             style = "packed_horizontal_flow",
             direction = "horizontal",
         }
-        flow.style.right_padding = 5
 
         flow.add {
             type = "sprite-button",
