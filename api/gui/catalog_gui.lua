@@ -48,7 +48,6 @@ function catalog_gui.register_events()
     -- Titlebar events
     event_system.register_gui("gui-search-button-clicked", "catalog", gui.handle_search_button_click)
     event_system.register_gui("gui-search-text-changed", "catalog", catalog_gui.on_search_text_changed)
-    event_system.register_gui("gui-search-text-confirmed", "catalog", catalog_gui.on_search_text_confirmed)
 
     event_system.register("post-rank-up-command", function(player, params)
         local selection = catalog_gui.get_catalog_selection(player)
@@ -1307,14 +1306,6 @@ function catalog_gui.on_search_text_changed(player, elem)
     log(elem)
     log(elem.name)
     log("search changed: " .. elem.titlebar["search-field"].text)
-end
-
----@param player LuaPlayer
----@param elem LuaGuiElement
-function catalog_gui.on_search_text_confirmed(player, elem)
-    log(elem)
-    log(elem.name)
-    log("search confirmed: " .. elem.titlebar["search-field"].text)
 end
 
 
