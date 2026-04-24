@@ -358,12 +358,24 @@ local function collect_recipes_and_origins()
         end
     end
 
-    -- Build recipe_name -> tech_name mapping (first tech that unlocks it)
+    -- Build recipe_name -> tech_name mapping, preferring the shallowest-origin tech
+    -- so that ambiguous recipes (unlockable by multiple techs from different planets)
+    -- aren't gated behind a later planet when an earlier one also unlocks them.
+    -- e.g. heat exchangers should NOT be gated behind Gleba.
+    -- This solves the vanilla Hextorio issue where heat exchangers, heat pipes, and
+    -- steam turbines weren't tradable on Nauvis due to the Gleba tech unlocking them.
     local recipe_to_tech = {}
     for tech_name, recipe_names in pairs(tech_unlocks_recipes) do
         for _, recipe_name in pairs(recipe_names) do
-            if not recipe_to_tech[recipe_name] then
+            local current = recipe_to_tech[recipe_name]
+            if not current then
                 recipe_to_tech[recipe_name] = tech_name
+            else
+                local current_origin = tech_origin[current] or "nauvis"
+                local new_origin = tech_origin[tech_name] or "nauvis"
+                if deeper_origin(current_origin, new_origin) == current_origin then
+                    recipe_to_tech[recipe_name] = tech_name
+                end
             end
         end
     end
