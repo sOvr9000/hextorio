@@ -115,6 +115,10 @@ function catalog_gui.register_events()
     end)
 
     event_system.register("post-item-values-recalculated", catalog_gui.reinitialize)
+
+    event_system.register("player-display-scale-changed", catalog_gui.reinitialize)
+    event_system.register("player-display-density-scale-changed", catalog_gui.reinitialize)
+    event_system.register("player-display-resolution-changed", catalog_gui.reinitialize)
 end
 
 ---Reinitialize the catalog GUI for the given player, or all players if no player is provided.
@@ -172,11 +176,11 @@ function catalog_gui.init_catalog(player)
     local scroll_pane = catalog_frame.add {type = "scroll-pane", name = "scroll-pane"}
     scroll_pane.style.vertically_stretchable = true
     scroll_pane.style.vertically_squashable = true
-    scroll_pane.style.minimal_width = 1080 / player.display_scale
+    scroll_pane.style.minimal_width = 1080 / (player.display_scale * player.display_density_scale)
 
     local inspect_frame = flow.add {type = "frame", name = "inspect-frame", direction = "vertical"}
     gui.auto_width_height(inspect_frame)
-    inspect_frame.style.maximal_width = 385 / player.display_scale
+    inspect_frame.style.maximal_width = 385 / (player.display_scale * player.display_density_scale)
 
     for i, surface_name in ipairs {
         "nauvis",
