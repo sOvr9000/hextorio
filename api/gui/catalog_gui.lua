@@ -172,11 +172,11 @@ function catalog_gui.init_catalog(player)
     local scroll_pane = catalog_frame.add {type = "scroll-pane", name = "scroll-pane"}
     scroll_pane.style.vertically_stretchable = true
     scroll_pane.style.vertically_squashable = true
-    scroll_pane.style.minimal_width = 1080 / player.display_scale
+    scroll_pane.style.minimal_width = 1080 / 1.2
 
     local inspect_frame = flow.add {type = "frame", name = "inspect-frame", direction = "vertical"}
     gui.auto_width_height(inspect_frame)
-    inspect_frame.style.maximal_width = 385 / player.display_scale
+    inspect_frame.style.maximal_width = 385 / 1.2
 
     for i, surface_name in ipairs {
         "nauvis",
