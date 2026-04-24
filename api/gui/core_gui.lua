@@ -605,6 +605,7 @@ function core_gui.handle_search_button_click(player, frame)
     else
         search_button.toggled = true
         search_field.visible = true
+        search_field.focus()
     end
 end
 
