@@ -212,6 +212,11 @@ function event_system.bind_gui_events()
         local search_button = titlebar.search
         if not search_button or not search_button.valid then return end
 
+        if search_field.visible then
+            -- If already visible, select all current text, matching vanilla behavior.
+            search_field.select_all()
+        end
+
         search_button.toggled = true
         search_field.visible = true
         search_field.focus()
