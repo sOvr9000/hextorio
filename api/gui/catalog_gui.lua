@@ -12,6 +12,7 @@ local quests = require "api.quests"
 local item_buffs = require "api.item_buffs"
 local gui_stack = require "api.gui.gui_stack"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
+local translations  = require "api.translations"
 
 local catalog_gui = {}
 
@@ -1303,9 +1304,65 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function catalog_gui.on_search_text_changed(player, elem)
-    log(elem)
-    log(elem.name)
-    log("search changed: " .. elem.titlebar["search-field"].text)
+    local frame = player.gui.screen["catalog"]
+    if not frame then return end
+
+    if not elem.titlebar or not elem.titlebar["search-field"] then return end
+    local query = elem.titlebar["search-field"].text
+
+    local scroll_pane = frame["flow"]["catalog-frame"]["scroll-pane"]
+    local translations_table = translations.get_player_translations_table(player.index)
+
+    if query == "" then
+        for _, child in pairs(scroll_pane.children) do
+            if child.type == "table" then
+                for _, rank_flow in pairs(child.children) do
+                    rank_flow.visible = true
+                end
+            end
+        end
+        return
+    end
+
+    local lower_query = query:lower()
+
+    local all_item_names = sets.new()
+    for _, child in pairs(scroll_pane.children) do
+        if child.type == "table" then
+            for _, rank_flow in pairs(child.children) do
+                local item_name = rank_flow.tags.item_name
+                if item_name then
+                    ---@cast item_name string
+                    if trades.is_item_discovered(item_name) or query == "" then
+                        sets.add(all_item_names, item_name)
+                    end
+                end
+            end
+        end
+    end
+
+    local items_to_show = sets.new()
+    for item_name, _ in pairs(all_item_names) do
+        local display_name = translations.get_item_name_translation(translations_table, item_name)
+        if display_name then
+            display_name = display_name:lower()
+            local ok, match = pcall(string.find, display_name, lower_query)
+            if (ok and match) or (not ok and display_name:find(lower_query, 1, true)) then
+                sets.add(items_to_show, item_name)
+            end
+        else
+            lib.log_error("Missing translation for " .. item_name)
+        end
+    end
+
+    for _, child in pairs(scroll_pane.children) do
+        if child.type == "table" then
+            for _, rank_flow in pairs(child.children) do
+                local item_name = rank_flow.tags.item_name
+                rank_flow.visible = item_name ~= nil and sets.contains(items_to_show, item_name)
+            end
+        end
+    end
 end
 
 

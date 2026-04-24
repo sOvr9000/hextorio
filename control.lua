@@ -32,6 +32,7 @@ local gameplay_statistics = require "api.gameplay_statistics"
 local gsr = require "api.gameplay_statistics_recalculators"
 local item_value_solver = require "api.item_value_solver"
 local item_tradability_solver = require "api.item_tradability_solver"
+local translations = require "api.translations"
 
 migrations.load_handlers()
 
@@ -54,6 +55,7 @@ gameplay_statistics.register_events()
 gsr.register_events()
 item_value_solver.register_events()
 item_tradability_solver.register_events()
+translations.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -195,6 +197,7 @@ script.on_init(function()
     train_trading.init()
     strongboxes.init()
     piggy_bank.init()
+    translations.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -365,6 +368,8 @@ script.on_event(defines.events.on_player_created, function(event)
     if not player then return end
 
     attempt_initialization()
+
+    translations.request_translations(player)
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
@@ -626,10 +631,15 @@ script.on_event(defines.events.on_player_display_density_scale_changed, function
     event_system.trigger("player-display-density-scale-changed", player)
 end)
 
+script.on_event(defines.events.on_string_translated, function(event)
+    event_system.trigger("string-translated", event)
+end)
+
 script.on_configuration_changed(function(handler)
     local changes = handler.mod_changes.hextorio
     if changes and changes.old_version ~= changes.new_version then
         migrations.on_mod_updated(changes.old_version, changes.new_version)
     end
     item_tradability_solver.solve()
+    translations.init()
 end)
