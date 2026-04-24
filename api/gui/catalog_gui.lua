@@ -1325,7 +1325,7 @@ function catalog_gui.on_search_text_changed(player, elem)
         return
     end
 
-    local lower_query = query:lower()
+    query = query:lower()
 
     local all_item_names = sets.new()
     for _, child in pairs(scroll_pane.children) do
@@ -1342,13 +1342,15 @@ function catalog_gui.on_search_text_changed(player, elem)
         end
     end
 
+    query = query:gsub(".", "%0.*"):sub(1, -3) -- Insert ".*" between all characters, so that string.find() will allow any characters between (making it a fuzzy search).
+
     local items_to_show = sets.new()
     for item_name, _ in pairs(all_item_names) do
         local display_name = translations.get_item_name_translation(translations_table, item_name)
         if display_name then
             display_name = display_name:lower()
-            local ok, match = pcall(string.find, display_name, lower_query)
-            if (ok and match) or (not ok and display_name:find(lower_query, 1, true)) then
+            local ok, match = pcall(string.find, display_name, query)
+            if (ok and match) or (not ok and display_name:find(query, 1, true)) then
                 sets.add(items_to_show, item_name)
             end
         else
