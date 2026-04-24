@@ -1,6 +1,16 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.5
 Date: 24/4/26
+  Minor Features:
+    - Added item buffs to 45 new item types:
+      - All armors
+      - Gleba soils
+      - Car and tank
+      - Rail system entities
+      - Belt immunity and exoskeleton equipment
+      - Pumpjack, offshore pump, pump, storage tank
+      - Nuclear and fusion power plant entities and fuel cells
+      - Centrifuge, plastic bar, battery, electric engine unit, quantum processor
   Bugfixes:
     - Fixed catalog GUI dimensions being off on some screens.
   Translation:

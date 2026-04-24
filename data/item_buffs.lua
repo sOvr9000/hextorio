@@ -1,6 +1,13 @@
 
 return {
     item_buffs = {
+        ["wood"] = {
+            {
+                type = "all-buffs-cost-reduced",
+                value = 0.02,
+                level_scaling = 0.01,
+            },
+        },
         ["iron-ore"] = {
             {
                 type = "mining-speed",
@@ -36,6 +43,18 @@ return {
                 level_scaling = 0.01,
             },
         },
+        ["calcite"] = {
+            {
+                type = "recipe-productivity",
+                values = {"molten-copper", 3},
+                level_scaling = 1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"molten-iron", 3},
+                level_scaling = 1,
+            },
+        },
         ["tungsten-ore"] = {
             {
                 type = "mining-speed",
@@ -48,6 +67,13 @@ return {
                 type = "recipe-productivity",
                 values = {"tungsten-plate", 5},
                 level_scaling = 1,
+            },
+        },
+        ["tungsten-carbide"] = {
+            {
+                type = "mining-productivity",
+                value = 0.10,
+                level_scaling = 0.02,
             },
         },
         ["scrap"] = {
@@ -69,6 +95,27 @@ return {
                 type = "recipe-productivity",
                 values = {"holmium-plate", 5},
                 level_scaling = 1,
+            },
+        },
+        ["superconductor"] = {
+            {
+                type = "research-speed",
+                value = 0.1,
+                level_scaling = 0.05,
+            },
+        },
+        ["supercapacitor"] = {
+            {
+                type = "beacon-efficiency",
+                value = 0.10,
+                level_scaling = 0.01,
+            },
+        },
+        ["ice"] = {
+            {
+                type = "crafting-speed",
+                value = 0.15,
+                level_scaling = 0.05,
             },
         },
         ["iron-plate"] = {
@@ -179,6 +226,20 @@ return {
                 type = "health",
                 value = 10,
                 level_scaling = 10,
+            },
+        },
+        ["jelly"] = {
+            {
+                type = "recipe-productivity",
+                values = {"jellynut-processing", 10},
+                level_scaling = 2,
+            },
+        },
+        ["yumako-mash"] = {
+            {
+                type = "recipe-productivity",
+                values = {"yumako-processing", 10},
+                level_scaling = 2,
             },
         },
         ["carbon-fiber"] = {
@@ -400,6 +461,98 @@ return {
                 level_scaling = 0.01,
             },
         },
+        ["offshore-pump"] = {
+            {
+                type = "recipe-productivity",
+                values = {"ice-melting", 10},
+                level_scaling = 2,
+            },
+        },
+        ["pump"] = {
+            {
+                type = "recipe-productivity",
+                values = {"ice-melting", 10},
+                level_scaling = 2,
+            },
+        },
+        ["storage-tank"] = {
+            {
+                type = "recipe-productivity",
+                values = {"ice-melting", 10},
+                level_scaling = 2,
+            },
+        },
+        ["fusion-reactor"] = {
+            {
+                type = "recipe-productivity",
+                values = {"fusion-power-cell", 15},
+                level_scaling = 5,
+            },
+        },
+        ["fusion-generator"] = {
+            {
+                type = "all-buffs-level",
+                value = 1,
+                level_scaling = 0.25,
+            },
+        },
+        ["nuclear-reactor"] = {
+            {
+                type = "recipe-productivity",
+                values = {"uranium-fuel-cell", 10},
+                level_scaling = 2,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"nuclear-fuel-reprocessing", 10},
+                level_scaling = 2,
+            },
+        },
+        ["steam-turbine"] = {
+            {
+                type = "recipe-productivity",
+                values = {"acid-neutralisation", 5},
+                level_scaling = 1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"steam-condensation", 5},
+                level_scaling = 1,
+            },
+        },
+        ["heat-exchanger"] = {
+            {
+                type = "recipe-productivity",
+                values = {"uranium-processing", 10},
+                level_scaling = 2,
+            },
+        },
+        ["heat-pipe"] = {
+            {
+                type = "recipe-productivity",
+                values = {"heat-pipe", 5},
+                level_scaling = 1,
+            },
+            {
+                type = "recipe-productivity",
+                values = {"heat-exchanger", 5},
+                level_scaling = 1,
+            },
+        },
+        ["uranium-fuel-cell"] = {
+            {
+                type = "unresearched-penalty-reduced",
+                value = 0.03,
+                level_scaling = 0.01,
+            },
+        },
+        ["depleted-uranium-fuel-cell"] = {
+            {
+                type = "unresearched-penalty-reduced",
+                value = 0.03,
+                level_scaling = 0.01,
+            },
+        },
         ["transport-belt"] = {
             {
                 type = "build-distance",
@@ -526,6 +679,13 @@ return {
                 level_scaling = 0.025,
             },
         },
+        ["pumpjack"] = {
+            {
+                type = "mining-productivity",
+                value = 0.05,
+                level_scaling = 0.01,
+            },
+        },
         ["stone-brick"] = {
             {
                 type = "moving-speed",
@@ -566,6 +726,34 @@ return {
                 type = "moving-speed",
                 value = 0.08,
                 level_scaling = 0.02,
+            },
+        },
+        ["artificial-yumako-soil"] = {
+            {
+                type = "recipe-productivity",
+                values = {"wood-processing", 50},
+                level_scaling = 50,
+            },
+        },
+        ["overgrowth-yumako-soil"] = {
+            {
+                type = "recipe-productivity",
+                values = {"fish-breeding", 25},
+                level_scaling = 25,
+            },
+        },
+        ["artificial-jellynut-soil"] = {
+            {
+                type = "recipe-productivity",
+                values = {"wood-processing", 50},
+                level_scaling = 50,
+            },
+        },
+        ["overgrowth-jellynut-soil"] = {
+            {
+                type = "recipe-productivity",
+                values = {"fish-breeding", 25},
+                level_scaling = 25,
             },
         },
         ["iron-gear-wheel"] = {
@@ -902,11 +1090,105 @@ return {
                 level_scaling = 0.05,
             },
         },
+        ["battery"] = {
+            {
+                type = "robot-battery",
+                value = 0.05,
+                level_scaling = 0.025,
+            },
+        },
+        ["electric-engine-unit"] = {
+            {
+                type = "robot-speed",
+                value = 0.2,
+                level_scaling = 0.1,
+            },
+        },
+        ["exoskeleton-equipment"] = {
+            {
+                type = "moving-speed",
+                value = 0.1,
+                level_scaling = 0.02,
+            },
+        },
+        ["belt-immunity-equipment"] = {
+            {
+                type = "moving-speed",
+                value = 0.05,
+                level_scaling = 0.01,
+            },
+        },
+        ["light-armor"] = {
+            {
+                type = "inventory-size",
+                value = 1,
+                level_scaling = 1,
+            },
+        },
+        ["heavy-armor"] = {
+            {
+                type = "inventory-size",
+                value = 2,
+                level_scaling = 1,
+            },
+        },
+        ["modular-armor"] = {
+            {
+                type = "reach-distance",
+                value = 0.20,
+                level_scaling = 0.10,
+            },
+        },
+        ["power-armor"] = {
+            {
+                type = "reach-distance",
+                value = 0.25,
+                level_scaling = 0.10,
+            },
+        },
+        ["power-armor-mk2"] = {
+            {
+                type = "reach-distance",
+                value = 0.25,
+                level_scaling = 0.10,
+            },
+        },
+        ["mech-armor"] = {
+            {
+                type = "reach-distance",
+                value = 0.5,
+                level_scaling = 0.15,
+            },
+        },
         ["spidertron"] = {
             {
                 type = "trade-productivity",
                 value = 0.05,
                 level_scaling = 0.01,
+            },
+        },
+        ["car"] = {
+            {
+                type = "recipe-productivity",
+                values = {"engine-unit", 5},
+                level_scaling = 1,
+            },
+            {
+                type = "bullet-shooting-speed",
+                value = 0.05,
+                level_scaling = 0.02,
+            },
+        },
+        ["tank"] = {
+            {
+                type = "recipe-productivity",
+                values = {"engine-unit", 5},
+                level_scaling = 1,
+            },
+            {
+                type = "explosion-damage",
+                value = 0.10,
+                level_scaling = 0.02,
             },
         },
         ["rocket-silo"] = {
@@ -930,11 +1212,25 @@ return {
                 level_scaling = 0.03,
             },
         },
+        ["quantum-processor"] = {
+            {
+                type = "trade-productivity",
+                value = 0.03,
+                level_scaling = 0.01,
+            },
+        },
         ["lithium-plate"] = {
             {
                 type = "inventory-size",
                 value = 5,
                 level_scaling = 1,
+            },
+        },
+        ["plastic-bar"] = {
+            {
+                type = "all-buffs-cost-reduced",
+                value = 0.02,
+                level_scaling = 0.01,
             },
         },
         ["raw-fish"] = {
@@ -1001,6 +1297,53 @@ return {
                 level_scaling = 0.05,
             },
         },
+        ["train-stop"] = {
+            {
+                type = "train-trading-capacity",
+                value = 1.5,
+                level_scaling = 0.5,
+            },
+            {
+                type = "braking-force",
+                value = 0.1,
+                level_scaling = 0.05,
+            },
+        },
+        ["rail"] = {
+            {
+                type = "train-trading-capacity",
+                value = 1,
+                level_scaling = 0.2,
+            },
+        },
+        ["rail-ramp"] = {
+            {
+                type = "train-trading-capacity",
+                value = 1,
+                level_scaling = 0.25,
+            },
+        },
+        ["rail-support"] = {
+            {
+                type = "train-trading-capacity",
+                value = 1,
+                level_scaling = 0.2,
+            },
+        },
+        ["rail-signal"] = {
+            {
+                type = "braking-force",
+                value = 0.05,
+                level_scaling = 0.025,
+            },
+        },
+        ["rail-chain-signal"] = {
+            {
+                type = "braking-force",
+                value = 0.05,
+                level_scaling = 0.025,
+            },
+        },
         ["assembling-machine-1"] = {
             {
                 type = "recipe-productivity",
@@ -1059,6 +1402,13 @@ return {
                 type = "recipe-productivity",
                 values = {"advanced-oil-processing", 10},
                 level_scaling = 1,
+            },
+        },
+        ["centrifuge"] = {
+            {
+                type = "all-buffs-cost-reduced",
+                value = 0.05,
+                level_scaling = 0.01,
             },
         },
         ["cryogenic-plant"] = {
