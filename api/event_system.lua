@@ -92,7 +92,7 @@ function event_system.bind_gui_events()
                 local titlebar = event.element["titlebar"]
                 if titlebar then
                     local search_field = titlebar["search-field"]
-                    if search_field and search_field.valid and search_field.visible then
+                    if search_field and search_field.valid and search_field.visible then -- TODO: Also check for search_field.is_focused, if anything like that exists in the modding API...
                         found_search_field = true
                         search_field.visible = false
                         search_field.text = ""
