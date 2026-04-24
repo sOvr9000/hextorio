@@ -11,6 +11,7 @@ Date: 23/4/26
       - spoilage + raw fish -> coins
       - production science pack + utility science pack -> coins
       - coins -> plastic bars
+      - coins + firearm magazines -> piercing rounds magazines
   Changes:
     - Revised strongbox entity description to match recent changes to their behavior.
 ---------------------------------------------------------------------------------------------------

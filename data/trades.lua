@@ -49,6 +49,7 @@ return {
             {{"spoilage", "raw-fish"}, {"hex-coin"}},
             {{"production-science-pack", "utility-science-pack"}, {"hex-coin"}},
             {{"hex-coin"}, {"plastic-bar"}},
+            {{"hex-coin", "firearm-magazine"}, {"piercing-rounds-magazine"}},
         },
     },
 
