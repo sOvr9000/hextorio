@@ -368,8 +368,6 @@ script.on_event(defines.events.on_player_created, function(event)
     if not player then return end
 
     attempt_initialization()
-
-    translations.request_translations(player)
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)
@@ -379,6 +377,8 @@ script.on_event(defines.events.on_player_joined_game, function(event)
     gui.reinitialize_everything(player)
     quests.check_player_receive_items(player)
     event_system.trigger("player-joined", player)
+
+    translations.request_translations(player)
 end)
 
 script.on_event(defines.events.on_built_entity, function(event)

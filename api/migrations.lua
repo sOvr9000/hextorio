@@ -5,6 +5,7 @@ local quests = require "api.quests"
 local item_values = require "api.item_values"
 local coin_tiers  = require "api.coin_tiers"
 local trades = require "api.trades"
+local translations = require "api.translations"
 
 local data_quests = require "data.quests"
 local data_coin_tiers = require "data.coin_tiers"

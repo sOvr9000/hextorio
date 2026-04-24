@@ -599,6 +599,8 @@ function item_tradability_solver.solve()
     end
 
     storage.item_values.is_tradable = is_tradable
+    storage.item_values.tradable_items = nil
+    storage.item_values.local_items = nil
 
     lib.log("Tradability solver: complete")
 end
