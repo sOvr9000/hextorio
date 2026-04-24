@@ -288,6 +288,7 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward, include
         local search_field = titlebar.add {
             type = "textfield",
             name = "search-field",
+            style = "search_popup_textfield",
             visible = false,
             tags = {
                 handlers = {
@@ -297,6 +298,7 @@ function core_gui.add_titlebar(frame, caption, include_back_and_forward, include
                 linked_handler_parent_idx = 2, -- This makes the event system trigger "gui-search-text-changed" and "gui-search-text-confirmed" on the second parent up from this element.
             },
         }
+        search_field.style.top_margin = -2.5 / 1.2
 
         local search = titlebar.add {
             type = "sprite-button",
