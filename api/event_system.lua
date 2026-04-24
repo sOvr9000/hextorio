@@ -98,6 +98,7 @@ function event_system.bind_gui_events()
                         search_field.text = ""
                         local search_button = titlebar["search"]
                         if search_button and search_button.valid then search_button.toggled = false end
+                        player.opened = event.element
                         event_system.trigger_gui("gui-search-text-changed", tag, player, event.element)
                         return
                     end
