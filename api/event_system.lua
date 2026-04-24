@@ -199,8 +199,22 @@ function event_system.bind_gui_events()
     event_system.register("control-gui-back", on_control_gui_back)
     event_system.register("control-gui-forward", on_control_gui_forward)
 
-    event_system.register("control-gui-find", function(event)
-        
+    event_system.register("control-gui-find", function(player)
+        local opened = player.opened
+        if not opened or not opened.valid or opened.object_name ~= "LuaGuiElement" then return end
+
+        local titlebar = opened.titlebar
+        if not titlebar or not titlebar.valid then return end
+
+        local search_field = titlebar["search-field"]
+        if not search_field or not search_field.valid then return end
+
+        local search_button = titlebar.search
+        if not search_button or not search_button.valid then return end
+
+        search_button.toggled = true
+        search_field.visible = true
+        search_field.focus()
     end)
 end
 
