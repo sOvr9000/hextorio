@@ -18,8 +18,8 @@ function core_gui.register_events()
         local frame = elem.parent.parent
         if not frame then return end
 
-        -- If a title bar's search field is visible, then trying to close the frame while it's still visible triggers an event (on_gui_closed) after the frame is closed, causing a mismanagement of player.opened (bad bug).
-        -- This fixes that issue by hiding the search field right before closing the frame, ensuring that on_gui_closed event is called before the frame is hidden.
+        -- If a title bar's search field is visible, then trying to close the frame while it's still visible triggers an event (on_gui_closed on the search field) after the frame is closed, causing a mismanagement of player.opened (bad bug).
+        -- This fixes that issue by hiding the search field right before closing the frame, ensuring that on_gui_closed event (for the search field itself) is called before the frame is hidden.
         local titlebar = frame["titlebar"]
         if titlebar then
             local search_field = titlebar["search-field"]
