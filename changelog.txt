@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.5
-Date: 28/4/26
+Date: 24/4/26
+  Bugfixes:
+    - Fixed catalog GUI dimensions being off on some screens.
   Translation:
     - Updated RU translations, courtesy SanDK.
 ---------------------------------------------------------------------------------------------------
