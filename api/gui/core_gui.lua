@@ -602,6 +602,7 @@ function core_gui.handle_search_button_click(player, frame)
     if search_button.toggled or search_field.visible then
         search_button.toggled = false
         search_field.visible = false
+        search_field.text = ""
     else
         search_button.toggled = true
         search_field.visible = true
