@@ -1693,25 +1693,25 @@ end
 ---Recalculate the trade's productivity effect based on base productivity and its input and output item ranks.
 ---@param trade Trade
 function trades.check_productivity(trade)
-    local base_prod = trades.get_base_trade_productivity_on_surface(trade.surface_name)
-    trades.set_productivity(trade, base_prod)
+    local total_prod = trades.get_base_trade_productivity_on_surface(trade.surface_name)
 
-    local surface_name = trade.surface_name
     for _, item in pairs(trade.input_items) do
-        if lib.is_catalog_item(surface_name, item.name) then
-            trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)))
+        if item_ranks.is_item_rank_defined(item.name) then
+            total_prod = total_prod + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name))
         end
     end
 
     for _, item in pairs(trade.output_items) do
-        if lib.is_catalog_item(surface_name, item.name) then
+        if item_ranks.is_item_rank_defined(item.name) then
             local penalty_prod = 0.0
             if not storage.trades.researched_items[item.name] then
                 penalty_prod = storage.trades.unresearched_penalty * storage.item_buffs.unresearched_penalty_multiplier
             end
-            trades.increment_productivity(trade, item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) - penalty_prod)
+            total_prod = total_prod + item_ranks.get_rank_bonus_effect(item_ranks.get_item_rank(item.name)) - penalty_prod
         end
     end
+
+    trades.set_productivity(trade, total_prod)
 end
 
 ---Replace nil values with default values in `params`, modifying the table in place.
