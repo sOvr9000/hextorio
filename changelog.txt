@@ -8,6 +8,7 @@ Date: 23/4/26
     - Fixed that strongbox levels were counting twice toward hex rank.
     - Fixed crash when setting hex sizes and stroke widths to their minimal allowed values.
     - Fixed that heat exchangers, heat pipes, and steam turbines were only tradable on Gleba; they're now tradable on Nauvis, Vulcanus, and Fulgora as well.
+    - Fixed that ranks were not showing on interplanetary items in trades.
   Balancing:
     - Added guaranteed trades near spawn on Nauvis:
       - advanced circuits -> coins

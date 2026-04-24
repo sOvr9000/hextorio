@@ -153,7 +153,7 @@ function core_gui.give_item_tooltip(player, surface_name, element)
     local scaled_value = value / hex_coin_value * lib.get_quality_value_scale(quality)
 
     local rank_str = {""}
-    if lib.is_catalog_item(surface_name, item_name) then
+    if lib.is_catalog_item(nil, item_name) then
         local rank = item_ranks.get_item_rank(item_name)
         local left_half
         if rank == 1 then
