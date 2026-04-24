@@ -4,6 +4,9 @@ local lib = require "api.lib"
 -- Buff recipes
 data.raw["recipe"]["rocket"].category = "organic-or-assembling"
 data.raw["recipe"]["explosive-rocket"].category = "organic-or-assembling"
+data.raw["recipe"]["logistic-robot"].category = "electronics"
+data.raw["recipe"]["construction-robot"].category = "electronics"
+data.raw["recipe"]["roboport"].category = "electronics"
 
 -- Custom recipes
 local hexic_transport_belt = table.deepcopy(data.raw["recipe"]["turbo-transport-belt"])
