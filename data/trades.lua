@@ -45,6 +45,10 @@ return {
         nauvis = {
             {{"low-density-structure"}, {"hex-coin"}},
             {{"iron-plate", "copper-ore", "hex-coin"}, {"stone", "coal"}},
+            {{"advanced-circuit"}, {"hex-coin"}},
+            {{"spoilage", "raw-fish"}, {"hex-coin"}},
+            {{"production-science-pack", "utility-science-pack"}, {"hex-coin"}},
+            {{"hex-coin"}, {"plastic-bar"}},
         },
     },
 

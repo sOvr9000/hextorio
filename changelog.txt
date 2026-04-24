@@ -5,6 +5,12 @@ Date: 23/4/26
     - Added a text search to the catalog GUI. Press your search hotkey to activate, or press the button directly.
   Bugfixes:
     - Fixed that strongbox levels were counting twice toward hex rank.
+  Balancing:
+    - Added guaranteed trades near spawn on Nauvis:
+      - advanced circuits -> coins
+      - spoilage + raw fish -> coins
+      - production science pack + utility science pack -> coins
+      - coins -> plastic bars
   Changes:
     - Revised strongbox entity description to match recent changes to their behavior.
 ---------------------------------------------------------------------------------------------------
