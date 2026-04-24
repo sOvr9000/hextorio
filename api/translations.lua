@@ -38,8 +38,6 @@ function translations.register_events()
 
         local player_translations = translations.get_player_translations_table(player_index)
         player_translations[from_string] = to_string
-
-        log("translated " .. from_string .. " -> " .. to_string)
     end)
 end
 
