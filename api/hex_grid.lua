@@ -4444,8 +4444,6 @@ function hex_grid.on_strongbox_killed(sb_entity)
     else
         hex_grid.remove_strongbox(state, sb_entity)
     end
-
-    gameplay_statistics.increment "total-strongbox-level"
 end
 
 ---@param player LuaPlayer
