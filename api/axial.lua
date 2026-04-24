@@ -618,9 +618,15 @@ function axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke
         local dir_y = finish.y - start.y
 
         -- Calculate perpendicular vector (for stroke width)
-        local length = math.sqrt(dir_x * dir_x + dir_y * dir_y)
-        local perp_x = -dir_y / length
-        local perp_y = dir_x / length
+        local perp_x, perp_y
+        if dir_x == 0 and dir_y == 0 then
+            perp_x = 0
+            perp_y = 0
+        else
+            local length = math.sqrt(dir_x * dir_x + dir_y * dir_y)
+            perp_x = -dir_y / length
+            perp_y = dir_x / length
+        end
 
         -- For each position along the edge
         for step = 1, steps do

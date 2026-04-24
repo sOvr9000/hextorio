@@ -6,6 +6,7 @@ Date: 23/4/26
     - Added electromagnetic plant recipes for roboports and logistic/construction robots.
   Bugfixes:
     - Fixed that strongbox levels were counting twice toward hex rank.
+    - Fixed crash when setting hex sizes and stroke widths to their minimal allowed values.
   Balancing:
     - Added guaranteed trades near spawn on Nauvis:
       - advanced circuits -> coins
