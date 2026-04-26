@@ -4,6 +4,8 @@ Date: 28/4/26
   Features:
     - Added mod setting for trade complexity.
     - Added three new quests and a related hex rank factor.
+  Balancing:
+    - Made trades to be less complex on average, involving fewer items at a time. (This is the "Balanced" setting.)
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.5
 Date: 24/4/26
