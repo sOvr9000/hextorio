@@ -128,6 +128,7 @@ script.on_init(function()
     trades.fetch_base_trade_efficiency_settings()
 
     storage.hex_grid.sink_generator_efficiency = lib.runtime_setting_value_as_number "sink-generator-efficiency"
+    storage.trades.trade_complexity = lib.runtime_setting_value_as_string "trade-complexity"
     storage.trades.unresearched_penalty = lib.runtime_setting_value_as_number "unresearched-penalty"
     storage.trades.batch_processing_threshold = lib.runtime_setting_value_as_int "trade-batching-threshold"
     storage.trades.collection_batch_size = lib.runtime_setting_value_as_int "trade-collection-batch-size"

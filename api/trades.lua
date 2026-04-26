@@ -182,6 +182,10 @@ function trades.register_events()
         storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
     end)
 
+    event_system.register("runtime-setting-changed-trade-complexity", function()
+        storage.trades.trade_complexity = lib.runtime_setting_value_as_string "trade-complexity"
+    end)
+
     event_system.register("entity-killed-entity", trades.on_entity_killed_entity)
     event_system.register("post-item-values-recalculated", trades.generate_surrounding_trades)
 end
@@ -1249,45 +1253,48 @@ function trades.random_trade_item_names(surface_name, volume, params, allow_untr
         trade_items[math.random(1, #trade_items)] = include_item
     end
 
-    if #trade_items == 0 then
+    if #trade_items < 2 then
         lib.log_error("trades.random_trade_item_names: Not enough items selected for trade")
         return {}, {}
     end
 
+    local possible_distributions = {
+        [2] = {1},
+        [3] = {1, 2},
+        [4] = {1, 2, 2, 3}, -- Make two-to-two trades as common as trades with three items on one side
+        [5] = {2, 3},
+        [6] = {3},
+    }
+
+    local trade_complexity_mode = storage.trades.trade_complexity or "balanced"
+
+    local t
+    local r = math.random()
+    if trade_complexity_mode == "simple" then
+        -- Interpolation with x^2
+        -- Favors low values
+        t = r * r
+    elseif trade_complexity_mode == "balanced" then
+        -- Interpolation with x^1.15
+        -- Favors low values, but less so than x^2
+        t = r ^ 1.15
+    elseif trade_complexity_mode == "complex" then
+        -- Interpolation with x^0.75
+        -- Favors high values
+        t = r ^ 0.75
+    end
+
+    local total_items = math.min(2 + math.floor(5 * t), #trade_items)
+    local dists = possible_distributions[total_items]
+    local num_inputs = dists[math.random(1, #dists)]
+
     local input_item_names = {}
     local output_item_names = {}
-    local mod = math.random(0, 1) -- Controls whether inputs or outputs are selected first, removing bias from inputs having more items than outputs on average.
-    for i = 1, #trade_items do
-        if i % 2 == mod then
-            table.insert(output_item_names, trade_items[i])
+    for i = 1, total_items do
+        if i <= num_inputs then
+            input_item_names[i] = trade_items[i]
         else
-            table.insert(input_item_names, trade_items[i])
-        end
-    end
-
-    local num_inputs = math.random(1, 3)
-    while #input_item_names > num_inputs do
-        local idx = 1
-        if input_item_names[1] == include_item then
-            idx = idx + 1
-        end
-        if idx <= #input_item_names then
-            table.remove(input_item_names, idx)
-        else
-            break
-        end
-    end
-
-    local num_outputs = math.random(1, 3)
-    while #output_item_names > num_outputs do
-        local idx = 1
-        if output_item_names[1] == include_item then
-            idx = idx + 1
-        end
-        if idx <= #output_item_names then
-            table.remove(output_item_names, idx)
-        else
-            break
+            output_item_names[i - num_inputs] = trade_items[i]
         end
     end
 

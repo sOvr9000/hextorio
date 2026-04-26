@@ -10,6 +10,14 @@ data:extend({
         order = "a[important]-a[balancing]-s[base-trade-efficiency]",
     },
     {
+        type = "string-setting",
+        name = "hextorio-trade-complexity",
+        setting_type = "runtime-global",
+        default_value = "balanced",
+        allowed_values = {"simple", "balanced", "complex"},
+        order = "a[important]-a[balancing]-s[trade-complexity]",
+    },
+    {
         type = "double-setting",
         setting_type = "runtime-global",
         name = "hextorio-unresearched-penalty",
