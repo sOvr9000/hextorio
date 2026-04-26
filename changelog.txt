@@ -3,6 +3,7 @@ Version: 1.7.6
 Date: 28/4/26
   Features:
     - Added mod setting for trade complexity.
+    - Added three new quests and a related hex rank factor.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.5
 Date: 24/4/26

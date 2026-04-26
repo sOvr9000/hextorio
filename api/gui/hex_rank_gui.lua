@@ -45,6 +45,9 @@ local factor_metadata = {
     ["total-item-rank"] = {
         sprite = "gold-star",
     },
+    ["largest-parallel-trade"] = {
+        sprite = "virtual-signal.signal-stack-size",
+    },
     ["fastest-ship-speed"] = {
         sprite = "item.thruster",
     },

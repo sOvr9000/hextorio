@@ -396,6 +396,45 @@ return {
             rewards = {{type = "unlock-feature", value = "hex-rank"}},
             prerequisites = {"remind-me-later"},
         },
+        {
+            name = "deal-with-it",
+            conditions = {{type = "largest-parallel-trade", progress_requirement = 3}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "express-underground-belt", count = 10},
+                    },
+                },
+            },
+            prerequisites = {"look-at-my-score"},
+        },
+        {
+            name = "core-chungus",
+            conditions = {{type = "largest-parallel-trade", progress_requirement = 4}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "express-underground-belt", count = 16},
+                    },
+                },
+            },
+            prerequisites = {"deal-with-it"},
+        },
+        {
+            name = "stress-test",
+            conditions = {{type = "largest-parallel-trade", progress_requirement = 5}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "express-underground-belt", count = 24},
+                    },
+                },
+            },
+            prerequisites = {"core-chungus"},
+        },
 
         -- Post-Nauvis
         {

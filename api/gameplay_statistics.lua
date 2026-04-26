@@ -49,6 +49,7 @@ local gameplay_statistics = {}
 ---| "ping-trade"
 ---| "create-trade-map-tag"
 ---| "total-unique-items-traded"
+---| "largest-parallel-trade"
 ---| "fastest-ship-speed"
 ---| "give-hexlight-color"
 ---| "claim-farthest-hex-on"

@@ -100,6 +100,10 @@ function hex_rank.init()
             goal_stat = total_tradable_items * 4,
             coefficient = 1.2,
         },
+        ["largest-parallel-trade"] = {
+            goal_stat = 10,
+            coefficient = 5,
+        },
         ["fastest-ship-speed"] = {
             goal_stat = 550,
             coefficient = 2,

@@ -2863,6 +2863,7 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
     end
 
     local total_batches = 0
+    local unique_trades_used = 0
     for _, trade_id in pairs(trade_ids) do
         local trade = trades.get_trade_from_id(trade_id)
 
@@ -2878,6 +2879,7 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
 
                     gameplay_statistics.increment("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + num_batches
+                    unique_trades_used = unique_trades_used + 1
 
                     local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin, cargo_wagons)
                     if total_removed and total_inserted and remaining_to_insert and remaining_coin and coins_added then
@@ -2914,6 +2916,9 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
     local total_coins_removed = coin_tiers.subtract(initial_input_coin, input_coin)
 
     gameplay_statistics.increment("make-trades", total_batches)
+    if unique_trades_used > 1 then
+        gameplay_statistics.set_if_greater("largest-parallel-trade", unique_trades_used)
+    end
 
     -- Only NOW does it normalize, skipping all unnecessary normalizations mid-processing.
     local total_coins_added = coin_tiers.normalized(coin_tiers.new(total_coins_added_values))
