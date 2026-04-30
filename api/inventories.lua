@@ -149,7 +149,7 @@ function inventories.update_inventory(inventory, current_coin, new_coin, cargo_w
     local is_train = inventory.object_name == "LuaTrain"
 
     if use_piggy_bank and not is_train then
-        local player = inventory.player_owner
+        local player = lib.get_player_owner_of_inventory(inventory)
         if player then
             piggy_bank.set_player_stored_coins(player.index, new_coin)
 

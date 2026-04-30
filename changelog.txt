@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.7
 Date: 30/4/26
+  Bugfixes:
+    - Fixed that coins wouldn't be taken from the piggy bank if in remote view while claiming hexes or upgrading all item buffs.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.6
 Date: 27/4/26
