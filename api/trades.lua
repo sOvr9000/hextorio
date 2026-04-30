@@ -2952,8 +2952,7 @@ function trades.get_productivity_modifier(quality)
     -- The results of this function can be cached, but that'd be slower than calculating it repeatedly,
     -- partly because the tier has to be determined, which is already cached and requires a string hash.
     local tier = lib.get_quality_tier(quality)
-    if tier <= 1 then return 0 end
-    return -0.35 - (tier - 2) * 0.2
+    return 0.75 * (1 - tier) -- subtract 75% per quality tier
 end
 
 ---Get a value scaled by the productivity modifier, allowing for negative productivity modifiers.

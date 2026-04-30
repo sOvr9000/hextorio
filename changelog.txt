@@ -15,6 +15,7 @@ Date: 30/4/26
     - Upon unlocking the catalog, the initial discovery of items is now only on trades in claimed hexes instead of also in unclaimed hexes.
   Balancing:
     - Reduced strongbox reward from 5 minutes to 15 seconds of net coin production.
+    - Increased trade productivity penalty for higher qualities.
   Gui:
     - Grouped mod buttons into a tray in top left corner.  All buttons are visible from the start but are grayed out if their respective feature isn't yet unlocked.
 ---------------------------------------------------------------------------------------------------
