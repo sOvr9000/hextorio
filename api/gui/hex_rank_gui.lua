@@ -3,7 +3,6 @@ local lib = require "api.lib"
 local core_gui = require "api.gui.core_gui"
 local gui_stack = require "api.gui.gui_stack"
 local event_system = require "api.event_system"
-local quests       = require "api.quests"
 local hex_rank     = require "api.hex_rank"
 
 local hex_rank_gui = {}
@@ -16,7 +15,7 @@ local factor_metadata = {
         sprite = "hexagon-with-plus-sign",
     },
     ["total-quests-completed"] = {
-        sprite = "questbook",
+        sprite = "questbook-white",
     },
     ["total-strongbox-level"] = {
         sprite = "entity.strongbox-tier-1",
@@ -108,10 +107,6 @@ function hex_rank_gui.reinitialize(player)
     local frame = player.gui.screen["hex-rank"]
     if frame then frame.destroy() end
 
-    local button = player.gui.top["hex-rank-button"]
-    if button then button.destroy() end
-
-    hex_rank_gui.init_hex_rank_button(player)
     hex_rank_gui.init_hex_rank(player)
 
     hex_rank_gui.reinitialize_hud(player)
@@ -123,20 +118,6 @@ function hex_rank_gui.reinitialize_hud(player)
     local hud = player.gui.center["hex-rank-hud"]
     if hud then hud.destroy() end
     hex_rank_gui.init_hex_rank_hud(player)
-end
-
----@param player LuaPlayer
-function hex_rank_gui.init_hex_rank_button(player)
-    if player.gui.top["hex-rank-button"] then return end
-    local hex_rank_button = player.gui.top.add {
-        type = "sprite-button",
-        name = "hex-rank-button",
-        sprite = "hex-rank-button",
-        style = "side_menu_button",
-        tooltip = {"hextorio-gui.frame-toggle-button-tooltip"},
-        visible = quests.is_feature_unlocked "hex-rank",
-    }
-    hex_rank_button.tags = {handlers = {["gui-clicked"] = "hex-rank-button"}}
 end
 
 ---@param player LuaPlayer

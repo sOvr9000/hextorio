@@ -466,7 +466,7 @@ function hex_grid.add_trade(hex_core_state, trade)
 
     hex_grid.set_trade_allowed_qualities(hex_core, trade)
 
-    if hex_core_state.claimed then
+    if hex_core_state.claimed and quests.is_feature_unlocked "catalog" then
         trades.discover_items_in_trades {trade}
     end
 
@@ -1966,7 +1966,9 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
 
     -- Add trade items to catalog list
-    trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
+    if quests.is_feature_unlocked "catalog" then
+        trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
+    end
 
     -- Set default qualities once more just in case mod setting "Default Trade Quality" changed
     for _, trade_id in pairs(state.trades or {}) do

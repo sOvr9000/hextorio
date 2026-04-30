@@ -47,24 +47,8 @@ function questbook_gui.reinitialize(player)
     local frame = player.gui.screen["questbook"]
     if frame then frame.destroy() end
 
-    local button = player.gui.top["questbook-button"]
-    if button then button.destroy() end
-
-    questbook_gui.init_questbook_button(player)
     questbook_gui.init_questbook(player)
     questbook_gui.repopulate_quest_lists(player)
-end
-
-function questbook_gui.init_questbook_button(player)
-    if player.gui.top["questbook-button"] then return end
-    local questbook_button = player.gui.top.add {
-        type = "sprite-button",
-        name = "questbook-button",
-        sprite = "questbook",
-        style = "side_menu_button",
-        tooltip = {"hextorio-gui.questbook-button-tooltip"},
-    }
-    questbook_button.tags = {handlers = {["gui-clicked"] = "questbook-button"}}
 end
 
 function questbook_gui.init_questbook(player)

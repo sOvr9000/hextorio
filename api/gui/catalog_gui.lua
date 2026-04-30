@@ -64,16 +64,6 @@ function catalog_gui.register_events()
         catalog_gui.show_catalog(player)
     end)
 
-    event_system.register("quest-reward-received", function(reward_type, value)
-        if reward_type == "unlock-feature" then
-            if value == "catalog" then
-                for _, player in pairs(game.players) do
-                    catalog_gui.init_catalog_button(player)
-                end
-            end
-        end
-    end)
-
     event_system.register("item-buff-level-changed", function(item_name)
         for _, player in pairs(game.connected_players) do
             if gui.is_frame_open(player, "catalog") then
@@ -134,24 +124,7 @@ function catalog_gui.reinitialize(player)
     local frame = player.gui.screen["catalog"]
     if frame then frame.destroy() end
 
-    local button = player.gui.top["catalog-button"]
-    if button then button.destroy() end
-
-    catalog_gui.init_catalog_button(player)
     catalog_gui.init_catalog(player)
-end
-
-function catalog_gui.init_catalog_button(player)
-    if not player.gui.top["catalog-button"] then
-        local catalog_button = player.gui.top.add {
-            type = "sprite-button",
-            name = "catalog-button",
-            sprite = "catalog",
-            tags = {handlers = {["gui-clicked"] = "catalog-button"}},
-            tooltip = {"hextorio-gui.catalog-button-tooltip"},
-        }
-    end
-    player.gui.top["catalog-button"].visible = quests.is_feature_unlocked "catalog"
 end
 
 function catalog_gui.init_catalog(player)
@@ -409,7 +382,7 @@ function catalog_gui.build_header(player, rank_obj, frame)
     local open_in_trade_overview = control_flow.add {
         type = "sprite-button",
         name = "open-in-trade-overview",
-        sprite = "trade-overview",
+        sprite = "trade-overview-white",
         tags = {handlers = {["gui-clicked"] = "open-in-trade-overview"}},
     }
 

@@ -81,16 +81,6 @@ function trade_overview_gui.register_events()
     event_system.register("trade-export-progress", trade_overview_gui.on_trade_export_progress)
     event_system.register("trade-export-complete", trade_overview_gui.on_trade_export_complete)
 
-    event_system.register("quest-reward-received", function(reward_type, value)
-        if reward_type == "unlock-feature" then
-            if value == "trade-overview" then
-                for _, player in pairs(game.players) do
-                    trade_overview_gui.init_trade_overview_button(player)
-                end
-            end
-        end
-    end)
-
     event_system.register("hex-core-deleted", function(state)
         if not state then return end
         for _, player in pairs(game.connected_players) do
@@ -135,24 +125,7 @@ function trade_overview_gui.reinitialize(player)
     local frame = player.gui.screen["trade-overview"]
     if frame then frame.destroy() end
 
-    local button = player.gui.top["trade-overview-button"]
-    if button then button.destroy() end
-
-    trade_overview_gui.init_trade_overview_button(player)
     trade_overview_gui.init_trade_overview(player)
-end
-
-function trade_overview_gui.init_trade_overview_button(player)
-    if not player.gui.top["trade-overview-button"] then
-        local trade_overview_button = player.gui.top.add {
-            type = "sprite-button",
-            name = "trade-overview-button",
-            sprite = "trade-overview",
-            tags = {handlers = {["gui-clicked"] = "trade-overview-button"}},
-            tooltip = {"hextorio-gui.trade-overview-button-tooltip"},
-        }
-    end
-    player.gui.top["trade-overview-button"].visible = quests.is_feature_unlocked "trade-overview"
 end
 
 function trade_overview_gui.init_trade_overview(player)

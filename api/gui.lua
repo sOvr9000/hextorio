@@ -1,5 +1,6 @@
 
 local gui = {
+    tray = require "api.gui.tray_gui",
     core_gui = require "api.gui.core_gui",
     intro_gui = require "api.gui.intro_gui",
     questbook = require "api.gui.questbook_gui",

@@ -2,6 +2,69 @@
 data:extend{
     {
         type = "sprite",
+        name = "questbook-black",
+        filename = "__hextorio__/graphics/icons/questbook-black.png",
+        width = 128,
+        height = 128,
+        scale = 0.5,
+        flags = {"no-crop"},
+    },
+    {
+        type = "sprite",
+        name = "questbook-white",
+        filename = "__hextorio__/graphics/icons/questbook-white.png",
+        width = 128,
+        height = 128,
+        scale = 0.5,
+        flags = {"no-crop"},
+    },
+    {
+        type = "sprite",
+        name = "catalog-black",
+        filename = "__hextorio__/graphics/icons/catalog-black.png",
+        width = 128,
+        height = 128,
+    },
+    {
+        type = "sprite",
+        name = "catalog-white",
+        filename = "__hextorio__/graphics/icons/catalog-white.png",
+        width = 128,
+        height = 128,
+    },
+    {
+        type = "sprite",
+        name = "trade-overview-black",
+        filename = "__hextorio__/graphics/icons/trade-overview-black.png",
+        width = 128,
+        height = 128,
+    },
+    {
+        type = "sprite",
+        name = "trade-overview-white",
+        filename = "__hextorio__/graphics/icons/trade-overview-white.png",
+        width = 128,
+        height = 128,
+    },
+    {
+        type = "sprite",
+        name = "hex-rank-button-black",
+        filename = "__hextorio__/graphics/icons/hex-rank-button-black.png",
+        width = 64,
+        height = 64,
+    },
+    {
+        type = "sprite",
+        name = "hex-rank-button-white",
+        filename = "__hextorio__/graphics/icons/hex-rank-button-white.png",
+        width = 64,
+        height = 64,
+    },
+
+
+
+    {
+        type = "sprite",
         name = "hex-coin",
         filename = "__hextorio__/graphics/icons/hex-coin.png",
         width = 64,
@@ -66,29 +129,6 @@ data:extend{
         width = 150,
         height = 150,
         scale = 40/150,
-    },
-    {
-        type = "sprite",
-        name = "questbook",
-        filename = "__hextorio__/graphics/icons/questbook.png",
-        width = 128,
-        height = 128,
-        scale = 0.5,
-        flags = {"no-crop"},
-    },
-    {
-        type = "sprite",
-        name = "trade-overview",
-        filename = "__hextorio__/graphics/icons/trade-overview.png",
-        width = 128,
-        height = 128,
-    },
-    {
-        type = "sprite",
-        name = "catalog",
-        filename = "__hextorio__/graphics/icons/catalog.png",
-        width = 128,
-        height = 128,
     },
     {
         type = "sprite",
@@ -379,13 +419,6 @@ data:extend{
         width = 128,
         height = 128,
         flags = {"no-crop"},
-    },
-    {
-        type = "sprite",
-        name = "hex-rank-button",
-        filename = "__hextorio__/graphics/icons/hex-rank-button.png",
-        width = 64,
-        height = 64,
     },
     {
         type = "sprite",
