@@ -1055,7 +1055,8 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     local is_hexaprism = false
     if surface.name == "nauvis" then
         local extent = hex_island.get_island_extent "nauvis"
-        is_hexaprism = dist >= extent * 0.95
+        local bfs_dist = hex_island.get_distance_from_spawn("nauvis", hex_pos) or 0
+        is_hexaprism = bfs_dist >= extent * 0.95
         resource_names = {"iron-ore", "copper-ore", "coal", "stone"}
     elseif surface.name == "vulcanus" then
         resource_names = {"vulcanus_coal", "calcite", "tungsten_ore"}
@@ -4467,18 +4468,20 @@ function hex_grid.on_hex_island_generated(surface, island)
     end
 
     local extent = hex_island.get_island_extent(surface.name)
+    local distances = hex_island.get_island_distances(surface.name)
 
     local min_distance = extent * 0.95
     local max_distance = extent
 
-    local center = {q=0, r=0}
     local candidates = {}
-    for q, Q in pairs(island) do
-        for r, _ in pairs(Q) do
-            local pos = {q=q, r=r}
-            local dist = axial.distance(center, pos)
-            if dist >= min_distance and dist <= max_distance then
-                candidates[#candidates+1] = pos
+    for q, island_Q in pairs(island) do
+        for r, _ in pairs(island_Q) do
+            local dist_Q = distances[q]
+            if dist_Q then
+                local dist = dist_Q[r]
+                if dist and dist >= min_distance and dist <= max_distance then
+                    candidates[#candidates+1] = {q=q, r=r}
+                end
             end
         end
     end
