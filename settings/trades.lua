@@ -38,7 +38,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-coin-trade-chance",
         setting_type = "runtime-global",
-        default_value = 0.5,
+        default_value = 0.3,
         minimum_value = 0,
         maximum_value = 1.0,
         order = "t[trades]-c[coin-trade-chance]",
