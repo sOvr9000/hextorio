@@ -178,21 +178,23 @@ function inventories.update_inventory(inventory, current_coin, new_coin, cargo_w
 
         local fn, args
         if new_amount >= current_amount + 1 then
+            local diff = math.min(4294967295, new_amount - current_amount)
             if is_train then
                 fn = lib.insert_into_train
-                args = {cargo_wagons or {}, {name = coin_name, count = new_amount - current_amount}, storage.item_buffs.train_trading_capacity}
+                args = {cargo_wagons or {}, {name = coin_name, count = diff}, storage.item_buffs.train_trading_capacity}
             else
                 fn = inventory.insert
-                args = {{name = coin_name, count = new_amount - current_amount}}
+                args = {{name = coin_name, count = diff}}
             end
             call_order[#call_order+1] = {fn, args}
         elseif new_amount + 1 <= current_amount then
+            local diff = math.min(4294967295, current_amount - new_amount)
             if is_train then
                 fn = lib.remove_from_train
-                args = {cargo_wagons or {}, {name = coin_name, count = current_amount - new_amount}, storage.item_buffs.train_trading_capacity}
+                args = {cargo_wagons or {}, {name = coin_name, count = diff}, storage.item_buffs.train_trading_capacity}
             else
                 fn = inventory.remove
-                args = {{name = coin_name, count = current_amount - new_amount}}
+                args = {{name = coin_name, count = diff}}
             end
             table.insert(call_order, 1, {fn, args})
         end
