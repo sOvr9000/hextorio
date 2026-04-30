@@ -176,7 +176,7 @@ function inventories.update_inventory(inventory, current_coin, new_coin, cargo_w
         local current_amount = current_coin.values[tier]
 
         local fn, args
-        if new_amount > current_amount then
+        if new_amount >= current_amount + 1 then
             if is_train then
                 fn = lib.insert_into_train
                 args = {cargo_wagons or {}, {name = coin_name, count = new_amount - current_amount}, storage.item_buffs.train_trading_capacity}
@@ -185,7 +185,7 @@ function inventories.update_inventory(inventory, current_coin, new_coin, cargo_w
                 args = {{name = coin_name, count = new_amount - current_amount}}
             end
             call_order[#call_order+1] = {fn, args}
-        elseif new_amount < current_amount then
+        elseif new_amount + 1 <= current_amount then
             if is_train then
                 fn = lib.remove_from_train
                 args = {cargo_wagons or {}, {name = coin_name, count = current_amount - new_amount}, storage.item_buffs.train_trading_capacity}

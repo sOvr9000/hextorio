@@ -729,6 +729,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
                     end
 
                     local coin = coin_tiers.from_base_value(total_coin_value / (10 * (storage.item_values.base_coin_value or 10))) -- multiply base coin value by 10 because coins in dungeon chests are 1/10 of total item value in them
+                    coin = coin_tiers.floor(coin) -- If 0 < coin value < 1, then item insertion could crash because inventory item insertion/removal cannot be done with count < 1.
                     inventories.add_coin_to_inventory(inv, coin)
 
                     -- Additionally roll for extra items
