@@ -31,38 +31,28 @@ function history.step(history_obj, steps)
     return history_obj.data[history_obj.index]
 end
 
----Add data right after the currently visited position in the history object, clearing all history after it.
----Immediately visit the data after adding it.
+---Append data to the end of the history object, regardless of the currently visited position.
+---If an equivalent entry already exists anywhere in the history, it is moved to the end rather than duplicated.
+---Immediately visit the newly added data.
 ---If the history object would exceed its capacity after adding the data, the oldest data item is removed to make room.
 ---@generic T
 ---@param history_obj {data: T[], index: int, capacity: int}
 ---@param data_obj T
----@param allow_repeated boolean If false and the currently visited object is component-wise equivalent to `data_obj`, it is not added.
-function history.add(history_obj, data_obj, allow_repeated)
+function history.add(history_obj, data_obj)
     local d = history_obj.data
-    local index = history_obj.index
 
-    index = index + 2
-    for i = #d, index, -1 do
-        d[i] = nil
-    end
-
-    index = index - 2
-    if not allow_repeated and #d > 0 then
-        local cur = d[index]
-        if cur ~= nil then
-            if lib.tables_equal(cur, data_obj) then
-                return
-            end
+    for i = 1, #d do
+        if lib.tables_equal(d[i], data_obj) then
+            table.remove(d, i)
+            break
         end
     end
 
-    index = index + 1
-    d[index] = data_obj
-    history_obj.index = index
+    d[#d + 1] = data_obj
+    history_obj.index = #d
 
     if #d > history_obj.capacity then
-        table.remove(history_obj, 1)
+        table.remove(d, 1)
         history_obj.index = history_obj.capacity
     end
 end
