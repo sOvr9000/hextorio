@@ -84,6 +84,10 @@ function tray_gui.init_tray(player)
         name = "hextorio-tray",
         direction = "horizontal",
     }
+    tray.style.top_padding = 2
+    tray.style.left_padding = 2
+    tray.style.right_padding = 2
+    tray.style.bottom_padding = 2
 
     for i, def in pairs(BUTTON_DEFS) do
         local btn = tray.add {
@@ -95,7 +99,7 @@ function tray_gui.init_tray(player)
         btn.tags = {handlers = {["gui-clicked"] = def.handler}}
 
         if i > 1 then
-            btn.style.left_margin = 2
+            btn.style.left_margin = -4
         end
 
         tray_gui._update_button_state(btn, def)
