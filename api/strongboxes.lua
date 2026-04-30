@@ -67,6 +67,33 @@ function strongboxes.spawn(surface, pos, tier)
 
     strongboxes.insert_loot(sb_entity)
 
+    -- Find the tag for this strongbox if it already exists.
+    local current_tags = game.forces.player.find_chart_tags(surface, {
+        left_top = {
+            x = pos.x - 0.25,
+            y = pos.y - 0.25,
+        },
+        right_bottom = {
+            x = pos.x + 0.25,
+            y = pos.y + 0.25,
+        },
+    })
+
+    -- Remove excess tags if they somehow get created (they shouldn't).
+    for i = #current_tags, 2, -1 do
+        current_tags[i].destroy()
+    end
+
+    if current_tags[1] then
+        current_tags[1].text = "(" .. tier .. ")"
+    else
+        game.forces.player.add_chart_tag(surface, {
+            position = pos,
+            icon = {type = "entity", name = "strongbox-tier-" .. tier},
+            text = "(" .. tier .. ")",
+        })
+    end
+
     return sb_entity
 end
 
