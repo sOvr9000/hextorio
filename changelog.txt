@@ -16,8 +16,13 @@ Date: 30/4/26
     - Strongboxes can no longer spawn within one hex tile from the spawn hex.
   Balancing:
     - Reduced strongbox reward from 5 minutes to 15 seconds of net coin production.
-    - Reduced default setting value for coin trade chance from 0.5 to 0.3.
     - Increased trade productivity penalty for higher qualities.
+    - Changed default setting values:
+      - Coin Trade Chance: 0.5 -> 0.3
+      - Nauvis Hex Size: 24 -> 26
+      - Fulgora Hex Size: 33 -> 35
+      - Vulcanus Hex Stroke Width: 3 -> 2
+      - Aquilo Hex Stroke Width: 20 -> 18
   Gui:
     - Grouped mod buttons into a tray in top left corner.  All buttons are visible from the start but are grayed out if their respective feature isn't yet unlocked.
 ---------------------------------------------------------------------------------------------------
