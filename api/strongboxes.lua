@@ -6,6 +6,7 @@ local piggy_bank          = require "api.piggy_bank"
 local inventories         = require "api.inventories"
 local event_system        = require "api.event_system"
 local gameplay_statistics = require "api.gameplay_statistics"
+local entity_util         = require "api.entity_util"
 
 local strongboxes = {}
 
@@ -66,6 +67,17 @@ function strongboxes.spawn(surface, pos, tier)
     end
 
     strongboxes.insert_loot(sb_entity)
+    strongboxes.update_chart_tag(sb_entity)
+
+    return sb_entity
+end
+
+---Add a new chart tag for a strongbox entity, or modify one that already exists.
+---@param sb_entity any
+function strongboxes.update_chart_tag(sb_entity)
+    local surface = sb_entity.surface
+    local pos = sb_entity.position
+    local tier = entity_util.get_tier_of_strongbox(sb_entity)
 
     -- Find the tag for this strongbox if it already exists.
     local current_tags = game.forces.player.find_chart_tags(surface, {
@@ -93,8 +105,6 @@ function strongboxes.spawn(surface, pos, tier)
             text = "(" .. tier .. ")",
         })
     end
-
-    return sb_entity
 end
 
 ---Calculate coin reward based on the given net coin production statistic.
