@@ -75,7 +75,7 @@ end
 ---@return int
 function strongboxes.get_coin_reward_from_net_coin_production(net_coins)
     -- Base number of minutes of net coin production to use
-    local minutes = 5
+    local minutes = 0.25
 
     local scaled_net_coins = minutes * net_coins -- net coin production is measured in per-minute
 
