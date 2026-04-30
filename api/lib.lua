@@ -61,33 +61,6 @@ local non_buildable_on_tile_lookup = sets.union(non_land_tile_name_lookup, sets.
     "brash-ice",
 })
 
--- This can probably be auto-populated, but that may not work well with modded items.
-local raw_items = sets.new {
-    "iron-ore",
-    "copper-ore",
-    "stone",
-    "coal",
-    "uranium-ore",
-    "wood",
-    "raw-fish",
-    "tungsten-ore",
-    "calcite",
-    "carbon", -- Just so that coal synthesis isn't needed to be unlocked from Gleba before trading on Vulcanus
-    "scrap",
-    "yumako",
-    "jellynut",
-    "hexaprism",
-    "carbonic-asteroid-chunk",
-    "metallic-asteroid-chunk",
-    "oxide-asteroid-chunk",
-    "promethium-asteroid-chunk",
-
-    "hex-coin",
-    "gravity-coin",
-    "meteor-coin",
-    "hexaprism-coin",
-}
-
 local vanilla_planet_names = {
     ["nauvis"] = true,
     ["vulcanus"] = true,
@@ -2356,6 +2329,62 @@ end
 ---Return a lookup table of names of items (and not fluids) that are only obtainable from planets without recipes.
 ---@return {[string]: boolean}
 function lib.get_raw_items()
+    local cached_storage = storage.cached
+    if not cached_storage then
+        cached_storage = {}
+        storage.cached = cached_storage
+    end
+
+    local raw_items = cached_storage.raw_items
+    if raw_items then
+        return raw_items
+    end
+
+    raw_items = sets.new {}
+    for _, prot in pairs(prototypes.space_location) do
+        if prot.type == "planet" then
+            local mgs = prot.map_gen_settings
+            if mgs then
+                local entity_settings = mgs.autoplace_settings.entity.settings
+                if entity_settings then
+                    for entity_name, s in pairs(entity_settings) do
+                        local entity_prot = prototypes.entity[entity_name]
+                        if entity_prot then
+                            local mining_results = entity_prot.mineable_properties.products
+                            if mining_results then
+                                for _, result in pairs(mining_results) do
+                                    if result.type == "item" then
+                                        local item_name = result.name
+                                        sets.add(raw_items, item_name)
+                                        local result_prot = prototypes.item[item_name]
+                                        if result_prot then
+                                            local spoil_result_prot = result_prot.spoil_result
+                                            if spoil_result_prot then
+                                                local spoil_result_name = spoil_result_prot.name
+                                                sets.add(raw_items, spoil_result_name)
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    sets.add(raw_items, "hexaprism")
+    for _, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
+        sets.add(raw_items, coin_name)
+    end
+
+    -- Would be nice to procedurally determine what tree types generate on each planet, but that seems very complicated, so for now this part is hardcoded.
+    sets.add(raw_items, "wood")
+    sets.add(raw_items, "yumako")
+    sets.add(raw_items, "jellynut")
+
+    cached_storage.raw_items = raw_items
     return raw_items
 end
 
