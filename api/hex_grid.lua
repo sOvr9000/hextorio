@@ -1638,6 +1638,9 @@ end
 function hex_grid.try_generate_strongbox(state)
     if not state.hex_core or not state.hex_core.valid or not state.claimed then return end
 
+    local dist = axial.distance(state.position, {q=0, r=0})
+    if dist <= 1 then return end
+
     local surface = state.hex_core.surface
     local pos = state.hex_core.position
     local offset = lib.random_unit_vector(math.random(8, 16))
