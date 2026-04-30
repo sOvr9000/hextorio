@@ -745,8 +745,6 @@ end
 function item_buffs.add_free_buffs(amount)
     -- If there were no free buffs queued up and it's currently stalled, then it should no longer be stalled, just to check if anything can happen.
     storage.item_buffs.free_buffs_stalled = storage.item_buffs.free_buffs_stalled and storage.item_buffs.free_buffs_remaining > 0
-    log(storage.item_buffs.free_buffs_stalled)
-
     storage.item_buffs.free_buffs_remaining = storage.item_buffs.free_buffs_remaining + amount
 end
 
