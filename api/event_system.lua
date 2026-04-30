@@ -93,14 +93,17 @@ function event_system.bind_gui_events()
                 if titlebar then
                     local search_field = titlebar["search-field"]
                     if search_field and search_field.valid and search_field.visible then -- TODO: Also check for search_field.is_focused, if anything like that exists in the modding API...
-                        found_search_field = true
+                        local is_switching = storage.gui and storage.gui.switching and storage.gui.switching[player.index] == true
                         search_field.visible = false
                         search_field.text = ""
                         local search_button = titlebar["search"]
                         if search_button and search_button.valid then search_button.toggled = false end
-                        player.opened = event.element
                         event_system.trigger_gui("gui-search-text-changed", tag, player, event.element)
-                        return
+                        if not is_switching then
+                            found_search_field = true
+                            player.opened = event.element
+                            return
+                        end
                     end
                 end
                 if not found_search_field then
