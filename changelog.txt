@@ -1,11 +1,4 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.7.8
-Date: 30/4/26
-  Gui:
-    - Grouped mod buttons into a tray in top left corner.  All buttons are visible from the start but are grayed out if their respective feature isn't yet unlocked.
-  Changes:
-    - Upon unlocking the catalog, the initial discovery of items is now only on trades in claimed hexes instead of also in unclaimed hexes.
----------------------------------------------------------------------------------------------------
 Version: 1.7.7
 Date: 30/4/26
   Bugfixes:
@@ -19,6 +12,9 @@ Date: 30/4/26
     - Changed that trade overview filter history doesn't get overwritten when adding new filters while viewing a past filter.
     - Changed that newly added trade overview filters that already exist in the history now get pushed to the front (most recent end) of the history instead of staying in place to avoid duplication.
     - Changed the default keybind for teleporting to hex cores from T to F.
+    - Upon unlocking the catalog, the initial discovery of items is now only on trades in claimed hexes instead of also in unclaimed hexes.
+  Gui:
+    - Grouped mod buttons into a tray in top left corner.  All buttons are visible from the start but are grayed out if their respective feature isn't yet unlocked.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.6
 Date: 27/4/26
