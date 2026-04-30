@@ -234,7 +234,7 @@ function hex_grid.register_events()
                 local all_trades = {}
                 for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
                     for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
-                        if state.trades then
+                        if state.trades and state.claimed then
                             for _, trade_id in pairs(state.trades) do
                                 table.insert(all_trades, trades.get_trade_from_id(trade_id))
                             end
