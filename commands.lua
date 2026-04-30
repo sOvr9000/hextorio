@@ -8,10 +8,6 @@ local inventories = require "api.inventories"
 
 
 local all_commands = {
-    -- {
-    --     name = "refresh-all-trades",
-    --     usage = "/refresh-all-trades",
-    -- },
     {
         name = "hextorio-commands",
         usage = "/hextorio-commands",
@@ -71,10 +67,6 @@ local all_commands = {
         examples = {"/disable-quest ground-zero", "/disable-quest lazy-looter"},
     },
     {
-        name = "tp-to-ship",
-        usage = "/tp-to-ship",
-    },
-    {
         name = "chart",
         usage = "/chart <surface> [range]",
         params = {"string", "number?"},
@@ -83,10 +75,6 @@ local all_commands = {
     {
         name = "spawn-ship",
         usage = "/spawn-ship",
-    },
-    {
-        name = "skip-flight",
-        usage = "/skip-flight",
     },
     {
         name = "add-coins",
@@ -99,10 +87,6 @@ local all_commands = {
         usage = "/summon <entity> [amount] [quality]",
         params = {"string", "number?", "string?"},
         examples = {"/summon spitter-spawner", "/summon small-worm-turret 2", "/summon big-stomper-pentapod 5 hextreme"},
-    },
-    {
-        name = "tp-to-edge",
-        usage = "/tp-to-edge",
     },
     {
         name = "regenerate-trades",
@@ -403,8 +387,6 @@ function on_command(player, command, params)
 
         -- Claim hexes
         -- handled by event_system
-    elseif command == "tp-to-ship" then
-        player.teleport({x = 0, y = 0}, "platform-1")
     elseif command == "chart" then
         local surface_name = params[1]
         if not game.get_surface(surface_name) then
@@ -419,18 +401,6 @@ function on_command(player, command, params)
         if sp then
             space_platforms.generate(sp, "starter-ship")
         end
-    elseif command == "skip-flight" then
-        local sp = player.surface.platform
-        if not sp then
-            player.print({"hextorio.not-on-platform"})
-            return
-        end
-        if not sp.space_connection then
-            player.print({"hextorio.platform-no-destination"})
-            return
-        end
-
-        sp.distance = 1
     elseif command == "add-coins" then
         local inv = lib.get_player_inventory(player)
         if inv then

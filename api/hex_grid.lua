@@ -220,13 +220,6 @@ function hex_grid.register_events()
     end)
 
 
-    event_system.register("command-tp-to-edge", function(player, params)
-        local island_extent = hex_island.get_island_extent(player.surface.name)
-        local edge_pos = {q = island_extent, r = 0}
-        local transformation = terrain.get_surface_transformation(player.surface)
-        local center = axial.get_hex_center(edge_pos, transformation.scale, transformation.rotation)
-        player.teleport(center)
-    end)
 
     event_system.register("quest-reward-received", function(reward_type, value)
         if reward_type == "unlock-feature" then
