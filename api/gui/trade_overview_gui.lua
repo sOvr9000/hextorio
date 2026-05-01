@@ -1,12 +1,8 @@
 
 local lib = require "api.lib"
 local gui = require "api.gui.core_gui"
-local axial = require "api.axial"
-local terrain = require "api.terrain"
-local hex_grid = require "api.hex_grid"
 local trades = require "api.trades"
 local sets = require "api.sets"
-local item_values = require "api.item_values"
 local event_system = require "api.event_system"
 local quests = require "api.quests"
 local gui_stack = require "api.gui.gui_stack"
@@ -15,6 +11,10 @@ local trades_gui = require "api.gui.trades_gui"
 local history    = require "api.history"
 
 local trade_overview_gui = {}
+
+
+
+local TRADE_OVERVIEW_MIDDLE_SPACING = 48
 
 
 
@@ -139,7 +139,7 @@ function trade_overview_gui.init_trade_overview(player)
         name = "trade-overview",
         direction = "vertical",
     }
-    frame.style.width = 900
+    frame.style.width = 900-TRADE_OVERVIEW_MIDDLE_SPACING
     frame.style.height = 900
     frame.visible = false
 
@@ -1069,7 +1069,7 @@ function trade_overview_gui.on_trade_sorting_complete(player, sorted_lookup, sor
         batched = true,
         table_batch_def = {
             column_count = 2,
-            horizontal_spacing = 28 / 1.2,
+            horizontal_spacing = TRADE_OVERVIEW_MIDDLE_SPACING,
         },
     })
 end

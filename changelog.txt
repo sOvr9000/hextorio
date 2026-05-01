@@ -33,6 +33,7 @@ Date: 30/4/26
   Gui:
     - Grouped mod buttons into a tray in top left corner.  All buttons are visible from the start but are grayed out if their respective feature isn't yet unlocked.
     - Made the trade UI and trade overview GUI more horizontally compact.
+    - Squished the width of the trade overview GUI by a small amount.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.6
 Date: 27/4/26
