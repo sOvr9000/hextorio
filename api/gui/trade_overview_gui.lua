@@ -9,6 +9,7 @@ local gui_stack = require "api.gui.gui_stack"
 local core_gui = require "api.gui.core_gui"
 local trades_gui = require "api.gui.trades_gui"
 local history    = require "api.history"
+local gameplay_statistics = require "api.gameplay_statistics"
 
 local trade_overview_gui = {}
 
@@ -209,8 +210,6 @@ function trade_overview_gui.build_left_filter_frame(frame)
             type = "sprite-button",
             name = "rank-" .. (i + 1),
             sprite = sprite_name,
-            toggled = false,
-            tooltip = {"hextorio-gui.rank-up-filter-tooltip-" .. (i + 1)},
             tags = {handlers = {["gui-clicked"] = "rank-up-filter-button"}},
         }
         if i > 1 then
@@ -714,7 +713,13 @@ function trade_overview_gui.reconcile_gui_with_filter_settings(player)
     local rank_up_filter = filter.rank_up_filter or {}
     for _, btn in pairs(left_frame["rank-up-filter-flow"].children) do
         local tier = tonumber(btn.name:match("rank%-(%d+)"))
-        if tier then btn.toggled = rank_up_filter[tier] or false end
+        if tier then
+            btn.toggled = rank_up_filter[tier] or false
+            btn.enabled = tier == 2 or gameplay_statistics.get("items-at-rank", tier - 1) > 0
+            if btn.enabled then
+                btn.tooltip = {"hextorio-gui.rank-up-filter-tooltip-" .. tier}
+            end
+        end
     end
 
     for i = 1, 3 do
@@ -821,7 +826,9 @@ function trade_overview_gui.reconcile_filter_settings_with_gui(player, add_to_hi
     filter.rank_up_filter = {}
     for _, btn in pairs(filter_frame["left"]["rank-up-filter-flow"].children) do
         local tier = tonumber(btn.name:match("rank%-(%d+)"))
-        if tier and btn.toggled then filter.rank_up_filter[tier] = true end
+        if tier and btn.toggled then
+            filter.rank_up_filter[tier] = true
+        end
     end
     if not next(filter.rank_up_filter) then filter.rank_up_filter = nil end
 
