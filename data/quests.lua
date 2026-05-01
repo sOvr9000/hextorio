@@ -268,15 +268,15 @@ return {
         },
         {
             name = "half-a-gravity",
-            conditions = {{type = "coins-in-inventory", progress_requirement = 50000}},
+            conditions = {{type = "coins-in-inventory", progress_requirement = 500}},
             rewards = {{type = "claim-free-hexes", value = {"nauvis", 3}}},
-            prerequisites = {"getting-somewhere"},
+            prerequisites = {"find-some-trades"},
         },
         {
             name = "getting-somewhere",
             conditions = {{type = "coins-in-inventory", progress_requirement = 10000}},
             rewards = {{type = "unlock-feature", value = "generator-mode", notes = {"irreversible-action", "low-efficiency"}}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
-            prerequisites = {"find-some-trades"},
+            prerequisites = {"half-a-gravity"},
         },
         {
             name = "trades-galore",

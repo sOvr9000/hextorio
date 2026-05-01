@@ -16,6 +16,8 @@ Date: 1/5/26
     - Fixed that spoilage was being considered an unresearched item on Nauvis.
     - Fixed crashes related to extremely large or small coin values being added to inventories (e.g. /add-coins 1e24).
   Changes:
+    - Swapped the quest completion order of "Half 'a Gravity" and "Getting Somewhere".
+    - Reduced the coin requirement of "Half 'a Gravity" from 50000 to 500.
     - Changed that trade overview filter history doesn't get overwritten when adding new filters while viewing a past filter.
     - Changed that newly added trade overview filters that already exist in the history now get pushed to the front (most recent end) of the history instead of staying in place to avoid duplication.
     - Changed the default keybind for teleporting to hex cores from T to F.
@@ -44,6 +46,7 @@ Date: 1/5/26
       - Uranium Base Frequency: 1 -> 0.5
       - Calcite Base Frequency: 0.5 -> 1
   Gui:
+    - Changed the quest image for "Getting Somewhere".
     - Grouped mod buttons into a tray in top left corner.  All buttons are visible from the start but are grayed out if their respective feature isn't yet unlocked.
     - Made the trade UI and trade overview GUI more horizontally compact.
     - Squished the width of the trade overview GUI by a small amount.
