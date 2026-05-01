@@ -1893,6 +1893,82 @@ function trades.process_trade_collection_jobs()
     end
 end
 
+---Count the unique items in a trade that are ready to rank up, considering only the specified rank tiers.
+---Rank-up mechanics per tier:
+--- - Rank 2 (bronze): rank-1 item in inputs (not yet sold) or outputs (not yet bought). No productivity gate.
+--- - Rank 3 (silver): rank-2 item in trade outputs + trade productivity >= prod_reqs[2] (must be bought)
+--- - Rank 4 (gold): rank-3 item anywhere in the trade + trade productivity >= prod_reqs[3] (enemy kill in hex)
+--- - Rank 5 (red): rank-4 item in trade inputs + trade productivity >= prod_reqs[4] (must be sold)
+---@param trade Trade
+---@param rank_up_filter {[int]: boolean}|nil Enabled rank tiers (2-5); nil or empty counts all tiers
+---@return int
+function trades.count_item_rank_ups(trade, rank_up_filter)
+    local item_ranks_data = storage.item_ranks.item_ranks
+    local prod_reqs = storage.item_ranks.productivity_requirements
+    local tiers = (rank_up_filter and next(rank_up_filter)) and rank_up_filter
+        or {[2] = true, [3] = true, [4] = true, [5] = true}
+
+    local count = 0
+    local counted = {}
+
+    local prod
+
+    local function count_input_items(target_rank, check_rank, predicate)
+        for _, item in pairs(trade.input_items) do
+            if not counted[item.name] then
+                local r = item_ranks_data[item.name]
+                if r and r.rank == check_rank and (not predicate or predicate(item.name)) then
+                    counted[item.name] = true
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    local function count_output_items(target_rank, check_rank, predicate)
+        for _, item in pairs(trade.output_items) do
+            if not counted[item.name] then
+                local r = item_ranks_data[item.name]
+                if r and r.rank == check_rank and (not predicate or predicate(item.name)) then
+                    counted[item.name] = true
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    if tiers[2] then
+        local bought = storage.trades.total_items_bought
+        local sold = storage.trades.total_items_sold
+        count_input_items(2, 1, function(name) return (sold[name] or 0) == 0 end)
+        count_output_items(2, 1, function(name) return (bought[name] or 0) == 0 end)
+    end
+
+    if tiers[3] then
+        prod = prod or trades.get_productivity(trade, "normal")
+        if prod + 1e-9 >= (prod_reqs[2] or 0) then
+            count_output_items(3, 2)
+        end
+    end
+
+    if tiers[4] then
+        prod = prod or trades.get_productivity(trade, "normal")
+        if prod + 1e-9 >= (prod_reqs[3] or 0) then
+            count_input_items(4, 3)
+            count_output_items(4, 3)
+        end
+    end
+
+    if tiers[5] then
+        prod = prod or trades.get_productivity(trade, "normal")
+        if prod + 1e-9 >= (prod_reqs[4] or 0) then
+            count_input_items(5, 4)
+        end
+    end
+
+    return count
+end
+
 ---Queue a job to filter trades for the trade overview.
 ---@param player LuaPlayer
 ---@param trades_lookup {[int]: Trade}
@@ -1964,6 +2040,7 @@ function trades.process_trade_filtering_jobs()
                             should_filter = true
                         end
                     end
+
                     if not should_filter and filter.show_interplanetary_only and not trades.trade_has_untradable_items(trade) then -- TODO: relabel "interplanetary" in the GUIs to "untradable" or something, because that's the intended filter (to find trades created by the silver rank bonus)
                         should_filter = true
                     end
@@ -1989,6 +2066,12 @@ function trades.process_trade_filtering_jobs()
                             if num_outputs < (output_bounds.min or 1) or num_outputs > (output_bounds.max or math.huge) then
                                 should_filter = true
                             end
+                        end
+                    end
+
+                    if not should_filter and filter.rank_up_filter and next(filter.rank_up_filter) then
+                        if trades.count_item_rank_ups(trade, filter.rank_up_filter) == 0 then
+                            should_filter = true
                         end
                     end
 
@@ -2189,6 +2272,10 @@ function trades.process_trade_sorting_jobs()
                 elseif filter.sorting.method == "productivity" then
                     for trade_id, trade in pairs(job.filtered_trades) do
                         job.metrics[trade_id] = trades.get_productivity(trade)
+                    end
+                elseif filter.sorting.method == "num-rank-ups" then
+                    for trade_id, trade in pairs(job.filtered_trades) do
+                        job.metrics[trade_id] = trades.count_item_rank_ups(trade, filter.rank_up_filter)
                     end
                 end
             end

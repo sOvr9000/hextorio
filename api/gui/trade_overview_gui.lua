@@ -22,9 +22,10 @@ local trade_overview_gui = {}
 ---| "distance-from-spawn"
 ---| "distance-from-character"
 ---| "total-item-value"
+---| "productivity"
 ---| "num-inputs"
 ---| "num-outputs"
----| "productivity"
+---| "num-rank-ups"
 
 ---@class TradeOverviewFilterSettings
 ---@field input_items string[]|nil
@@ -40,6 +41,7 @@ local trade_overview_gui = {}
 ---@field exclude_favorited boolean
 ---@field exclude_dungeons boolean
 ---@field exclude_sinks_generators boolean
+---@field rank_up_filter {[int]: boolean}|nil Rank tiers (2-5) enabled for rank-up filtering and sort counting.
 ---@field num_item_bounds TradeOverviewFilterNumItemBounds|nil
 ---@field sorting TradeOverviewSortingSettings
 ---@field max_trades int
@@ -60,6 +62,7 @@ function trade_overview_gui.register_events()
     event_system.register_gui("gui-clicked", "trade-overview-clear-filters", trade_overview_gui.on_clear_filters_button_click)
     event_system.register_gui("gui-clicked", "export-json", trade_overview_gui.on_export_json_button_click)
     event_system.register_gui("gui-clicked", "planet-filter", trade_overview_gui.on_planet_filter_button_click)
+    event_system.register_gui("gui-clicked", "rank-up-filter-button", trade_overview_gui.on_rank_up_filter_button_click)
     event_system.register_gui("gui-clicked", "trade-overview-contents-arrow", trade_overview_gui.on_trade_overview_contents_arrow_click)
     event_system.register_gui("gui-slider-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
     event_system.register_gui("gui-elem-changed", "trade-overview-filter-changed", trade_overview_gui.update_trade_overview)
@@ -194,6 +197,19 @@ function trade_overview_gui.build_left_filter_frame(frame)
                 tags = {handlers = {["gui-clicked"] = "planet-filter"}}
             }
         end
+    end
+
+    local rank_up_filter_flow = left_frame.add {type = "flow", name = "rank-up-filter-flow", direction = "horizontal"}
+    local rank_sprites = {"bronze-star", "silver-star", "gold-star", "red-star"}
+    for i, sprite_name in pairs(rank_sprites) do
+        rank_up_filter_flow.add {
+            type = "sprite-button",
+            name = "rank-" .. (i + 1),
+            sprite = sprite_name,
+            toggled = false,
+            tooltip = {"hextorio-gui.rank-up-filter-tooltip-" .. (i + 1)},
+            tags = {handlers = {["gui-clicked"] = "rank-up-filter-button"}},
+        }
     end
 
     left_frame.add {type = "line", direction = "horizontal"}
@@ -384,9 +400,10 @@ function trade_overview_gui.build_right_filter_frame(frame)
             {"trade-sort-method.distance-from-spawn"},
             {"trade-sort-method.distance-from-character"},
             {"trade-sort-method.total-item-value"},
+            {"trade-sort-method.productivity"},
             {"trade-sort-method.num-inputs"},
             {"trade-sort-method.num-outputs"},
-            {"trade-sort-method.productivity"},
+            {"trade-sort-method.num-rank-ups"},
         },
         tags = {handlers = {["gui-selection-changed"] = "trade-overview-filter-changed"}},
     }
@@ -682,6 +699,12 @@ function trade_overview_gui.reconcile_gui_with_filter_settings(player)
         end
     end
 
+    local rank_up_filter = filter.rank_up_filter or {}
+    for _, btn in pairs(left_frame["rank-up-filter-flow"].children) do
+        local tier = tonumber(btn.name:match("rank%-(%d+)"))
+        if tier then btn.toggled = rank_up_filter[tier] or false end
+    end
+
     for i = 1, 3 do
         trade_inputs["choose-elems"]["input-item-" .. i].elem_value = filter.input_items and filter.input_items[i] or nil
         trade_outputs["choose-elems"]["output-item-" .. i].elem_value = filter.output_items and filter.output_items[i] or nil
@@ -782,6 +805,13 @@ function trade_overview_gui.reconcile_filter_settings_with_gui(player, add_to_hi
     filter.exclude_dungeons = filter_frame["right"]["exclude-dungeons"]["checkbox"].state
     filter.exclude_sinks_generators = filter_frame["right"]["exclude-sinks-generators"]["checkbox"].state
     filter.exclude_favorited = filter_frame["right"]["exclude-favorited"]["checkbox"].state
+
+    filter.rank_up_filter = {}
+    for _, btn in pairs(filter_frame["left"]["rank-up-filter-flow"].children) do
+        local tier = tonumber(btn.name:match("rank%-(%d+)"))
+        if tier and btn.toggled then filter.rank_up_filter[tier] = true end
+    end
+    if not next(filter.rank_up_filter) then filter.rank_up_filter = nil end
 
     filter.num_item_bounds = {
         inputs  = {min = 1, max = trade_contents_frame["inputs"]["max-inputs-flow"]["slider"].slider_value},
@@ -1172,6 +1202,10 @@ function trade_overview_gui.on_clear_filters_button_click(player, elem)
         filter_frame["left"]["trade-contents-flow"]["frame"]["outputs"]["choose-elems"]["output-item-" .. i].elem_value = nil
     end
 
+    for _, btn in pairs(filter_frame["left"]["rank-up-filter-flow"].children) do
+        btn.toggled = false
+    end
+
     local right_frame = filter_frame["right"]
     right_frame["show-only-claimed"]["checkbox"].state = false
     right_frame["show-only-interplanetary"]["checkbox"].state = false
@@ -1192,6 +1226,13 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function trade_overview_gui.on_planet_filter_button_click(player, elem)
+    elem.toggled = not elem.toggled
+    trade_overview_gui.update_trade_overview(player)
+end
+
+---@param player LuaPlayer
+---@param elem LuaGuiElement
+function trade_overview_gui.on_rank_up_filter_button_click(player, elem)
     elem.toggled = not elem.toggled
     trade_overview_gui.update_trade_overview(player)
 end

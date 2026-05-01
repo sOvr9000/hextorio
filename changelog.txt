@@ -1,6 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.7
 Date: 30/4/26
+  Features:
+    - Added trade overview filters for showing trades that can be used to rank up items.
+    - Added a trade overview sorting method for sorting by total number of items that can be ranked up by a trade.
   Minor Features:
     - Map tags are now automatically created for strongboxes.
       - This means searching for "strongbox" in remote view shows all existing strongbox entities on any surface.
