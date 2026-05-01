@@ -28,6 +28,10 @@ Date: 30/4/26
     - Increased trade productivity penalty for higher qualities.
     - Tripled base ore richness, going from 10k-30k initial iron ore to 30k-90k initial iron ore.
     - Made hexaprisms be an unresearched item on Nauvis until fluoroketone is researched.
+    - Changed default setting values for item rank-up productivity requirements:
+      - Bronze to Silver: increased from 35% to 40%
+      - Silver to Gold: increased from 85% to 95%
+      - Gold to Red: increased from 135% to 165%
     - Changed default setting values:
       - Coin Trade Chance: 0.5 -> 0.3
       - Nauvis Hex Size: 24 -> 26
