@@ -26,6 +26,7 @@ Date: 1/5/26
     - Reduced strongbox reward from 5 minutes to 15 seconds of net coin production.
     - Reduced the trade productivity bonuses from 5% to 1% given by some quests: "Automated Clearing", "Lazy Looter", "Stepping on Beetles", "Can't Step on That", and "YOU are the Destroyer!".
     - Changed the Lazy Looter quest to give a less powerful spidertron and equipment.
+    - Added extra items to the quest reward from "Grabbing the Milk" on Fulgora.
     - Reduced the number of trades requirement for the "Too Many Belts" quest from 2000 to 1500.
     - Increased trade productivity penalty for higher qualities.
     - Tripled base ore richness, going from 10k-30k initial iron ore to 30k-90k initial iron ore.

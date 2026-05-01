@@ -610,6 +610,7 @@ return {
                     type = "receive-items",
                     value = {
                         {name = "electromagnetic-plant", count = 5, quality = "legendary"},
+                        {name = "discharge-defense-equipment", count = 2, quality = "rare"},
                     },
                 },
             },
