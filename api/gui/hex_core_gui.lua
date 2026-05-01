@@ -113,7 +113,7 @@ function hex_core_gui.init_hex_core(player)
     }
     local frame = player.gui.relative.add {type = "frame", name = "hex-core", direction = "vertical", anchor = anchor}
     frame.caption = {"hex-core-gui.title"}
-    frame.style.width = 380
+    frame.style.width = 315
     frame.style.natural_height = 625
     frame.style.vertically_stretchable = true
     frame.visible = false
