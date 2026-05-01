@@ -24,6 +24,7 @@ Date: 30/4/26
     - Removed obsolete commands /tp-to-edge, /tp-to-ship, and /skip-flight.
   Balancing:
     - Reduced strongbox reward from 5 minutes to 15 seconds of net coin production.
+    - Reduced the trade productivity bonuses from 5% to 1% given by some quests: "Automated Clearing", "Lazy Looter", "Stepping on Beetles", "Can't Step on That", and "YOU are the Destroyer!".
     - Increased trade productivity penalty for higher qualities.
     - Tripled base ore richness, going from 10k-30k initial iron ore to 30k-90k initial iron ore.
     - Changed default setting values:

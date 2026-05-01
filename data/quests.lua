@@ -263,7 +263,7 @@ return {
         {
             name = "automated-clearing",
             conditions = {{type = "total-strongbox-level", progress_requirement = 150}, {type = "visit-planet", value = "vulcanus", show_progress_bar = false}, {type = "visit-planet", value = "fulgora", show_progress_bar = false}, {type = "visit-planet", value = "gleba", show_progress_bar = false}},
-            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 5}}, {type = "claim-free-hexes", value = {"fulgora", 5}}, {type = "claim-free-hexes", value = {"gleba", 5}}},
+            rewards = {{type = "all-trades-productivity", value = 1}, {type = "claim-free-hexes", value = {"vulcanus", 5}}, {type = "claim-free-hexes", value = {"fulgora", 5}}, {type = "claim-free-hexes", value = {"gleba", 5}}},
             prerequisites = {"lockbreaker"},
         },
         {
@@ -332,7 +332,7 @@ return {
             name = "lazy-looter",
             conditions = {{type = "loot-dungeons-off-planet", progress_requirement = 1}},
             rewards = {
-                {type = "all-trades-productivity", value = 5},
+                {type = "all-trades-productivity", value = 1},
                 {
                     type = "receive-items",
                     value = {
@@ -571,7 +571,7 @@ return {
         {
             name = "stepping-on-beetles",
             conditions = {{type = "kill-entity", value = "medium-demolisher", progress_requirement = 3}},
-            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
+            rewards = {{type = "all-trades-productivity", value = 1}, {type = "claim-free-hexes", value = {"vulcanus", 10}}},
             prerequisites = {"stepping-on-ants"},
         },
         {
@@ -579,7 +579,7 @@ return {
             conditions = {{type = "kill-entity", value = "big-demolisher", progress_requirement = 1}},
             rewards = {
                 {type = "unlock-feature", value = "teleportation-cross-planet", notes = {"empty-inventories"}},
-                {type = "all-trades-productivity", value = 5},
+                {type = "all-trades-productivity", value = 1},
                 {type = "claim-free-hexes", value = {"vulcanus", 15},
             }},
             prerequisites = {"stepping-on-beetles"},
@@ -638,7 +638,7 @@ return {
         {
             name = "you-are-the-destroyer",
             conditions = {{type = "use-capsule", value = "destroyer-capsule", progress_requirement = 5}},
-            rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"fulgora", 5}}},
+            rewards = {{type = "all-trades-productivity", value = 1}, {type = "claim-free-hexes", value = {"fulgora", 5}}},
             prerequisites = {"biter-rammer", "visit-fulgora"},
         },
         {
