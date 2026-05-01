@@ -392,18 +392,19 @@ function trade_overview_gui.build_right_filter_frame(frame)
     gui.auto_width_height(right_frame)
 
     local max_trades_flow = right_frame.add {type = "flow", name = "max-trades-flow", direction = "horizontal"}
-    local max_trades_label = max_trades_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-trades"}}
-    max_trades_label.style.top_margin = 3
+    -- local max_trades_label = max_trades_flow.add {type = "label", name = "label", caption = {"hextorio-gui.max-trades"}}
+    -- max_trades_label.style.top_margin = 3
     local max_trades_dropdown = max_trades_flow.add {
         type = "drop-down",
         name = "dropdown",
         selected_index = 4,
         items = {{"", 10}, {"", 25}, {"", 100}, {"", 250}},
         tags = {handlers = {["gui-selection-changed"] = "trade-overview-filter-changed"}},
+        tooltip = {"hextorio-gui.max-trades"},
     }
 
     local sort_method_flow = right_frame.add {type = "flow", name = "sort-method", direction = "horizontal"}
-    local sort_method_label = sort_method_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sort-method"}}
+    -- local sort_method_label = sort_method_flow.add {type = "label", name = "label", caption = {"hextorio-gui.sort-method"}}
     local sort_method_dropdown = sort_method_flow.add {
         type = "drop-down",
         name = "dropdown",
@@ -418,6 +419,7 @@ function trade_overview_gui.build_right_filter_frame(frame)
             {"trade-sort-method.num-rank-ups"},
         },
         tags = {handlers = {["gui-selection-changed"] = "trade-overview-filter-changed"}},
+        tooltip = {"hextorio-gui.sort-method"},
     }
 
     local sort_direction = right_frame.add {
