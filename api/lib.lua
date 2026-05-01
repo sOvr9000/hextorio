@@ -2374,7 +2374,6 @@ function lib.get_raw_items()
         end
     end
 
-    sets.add(raw_items, "hexaprism")
     for _, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
         sets.add(raw_items, coin_name)
     end

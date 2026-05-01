@@ -3267,6 +3267,11 @@ function trades.recalculate_researched_items()
         end
     end
 
+    -- Hardcoded solution for hexaprisms
+    if game.forces.player.technologies["cryogenic-plant"].researched then
+        sets.add(researched_items, "hexaprism")
+    end
+
     -- Add raw items to set
     researched_items = sets.union(researched_items, lib.get_raw_items())
     storage.trades.researched_items = researched_items
