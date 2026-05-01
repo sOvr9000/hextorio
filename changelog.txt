@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.7
-Date: 30/4/26
+Date: 1/5/26
   Features:
     - Added two ore generation modes: "Spokes" and "Scattered".
     - Added trade overview filters for showing trades that can be used to rank up items.
