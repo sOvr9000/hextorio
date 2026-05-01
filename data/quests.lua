@@ -286,7 +286,7 @@ return {
         },
         {
             name = "too-many-belts",
-            conditions = {{type = "trades-found", progress_requirement = 2000}},
+            conditions = {{type = "trades-found", progress_requirement = 1500}},
             rewards = {{type = "unlock-feature", value = "locomotive-trading"}, {type = "claim-free-hexes", value = {"nauvis", 10}}},
             prerequisites = {"trades-galore"},
         },
