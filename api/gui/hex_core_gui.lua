@@ -446,6 +446,19 @@ function hex_core_gui.update_hex_core(player)
     -- local quality_dropdown = frame["trades-header"]["quality-dropdown"]
     -- local quality_name = core_gui.get_quality_name_from_dropdown(quality_dropdown)
 
+    local column_count = frame["hex-control-flow"].column_count
+    local i = 1
+    for _, elem in pairs(frame["hex-control-flow"].children) do
+        if elem.visible then
+            if i % column_count == 1 then
+                elem.style.left_margin = 0
+            else
+                elem.style.left_margin = -4
+            end
+            i = i + 1
+        end
+    end
+
     local label = frame["awaiting-solver"]
     if label then
         label.destroy()

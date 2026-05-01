@@ -21,8 +21,6 @@ function trades_gui.register_events()
     event_system.register_gui("gui-clicked", "trade-item", trades_gui.on_trade_item_clicked)
     event_system.register_gui("gui-clicked", "trade-arrow", trades_gui.on_trade_arrow_clicked)
     event_system.register_gui("gui-elem-changed", "trade-quality", trades_gui.on_trade_quality_selected)
-
-    -- event_system.register("favorite-trade-key-pressed", trades_gui.on_favorite_trade_key_pressed)
 end
 
 function trades_gui._process_trades_scroll_panes()
@@ -133,6 +131,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             raise_hover_events = true,
         }
         ping_button.tooltip = {"hextorio-gui.ping-in-chat"}
+        ping_button.style.left_margin = -4
     end
 
     if params.show_core_finder then
@@ -161,13 +160,14 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         direction = "vertical",
     }
     trade_frame.style.natural_height = (size + 20) / 1.2 - 5
-    trade_frame.style.width = 381 / 1.2
+    gui.auto_width(trade_frame)
 
     local trade_table = trade_frame.add {
         type = "table",
         name = "trade-table",
         column_count = 8,
     }
+    trade_table.style.horizontal_spacing = 0
 
     if params.expanded and params.is_configuration_unlocked then
         local trade_control_flow = trade_frame.add {
@@ -192,6 +192,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 raise_hover_events = true,
             }
             toggle_trade_button.tooltip = {"hex-core-gui.trade-checkbox-tooltip"}
+
+            -- TODO: automatically track which element is actually the leftmost in this trade_control_flow (which currently is always this one when it matters, but a better practice is to automatically determine which element is leftmost)
+            -- toggle_trade_button.style.left_margin = -4
         end
 
         if params.show_tag_creator then
@@ -203,6 +206,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 tags = {handlers = {["gui-clicked"] = "tag-button"}},
                 raise_hover_events = true,
             }
+            tag_button.style.left_margin = -4
         end
 
         if params.show_ping_button then
@@ -217,6 +221,8 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 raise_hover_events = true,
             }
             gui.give_productivity_tooltip(prod_info, trade, quality_to_show, quality_cost_mult)
+            prod_info.style.left_margin = -4
+            prod_info.style.right_margin = 2
         end
 
         if params.show_add_to_filters then
@@ -228,6 +234,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 raise_hover_events = true,
             }
             add_to_filters_button.tooltip = {"hex-core-gui.add-to-filters-tooltip"}
+            add_to_filters_button.style.left_margin = -4
         end
 
         if params.show_quality_bounds then
@@ -254,6 +261,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 elem_filters = elem_filters,
             }
             quality_button.tooltip = {"hex-core-gui.trade-quality"}
+            quality_button.style.left_margin = -4
         end
     end
 
@@ -261,6 +269,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
     for i = 1, 3 do
         if i <= #trade.input_items then
             local input_item = trade.input_items[i]
+
             local input_sprite_button = trade_table.add {
                 type = "sprite-button",
                 name = "input-" .. tostring(i) .. "-" .. input_item.name,
@@ -269,6 +278,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = input_item.name, is_input = true},
                 raise_hover_events = true,
             }
+
             if lib.is_coin(input_item.name) then
                 local coin = trades.get_input_coins_of_trade(trade, quality_to_show, quality_cost_mult)
                 local tier = coin_tiers.get_tier_for_display(coin)
@@ -299,7 +309,8 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
     trade_arrow_sprite.style.width = size / 1.2
     trade_arrow_sprite.style.height = size / 1.2
     trade_arrow_sprite.style.top_margin = 2
-    trade_arrow_sprite.style.left_margin = 4
+    trade_arrow_sprite.style.left_margin = 5
+    trade_arrow_sprite.style.right_margin = 5
     trade_arrow_sprite.style.stretch_image_to_widget_size = true
 
     local prod = trades.get_productivity(trade, quality_to_show)
@@ -349,6 +360,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         local j = 4 - i
         if j <= #trade.output_items then
             local output_item = trade.output_items[j]
+
             local output_sprite_button = trade_table.add {
                 type = "sprite-button",
                 name = "output-" .. tostring(i) .. "-" .. tostring(output_item.name),
@@ -357,6 +369,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = output_item.name, is_input = false},
                 raise_hover_events = true,
             }
+
             if lib.is_coin(output_item.name) then
                 local coin = trades.get_output_coins_of_trade(trade, quality_to_show)
                 local tier = coin_tiers.get_tier_for_display(coin)
@@ -510,7 +523,6 @@ function trades_gui.get_trade_flow_from_trade_element(elem)
     return core_gui.get_parent_of_name_match(elem, "^trade%-%d+$")
 end
 
-
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function trades_gui.on_toggle_trade_button_clicked(player, elem)
@@ -540,14 +552,6 @@ end
 function trades_gui.on_trade_quality_selected(player, elem)
     event_system.trigger("trade-quality-selected", player, elem, elem.tags.trade_number)
 end
-
--- ---@param player LuaPlayer
--- function trades_gui.on_favorite_trade_key_pressed(player)
---     local elem = core_gui.get_currently_hovered_element(player.index)
---     if not elem then return end
-
---     trades_gui.on_trade_arrow_clicked(player, elem)
--- end
 
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement

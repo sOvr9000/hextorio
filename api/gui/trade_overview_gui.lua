@@ -196,13 +196,16 @@ function trade_overview_gui.build_left_filter_frame(frame)
                 enabled = enabled,
                 tags = {handlers = {["gui-clicked"] = "planet-filter"}}
             }
+            if surface_name ~= "nauvis" then
+                surface_sprite.style.left_margin = -6
+            end
         end
     end
 
     local rank_up_filter_flow = left_frame.add {type = "flow", name = "rank-up-filter-flow", direction = "horizontal"}
     local rank_sprites = {"bronze-star", "silver-star", "gold-star", "red-star"}
     for i, sprite_name in pairs(rank_sprites) do
-        rank_up_filter_flow.add {
+        local rank_up_sprite = rank_up_filter_flow.add {
             type = "sprite-button",
             name = "rank-" .. (i + 1),
             sprite = sprite_name,
@@ -210,6 +213,9 @@ function trade_overview_gui.build_left_filter_frame(frame)
             tooltip = {"hextorio-gui.rank-up-filter-tooltip-" .. (i + 1)},
             tags = {handlers = {["gui-clicked"] = "rank-up-filter-button"}},
         }
+        if i > 1 then
+            rank_up_sprite.style.left_margin = -6
+        end
     end
 
     left_frame.add {type = "line", direction = "horizontal"}
@@ -287,6 +293,9 @@ function trade_overview_gui.build_trade_content_filter(frame)
             tags = {handlers = {["gui-elem-changed"] = "trade-overview-filter-changed"}},
         }
         input_item.elem_filters = elem_filters
+        if i > 1 then
+            input_item.style.left_margin = -4
+        end
     end
 
     trade_overview_gui.build_trade_content_filter_center(trade_contents_frame)
@@ -343,6 +352,9 @@ function trade_overview_gui.build_trade_content_filter(frame)
             tags = {handlers = {["gui-elem-changed"] = "trade-overview-filter-changed"}},
         }
         output_item.elem_filters = elem_filters
+        if i > 1 then
+            output_item.style.left_margin = -4
+        end
     end
 end
 
@@ -359,8 +371,8 @@ function trade_overview_gui.build_trade_content_filter_center(frame)
         sprite = "trade-arrow",
         tags = {handlers = {["gui-clicked"] = "trade-overview-contents-arrow"}},
     }
-    trade_arrow.style.top_margin = 4
-    trade_arrow.style.left_margin = 4
+    trade_arrow.style.top_margin = 5
+    trade_arrow.style.left_margin = 5
     trade_arrow.style.width = 40 / 1.2
     trade_arrow.style.height = 40 / 1.2
     trade_arrow.style.stretch_image_to_widget_size = true
