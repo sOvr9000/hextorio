@@ -1215,7 +1215,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         elseif ore_generation_mode == "scattered" then
             local inner_size = hex_grid_scale - stroke_width
             local inner_tiles = axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-            local density = inner_size > 0 and math.min(1, 3 * resource_stroke_width / inner_size) or 1
+            local density = inner_size > 0 and math.min(1, 2 * resource_stroke_width / inner_size) or 1
             ore_positions = {}
             for _, tile in pairs(inner_tiles) do
                 if math.random() < density then
