@@ -204,6 +204,7 @@ function trade_overview_gui.build_left_filter_frame(frame)
     end
 
     local rank_up_filter_flow = left_frame.add {type = "flow", name = "rank-up-filter-flow", direction = "horizontal"}
+    rank_up_filter_flow.style.top_margin = -5
     local rank_sprites = {"bronze-star", "silver-star", "gold-star", "red-star"}
     for i, sprite_name in pairs(rank_sprites) do
         local rank_up_sprite = rank_up_filter_flow.add {
