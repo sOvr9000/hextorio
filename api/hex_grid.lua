@@ -1084,10 +1084,8 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         end
     end
 
-    local base_richness = 250 * lib.runtime_setting_value "base-resource-richness"
+    local base_richness = 750 * lib.runtime_setting_value "base-resource-richness"
     if surface.name == "fulgora" then
-        base_richness = base_richness * 10
-    elseif surface.name == "gleba" then
         base_richness = base_richness * 2
     end
 
