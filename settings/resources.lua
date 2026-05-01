@@ -4,7 +4,7 @@ data:extend({
         type = "string-setting",
         name = "hextorio-ore-generation-mode",
         setting_type = "runtime-global",
-        allowed_values = {"single-hex", "along-edges", "center-square"},
+        allowed_values = {"single-hex", "along-edges", "center-square", "spokes", "scattered"},
         default_value = "along-edges",
         order = "w[resources]-b[ore-generation-mode]",
     },

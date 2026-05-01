@@ -1194,6 +1194,34 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                     table.insert(ore_positions, {x = x, y = y})
                 end
             end
+        elseif ore_generation_mode == "spokes" then
+            local half_width = resource_stroke_width / 2
+            local inner_tiles = axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+            local spoke_rotation = math.random() * math.pi / 3
+            ore_positions = {}
+            for _, tile in pairs(inner_tiles) do
+                local dx = tile.x - hex_center.x
+                local dy = tile.y - hex_center.y
+                local min_perp = math.huge
+                for k = 0, 2 do
+                    local angle = spoke_rotation + k * math.pi / 3
+                    local perp = math.abs(dx * math.sin(angle) - dy * math.cos(angle))
+                    if perp < min_perp then min_perp = perp end
+                end
+                if min_perp <= half_width then
+                    table.insert(ore_positions, tile)
+                end
+            end
+        elseif ore_generation_mode == "scattered" then
+            local inner_size = hex_grid_scale - stroke_width
+            local inner_tiles = axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+            local density = inner_size > 0 and math.min(1, 3 * resource_stroke_width / inner_size) or 1
+            ore_positions = {}
+            for _, tile in pairs(inner_tiles) do
+                if math.random() < density then
+                    table.insert(ore_positions, tile)
+                end
+            end
         end
 
         -- Filter out positions that aren't good for ores, like underneath the hex core or on water.
