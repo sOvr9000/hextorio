@@ -32,6 +32,8 @@ Date: 30/4/26
       - Fulgora Hex Size: 33 -> 35
       - Vulcanus Hex Stroke Width: 3 -> 2
       - Aquilo Hex Stroke Width: 20 -> 18
+      - Uranium Base Frequency: 1 -> 0.5
+      - Calcite Base Frequency: 0.5 -> 1
   Gui:
     - Grouped mod buttons into a tray in top left corner.  All buttons are visible from the start but are grayed out if their respective feature isn't yet unlocked.
     - Made the trade UI and trade overview GUI more horizontally compact.
