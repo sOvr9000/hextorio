@@ -111,7 +111,7 @@ function trade_overview_gui.register_events()
 
     event_system.register("post-item-values-recalculated", function()
         for _, player in pairs(game.players) do
-            trade_overview_gui.init_trade_overview(player)
+            trade_overview_gui.update_trade_overview(player)
         end
     end)
 end
