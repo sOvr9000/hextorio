@@ -5,6 +5,8 @@ Date: 2/5/26
     - Fixed crash when modded surfaces are missing some map generation setting fields (e.g. Factorissimo).
     - Fixed crash when modded items use non-standard sprite names (e.g. Text Plates).
     - Fixed crash when updating item value solver settings during runtime (in mod settings).
+  Gui:
+    - Slightly widened the hex core GUI, preventing a horizontal scroll bar from occasionally showing up.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.7
 Date: 1/5/26
