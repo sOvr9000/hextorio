@@ -763,14 +763,14 @@ function lib.get_player_inventory(player)
     if inv then return inv end
 
     if not player.character then
-        lib.log_error("get_player_inventory: could not find player character")
+        lib.log_error("get_player_inventory: could not find player character for " .. player.name)
         return
     end
 
     inv = player.character.get_main_inventory()
     if inv then return inv end
 
-    lib.log_error("get_player_inventory: could not find inventory of player")
+    lib.log_error("get_player_inventory: could not find inventory of player " .. player.name)
 end
 
 ---Get a player which owns a given inventory.
@@ -2395,7 +2395,7 @@ end
 ---@param player LuaPlayer
 ---@return boolean
 function lib.player_is_waiting_to_respawn(player)
-    return player.connected and (not player.character or not player.character.valid or player.character.health == 0)
+    return not player.character or not player.character.valid or player.character.health == 0
 end
 
 ---Return whether the given object is a LocalisedString. Does not check for circular references, so infinite recursion is possible.

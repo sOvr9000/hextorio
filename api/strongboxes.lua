@@ -160,9 +160,11 @@ function strongboxes.dish_out_rewards_retro(net_coins_diff)
             piggy_bank.increment_player_stored_coins(player.index, coin_to_insert)
         else
             -- This would normalize the entire inventory if piggy bank was unlocked (impossible with this flow control).
-            local player_inv = lib.get_player_inventory(player)
-            if player_inv then
-                inventories.add_coin_to_inventory(player_inv, coin_to_insert)
+            if not lib.player_is_waiting_to_respawn(player) then -- TODO: if player is dead, fetch player corpse if it exists and use that inventory
+                local player_inv = lib.get_player_inventory(player)
+                if player_inv then
+                    inventories.add_coin_to_inventory(player_inv, coin_to_insert)
+                end
             end
         end
     end
