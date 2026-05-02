@@ -270,10 +270,19 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         if i <= #trade.input_items then
             local input_item = trade.input_items[i]
 
+            local sprite = "item/" .. input_item.name
+            if not helpers.is_valid_sprite_path(sprite) then
+                sprite = "entity/" .. input_item.name
+                if not helpers.is_valid_sprite_path(sprite) then
+                    lib.log_error("Could not find sprite for item " .. input_item)
+                    sprite = nil
+                end
+            end
+
             local input_sprite_button = trade_table.add {
                 type = "sprite-button",
                 name = "input-" .. tostring(i) .. "-" .. input_item.name,
-                sprite = "item/" .. input_item.name,
+                sprite = sprite,
                 number = input_item.count,
                 tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = input_item.name, is_input = true},
                 raise_hover_events = true,
@@ -361,10 +370,19 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         if j <= #trade.output_items then
             local output_item = trade.output_items[j]
 
+            local sprite = "item/" .. output_item.name
+            if not helpers.is_valid_sprite_path(sprite) then
+                sprite = "entity/" .. output_item.name
+                if not helpers.is_valid_sprite_path(sprite) then
+                    lib.log_error("Could not find sprite for item " .. output_item)
+                    sprite = nil
+                end
+            end
+
             local output_sprite_button = trade_table.add {
                 type = "sprite-button",
                 name = "output-" .. tostring(i) .. "-" .. tostring(output_item.name),
-                sprite = "item/" .. output_item.name,
+                sprite = sprite,
                 number = output_item.count,
                 tags = {handlers = {["gui-clicked"] = "trade-item"}, item_name = output_item.name, is_input = false},
                 raise_hover_events = true,
