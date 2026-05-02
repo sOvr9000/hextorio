@@ -2344,26 +2344,22 @@ function lib.get_raw_items()
     for _, prot in pairs(prototypes.space_location) do
         if prot.type == "planet" then
             local mgs = prot.map_gen_settings
-            if mgs then
+            if mgs and mgs.autoplace_settings and mgs.autoplace_settings.entity and mgs.autoplace_settings.entity.settings then
                 local entity_settings = mgs.autoplace_settings.entity.settings
-                if entity_settings then
-                    for entity_name, s in pairs(entity_settings) do
-                        local entity_prot = prototypes.entity[entity_name]
-                        if entity_prot then
-                            local mining_results = entity_prot.mineable_properties.products
-                            if mining_results then
-                                for _, result in pairs(mining_results) do
-                                    if result.type == "item" then
-                                        local item_name = result.name
-                                        sets.add(raw_items, item_name)
-                                        local result_prot = prototypes.item[item_name]
-                                        if result_prot then
-                                            local spoil_result_prot = result_prot.spoil_result
-                                            if spoil_result_prot then
-                                                local spoil_result_name = spoil_result_prot.name
-                                                sets.add(raw_items, spoil_result_name)
-                                            end
-                                        end
+                for entity_name, _ in pairs(entity_settings) do
+                    local entity_prot = prototypes.entity[entity_name]
+                    if entity_prot and entity_prot.mineable_properties and entity_prot.mineable_properties.products then
+                        local mining_results = entity_prot.mineable_properties.products
+                        for _, result in pairs(mining_results) do
+                            if result.type == "item" then
+                                local item_name = result.name
+                                sets.add(raw_items, item_name)
+                                local result_prot = prototypes.item[item_name]
+                                if result_prot then
+                                    local spoil_result_prot = result_prot.spoil_result
+                                    if spoil_result_prot then
+                                        local spoil_result_name = spoil_result_prot.name
+                                        sets.add(raw_items, spoil_result_name)
                                     end
                                 end
                             end
