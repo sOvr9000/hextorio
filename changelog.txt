@@ -1,6 +1,10 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.7.9
+Version: 1.8.0
 Date: 6/5/26
+  Major Features:
+    - (TODO) Added spider networks (Sentient Spiders are now sentient).
+  Features:
+    - (TODO) Added quest on Gleba.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.8
 Date: 2/5/26

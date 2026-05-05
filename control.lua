@@ -20,7 +20,6 @@ local blueprints = require "api.blueprints"
 local space_platforms = require "api.space_platforms"
 local loot_tables = require "api.loot_tables"
 local dungeons = require "api.dungeons"
--- local spiders = require "api.spiders"
 local hex_island = require "api.hex_island"
 local train_trading = require "api.train_trading"
 local inventories = require "api.inventories"
@@ -33,6 +32,8 @@ local gsr = require "api.gameplay_statistics_recalculators"
 local item_value_solver = require "api.item_value_solver"
 local item_tradability_solver = require "api.item_tradability_solver"
 local translations = require "api.translations"
+local spider_control = require "api.spider_control"
+local spider_network = require "api.spider_network"
 
 migrations.load_handlers()
 
@@ -44,7 +45,6 @@ item_ranks.register_events()
 item_buffs.register_events()
 quests.register_events()
 dungeons.register_events()
--- spiders.register_events()
 hex_island.register_events()
 space_platforms.register_events()
 train_trading.register_events()
@@ -56,6 +56,8 @@ gsr.register_events()
 item_value_solver.register_events()
 item_tradability_solver.register_events()
 translations.register_events()
+spider_control.register_events()
+spider_network.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -77,7 +79,6 @@ local data_item_ranks = require "data.item_ranks"
 local data_trade_overview = require "data.trade_overview"
 local data_blueprints = require "data.blueprints"
 local data_dungeons = require "data.dungeons"
--- local data_spiders = require "data.spiders"
 local data_hex_island = require "data.hex_island"
 local data_item_buffs = require "data.item_buffs"
 local data_strongboxes = require "data.strongboxes"
@@ -117,7 +118,6 @@ script.on_init(function()
     storage.trade_overview = data_trade_overview
     storage.blueprints = data_blueprints
     storage.dungeons = data_dungeons
-    -- storage.spiders = data_spiders
     storage.hex_island = data_hex_island
     storage.item_buffs = data_item_buffs
     storage.strongboxes = data_strongboxes
@@ -194,7 +194,6 @@ script.on_init(function()
     hex_island.init()
     blueprints.init()
     dungeons.init()
-    -- spiders.init()
     train_trading.init()
     strongboxes.init()
     piggy_bank.init()
@@ -394,6 +393,7 @@ script.on_event(defines.events.on_player_mined_entity, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
+    event_system.trigger("entity-becoming-invalid", event.entity)
     event_system.trigger("player-mined-entity", player, event.entity)
     event_system.trigger("entity-picked-up", event.entity)
 end)
@@ -404,6 +404,7 @@ script.on_event(defines.events.on_robot_built_entity, function(event)
 end)
 
 script.on_event(defines.events.on_robot_mined_entity, function(event)
+    event_system.trigger("entity-becoming-invalid", event.entity)
     event_system.trigger("entity-picked-up", event.entity)
 end)
 
@@ -463,6 +464,7 @@ script.on_event(defines.events.on_entity_settings_pasted, function (event)
 end)
 
 script.on_event(defines.events.on_entity_died, function (event)
+    event_system.trigger("entity-becoming-invalid", event.entity)
     event_system.trigger("entity-died", event.entity)
 
     if event.cause and event.cause.valid and event.entity.valid then
@@ -634,6 +636,13 @@ end)
 
 script.on_event(defines.events.on_string_translated, function(event)
     event_system.trigger("string-translated", event)
+end)
+
+script.on_event(defines.events.on_player_driving_changed_state, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    event_system.trigger("player-driving-state-changed", player, event.entity)
 end)
 
 script.on_configuration_changed(function(handler)
