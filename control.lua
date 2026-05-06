@@ -602,6 +602,13 @@ script.on_event(defines.events.on_research_finished, function(event)
     event_system.trigger("research-completed", event.research)
 end)
 
+script.on_event(defines.events.on_spider_command_completed, function(event)
+    local entity = event.vehicle
+    if not entity or not entity.valid then return end
+
+    event_system.trigger("spider-reached-patrol-point", entity)
+end)
+
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local setting = event.setting:sub(10)
     if event.setting_type == "runtime-per-user" then

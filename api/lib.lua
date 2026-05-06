@@ -1912,7 +1912,7 @@ end
 ---Add a quality item counts table to another, modifying the first one passed.
 ---@param quality_item_counts_to_modify QualityItemCounts
 ---@param quality_item_counts_to_add QualityItemCounts
-function lib.add_to_quality_item_counts(quality_item_counts_to_modify, quality_item_counts_to_add)
+function lib.add_quality_item_counts(quality_item_counts_to_modify, quality_item_counts_to_add)
     for quality, t_add in pairs(quality_item_counts_to_add) do
         local t_modify = quality_item_counts_to_modify[quality]
         if not t_modify then
@@ -1924,7 +1924,54 @@ function lib.add_to_quality_item_counts(quality_item_counts_to_modify, quality_i
             t_modify[item_name] = (t_modify[item_name] or 0) + count
         end
     end
+
     lib.normalize_quality_item_counts(quality_item_counts_to_modify)
+end
+
+---Negate each count in a QualityItemCounts, modifying it in place.
+---@param quality_item_counts QualityItemCounts
+function lib.negate_quality_item_counts(quality_item_counts)
+    for _, counts in pairs(quality_item_counts) do
+        for item_name, count in pairs(counts) do
+            counts[item_name] = -count
+        end
+    end
+end
+
+---Add an amount of an item to a QualityItemCounts table.
+---Creates nested tables or item entries when needed, deletes item entries when zeroed, and removes nested tables when empty.
+---@param quality_item_counts QualityItemCounts
+---@param item_name string
+---@param amount int
+---@param quality string|nil
+---@return int actual_amount How many items were actually added.
+function lib.add_item_to_quality_item_counts(quality_item_counts, item_name, amount, quality)
+    if not quality then quality = "normal" end
+
+    local quality_items = quality_item_counts[quality]
+    if not quality_items then
+        quality_items = {}
+        quality_item_counts[quality] = quality_items
+    end
+
+    local actual_amount = amount
+    local new_amount = (quality_items[item_name] or 0) + amount
+    if new_amount < 0 then
+        actual_amount = actual_amount - new_amount
+        new_amount = 0
+    end
+
+    quality_items[item_name] = new_amount
+
+    if new_amount <= 0 then
+        quality_items[item_name] = nil
+    end
+
+    if not next(quality_items) then
+        quality_item_counts[quality] = nil
+    end
+
+    return actual_amount
 end
 
 ---@param quality_item_counts QualityItemCounts

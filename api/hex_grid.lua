@@ -3226,6 +3226,10 @@ function hex_grid.process_hex_core_pool()
             hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
             hex_grid.process_strongboxes(state)
             hex_grid.process_hexlight(state)
+
+            if state.is_active then
+                event_system.trigger("active-hex-state-processed", state)
+            end
         end
     end
 end
@@ -3715,12 +3719,12 @@ function hex_grid.process_hex_core_trades(state, inventory_input, inventory_outp
     if not state.total_items_sold then
         state.total_items_sold = {}
     end
-    lib.add_to_quality_item_counts(state.total_items_sold, total_removed)
+    lib.add_quality_item_counts(state.total_items_sold, total_removed)
 
     if not state.total_items_bought then
         state.total_items_bought = {}
     end
-    lib.add_to_quality_item_counts(state.total_items_bought, total_inserted)
+    lib.add_quality_item_counts(state.total_items_bought, total_inserted)
 
     if not state.total_coins_produced then
         state.total_coins_produced = coin_tiers.new()

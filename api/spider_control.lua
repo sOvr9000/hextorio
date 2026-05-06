@@ -3,6 +3,9 @@ local lib = require "api.lib"
 local axial = require "api.axial"
 local terrain = require "api.terrain"
 local event_system = require "api.event_system"
+local hex_state_manager = require "api.hex_state_manager"
+local hex_pathfinding   = require "api.hex_pathfinding"
+local hex_island        = require "api.hex_island"
 
 local spider_control = {}
 
@@ -20,6 +23,7 @@ local spider_control = {}
 function spider_control.register_events()
     event_system.register("entity-becoming-invalid", spider_control.on_entity_becoming_invalid)
     event_system.register("player-driving-state-changed", spider_control.on_player_driving_state_changed)
+    event_system.register("spider-reached-patrol-point", spider_control.on_spider_reached_patrol_point)
 end
 
 ---@return SpiderControlStorage
@@ -154,6 +158,30 @@ function spider_control.enqueue_hex_move(unit, to_hex_positions)
     spider_control.enqueue_move(unit, to_positions)
 end
 
+---Add patrol points to the spider's autopilot by pathfinding from its current position to the destination hex.
+---@param unit SpiderControlUnit
+---@param to_hex_pos HexPos
+function spider_control.enqueue_pathfind_hex_move(unit, to_hex_pos)
+    local entity = unit.entity
+    if not entity or not entity.valid then return end
+
+    local surface = entity.surface
+    local state = hex_state_manager.get_hex_state_containing(surface, entity.position)
+    if not state then return end
+
+    local cur_hex_pos = state.position
+
+    local island = hex_island.get_island_hex_set(surface.name)
+    local to_hex_positions = hex_pathfinding.find_path(island, cur_hex_pos, to_hex_pos)
+
+    if not to_hex_positions then
+        lib.log_error("spider_control.enqueue_pathfind_hex_move: Could not find path for spider")
+        return
+    end
+
+    spider_control.enqueue_hex_move(unit, to_hex_positions)
+end
+
 ---@param entity LuaEntity
 function spider_control.on_entity_becoming_invalid(entity)
     if not entity.valid then return end
@@ -178,6 +206,14 @@ function spider_control.on_player_driving_state_changed(player, vehicle)
             player.driving = false
         end
     end
+end
+
+---@param entity LuaEntity
+function spider_control.on_spider_reached_patrol_point(entity)
+    local state = hex_state_manager.get_hex_state_containing(entity.surface, entity.position)
+    if not state then return end
+
+    event_system.trigger("spider-reached-hex-state", entity, state)
 end
 
 

@@ -66,6 +66,8 @@ local hex_state_manager = {}
 ---@field tags_created int|nil The number of tags created on the map for trades at this hex state's hex core. Starts counting at 0, so 0 means 1 tag has been created, etc.
 ---@field strongboxes LuaEntity[]|nil Array of strongbox entities assigned to this hex.
 ---@field update_players int[]|nil Array of player indices for whom to update hex core GUI immediately when a trade occurs.
+---@field is_in_spider_network boolean|nil Whether this hex state is currently in the planet's spider network.
+---@field requested_pickup QualityItemCounts|nil Which items are currently requested for pickup by a spider in the spider network.
 
 
 
@@ -241,6 +243,28 @@ function hex_state_manager.unmap_entity(unit_number)
     end
 
     entity_map[unit_number] = nil
+end
+
+---Add an amount of an item to be picked up at the hex core in the given hex state.
+---@param state HexState
+---@param item_name string
+---@param amount int
+---@param quality string|nil
+---@return int actual_amount How many items were actually added.
+function hex_state_manager.add_to_requested_pickup(state, item_name, amount, quality)
+    local requested_pickup = state.requested_pickup
+    if not requested_pickup then
+        requested_pickup = {}
+        state.requested_pickup = requested_pickup
+    end
+
+    local actual_amount = lib.add_item_to_quality_item_counts(requested_pickup, item_name, amount, quality)
+
+    if not next(requested_pickup) then
+        state.requested_pickup = nil
+    end
+
+    return actual_amount
 end
 
 

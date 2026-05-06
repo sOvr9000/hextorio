@@ -277,6 +277,33 @@ function inventories.can_insert_coin(inventory, coin)
     return true
 end
 
+---Get the total amount of coins and items of an inventory.
+---@param inv LuaInventory|LuaTrain
+---@return Coin, QualityItemCounts
+function inventories.get_coins_and_items_of_inventory(inv)
+    local input_coin_values = {}
+    local all_items = inv.get_contents()
+    local all_items_lookup = {}
+
+    for _, stack in pairs(all_items) do
+        local item_name = stack.name
+        if lib.is_coin(item_name) then
+            input_coin_values[item_name] = stack.count
+        else
+            local quality = stack.quality or "normal"
+            local quality_table = all_items_lookup[quality]
+            if not quality_table then
+                quality_table = {}
+                all_items_lookup[quality] = quality_table
+            end
+            quality_table[item_name] = stack.count
+        end
+    end
+
+    local input_coin = coin_tiers.normalized(coin_tiers.from_coin_values_by_name(input_coin_values))
+    return input_coin, all_items_lookup
+end
+
 ---@param reward_type QuestRewardType
 ---@param value any
 function inventories.on_quest_reward_received(reward_type, value)
