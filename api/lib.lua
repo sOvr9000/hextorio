@@ -1988,6 +1988,30 @@ function lib.normalize_quality_item_counts(quality_item_counts)
     end
 end
 
+---Modify the first QualityItemCounts such that each count is clamped by the second QualityItemCounts as an upper bound.
+---@param qic_modify QualityItemCounts
+---@param qic_clamp QualityItemCounts
+function lib.quality_item_counts_clamp_upper(qic_modify, qic_clamp)
+    for quality, modify_counts in pairs(qic_modify) do
+        local other_counts = qic_clamp[quality] or {}
+        for item_name, count in pairs(other_counts) do
+            modify_counts[item_name] = math.min(modify_counts[item_name] or 0, count)
+        end
+    end
+end
+
+---Modify the first QualityItemCounts such that each count is clamped by the second QualityItemCounts as a lower bound.
+---@param qic_modify QualityItemCounts
+---@param qic_clamp QualityItemCounts
+function lib.quality_item_counts_clamp_lower(qic_modify, qic_clamp)
+    for quality, modify_counts in pairs(qic_modify) do
+        local other_counts = qic_clamp[quality] or {}
+        for item_name, count in pairs(other_counts) do
+            modify_counts[item_name] = math.max(modify_counts[item_name] or 0, count)
+        end
+    end
+end
+
 ---@param stats HexCoreStats
 ---@return LocalisedString
 function lib.get_str_from_hex_core_stats(stats)

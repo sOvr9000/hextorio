@@ -451,6 +451,46 @@ function coin_tiers.floor(coin)
     return norm
 end
 
+---Return coin1 if coin1's value is less than or equal to coin2's value.  Otherwise, return coin2.
+---Assumes both coins are in normalized form.
+---@param coin1 Coin
+---@param coin2 Coin
+---@return Coin
+function coin_tiers.min(coin1, coin2)
+    local values1 = coin1.values
+    local values2 = coin2.values
+    for i = #storage.coin_tiers.COIN_NAMES, 1, -1 do
+        local val1 = values1[i]
+        local val2 = values2[i]
+        if val1 < val2 then
+            return coin1
+        elseif val2 < val1 then
+            return coin2
+        end
+    end
+    return coin1
+end
+
+---Return coin1 if coin1's value is greater than or equal to coin2's value.  Otherwise, return coin2.
+---Assumes both coins are in normalized form.
+---@param coin1 Coin
+---@param coin2 Coin
+---@return Coin
+function coin_tiers.max(coin1, coin2)
+    local values1 = coin1.values
+    local values2 = coin2.values
+    for i = #storage.coin_tiers.COIN_NAMES, 1, -1 do
+        local val1 = values1[i]
+        local val2 = values2[i]
+        if val1 > val2 then
+            return coin1
+        elseif val2 > val1 then
+            return coin2
+        end
+    end
+    return coin1
+end
+
 ---Convert a coin object to a human-readable string which represents its value.
 ---@param coin table
 ---@param show_leading_zeros boolean|nil

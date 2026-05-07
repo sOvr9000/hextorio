@@ -304,6 +304,119 @@ function inventories.get_coins_and_items_of_inventory(inv)
     return input_coin, all_items_lookup
 end
 
+---Insert items from a QualityItemCounts into an inventory.
+---@param inv LuaInventory
+---@param quality_item_counts QualityItemCounts
+---@return QualityItemCounts inserted, boolean succeeded Which items were actually inserted, and whether it was all of the ones specified.
+function inventories.try_insert_quality_item_counts(inv, quality_item_counts)
+    if not inv.valid then
+        lib.log_error("inventories.try_insert_quality_item_counts: inventory is invalid")
+        return {}, false
+    end
+
+    local actual_inserted = {}
+    local all_succeeded = true
+
+    for quality, quality_items in pairs(quality_item_counts) do
+        local qi = {}
+        for item_name, amount in pairs(quality_items) do
+            if amount >= 1 then
+                local actual = inv.insert {name = item_name, count = amount, quality = quality}
+                if actual > 0 then
+                    qi[item_name] = actual
+                end
+                if actual < amount then
+                    all_succeeded = false
+                end
+            else
+                lib.log_error("inventories.try_add_quality_item_counts: amount<1 in quality item counts")
+                all_succeeded = false
+            end
+        end
+        actual_inserted[quality] = qi
+    end
+
+    return actual_inserted, all_succeeded
+end
+
+---Remove items from a QualityItemCounts from an inventory.
+---@param inv LuaInventory
+---@param quality_item_counts QualityItemCounts
+---@return QualityItemCounts removed, boolean succeeded Which items were actually removed, and whether it was all of the ones specified.
+function inventories.try_remove_quality_item_counts(inv, quality_item_counts)
+    if not inv.valid then
+        lib.log_error("inventories.try_remove_quality_item_counts: inventory is invalid")
+        return {}, false
+    end
+
+    local actual_removed = {}
+    local all_succeeded = true
+
+    for quality, quality_items in pairs(quality_item_counts) do
+        local qi = {}
+        for item_name, amount in pairs(quality_items) do
+            if amount >= 1 then
+                local actual = inv.remove {name = item_name, count = amount, quality = quality}
+                if actual > 0 then
+                    qi[item_name] = actual
+                end
+                if actual < amount then
+                    all_succeeded = false
+                end
+            else
+                lib.log_error("inventories.try_remove_quality_item_counts: amount<1 in quality item counts")
+                all_succeeded = false
+            end
+        end
+        actual_removed[quality] = qi
+    end
+
+    return actual_removed, all_succeeded
+end
+
+---Transfer coins and items from one inventory to another.
+---@param from_inv LuaInventory
+---@param from_use_piggy_bank boolean|nil
+---@param to_inv LuaInventory
+---@param to_use_piggy_bank boolean|nil
+---@param quality_item_counts QualityItemCounts|nil The items to transfer.
+---@param coin Coin|nil Coin object representing the amount of coins to transfer.
+---@return Coin|nil transferred_coins, QualityItemCounts|nil transferred_items, boolean succeeded Which coins and items were successfully transferred, and whether it was all of the ones specified.
+function inventories.transfer_coins_and_items(from_inv, from_use_piggy_bank, to_inv, to_use_piggy_bank, coin, quality_item_counts)
+    local succeeded = true
+
+    local from_inv_coins, from_inv_items = inventories.get_coins_and_items_of_inventory(from_inv)
+
+    local transferred_coins
+    if coin then
+        local to_transfer_coins = coin_tiers.min(from_inv_coins, coin)
+
+        inventories.add_coin_to_inventory(to_inv, to_transfer_coins, nil, to_use_piggy_bank)
+
+        -- TODO: Handle the case when not enough empty slots exist in to_inv for coin transferral.
+        -- succeeded = succeeded and success
+
+        inventories.remove_coin_from_inventory(from_inv, to_transfer_coins, nil, from_use_piggy_bank)
+
+        transferred_coins = to_transfer_coins
+    end
+
+    local transferred_items
+    if quality_item_counts then
+        local to_transfer_items = table.deepcopy(quality_item_counts)
+        lib.quality_item_counts_clamp_upper(to_transfer_items, from_inv_items)
+
+        local actual_inserted, success = inventories.try_insert_quality_item_counts(to_inv, to_transfer_items)
+        succeeded = succeeded and success
+
+        inventories.try_remove_quality_item_counts(from_inv, actual_inserted)
+
+        transferred_items = actual_inserted
+    end
+
+    return transferred_items, transferred_coins, succeeded
+end
+
 ---@param reward_type QuestRewardType
 ---@param value any
 function inventories.on_quest_reward_received(reward_type, value)
