@@ -22,14 +22,13 @@ local spider_network = {}
 
 ---@class SpiderNetworkStorage
 ---@field spiders {[int]: {[int]: Tradertron}} Mapping for each surface ID of entity unit numbers to the Tradertron that is associated to that entity
----@field route_assignments {[int]: int} Mapping of trade IDs to spider unit numbers for active deliveries.
 ---@field trade_ids_in_ranking_progress {[int]: int} Mapping of trade IDs to spider unit numbers currently ranking up items with that trade.
 
 ---@class Tradertron
 ---@field unit SpiderControlUnit
 ---@field mode TradertronMode
 ---@field current_state TradertronState
----@field route DeliveryRoute|nil Current delivery route, or nil if idle with no assignment.
+---@field route DeliveryRoute|nil Current delivery route, or nil if idle.
 
 
 
@@ -210,13 +209,12 @@ function spider_network._process_available_deliveries(state, inv_coins, inv_item
 end
 
 ---@param spiders {[int]: Tradertron}
----@param assignments {[int]: int}
 ---@param source_hex_state HexState
 ---@param trade_id int
 ---@param route_items QualityItemCounts|nil
 ---@param route_coins Coin|nil
 ---@return boolean
-function spider_network._try_dispatch(spiders, assignments, source_hex_state, trade_id, route_items, route_coins)
+function spider_network._try_dispatch(spiders, source_hex_state, trade_id, route_items, route_coins)
     local trade = trades.get_trade_from_id(trade_id)
     if not trade or not trade.active or not trade.hex_core_state then return false end
     if not spider_network.is_hex_state_in_network(trade.hex_core_state) then return false end
