@@ -1925,6 +1925,10 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
 
     state.claimed_timestamp = game.tick
 
+    if state.hex_core and state.hex_core.valid then
+        state.is_in_spider_network = true
+    end
+
     -- Set tiles
     local tile_name
     if by_player then

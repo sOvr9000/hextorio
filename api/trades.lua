@@ -2803,6 +2803,32 @@ function trades.has_item(trade, item_name)
     return trades.has_item_as_input(trade, item_name) or trades.has_item_as_output(trade, item_name)
 end
 
+---Get how much of the item the trade needs for input.
+---@param trade Trade
+---@param item_name string
+---@return int
+function trades.get_input_count(trade, item_name)
+    for _, input_item in ipairs(trade.input_items) do
+        if input_item.name == item_name then
+            return input_item.count
+        end
+    end
+    return 0
+end
+
+---Get how much of the item the trade gives as output.
+---@param trade Trade
+---@param item_name string
+---@return int
+function trades.get_output_count(trade, item_name)
+    for _, output_item in ipairs(trade.output_items) do
+        if output_item.name == item_name then
+            return output_item.count
+        end
+    end
+    return 0
+end
+
 ---Verify that the list of item names has the best coin tiers for display, given a central value for item values.
 ---@param list string[]
 ---@param volume number
