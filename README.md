@@ -185,19 +185,6 @@ The main features are above, but there are other obscure features scattered thro
 There's also an extra quality tier called "Hextreme", following legendary.
 
 # Planned Features
-### Automated spidertron interaction with the mod
-- Unlocked as a quest reward.
-- When a group of spidertrons (even if only containing one spidertron) is selected, a button shows up in the top left corner of the screen beside the mod's buttons.
-- This button opens a GUI for managing allowed behaviors of the selected spidertrons:
-  - Add to spidertron manager
-  - Remove from spidertron manager
-  - *Item Ranking Mode* - Allow requesting items from a suitable logistic network to carry them over to a trade in order to rank up items.
-  - *Logistics Mode* - Configure a looping schedule of specific entities to either pick up all contents or dropoff entire inventory to.
-    - Not restricted to hex cores.
-    - The schedule is a list of entities, marked as either to pick up or to drop off items.
-    - Item pickup and dropoff filtering can be loosely achieved with spidertron and hex core inventory slot filters.
-- When a spidertron is set to move to an entity, it finds a path through claimed hexes so that it doesn't try to cut corners and run straight into a dungeon.
-
 ### Quickly viewable hex claim cost
 - Mouse over a hex core to see a GUI element (label with transparent background) appear over it indicating hex claim cost.
 - Label uses rich text to display coin amounts beautifully.
