@@ -55,6 +55,8 @@ function spider_control.register_spider(entity, allow_manual_driving)
         return
     end
 
+    if not allow_manual_driving and entity.get_driver() then return end
+
     local unit = {
         entity = entity,
         allow_manual_driving = allow_manual_driving,
