@@ -30,7 +30,7 @@ data:extend({
         type = "bool-setting",
         setting_type = "runtime-global",
         name = "hextorio-allow-two-headed-trains",
-        default_value = true,
+        default_value = false,
         order = "a[important]-b[balancing]-s[allow-two-headed-trains]",
     },
 
