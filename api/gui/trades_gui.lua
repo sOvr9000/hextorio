@@ -436,6 +436,8 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
     end
 
     trades_gui.update_trade_elements(player, trade_flow, trade, quality_to_show)
+
+    event_system.trigger("trade-ui-created", player, trade_flow, trade, quality_to_show)
 end
 
 ---@param player LuaPlayer

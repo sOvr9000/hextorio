@@ -439,8 +439,8 @@ function hex_grid.add_trade(hex_core_state, trade)
         return
     end
     local hex_core = hex_core_state.hex_core
-    if not hex_core then
-        lib.log_error("hex_grid.add_trade: hex core is nil in hex core state")
+    if not hex_core or not hex_core.valid then
+        lib.log_error("hex_grid.add_trade: hex core is nil or invalid in hex core state")
         return
     end
 
@@ -466,8 +466,14 @@ function hex_grid.add_trade(hex_core_state, trade)
     if not hex_core_state.is_dungeon then
         gameplay_statistics.increment "trades-found"
     end
+
+    event_system.trigger("trade-added", trade)
 end
 
+---Remove a trade from a hex core.
+---@param hex_core_state HexState
+---@param idx int Index in HexState.trades to be removed.
+---@param recoverable boolean|nil Whether the trade should be recovered upon one of its items getting ranked up to gold stars.
 function hex_grid.remove_trade_by_index(hex_core_state, idx, recoverable)
     if recoverable == nil then recoverable = true end
     if not hex_core_state then
@@ -486,6 +492,8 @@ function hex_grid.remove_trade_by_index(hex_core_state, idx, recoverable)
     if not trade then return end
 
     trades.remove_trade_from_tree(trade, recoverable)
+
+    event_system.trigger("trade-removed", trade, recoverable)
 end
 
 ---Add items to a hex core's unloader filters, only filling in some or all of the remaining empty filters.
@@ -2327,6 +2335,8 @@ function hex_grid.spawn_hex_core(surface, position)
     state.trades = {}
     hex_grid.add_initial_trades(state)
 
+    event_system.trigger("hex-core-spawned", state, hex_core)
+
     return hex_core
 end
 
@@ -2469,6 +2479,8 @@ function hex_grid.add_initial_trades(state)
     local surface = hex_core.surface
     local surface_name = surface.name
 
+    local trades_added = {}
+
     if is_starting_hex then
         for _, trade_items in pairs(storage.trades.starting_trades[surface_name]) do
             local input_names = trade_items[1]
@@ -2477,6 +2489,7 @@ function hex_grid.add_initial_trades(state)
             local trade = trades.from_item_names(state.hex_core.surface.name, input_names, output_names, params)
             if trade then
                 hex_grid.add_trade(state, trade)
+                trades_added[#trades_added+1] = trade
             else
                 lib.log_error("hex_grid.add_initial_trades: Failed to generate trade from item names: " .. serpent.line(input_names) .. " -> " .. serpent.line(output_names) .. " -- Is target_efficiency too high or low (see below)?\nparams = " .. serpent.block(params))
             end
@@ -2490,6 +2503,7 @@ function hex_grid.add_initial_trades(state)
             for _, trade in pairs(guaranteed_trades) do
                 hex_grid.add_trade(state, trade)
                 trades_per_hex = trades_per_hex - 1
+                trades_added[#trades_added+1] = trade
             end
             lib.remove_at_multi_index(storage.trades.guaranteed_trades, surface_name, state.position.q, state.position.r) -- Erase it so that multiple copies of the same trade don't exist in storage (bad for save times)
         end
@@ -2544,9 +2558,14 @@ function hex_grid.add_initial_trades(state)
                 local trade = hex_grid.generate_random_trade(state, random_volume)
                 if trade then
                     hex_grid.add_trade(state, trade)
+                    trades_added[#trades_added+1] = trade
                 end
             end
         end
+    end
+
+    if next(trades_added) then
+        event_system.trigger("initial-trades-added", trades_added)
     end
 
     hex_grid.apply_extra_trades_bonus(state)
@@ -4136,43 +4155,47 @@ function hex_grid.try_recover_trade(trade, states, notify)
     if not states then
         states = hex_grid.get_states_with_fewest_trades(trade.surface_name)
     end
-    if #states > 0 then
-        -- Avoid interfering with currently active trading lines by deactivating the relocated trade.
-        trades.set_trade_active(trade, false)
 
-        local state = states[math.random(1, #states)]
-        hex_grid.add_trade(state, trade)
-
-        if notify then
-            local item_name
-            for _, _item_name in pairs(trades.get_item_names_in_trade(trade)) do
-                if item_ranks.get_item_rank(_item_name) >= 4 then
-                    item_name = _item_name
-                    break
-                end
-            end
-            if item_name then
-                lib.print_notification("trade-recovered", {
-                    "",
-                    lib.color_localized_string(
-                        {
-                            "hextorio.trade-recovered",
-                            "[img=item." .. item_name .. "]",
-                        },
-                        "purple",
-                        "heading-1"
-                    ),
-                    " ",
-                    lib.get_gps_str_from_hex_core(state.hex_core),
-                    " ",
-                    lib.get_trade_img_str(trade),
-                })
-            end
-        end
-    else
+    if not next(states) then
         -- This should never happen, but it's here just in case.
         lib.log_error("hex_grid.try_recover_trade: No states found with minimal trades.")
+        return
     end
+
+    -- Avoid interfering with currently active trading lines by deactivating the relocated trade.
+    trades.set_trade_active(trade, false)
+
+    local state = states[math.random(1, #states)]
+    hex_grid.add_trade(state, trade)
+
+    if notify then
+        local item_name
+        for _, _item_name in pairs(trades.get_item_names_in_trade(trade)) do
+            if item_ranks.get_item_rank(_item_name) >= 4 then
+                item_name = _item_name
+                break
+            end
+        end
+        if item_name then
+            lib.print_notification("trade-recovered", {
+                "",
+                lib.color_localized_string(
+                    {
+                        "hextorio.trade-recovered",
+                        "[img=item." .. item_name .. "]",
+                    },
+                    "purple",
+                    "heading-1"
+                ),
+                " ",
+                lib.get_gps_str_from_hex_core(state.hex_core),
+                " ",
+                lib.get_trade_img_str(trade),
+            })
+        end
+    end
+
+    event_system.trigger("trade-recovered", trade)
 end
 
 function hex_grid.recover_trades_retro(item_name)

@@ -58,6 +58,7 @@
 ---| "hex-island-generated"
 ---| "hex-rank-changed"
 ---| "hex-rank-factor-changed"
+---| "initial-trades-added"
 ---| "interplanetary-trade-generated"
 ---| "item-buff-changed-trade-productivity"
 ---| "item-buff-data-reset"
@@ -185,8 +186,11 @@
 ---| "runtime-setting-changed-trade-flying-text"
 ---| "runtime-setting-changed-trade-sorting-batch-size"
 ---| "runtime-setting-changed-unresearched-penalty"
----| "string-translated"
----| "surface-created"
+---| "string-translated" When a string is translated
+---| "surface-created" When a surface is created
+---| "trade-added" When a trade is added to a hex state
+---| "trade-recovered" When a trade is recovered by an item with gold star rank
+---| "trade-removed" When a trade is removed from a hex state
 ---| "trade-add-to-filters-button-clicked"
 ---| "trade-collection-complete"
 ---| "trade-collection-progress"
