@@ -53,6 +53,7 @@
 ---| "gameplay-statistic-changed"
 ---| "hex-claimed"
 ---| "hex-core-deleted"
+---| "hex-core-spawned" When a hex core entity is created on a surface
 ---| "hex-core-trade-item-clicked"
 ---| "hex-generated"
 ---| "hex-island-generated"
@@ -191,6 +192,7 @@
 ---| "trade-added" When a trade is added to a hex state
 ---| "trade-recovered" When a trade is recovered by an item with gold star rank
 ---| "trade-removed" When a trade is removed from a hex state
+---| "trade-ui-created" When GUI elements for a trade are created
 ---| "trade-add-to-filters-button-clicked"
 ---| "trade-collection-complete"
 ---| "trade-collection-progress"
