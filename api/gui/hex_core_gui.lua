@@ -479,7 +479,7 @@ function hex_core_gui.update_hex_core(player)
         show_quality_bounds = lib.get_highest_unlocked_quality().name ~= "normal"
     end
 
-    trades_gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
+    trades_gui.build_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
         show_toggle_trade = state.claimed,
         show_tag_creator = true,
         show_ping_button = true,
