@@ -50,17 +50,17 @@ function catalog_gui.register_events()
     event_system.register_gui("gui-search-button-clicked", "catalog", gui.handle_search_button_click)
     event_system.register_gui("gui-search-text-changed", "catalog", catalog_gui.on_search_text_changed)
 
-    event_system.register("post-rank-up-command", function(player, params)
+    event_system.register("post-command-rank-up", function(player, params)
         local selection = catalog_gui.get_catalog_selection(player)
         catalog_gui.set_catalog_selection(player, "nauvis", params[1], selection.bazaar_quality)
         catalog_gui.show_catalog(player)
     end)
 
-    event_system.register("post-rank-up-all-command", function(player, params)
+    event_system.register("post-command-rank-up-all", function(player, params)
         catalog_gui.show_catalog(player)
     end)
 
-    event_system.register("post-discover-all-command", function(player, params)
+    event_system.register("post-command-discover-all", function(player, params)
         catalog_gui.show_catalog(player)
     end)
 
@@ -84,11 +84,11 @@ function catalog_gui.register_events()
         end
     end)
 
-    event_system.register("post-set-item-value-command", function(player, params)
+    event_system.register("post-command-set-item-value", function(player, params)
         catalog_gui.reinitialize()
     end)
 
-    event_system.register("post-import-item-values-command", function(player, params)
+    event_system.register("post-command-import-item-values", function(player, params)
         catalog_gui.reinitialize()
     end)
 

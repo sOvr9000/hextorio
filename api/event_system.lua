@@ -6,7 +6,7 @@ local funcs = {}
 
 
 ---Register an event handler
----@param name string
+---@param name EventName
 ---@param callback function
 function event_system.register(name, callback)
     funcs[name] = (funcs[name] or {})
@@ -23,7 +23,7 @@ function event_system.register_gui(name, tag, callback)
 end
 
 ---Trigger an event
----@param name string
+---@param name EventName
 ---@param ... any
 function event_system.trigger(name, ...)
     local callbacks = funcs[name]

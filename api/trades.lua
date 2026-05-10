@@ -140,7 +140,7 @@ function trades.register_events()
     end
 
     -- Automatically discover all items when ranking up all items.
-    event_system.register("command-discover-all", function(player, params) discover_all(player, params) event_system.trigger("post-discover-all-command", player, params) end) -- TODO: just fire an event `post-<command>` for all commands, even though it is "wasteful" as most of such events would never be used; it's probably okay because commands are infrequent events
+    event_system.register("command-discover-all", function(player, params) discover_all(player, params) event_system.trigger("post-command-discover-all", player, params) end) -- TODO: just fire an event `post-<command>` for all commands, even though it is "wasteful" as most of such events would never be used; it's probably okay because commands are infrequent events
     event_system.register("command-rank-up-all", function(player, params) discover_all(player, params) end)
 
     event_system.register("command-refresh-all-trades", function(player, params)

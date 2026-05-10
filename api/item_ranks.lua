@@ -18,14 +18,14 @@ local item_ranks = {}
 function item_ranks.register_events()
     event_system.register("command-rank-up", function(player, params)
         if item_ranks.rank_up(params[1]) then
-            event_system.trigger("post-rank-up-command", player, params)
+            event_system.trigger("post-command-rank-up", player, params)
         end
     end)
     event_system.register("command-rank-up-all", function(player, params)
         for item_name, _ in pairs(storage.item_ranks.item_ranks) do
             item_ranks.rank_up(item_name)
         end
-        event_system.trigger("post-rank-up-all-command", player, params)
+        event_system.trigger("post-command-rank-up-all", player, params)
     end)
     event_system.register("quests-reinitialized", function()
         gameplay_statistics.set("total-item-rank", item_ranks.get_total_item_rank())
