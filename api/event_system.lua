@@ -26,8 +26,18 @@ end
 ---@param name string
 ---@param ... any
 function event_system.trigger(name, ...)
-    for _, callback in pairs(funcs[name] or {}) do
-        callback(...)
+    local callbacks = funcs[name]
+    if callbacks then
+        for _, callback in pairs(callbacks) do
+            callback(...)
+        end
+    end
+
+    local interface_names = storage.event_interface_names
+    if interface_names then
+        for _, interface_name in pairs(interface_names) do
+            remote.call(interface_name, "hextorio_event", name, ...)
+        end
     end
 end
 
@@ -37,8 +47,46 @@ end
 ---@param player LuaPlayer
 ---@param elem LuaGuiElement
 function event_system.trigger_gui(name, tag, player, elem)
-    for _, callback in pairs((funcs[name] or {})[tag] or {}) do
-        callback(player, elem)
+    local handlers = funcs[name]
+    if handlers then
+        local callbacks = handlers[tag]
+        if callbacks then
+            for _, callback in pairs(callbacks) do
+                callback(player, elem)
+            end
+        end
+    end
+
+    local interface_names = storage.gui_event_interface_names
+    if interface_names then
+        for _, interface_name in pairs(interface_names) do
+            remote.call(interface_name, "hextorio_gui_event", name, tag, player, elem)
+        end
+    end
+end
+
+function event_system.init()
+    local event_interface_names = {}
+    local gui_event_interface_names = {}
+    for interface_name, func_names in pairs(remote.interfaces) do
+        if func_names["hextorio_event"] then
+            event_interface_names[#event_interface_names+1] = interface_name
+        end
+        if func_names["hextorio_gui_event"] then
+            gui_event_interface_names[#gui_event_interface_names+1] = interface_name
+        end
+    end
+
+    if next(event_interface_names) then
+        storage.event_interface_names = event_interface_names
+    else
+        storage.event_interface_names = nil
+    end
+
+    if next(gui_event_interface_names) then
+        storage.gui_event_interface_names = gui_event_interface_names
+    else
+        storage.gui_event_interface_names = nil
     end
 end
 

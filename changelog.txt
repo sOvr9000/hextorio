@@ -3,6 +3,8 @@ Version: 1.7.9
 Date: 6/5/26
   Changes:
     - The default setting for allowing two-headed trains is now disabled.
+  Scripting:
+    - Other mods can now listen directly to Hextorio's internal events, e.g. when a trade is added to a hex core.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.8
 Date: 2/5/26
