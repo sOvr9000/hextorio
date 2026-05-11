@@ -51,6 +51,7 @@ for _, api_name in pairs{
     "terrain",
     "tile_names",
     "toasts",
+    "trade_generator",
     "trade_loop_finder",
     "trades",
     "train_trading",

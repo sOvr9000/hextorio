@@ -5,7 +5,7 @@ local axial = require "api.axial"
 local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"
-local trade_loop_finder = require "api.trade_loop_finder"
+local trade_generator   = require "api.trade_generator"
 local hex_state_manager = require "api.hex_state_manager"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
@@ -386,8 +386,7 @@ function hex_grid.get_hex_state_from_core(hex_core)
     return state
 end
 
----Attempt to generate a random trade for the given hex core state, but don't add it if successful.
----This is intended as a wrapper for `trades.random()` with added restrictions to prevent simple single-core trade loops from being generated.
+---Generate a random trade for the given hex core state without adding it to the hex.
 ---@param hex_core_state HexState
 ---@param volume number
 ---@param is_interplanetary boolean|nil
@@ -407,27 +406,14 @@ function hex_grid.generate_random_trade(hex_core_state, volume, is_interplanetar
         return
     end
 
+    local surface_name = hex_core_state.hex_core.surface.name
     local cur_trades = trades.convert_trade_id_array_to_trade_array(hex_core_state.trades)
-    local idx = #cur_trades + 1
+    local params = {target_efficiency = storage.trades.base_trade_efficiency}
 
-    local attempts = 10
-    for _ = 1, attempts do
-        local params = {target_efficiency = storage.trades.base_trade_efficiency}
-        local trade = trades.random(hex_core_state.hex_core.surface.name, volume, params, is_interplanetary, include_item)
-        if trade then
-            cur_trades[idx] = trade -- Overwrite previously generated trades if they failed.
-            local loops = trade_loop_finder.find_simple_loops(cur_trades)
+    local tentative = trade_generator.generate_random(surface_name, cur_trades, volume, params, is_interplanetary, include_item)
+    if not tentative then return end
 
-            -- This can more efficiently be something like "trade_loop_finder.has_simple_loop()", but I don't know how to properly implement generator functions (like from Python) in Lua,
-            -- which is what would be ideal to avoid copying and pasting 20-30 lines of code in the case of implementing that function.
-            if not next(loops) then
-                return trade
-            end
-        end
-    end
-
-    -- Failed to generate trade. Return nil.
-    lib.log_error("hex_grid.generate_random_trade: A trade failed to generate within " .. attempts .. " attempts.")
+    return trades.initialize_trade_state(tentative)
 end
 
 ---Add a trade to a hex core.
