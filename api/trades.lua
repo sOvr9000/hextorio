@@ -2710,7 +2710,7 @@ function trades.should_use_batch_processing(filter)
             if count > threshold then return true end
         end
     elseif filter.output_items and filter.output_items[1] then
-        for _ in pairs(trades.get_trades_by_input(filter.output_items[1])) do
+        for _ in pairs(trades.get_trades_by_output(filter.output_items[1])) do
             count = count + 1
             if count > threshold then return true end
         end
