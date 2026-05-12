@@ -557,105 +557,105 @@ return {
             {
                 type = "build-distance",
                 value = 1,
-                level_scaling = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["underground-belt"] = {
             {
                 type = "build-distance",
                 value = 1,
-                level_scaling = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["splitter"] = {
             {
                 type = "build-distance",
                 value = 1,
-                level_scaling = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["fast-transport-belt"] = {
             {
                 type = "build-distance",
                 value = 1,
-                level_scaling = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["fast-underground-belt"] = {
             {
                 type = "build-distance",
                 value = 1,
-                level_scaling = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["fast-splitter"] = {
             {
                 type = "build-distance",
                 value = 1,
-                level_scaling = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["express-transport-belt"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["express-underground-belt"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["express-splitter"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["turbo-transport-belt"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["turbo-underground-belt"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["turbo-splitter"] = {
             {
                 type = "build-distance",
                 value = 1,
-                level_scaling = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["hexic-transport-belt"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["hexic-underground-belt"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["hexic-splitter"] = {
             {
                 type = "build-distance",
-                value = 1,
-                level_scaling = 0.5,
+                value = 0.5,
+                level_scaling = 0.2,
             },
         },
         ["burner-mining-drill"] = {

@@ -1,5 +1,8 @@
 
 local hex_state_manager = require "api.hex_state_manager"
+local item_buffs = require "api.item_buffs"
+
+local data_item_buffs = require "data.item_buffs"
 
 return function()
     -- Clean up any hex claim tool accidents.
@@ -15,4 +18,6 @@ return function()
             end
         end
     end
+
+    item_buffs.migrate_buff_changes(data_item_buffs)
 end
