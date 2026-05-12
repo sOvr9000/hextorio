@@ -113,7 +113,7 @@ function hex_core_gui.init_hex_core(player)
     }
     local frame = player.gui.relative.add {type = "frame", name = "hex-core", direction = "vertical", anchor = anchor}
     frame.caption = {"hex-core-gui.title"}
-    frame.style.width = 319
+    frame.style.width = 325
     frame.style.natural_height = 625
     frame.style.vertically_stretchable = true
     frame.visible = false
@@ -289,7 +289,7 @@ function hex_core_gui.init_hex_core(player)
 
     core_gui.add_warning(frame, {"hex-core-gui.unresearched-penalty"}, "unresearched-penalty")
 
-    local trades_scroll_pane = frame.add {type = "scroll-pane", name = "trades", direction = "vertical"}
+    local trades_scroll_pane = frame.add {type = "scroll-pane", name = "trades", direction = "vertical", horizontal_scroll_policy = "never"}
     core_gui.auto_width_height(trades_scroll_pane)
 end
 
