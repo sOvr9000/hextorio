@@ -31,7 +31,7 @@ local trades = {}
 ---@field id int Unique ID (serial number) given to this trade.
 ---@field surface_name string
 ---@field active boolean Whether this trade is currently allowed to be executed when possible.
----@field hex_core_state HexState|nil The hex core state to which this trade belongs.
+---@field hex_state_flat_index int|nil The flat index into the surface's flattened hex array for the hex state this trade belongs to.
 ---@field allowed_qualities string[] The current list of qualities allowed to be used by this trade.
 ---@field productivity number The base productivity of this trade to be used in calculating the productivity for each quality.
 ---@field current_prod_value StringAmounts Indexed by quality name, the current progress towards filling the productivity bar (red or purple).
@@ -538,6 +538,18 @@ function trades.get_output_coins_of_trade(trade, quality)
     return coin
 end
 
+---Get the hex state to which this trade belongs.
+---
+---Can be nil if the trade has not been added to a hex core or its hex core was deleted and the trade hasn't yet been recovered by an item of gold star rank.
+---@param trade Trade
+---@return HexState|nil
+function trades.get_hex_state(trade)
+    if not trade.hex_state_flat_index then return end
+    local surface = game.get_surface(trade.surface_name)
+    if not surface then return end
+    return hex_state_manager.get_hex_from_flat_index(surface.index, trade.hex_state_flat_index)
+end
+
 ---Check how many batches of (how many times) a trade can occur given an input amount of items.
 ---@param input_items QualityItemCounts
 ---@param input_coin Coin
@@ -556,13 +568,16 @@ function trades.get_num_batches_for_trade(input_items, input_coin, trade, qualit
     quality = quality or "normal"
     quality_cost_mult = quality_cost_mult or 1
 
-    if check_output_buffer and trade.hex_core_state.output_buffer then
-        -- Ensure that if the output buffer has any of the output items, it does not process.
-        local buffer_quality = trade.hex_core_state.output_buffer[quality]
-        if buffer_quality then
-            for _, outp in pairs(trade.output_items) do
-                if (buffer_quality[outp.name] or 0) > 0 then
-                    return 0
+    if check_output_buffer then
+        local state = trades.get_hex_state(trade)
+        if state and state.output_buffer then
+            -- Ensure that if the output buffer has any of the output items, it does not process.
+            local buffer_quality = state.output_buffer[quality]
+            if buffer_quality then
+                for _, outp in pairs(trade.output_items) do
+                    if (buffer_quality[outp.name] or 0) > 0 then
+                        return 0
+                    end
                 end
             end
         end
@@ -1420,7 +1435,7 @@ function trades.process_trade_filtering_jobs()
                 if trade then
                     local should_filter = false
 
-                    local state = trade.hex_core_state
+                    local state = trades.get_hex_state(trade)
                     if state then
                         if not state.hex_core or not state.hex_core.valid then
                             should_filter = true
@@ -1604,7 +1619,10 @@ function trades.process_trade_sorting_jobs()
             end_index = math.min(job.current_index + batch_size - 1, job.total_count)
         end
         local ascending = filter.sorting.ascending == true
-        local sorting_method = filter.sorting.method
+        local sorting_method
+        if filter.sorting then
+            sorting_method = filter.sorting.method
+        end
 
         ---@param value number
         local function update_bounds(value)
@@ -1623,13 +1641,13 @@ function trades.process_trade_sorting_jobs()
             event_system.trigger("trade-sorting-complete", player, {}, {}, job.is_favorited, filter)
         else
             -- Pre-calculate data needed for sorting (only once at start)
-            if not job.metrics and filter.sorting and filter.sorting.method then
+            if not job.metrics and sorting_method then
                 job.metrics = {}
 
-                if filter.sorting.method == "distance-from-spawn" then
+                if sorting_method == "distance-from-spawn" then
                     local dists = storage.hex_island.distances
                     for trade_id, trade in pairs(job.filtered_trades) do
-                        local state = trade.hex_core_state
+                        local state = trades.get_hex_state(trade)
                         if state then
                             local pos = state.position
                             local Q = dists[pos.q]
@@ -1647,25 +1665,26 @@ function trades.process_trade_sorting_jobs()
                             job.metrics[trade_id] = 0
                         end
                     end
-                elseif filter.sorting.method == "distance-from-character" and player.character then
+                elseif sorting_method == "distance-from-character" and player.character then
                     local transformation = terrain.get_surface_transformation(player.surface)
                     local char_pos = axial.get_hex_containing(player.character.position, transformation.scale, transformation.rotation)
                     for trade_id, trade in pairs(job.filtered_trades) do
-                        if trade.hex_core_state then
-                            job.metrics[trade_id] = axial.distance(trade.hex_core_state.position, char_pos)
+                        local state = trades.get_hex_state(trade)
+                        if state then
+                            job.metrics[trade_id] = axial.distance(state.position, char_pos)
                         else
                             job.metrics[trade_id] = 0
                         end
                     end
-                elseif filter.sorting.method == "total-item-value" then
+                elseif sorting_method == "total-item-value" then
                     for trade_id, trade in pairs(job.filtered_trades) do
                         job.metrics[trade_id] = trades.get_volume_of_trade(trade.surface_name, trade)
                     end
-                elseif filter.sorting.method == "productivity" then
+                elseif sorting_method == "productivity" then
                     for trade_id, trade in pairs(job.filtered_trades) do
                         job.metrics[trade_id] = trades.get_productivity(trade)
                     end
-                elseif filter.sorting.method == "num-rank-ups" then
+                elseif sorting_method == "num-rank-ups" then
                     for trade_id, trade in pairs(job.filtered_trades) do
                         job.metrics[trade_id] = trades.count_item_rank_ups(trade, filter.rank_up_filter)
                     end
@@ -1843,25 +1862,35 @@ function trades.process_trade_export_jobs()
             local trade_id = job.trade_ids[idx]
             local trade = lookup[trade_id]
             if trade then
+                local hex_state = trades.get_hex_state(trade)
                 local transformation = terrain.get_surface_transformation(trade.surface_name)
-                local hex_core = trade.hex_core_state.hex_core
-                local quality = "normal"
-                if hex_core and hex_core.valid then
-                    quality = hex_core.quality.name
+
+                local hex_core_quality = "normal"
+                local hex_core, axial_pos, rect_pos, claimed, is_dungeon, mode
+                if hex_state then
+                    hex_core = hex_state.hex_core
+                    axial_pos = hex_state.position
+                    rect_pos = axial.get_hex_center(hex_state.position, transformation.scale, transformation.rotation)
+                    claimed = hex_state.claimed == true
+                    is_dungeon = hex_state.is_dungeon == true or hex_state.was_dungeon == true
+                    mode = hex_state.mode or "normal"
+                    if hex_core and hex_core.valid then
+                        hex_core_quality = hex_core.quality.name
+                    end
                 end
 
                 table.insert(job.formatted_trades[trade.surface_name], {
-                    axial_pos = trade.hex_core_state.position,
-                    rect_pos = axial.get_hex_center(trade.hex_core_state.position, transformation.scale, transformation.rotation),
+                    axial_pos = axial_pos,
+                    rect_pos = rect_pos,
                     inputs = trade.input_items,
                     outputs = trade.output_items,
-                    claimed = trade.hex_core_state.claimed == true,
-                    is_dungeon = trade.hex_core_state.is_dungeon == true or trade.hex_core_state.was_dungeon == true,
+                    claimed = claimed,
+                    is_dungeon = is_dungeon,
                     productivity = trades.get_productivity(trade),
                     is_interplanetary = trades.trade_has_interplanetary_items(trade),
                     has_untradable_items = trades.trade_has_untradable_items(trade),
-                    mode = trade.hex_core_state.mode or "normal",
-                    core_quality = quality,
+                    mode = mode,
+                    core_quality = hex_core_quality,
                 })
 
                 local seen = job.seen_items[trade.surface_name]

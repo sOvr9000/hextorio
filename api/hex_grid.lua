@@ -434,7 +434,7 @@ function hex_grid.add_trade(hex_core_state, trade)
         hex_core_state.trades = {}
     end
 
-    trade.hex_core_state = hex_core_state
+    trade.hex_state_flat_index = hex_core_state.flat_index
     table.insert(hex_core_state.trades, trade.id)
 
     trades.add_trade_to_tree(trade)
@@ -4055,8 +4055,10 @@ function hex_grid.get_states_with_fewest_trades(surface_name, claimed_only)
     return states
 end
 
+---@param item_name string
 function hex_grid.apply_extra_trades_bonus_retro(item_name)
     local added_trades = {}
+
     for surface_id, flattened_surface_hexes in pairs(storage.hex_grid.flattened_surface_hexes) do
         local surface = game.get_surface(surface_id)
         if surface and not lib.is_space_platform(surface) then
@@ -4067,7 +4069,7 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
                     local state = hex_state_manager.get_hex_state(surface, hex_pos)
                     if state and state.trades then
                         local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
-                        if trade and trade.hex_core_state then
+                        if trade and trade.hex_state_flat_index then
                             -- Avoid interfering with currently active trading lines by deactivating the new trade.
                             trades.set_trade_active(trade, false)
                             table.insert(added_trades, trade)
@@ -4077,20 +4079,28 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
             end
         end
     end
-    if next(added_trades) then
-        local hex_cores_str = ""
-        for i, trade in ipairs(added_trades) do
+
+    if not next(added_trades) then return end
+
+    local hex_cores_str = ""
+    local i = 1
+    for _, trade in pairs(added_trades) do
+        local state = trades.get_hex_state(trade)
+        if state and state.hex_core and state.hex_core.valid then
             if i > 1 then
                 hex_cores_str = hex_cores_str .. "   "
             end
-            hex_cores_str = hex_cores_str .. lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
+            hex_cores_str = hex_cores_str .. lib.get_gps_str_from_hex_core(state.hex_core)
+            i = i + 1
         end
-        lib.print_notification("extra-trade", {"", lib.color_localized_string({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"}, "yellow", "heading-1"), "\n", hex_cores_str})
     end
+    lib.print_notification("extra-trade", {"", lib.color_localized_string({"hextorio.bonus-trades-retro", "[img=item." .. item_name .. "]"}, "yellow", "heading-1"), "\n", hex_cores_str})
 end
 
+---@param state HexState
+---@param item_name string|nil
 function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
-    if not state.hex_core then return end
+    if not state.hex_core or not state.hex_core.valid then return end
 
     local surface_name = state.hex_core.surface.name
 
