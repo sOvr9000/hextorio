@@ -70,8 +70,8 @@ function spider_network.register_events()
     event_system.register("entity-becoming-invalid", spider_network.on_entity_becoming_invalid)
     event_system.register("active-hex-state-processed", spider_network.on_active_hex_state_processed)
     event_system.register("spider-reached-hex-state", spider_network.on_spider_reached_hex_state)
-    event_system.register("player-started-driving-spider-control-vehicle", spider_network.on_player_started_driving_spider_control_vehicle)
-    event_system.register("player-commanded-spider-control-vehicle", spider_network.on_player_commanded_spider_control_vehicle)
+    event_system.register("player-entered-spider-control-vehicle", spider_network.on_player_entered_spider_control_vehicle)
+    event_system.register("player-commanded-spiders", spider_network.on_player_commanded_spiders)
 
     event_system.register("player-built-entity", function(player, entity)
         spider_network.register_spider(entity)
@@ -586,16 +586,20 @@ end
 
 ---@param player LuaPlayer
 ---@param vehicle LuaEntity
-function spider_network.on_player_started_driving_spider_control_vehicle(player, vehicle)
+function spider_network.on_player_entered_spider_control_vehicle(player, vehicle)
     local tradertron = spider_network.get_tradertron_from_entity(vehicle)
     if not tradertron then return end
     spider_network.unregister_spider(tradertron)
 end
 
-function spider_network.on_player_commanded_spider_control_vehicle(player, vehicle)
-    local tradertron = spider_network.get_tradertron_from_entity(vehicle)
-    if not tradertron then return end
-    spider_network.unregister_spider(tradertron)
+---@param player LuaPlayer
+---@param spiders LuaEntity[]
+function spider_network.on_player_commanded_spiders(player, spiders)
+    for _, spider in pairs(spiders) do
+        local tradertron = spider_network.get_tradertron_from_entity(spider)
+        if not tradertron then return end
+        spider_network.unregister_spider(tradertron)
+    end
 end
 
 

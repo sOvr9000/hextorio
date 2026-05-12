@@ -611,6 +611,17 @@ script.on_event(defines.events.on_spider_command_completed, function(event)
     event_system.trigger("spider-reached-patrol-point", entity)
 end)
 
+script.on_event(defines.events.on_player_used_spidertron_remote, function(event)
+    local player = game.get_player(event.player_index)
+    if not player then return end
+
+    local spiders = player.spidertron_remote_selection
+    if not spiders or not next(spiders) then return end
+
+    game.print(serpent.line(spiders))
+    event_system.trigger("player-commanded-spiders", player, spiders, event.position)
+end)
+
 script.on_event(defines.events.on_runtime_mod_setting_changed, function(event)
     local setting = event.setting:sub(10)
     if event.setting_type == "runtime-per-user" then

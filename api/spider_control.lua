@@ -203,7 +203,7 @@ function spider_control.on_player_driving_state_changed(player, vehicle)
     local unit = spider_control.get_unit_from_entity(vehicle)
     if unit then
         if unit.allow_manual_driving then
-            event_system.trigger("player-started-driving-spider-control-vehicle", player, vehicle)
+            event_system.trigger("player-entered-spider-control-vehicle", player, vehicle)
         else
             player.driving = false
         end

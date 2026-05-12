@@ -17,6 +17,7 @@
 ---| "gui-search-text-confirmed"
 
 ---@alias EventName
+---| "active-hex-state-processed" When a hex state gets processed for executing trades
 ---| "catalog-item-buffs-button-clicked"
 ---| "catalog-trade-overview-clicked"
 ---| "command-add-trade"
@@ -45,6 +46,7 @@
 ---| "dungeon-looted"
 ---| "dungeon-update"
 ---| "dynamic-stats-updating"
+---| "entity-becoming-invalid" When an entity is picked up or destroyed in some way
 ---| "entity-built"
 ---| "entity-died"
 ---| "entity-killed-entity"
@@ -72,9 +74,12 @@
 ---| "player-built-entity"
 ---| "player-closed-entity"
 ---| "player-coins-base-value-changed"
+---| "player-commanded-spiders" When a player commanded spiders with a spidertron remote
 ---| "player-display-density-scale-changed"
 ---| "player-display-resolution-changed"
 ---| "player-display-scale-changed"
+---| "player-driving-state-changed" When a player starts or stops driving a vehicle
+---| "player-entered-spider-control-vehicle" When a player has taken control of a spider registered in the spider control system
 ---| "player-favorited-trade"
 ---| "player-joined"
 ---| "player-mined-entity"
@@ -187,6 +192,8 @@
 ---| "runtime-setting-changed-trade-flying-text"
 ---| "runtime-setting-changed-trade-sorting-batch-size"
 ---| "runtime-setting-changed-unresearched-penalty"
+---| "spider-reached-hex-state" When a spider-vehicle reached a hex state under one of its autopilot patrol points
+---| "spider-reached-patrol-point" When a spider-vehicle reached one of its autopilot patrol points
 ---| "string-translated" When a string is translated
 ---| "surface-created" When a surface is created
 ---| "trade-added" When a trade is added to a hex state
