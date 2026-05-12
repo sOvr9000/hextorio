@@ -1,3 +1,18 @@
 
+local hex_state_manager = require "api.hex_state_manager"
+
 return function()
+    -- Clean up any hex claim tool accidents.
+    for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+        local surface_hexes = hex_state_manager.get_surface_hexes(surface_name)
+        if surface_hexes then
+            for _, Q in pairs(surface_hexes) do
+                for r, state in pairs(Q) do
+                    if state.generated == nil then
+                        Q[r] = nil
+                    end
+                end
+            end
+        end
+    end
 end
