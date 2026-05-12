@@ -5,6 +5,7 @@ Date: 6/5/26
     - The default setting for allowing two-headed trains is now disabled.
   Bugfixes:
     - The claim tool no longer wastefully creates hex states in chunks that aren't yet generated.
+    - Fixed that the warning from attempting to teleport near unclaimed dungeon hexes stops working once cross-planet teleportation is unlocked. 
   Balancing:
     - Reduced the scaling of build distance from item buffs.
   Gui:
