@@ -1815,7 +1815,7 @@ end
 function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_coins, player_inventory_coins)
     if check_coins == nil then check_coins = true end
 
-    local state = hex_state_manager.get_hex_state(surface, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface, hex_pos, false)
     if not state or state.claimed or not state.generated or state.is_dungeon or not state.is_land and not allow_nonland then
         return false
     end
