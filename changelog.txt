@@ -9,6 +9,7 @@ Date: 12/5/26
   Bugfixes:
     - The claim tool no longer wastefully creates hex states in chunks that aren't yet generated.
     - Fixed that the warning from attempting to teleport near unclaimed dungeon hexes stops working once cross-planet teleportation is unlocked. 
+    - Fixed that the HUD positioning was off for screens with non-standard display density scale.
   Balancing:
     - Reduced the scaling of build distance from item buffs.
   Ease of use:
