@@ -364,7 +364,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         if prod > 0 then
             desc = {"hextorio-gui.positive-prod-description"}
         else
-            desc = {"hextorio-gui.negative-prod-description"}
+            desc = {"hextorio-gui.negative-prod-description", "[font=heading-2][color=red]" .. lib.format_percentage(trades.get_productivity_increment(prod), 1, true, false) .. "[.color][.font]"}
         end
 
         prod_bar.tooltip = {"",
