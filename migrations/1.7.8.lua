@@ -1,6 +1,7 @@
 
 local hex_state_manager = require "api.hex_state_manager"
 local item_buffs = require "api.item_buffs"
+local quests = require "api.quests"
 
 local data_item_buffs = require "data.item_buffs"
 
@@ -16,6 +17,13 @@ return function()
                     end
                 end
             end
+        end
+    end
+
+    if quests.is_complete "grabbing-the-milk-nauvis" then
+        -- Quick and dirty migration
+        for _, player in pairs(game.players) do
+            player.insert {name = "express-loader", count = 15}
         end
     end
 
