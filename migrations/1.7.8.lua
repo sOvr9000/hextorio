@@ -1,8 +1,6 @@
 
 local hex_state_manager = require "api.hex_state_manager"
 local item_buffs = require "api.item_buffs"
-local dungeons = require "api.dungeons"
-local axial    = require "api.axial"
 
 local data_item_buffs = require "data.item_buffs"
 
