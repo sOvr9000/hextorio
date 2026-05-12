@@ -3233,6 +3233,18 @@ function hex_grid.process_hex_core_pool()
             hex_grid.process_hexlight(state)
         end
     end
+
+    -- Also process trades in player-opened hex cores.
+    -- Can lead to processing the same hex core multiple times in one tick, but it's not an issue (SHOULDN'T BE, ANYWAY).
+    for _, player in pairs(game.connected_players) do
+        local opened = lib.get_player_opened_entity(player)
+        if opened and opened.valid and opened.name == "hex-core" then
+            local state = hex_grid.get_hex_state_from_core(opened)
+            if state and state.claimed and state.trades then
+                hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
+            end
+        end
+    end
 end
 
 function hex_grid.setup_pool()

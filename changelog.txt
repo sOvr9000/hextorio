@@ -8,6 +8,8 @@ Date: 6/5/26
     - Fixed that the warning from attempting to teleport near unclaimed dungeon hexes stops working once cross-planet teleportation is unlocked. 
   Balancing:
     - Reduced the scaling of build distance from item buffs.
+  Ease of use:
+    - Hex cores with their GUIs currently opened by any player will process their trades immediately.
   Gui:
     - Slightly widened the hex core GUI, preventing a horizontal scroll bar from occasionally showing up.
   Scripting:
