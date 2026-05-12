@@ -6,6 +6,25 @@ Date: 6/5/26
   Features:
     - (TODO) Added quest on Gleba.
 ---------------------------------------------------------------------------------------------------
+Version: 1.7.9
+Date: 12/5/26
+  Changes:
+    - The default setting for allowing two-headed trains is now disabled.
+    - The "Grabbing the Milk" quest on Nauvis now gives 16 express loaders instead of only one.
+    - Made the descriptions of hexadic resonators more concise.
+    - Made the tooltip for productivity meters on trades with negative productivity more concise, as well as show the percentage increments per input batch.
+  Bugfixes:
+    - The claim tool no longer wastefully creates hex states in chunks that aren't yet generated.
+    - Fixed that the warning from attempting to teleport near unclaimed dungeon hexes stops working once cross-planet teleportation is unlocked. 
+  Balancing:
+    - Reduced the scaling of build distance from item buffs.
+  Ease of use:
+    - Hex cores with their GUIs currently opened by any player will process their trades immediately.
+  Gui:
+    - Slightly widened the hex core GUI, preventing a horizontal scroll bar from occasionally showing up.
+  Scripting:
+    - Other mods can now listen directly to Hextorio's internal events, e.g. when a trade is added to a hex core.
+---------------------------------------------------------------------------------------------------
 Version: 1.7.8
 Date: 2/5/26
   Bugfixes:

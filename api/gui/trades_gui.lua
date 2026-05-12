@@ -5,10 +5,26 @@ local trades = require "api.trades"
 local coin_tiers = require "api.coin_tiers"
 local event_system = require "api.event_system"
 local gameplay_statistics = require "api.gameplay_statistics"
-local quests = require "api.quests"
 local core_gui = require "api.gui.core_gui"
 
 local trades_gui = {}
+
+
+
+---@class TradesListParams
+---@field show_toggle_trade boolean|nil
+---@field show_tag_creator boolean|nil
+---@field show_ping_button boolean|nil
+---@field show_add_to_filters boolean|nil
+---@field show_core_finder boolean|nil
+---@field show_productivity_bar boolean|nil
+---@field show_productivity_info boolean|nil
+---@field show_quality_bounds boolean|nil
+---@field quality_to_show string|nil
+---@field expanded boolean|nil
+---@field is_configuration_unlocked boolean|nil
+---@field batched boolean|nil
+---@field table_batch_def {column_count: int, horizontal_spacing: number}|nil
 
 
 
@@ -113,6 +129,12 @@ function trades_gui._update_trades_scroll_pane_tick(process)
     end
 end
 
+---Populate a GUI element with a flow containing buttons and info for a trade.
+---@param player LuaPlayer
+---@param element LuaGuiElement
+---@param trade Trade
+---@param trade_number int
+---@param params table
 function trades_gui.add_trade_elements(player, element, trade, trade_number, params)
     local size = 40
 
@@ -120,6 +142,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         type = "flow",
         name = "trade-" .. trade_number,
         direction = "horizontal",
+        tags = {trade_id = trade.id},
     }
 
     local function create_ping_button(e)
@@ -274,7 +297,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             if not helpers.is_valid_sprite_path(sprite) then
                 sprite = "entity/" .. input_item.name
                 if not helpers.is_valid_sprite_path(sprite) then
-                    lib.log_error("Could not find sprite for item " .. input_item)
+                    lib.log_error("trades_gui.add_trade_elements: Could not find sprite for item " .. input_item)
+
+                    ---@diagnostic disable-next-line
                     sprite = nil
                 end
             end
@@ -339,7 +364,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         if prod > 0 then
             desc = {"hextorio-gui.positive-prod-description"}
         else
-            desc = {"hextorio-gui.negative-prod-description"}
+            desc = {"hextorio-gui.negative-prod-description", "[font=heading-2][color=red]" .. lib.format_percentage(trades.get_productivity_increment(prod), 1, true, false) .. "[.color][.font]"}
         end
 
         prod_bar.tooltip = {"",
@@ -354,7 +379,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
     end
 
     local prod_label = trade_table.add {
-        type = "label",
+        type = "label", ---@diagnostic disable-line
         name = "productivity",
         caption = "", -- Gets set by trades_gui.update_trade_elements()
         tags = {handlers = {["gui-clicked"] = "trade-arrow"}},
@@ -374,7 +399,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             if not helpers.is_valid_sprite_path(sprite) then
                 sprite = "entity/" .. output_item.name
                 if not helpers.is_valid_sprite_path(sprite) then
-                    lib.log_error("Could not find sprite for item " .. output_item)
+                    lib.log_error("trades_gui.add_trade_elements: Could not find sprite for item " .. output_item)
+
+                    ---@diagnostic disable-next-line
                     sprite = nil
                 end
             end
@@ -409,6 +436,8 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
     end
 
     trades_gui.update_trade_elements(player, trade_flow, trade, quality_to_show)
+
+    event_system.trigger("trade-ui-created", player, trade_flow, trade, quality_to_show)
 end
 
 ---@param player LuaPlayer
@@ -440,7 +469,12 @@ function trades_gui.update_trade_elements(player, trade_flow, trade, quality)
     end
 end
 
-function trades_gui.update_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
+---Enqueue a job to iterate over a list of trades and build the GUI elements needed to display it.
+---@param player LuaPlayer
+---@param trades_scroll_pane LuaGuiElement
+---@param trades_list Trade[]
+---@param params TradesListParams
+function trades_gui.build_trades_scroll_pane(player, trades_scroll_pane, trades_list, params)
     if not params then params = {} end
     if not storage.gui then
         storage.gui = {}
@@ -468,6 +502,28 @@ function trades_gui.update_trades_scroll_pane(player, trades_scroll_pane, trades
         process.immediate = true
     end
     storage.gui.trades_scroll_pane_update[player.name] = process
+end
+
+---Get the trade ID that is associated with one of a trade's GUI elements.
+---@param elem LuaGuiElement
+---@return int|nil
+function trades_gui.get_trade_id_from_trade_element(elem)
+    local flow = trades_gui.get_trade_flow_from_trade_element(elem)
+    if not flow or not flow.valid then return end
+
+    local trade_id = flow.tags.trade_id
+    ---@cast trade_id int
+
+    return trade_id
+end
+
+---Get the trade object that is associated with one of its GUI elements.
+---@param elem LuaGuiElement
+---@return Trade|nil
+function trades_gui.get_trade_from_trade_element(elem)
+    local trade_id = trades_gui.get_trade_id_from_trade_element(elem)
+    if not trade_id then return end
+    return trades.get_trade_from_id(trade_id)
 end
 
 ---Get the rich text formatted string for a label that shows the productivity percentage.

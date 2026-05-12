@@ -6,7 +6,7 @@ local trade_loop_finder = {}
 
 
 ---Generate a mapping of item names to trade indices based on each trade's input items.
----@param trades_list Trade[]
+---@param trades_list (Trade|TentativeTrade)[]
 ---@return TradeInputMap
 local function preprocess_trades(trades_list)
     local input_map = {}
@@ -28,14 +28,14 @@ local function preprocess_trades(trades_list)
 end
 
 ---Return whether the given trade has exactly one input and one output.
----@param trade Trade
+---@param trade Trade|TentativeTrade
 ---@return boolean
 local function is_simple_trade(trade)
     return #trade.input_items == 1 and #trade.output_items == 1
 end
 
 ---Return all loops of order 2 (involving only two trades) within a set of trades.
----@param trades_list Trade[]
+---@param trades_list (Trade|TentativeTrade)[]
 ---@return {[1]: int, [2]: int}[] loops Table containing tables of index pairs corresponding to simple, two-trade loops in `trades_list`.
 function trade_loop_finder.find_simple_loops(trades_list)
     local loops_set = {} ---@as HexSet

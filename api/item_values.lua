@@ -212,7 +212,7 @@ function item_values.register_events()
 
         item_values.set_item_values(t)
 
-        event_system.trigger("post-import-item-values-command", player, params)
+        event_system.trigger("post-command-import-item-values", player, params)
 
         if errored then
             player.print {"hextorio.command-some-item-values-invalid"}

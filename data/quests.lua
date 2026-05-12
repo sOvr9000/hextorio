@@ -221,7 +221,7 @@ return {
                 {
                     type = "receive-items",
                     value = {
-                        {name = "express-loader", count = 1},
+                        {name = "express-loader", count = 16},
                     },
                 },
             },

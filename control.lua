@@ -198,6 +198,7 @@ script.on_init(function()
     strongboxes.init()
     piggy_bank.init()
     translations.init()
+    event_system.init()
 
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -660,4 +661,5 @@ script.on_configuration_changed(function(handler)
     end
     item_tradability_solver.solve()
     translations.init()
+    event_system.init()
 end)

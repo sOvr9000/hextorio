@@ -113,7 +113,7 @@ function hex_core_gui.init_hex_core(player)
     }
     local frame = player.gui.relative.add {type = "frame", name = "hex-core", direction = "vertical", anchor = anchor}
     frame.caption = {"hex-core-gui.title"}
-    frame.style.width = 316
+    frame.style.width = 325
     frame.style.natural_height = 625
     frame.style.vertically_stretchable = true
     frame.visible = false
@@ -289,7 +289,7 @@ function hex_core_gui.init_hex_core(player)
 
     core_gui.add_warning(frame, {"hex-core-gui.unresearched-penalty"}, "unresearched-penalty")
 
-    local trades_scroll_pane = frame.add {type = "scroll-pane", name = "trades", direction = "vertical"}
+    local trades_scroll_pane = frame.add {type = "scroll-pane", name = "trades", direction = "vertical", horizontal_scroll_policy = "never"}
     core_gui.auto_width_height(trades_scroll_pane)
 end
 
@@ -479,7 +479,7 @@ function hex_core_gui.update_hex_core(player)
         show_quality_bounds = lib.get_highest_unlocked_quality().name ~= "normal"
     end
 
-    trades_gui.update_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
+    trades_gui.build_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
         show_toggle_trade = state.claimed,
         show_tag_creator = true,
         show_ping_button = true,

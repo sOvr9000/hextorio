@@ -1063,7 +1063,7 @@ function trade_overview_gui.on_trade_sorting_complete(player, sorted_lookup, sor
 
     storage.trade_overview.trades[player.name] = trades_list
 
-    trades_gui.update_trades_scroll_pane(player, trade_table, trades_list, {
+    trades_gui.build_trades_scroll_pane(player, trade_table, trades_list, {
         show_toggle_trade = false,
         show_tag_creator = false,
         show_ping_button = true,

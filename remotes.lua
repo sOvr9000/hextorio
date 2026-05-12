@@ -53,6 +53,7 @@ for _, api_name in pairs{
     "terrain",
     "tile_names",
     "toasts",
+    "trade_generator",
     "trade_loop_finder",
     "trades",
     "train_trading",
@@ -66,7 +67,7 @@ end
 for api_name, api_funcs in pairs(api) do
     local interface = {}
     for func_name, func in pairs(api_funcs) do
-        if type(func) == "function" then
+        if type(func) == "function" and func_name:sub(1,1) ~= "_" then
             interface[func_name] = func
         end
     end

@@ -558,6 +558,17 @@ function coin_tiers.get_name_of_tier(tier)
     return lib.get_coin_name_of_tier(tier)
 end
 
+---Modify a list in place to ensure that the item names (coins or not) are the best coin tiers for display, given a central value for item values.
+---@param list string[]
+---@param item_value number
+function coin_tiers.validate_coin_names(list, item_value)
+    for i, item_name in pairs(list) do
+        if lib.is_coin(item_name) then
+            list[i] = coin_tiers.get_name_of_tier(coin_tiers.get_tier_for_display(coin_tiers.from_base_value(item_value / (storage.item_values.base_coin_value or 10))))
+        end
+    end
+end
+
 ---Shift the tier of the given coin, returning a new coin object.
 ---@param coin Coin
 ---@param shift int

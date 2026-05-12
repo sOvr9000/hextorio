@@ -112,8 +112,11 @@ end
 ---Get the state of a hex on a specific surface.  Only returns nil if the surface does not exist or the surface is a space platform.
 ---@param surface SurfaceIdentification
 ---@param hex_pos HexPos
+---@param auto_create boolean|nil
 ---@return HexState|nil
-function hex_state_manager.get_hex_state(surface, hex_pos)
+function hex_state_manager.get_hex_state(surface, hex_pos, auto_create)
+    if auto_create == nil then auto_create = true end
+
     local surface_id = lib.get_surface_id(surface)
     if surface_id == -1 then return end
 
@@ -123,11 +126,8 @@ function hex_state_manager.get_hex_state(surface, hex_pos)
     local surface_hexes = hex_state_manager.get_surface_hexes(surface_id)
     if not surface_hexes then return end
 
-    local state = hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_pos)
-
-    if not state.position then
-        state.position = {q = hex_pos.q, r = hex_pos.r} -- copy position just in case
-    end
+    local state = hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_pos, auto_create)
+    if not state then return end
 
     return state
 end
@@ -173,21 +173,26 @@ function hex_state_manager.get_flattened_surface_hexes(surface)
     return flattened_surface_hexes
 end
 
----Get a hex by its axial coordinates in a surface's hex state map.  Defaults and sets to an empty hex state if the hex does not exist.
+---Get a hex by its axial coordinates in a surface's hex state map.
 ---@param surface_hexes HexStateMap
 ---@param hex_pos HexPos
----@return HexState
-function hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_pos)
-    local Q = surface_hexes[hex_pos.q]
+---@param auto_create boolean|nil If true and the hex state does not already exist, index and return a hex state containing only the provided position.
+---@return HexState|nil
+function hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_pos, auto_create)
+    local q = hex_pos.q
+    local Q = surface_hexes[q]
     if not Q then
+        if not auto_create then return end
         Q = {}
-        surface_hexes[hex_pos.q] = Q
+        surface_hexes[q] = Q
     end
 
-    local state = Q[hex_pos.r]
+    local r = hex_pos.r
+    local state = Q[r]
     if not state then
-        state = {position = hex_pos}
-        Q[hex_pos.r] = state
+        if not auto_create then return end
+        state = {position = {q=q, r=r}}
+        Q[r] = state
     end
 
     return state

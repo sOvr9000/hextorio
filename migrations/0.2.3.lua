@@ -1,6 +1,7 @@
 
 local lib = require "api.lib"
 local trades = require "api.trades"
+local trade_generator = require "api.trade_generator"
 local hex_grid = require "api.hex_grid"
 local hex_state_manager = require "api.hex_state_manager"
 local blueprints = require "api.blueprints"
@@ -57,8 +58,8 @@ return function()
                     local trade = state.trades[i]
                     local input_names, output_names = trades.get_input_output_item_names_of_trade(trade)
                     local volume = trades.get_volume_of_trade(trade.surface_name, trade)
-                    trades._check_coin_names_for_volume(input_names, volume)
-                    trades._check_coin_names_for_volume(output_names, volume)
+                    trade_generator.validate_coin_names(input_names, volume)
+                    trade_generator.validate_coin_names(output_names, volume)
                     hex_grid.remove_trade_by_index(state, i)
                     local new_trade = trades.from_item_names(trade.surface_name, input_names, output_names, params)
                     new_trade.active = trade.active
