@@ -6,6 +6,7 @@ Date: 12/5/26
     - The "Grabbing the Milk" quest on Nauvis now gives 16 express loaders instead of only one.
     - Made the descriptions of hexadic resonators more concise.
     - Made the tooltip for productivity meters on trades with negative productivity more concise, as well as show the percentage increments per input batch.
+    - Redesigned the Hexaclysm space platform given by the "Stepping on Ants" quest.
   Bugfixes:
     - The claim tool no longer wastefully creates hex states in chunks that aren't yet generated.
     - Fixed that the warning from attempting to teleport near unclaimed dungeon hexes stops working once cross-planet teleportation is unlocked. 

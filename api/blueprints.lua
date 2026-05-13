@@ -6,8 +6,13 @@ local blueprints = {}
 
 
 function blueprints.init()
-    for _, bp_string in pairs(storage.blueprints.strings) do
-        blueprints.save_item_stack(blueprints.load_string(bp_string))
+    for string_name, string_def in pairs(storage.blueprints.strings) do
+        local stack = blueprints.load_string(string_name, string_def.string)
+        if stack then
+            blueprints.save_item_stack(string_name, stack)
+        else
+            lib.log_error("blueprints.init: Failed to load blueprint string for " .. string_name)
+        end
     end
 end
 
@@ -15,6 +20,7 @@ end
 ---@param surface SurfaceIdentification
 ---@param position MapPosition
 ---@param force ForceID|nil
+---@return LuaEntity[]
 function blueprints.build(stack, surface, position, force)
     local ghosts = stack.build_blueprint {
         surface = surface,
@@ -28,19 +34,26 @@ function blueprints.build(stack, surface, position, force)
     -- end
 end
 
-function blueprints.get_item_stack(blueprint_name)
-    if not storage.blueprints.item_stacks[blueprint_name] then
-        lib.log_error("blueprints.get_item_stack: Could not find item stack by blueprint name \"" .. blueprint_name .. "\"")
+---Build a blueprint from its indexed name.
+---@param string_name string
+---@param surface SurfaceIdentification
+---@param position MapPosition
+---@param force ForceID|nil
+---@return LuaEntity[]|nil
+function blueprints.build_from_name(string_name, surface, position, force)
+    local stack = blueprints.get_item_stack(string_name)
+    if not stack then
+        lib.log_error("blueprints.build_from_name: Failed to get item stack for " .. string_name)
         return
     end
-    return storage.blueprints.item_stacks[blueprint_name]
+
+    return blueprints.build(stack, surface, position, force)
 end
 
--- /c local stack = game.player.selected.get_inventory(1).find_empty_stack(); stack.import_stack("0eNqdluFugyAQx1+luc/aCIqtJtuLNM2iLVlILBrEZqbx3Xfq2m1WK+AnPbwff7g7uBvkRcMrJaSG9AbiVMoa0sMNavEps6K36bbikMJVKN2gxQOZXXrD+IdPoPNAyDP/gpR0noUn++NJu6MHXGqhBR8FDB/th2wuOVeIfnjrRuWlr1Um66pU2s95oZFdlTU6l7KfGIE+2TIPWnyhW9b1uiZAagkMVnihrcA1YGQJXFsws+TRFV7sHBEyD9w5A4N54H4CrKtCaI0jz8F9KSwx5pCXekhgDHpkR4A1chaKn8ZBQue4xJhLXy6UUNcQ9Cv+J3Q/hw9d8cQIH5nH+8412V3mWtlmqmPHunza8nn1O8djZCmH945yl1IucdRHjJZPLUpuLF5qEjRKXHMinOKjObzr5WRGDy2Pi6UbNHJMhXCBxxxTYeBh/yA0v6Dzb0fjQZGhK9oOP02IP/Yeb/fm5bjZ+Pi8bxZ+YEeEXLmqh1lZTJMoSVjMAsKCqOu+AZxeDqQ="); stack.build_blueprint{surface=game.player.surface, force="player", position={-10,0}, build_mode=defines.build_mode.forced}
-
+---@param string_name string The name under which the result of the import gets stored.
 ---@param bp_string string
 ---@return LuaItemStack|nil
-function blueprints.load_string(bp_string)
+function blueprints.load_string(string_name, bp_string)
     local temp_inventory = game.create_inventory(1)
     local stack = temp_inventory.find_empty_stack()
     if not stack then
@@ -50,23 +63,26 @@ function blueprints.load_string(bp_string)
 
     local result = stack.import_stack(bp_string)
     if result == 0 and stack.is_blueprint_setup() then
-        blueprints.save_item_stack(stack)
+        blueprints.save_item_stack(string_name, stack)
         return stack
     end
     temp_inventory.destroy()
 end
 
-function blueprints.save_item_stack(stack)
-    if not stack then
-        lib.log_error("blueprints.save_item_stack: item stack is nil")
+---@param string_name string
+---@return LuaItemStack|nil
+function blueprints.get_item_stack(string_name)
+    if not storage.blueprints.item_stacks[string_name] then
+        lib.log_error("blueprints.get_item_stack: Could not find item stack for \"" .. string_name .. "\"")
         return
     end
-    local bp_name = stack.label
-    if not bp_name then
-        lib.log_error("blueprints.save_item_stack: Tried to save a blueprint with no label")
-        return
-    end
-    storage.blueprints.item_stacks[bp_name] = stack
+    return storage.blueprints.item_stacks[string_name]
+end
+
+---@param string_name string
+---@param stack LuaItemStack
+function blueprints.save_item_stack(string_name, stack)
+    storage.blueprints.item_stacks[string_name] = stack
 end
 
 

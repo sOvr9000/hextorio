@@ -2,13 +2,13 @@
 local lib = require "api.lib"
 local gui = require "api.gui"
 local quests = require "api.quests"
-local item_values = require "api.item_values"
-local coin_tiers  = require "api.coin_tiers"
+local blueprints = require "api.blueprints"
+local coin_tiers = require "api.coin_tiers"
 local trades = require "api.trades"
-local translations = require "api.translations"
 
 local data_quests = require "data.quests"
 local data_coin_tiers = require "data.coin_tiers"
+local data_blueprints   = require "data.blueprints"
 
 local migrations = {}
 
@@ -147,6 +147,10 @@ function migrations.on_mod_updated(old_version, new_version)
 
     -- And trade data as well
     trades.migrate_old_data()
+
+    -- Reload blueprint data before quests (in case of quest rewards referencing blueprints, e.g. receive-spaceship)
+    storage.blueprints = data_blueprints
+    blueprints.init()
 
     -- Reinitialize quests
     lib.log("Reloading quests")
