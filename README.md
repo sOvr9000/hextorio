@@ -29,7 +29,7 @@ This is a percentage that affects trades in the exact same way as recipe product
 - The trade behaves normally while the bar is filling up.
 - When full, an extra batch of the trade's outputs is given for free.
 
-For example, when trade productivity is `+50%`, the trade consuming two output batches will result in it returning three output batches.\
+For example, when trade productivity is `+50%`, the trade consuming two input batches will result in it returning three output batches.\
 Since trades are processed in entire batches at a time, the bar does not fill up continuously/smoothly; it instead jumps forward by large steps at a time depending on how much productivity the trade has.
 
 Trade productivity is able to become negative under some circumstances. When this happens:
