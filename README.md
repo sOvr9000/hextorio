@@ -182,7 +182,8 @@ This mod also makes some balancing changes some vanilla/Space Age weapons, parti
 
 ### Other Features
 The main features are above, but there are other obscure features scattered throughout the mod such as the **Fulgoran Electrocution** animation, which puts on a light show for the player to complete the "Electrocution" quest that would otherwise be too time-consuming on its own.\
-There's also an extra quality tier called "Hextreme", following legendary.
+There's also an extra quality tier called "Hextreme", following legendary.\
+Strongboxes are loot chests that randomly appear in hexes upon claim. They currently only give coins, but the amounts of which scale with your global net coin production.
 
 # Planned Features
 ### Quickly viewable hex claim cost
@@ -212,9 +213,6 @@ Make them use use entire stacks at a time. There's enough inventory control in t
 
 ### Hex claim tool visual effects
 When the tool is in use, highlight outlines of visible hexes (and to some distance some uncharted hexes) in remote view.
-
-### Add item rank filtering to trade overview
-Discussed here: https://mods.factorio.com/mod/hextorio/discussion/6964605b25f42e07037e4b65
 
 ### Add mod setting "Calcite Bias Chance"
 This would complement the "Tungsten Bias Chance" setting, allowing players to modify calcite generation in the same way as the other ores.
@@ -247,10 +245,6 @@ This will help to illustrate what these modes are doing before an irreversible c
 Some mods add numerous items which would serve next to zero purpose in trading, such as decorative tiles.\
 A way to quickly mark specific items as "untradable" (not showing up in trades anywhere) would be a nice QoL.\
 Using `choose-elem` buttons in a simple frame that's opened by a command like `/disable-tradability` would be relatively simple to implement and easy to use by the player.
-
-### Catalog search and sort feature
-As modded items populate the catalog, it becomes inreasingly annoying to have to look for a certain item.\
-A text field search and a dropdown for sorting method would be a nice QoL.
 
 ### Redesign GUIs
 **Massive** amount of work to be done here. Some common things currently causing confusion:
@@ -364,13 +358,8 @@ These are tentative ideas, which may or may not be added at some point. They are
   - Something like a +/- 15% variation of total loot value per chest would be nice to see for a change.
 
 ### Optimizations
-- Store hex states as their flat indices in trade objects.  Using *indirection* like this will almost certainly improve save times and reduce save file sizes to some degree.
 - Distribute hex tile (concrete) placement across more ticks in smaller loads so that instead of stuttering every 20 frames, it's more like negligibly small stutters on every frame.
 - Consider the potential of an LRU cache improving trade overview processing times.
-
-### Bugfixes
-- Fix that the mod's main buttons in the top left of the screen sometimes don't show up on rejoining a server.
-- Verify that when an extra trade is created in a hex core from bonus effect of bronze-ranked items, the respective item in the extra trade is not replaced by coins. This bug has been observed at least once in 1.2.x, but it could potentially have been indirectly fixed with the second or third trade generation overhaul somewhere in 1.4.x or 1.5.x.
 
 ### Development Workflow
 - Add menu simulations designated for testing common, important, and heavily used features of the mod, only enabled when in development mode (*never* enabled in production).
