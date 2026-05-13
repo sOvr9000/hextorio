@@ -2,6 +2,7 @@
 local hex_state_manager = require "api.hex_state_manager"
 local item_buffs = require "api.item_buffs"
 local quests = require "api.quests"
+local trades = require "api.trades"
 
 local data_item_buffs = require "data.item_buffs"
 
@@ -24,6 +25,13 @@ return function()
         -- Quick and dirty migration
         for _, player in pairs(game.players) do
             player.insert {name = "express-loader", count = 15}
+        end
+    end
+
+    for _, trade in pairs(trades.get_all_trades(false)) do
+        if trade.hex_core_state then
+            trade.hex_state_flat_index = trade.hex_core_state.flat_index
+            trade.hex_core_state = nil ---@diagnostic disable-line
         end
     end
 

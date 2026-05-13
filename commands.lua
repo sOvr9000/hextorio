@@ -380,9 +380,10 @@ function on_command(player, command, params)
         end
 
         -- Spawn midgame spaceship
-        local sp = space_platforms.new "nauvis"
+        local ship_name = space_platforms.get_platform_name "hexaclysm"
+        local sp = space_platforms.new("nauvis", ship_name)
         if sp then
-            space_platforms.generate(sp, "starter-ship")
+            space_platforms.generate(sp, "hexaclysm")
         end
 
         -- Claim hexes
@@ -397,9 +398,10 @@ function on_command(player, command, params)
         local range = params[2] or 300
         player.force.chart(surface_name, {{-range, -range}, {range, range}})
     elseif command == "spawn-ship" then
-        local sp = space_platforms.new "nauvis"
+        local ship_name = space_platforms.get_platform_name "hexaclysm"
+        local sp = space_platforms.new("nauvis", ship_name)
         if sp then
-            space_platforms.generate(sp, "starter-ship")
+            space_platforms.generate(sp, "hexaclysm")
         end
     elseif command == "add-coins" then
         local inv = lib.get_player_inventory(player)

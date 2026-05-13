@@ -264,8 +264,9 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             -- TODO: optimize by caching elem_filter results, but it's not super critical as long as no one is putting 100+ trades in a single hex core (other performance issues probably would arise from that than just this)
             local elem_filters = {}
             local core_quality_level = 0
-            if trade.hex_core_state and trade.hex_core_state.hex_core and trade.hex_core_state.hex_core.valid then
-                core_quality_level = trade.hex_core_state.hex_core.quality.level
+            local state = trades.get_hex_state(trade)
+            if state and state.hex_core and state.hex_core.valid then
+                core_quality_level = state.hex_core.quality.level
             end
             for _, q in pairs(lib.get_all_unlocked_qualities()) do
                 if q.level <= core_quality_level then
@@ -558,20 +559,21 @@ function trades_gui.on_core_finder_button_click(player, elem)
         return
     end
 
-    if not trade.hex_core_state then
+    local state = trades.get_hex_state(trade)
+    if not state then
         lib.log_error("gui.on_core_finder_button_click: No core found from trade overview")
         return
     end
 
     player.set_controller {
         type = defines.controllers.remote,
-        position = trade.hex_core_state.hex_core.position,
-        surface = trade.hex_core_state.hex_core.surface,
+        position = state.hex_core.position,
+        surface = state.hex_core.surface,
     }
 
     event_system.trigger("core-finder-button-clicked", player, elem)
 
-    player.opened = trade.hex_core_state.hex_core
+    player.opened = state.hex_core
 end
 
 ---@param player LuaPlayer
@@ -581,10 +583,13 @@ function trades_gui.on_ping_button_clicked(player, elem)
     if not flow then return end
 
     local trade = core_gui.get_trade_from_trade_flow(player, flow)
-    if not trade or not trade.hex_core_state or not trade.hex_core_state.hex_core then return end
+    if not trade then return end
+
+    local state = trades.get_hex_state(trade)
+    if not state or not state.hex_core or not state.hex_core.valid then return end
 
     local trade_str = lib.get_trade_img_str(trade, trades.trade_has_untradable_items(trade))
-    local gps_str = lib.get_gps_str_from_hex_core(trade.hex_core_state.hex_core)
+    local gps_str = lib.get_gps_str_from_hex_core(state.hex_core)
 
     game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
     gameplay_statistics.set("ping-trade", 1)

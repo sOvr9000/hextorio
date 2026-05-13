@@ -9,7 +9,8 @@ local space_platforms = {}
 function space_platforms.register_events()
     event_system.register("quest-reward-received", function(reward_type, reward_value)
         if reward_type == "receive-spaceship" then
-            local sp = space_platforms.new "nauvis"
+            local ship_name = space_platforms.get_platform_name(reward_value)
+            local sp = space_platforms.new("nauvis", ship_name)
             if sp then
                 space_platforms.generate(sp, reward_value)
             end
@@ -32,10 +33,20 @@ function space_platforms.new(planet_name, name)
     return sp
 end
 
+---Get a space platform's name from a blueprint's indexed name in storage.
+---@param string_name string
+---@return string|nil
+function space_platforms.get_platform_name(string_name)
+    local bp_storage = storage.blueprints
+    local string_def = bp_storage.strings[string_name]
+    if not string_def then return end
+    return string_def.space_platform_name
+end
+
 ---@param sp LuaSpacePlatform
----@param ship_name string
-function space_platforms.generate(sp, ship_name)
-    local stack = blueprints.get_item_stack(ship_name)
+---@param platform_name string
+function space_platforms.generate(sp, platform_name)
+    local stack = blueprints.get_item_stack(platform_name)
     if not stack then return end
     if not sp.hub then return end
 

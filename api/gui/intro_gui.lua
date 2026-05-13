@@ -57,15 +57,13 @@ function intro_gui.show(player)
         return
     end
 
-    local display_density_scale = player.display_density_scale
-
     frame = player.gui.screen.add {
         type = "frame",
         name = "hextorio-intro",
         direction = "vertical",
     }
-    frame.style.width = 800 / display_density_scale
-    frame.style.height = 350 / display_density_scale
+    frame.style.width = 800
+    frame.style.height = 350
     core_gui.add_titlebar(frame, {"hextorio-gui.intro"})
 
     local scroll_pane = frame.add {
@@ -84,7 +82,7 @@ function intro_gui.show(player)
     -- scroll_pane.vertical_scroll_policy = "never"
 
     scroll_pane.style.horizontally_stretchable = true
-    scroll_pane.style.top_padding = 10 / display_density_scale
+    scroll_pane.style.top_padding = 10
 
     -- This wrapper flow is necessary to prevent the scroll pane from stacking children vertically, since direction = "horizontal" has no effect.
     local scroll_flow = scroll_pane.add {
@@ -94,7 +92,7 @@ function intro_gui.show(player)
     }
 
     for _, step_name in pairs(intro_steps) do
-        intro_gui.add_intro_step(scroll_flow, step_name, display_density_scale)
+        intro_gui.add_intro_step(scroll_flow, step_name)
     end
 
     frame.force_auto_center()
@@ -105,8 +103,7 @@ end
 ---Add an intro step to the intro GUI.
 ---@param flow LuaGuiElement
 ---@param step_name string
----@param display_density_scale number
-function intro_gui.add_intro_step(flow, step_name, display_density_scale)
+function intro_gui.add_intro_step(flow, step_name)
     local sprite_path = "intro-step-" .. step_name
     if not helpers.is_valid_sprite_path(sprite_path) then
         lib.log_error("intro_gui.add_intro_step: Sprite path " .. sprite_path .. " is invalid")
@@ -134,9 +131,9 @@ function intro_gui.add_intro_step(flow, step_name, display_density_scale)
         sprite = sprite_path,
     }
     image.style.stretch_image_to_widget_size = true
-    image.style.left_margin = 50 / display_density_scale
-    image.style.right_margin = 50 / display_density_scale
-    image.style.size = 256 / 1.2 / display_density_scale
+    image.style.left_margin = 50
+    image.style.right_margin = 50
+    image.style.size = 256 / 1.2
 
     local caption = core_gui.auto_center_horizontally(step_flow, {
         type = "label",

@@ -561,7 +561,7 @@ return {
             conditions = {{type = "kill-entity", value = "small-demolisher", progress_requirement = 3}},
             rewards = {
                 {type = "unlock-feature", value = "supercharging"},
-                {type = "receive-spaceship", value = "starter-ship"},
+                {type = "receive-spaceship", value = "hexaclysm"},
                 {type = "claim-free-hexes", value = {"vulcanus", 5},
             }},
             prerequisites = {"biter-rammer", "visit-vulcanus"},

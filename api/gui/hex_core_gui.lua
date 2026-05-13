@@ -1014,7 +1014,7 @@ end
 ---@param total_removed QualityItemCounts
 ---@param total_inserted QualityItemCounts
 function hex_core_gui.on_trade_processed(trade, total_removed, total_inserted)
-    local state = trade.hex_core_state
+    local state = trades.get_hex_state(trade)
     if not state or not state.hex_core then return end
 
     local update_players = state.update_players
