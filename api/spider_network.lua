@@ -158,10 +158,10 @@ function spider_network._get_spider_network_storage()
 end
 
 ---Update hex_positions_with_order tracking when an order is added or removed.
----@param sn_storage SpiderNetworkStorage
 ---@param order SpiderNetworkOrder
 ---@param add boolean True to mark items as pending, false to clear them.
-local function update_order_position_tracking(sn_storage, order, add)
+function spider_network._update_order_position_tracking(order, add)
+    local sn_storage = spider_network._get_spider_network_storage()
     local items = order.items
     local coin = order.coin
     if not items and not coin then return end
@@ -319,8 +319,8 @@ function spider_network._process_order_for_spider(tradertron, order, order_idx)
     if not score then return false end
 
     if order.tick_created + MAX_ORDER_LIFETIME < game.tick then
+        spider_network._update_order_position_tracking(order, false)
         local sn_storage = spider_network._get_spider_network_storage()
-        update_order_position_tracking(sn_storage, order, false)
         if order.trade_id then
             sn_storage.active_trade_deliveries[order.trade_id] = nil
         end
@@ -557,8 +557,8 @@ function spider_network.clear_orders(tradertron, discard_order)
 
     -- log("spider completed order")
     if discard_order then
+        spider_network._update_order_position_tracking(order, false)
         local sn_storage = spider_network._get_spider_network_storage()
-        update_order_position_tracking(sn_storage, order, false)
         if order.trade_id and order.type == "dropoff"
             and not spider_network.trade_has_pending_or_active_dropoff(order.trade_id) then
             sn_storage.active_trade_deliveries[order.trade_id] = nil
@@ -576,7 +576,7 @@ function spider_network._add_order(order)
     -- log("adding order: " .. serpent.line(order))
     sn_storage.orders[#sn_storage.orders+1] = order
     sn_storage.orders_set[order] = true
-    update_order_position_tracking(sn_storage, order, true)
+    spider_network._update_order_position_tracking(order, true)
 end
 
 ---@param order SpiderNetworkOrder
@@ -980,7 +980,7 @@ function spider_network.cancel_orders_for_trade(trade_id)
     for i = #orders, 1, -1 do
         local order = orders[i]
         if order and order.trade_id == trade_id then
-            update_order_position_tracking(sn_storage, order, false)
+            spider_network._update_order_position_tracking(order, false)
             sn_storage.orders_set[order] = nil
             table.remove(orders, i)
         end
