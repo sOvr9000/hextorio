@@ -5,6 +5,8 @@ Date: 15/5/26
     - Added spider networks (Sentient Spiders are now sentient).
   Features:
     - (TODO) Added quest on Gleba.
+  Changes:
+    - Changed completion requirements and rewards of the quest "The Factorio Must Grow".
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.9
 Date: 13/5/26

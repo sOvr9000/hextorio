@@ -861,14 +861,14 @@ return {
         },
         {
             name = "the-factory-must-grow",
-            conditions = {{type = "place-entity", value = "sentient-spider", progress_requirement = 1}},
+            conditions = {{type = "place-entity", value = "sentient-spider", progress_requirement = 4}},
             rewards = {
                 {type = "claim-free-hexes", value = {"aquilo", 10}},
                 {type = "reduce-biters", value = 90},
                 {
                     type = "receive-items",
                     value = {
-                        {name = "personal-roboport-mk2-equipment", count = 1, quality = "hextreme"},
+                        {name = "exoskeleton-equipment", count = 16, quality = "hextreme"},
                     },
                 },
             },
