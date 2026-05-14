@@ -6,6 +6,7 @@ local hex_grid = require "api.hex_grid"
 local coin_tiers = require "api.coin_tiers"
 local quests = require "api.quests"
 local inventories = require "api.inventories"
+local spider_network = require "api.spider_network"
 
 
 
@@ -114,6 +115,40 @@ local function on_hexport_tool_used(player, entities, reverse)
     end
 end
 
+---@param player LuaPlayer
+---@param entities LuaEntity[]
+---@param reverse boolean
+local function on_spider_network_tool_used(player, entities, reverse)
+    local added = 0
+    local removed = 0
+
+    for _, e in pairs(entities) do
+        if e.name == "hex-core" then
+            local state = hex_grid.get_hex_state_from_core(e)
+            if state and state.claimed then
+                if reverse then
+                    if spider_network.is_hex_state_in_network(state) then
+                        spider_network.unregister_hex_state(state)
+                        removed = removed + 1
+                    end
+                else
+                    if not spider_network.is_hex_state_in_network(state) then
+                        spider_network.register_hex_state(state)
+                        added = added + 1
+                    end
+                end
+            end
+        end
+    end
+
+    if added > 0 then
+        player.print({"hextorio.spider-network-hexes-added", added})
+    end
+    if removed > 0 then
+        player.print({"hextorio.spider-network-hexes-removed", removed})
+    end
+end
+
 script.on_event(defines.events.on_player_selected_area, function (event)
     local player = game.get_player(event.player_index)
     if not player then return end
@@ -124,6 +159,8 @@ script.on_event(defines.events.on_player_selected_area, function (event)
         on_delete_core_tool_used(player, event.entities)
     elseif event.item == "hexport-tool" then
         on_hexport_tool_used(player, event.entities, false)
+    elseif event.item == "spider-network-tool" then
+        on_spider_network_tool_used(player, event.entities, false)
     end
 end)
 
@@ -135,6 +172,8 @@ script.on_event(defines.events.on_player_reverse_selected_area, function (event)
         on_claim_tool_used(player, event.surface, event.entities, event.area, true, false)
     elseif event.item == "hexport-tool" then
         on_hexport_tool_used(player, event.entities, true)
+    elseif event.item == "spider-network-tool" then
+        on_spider_network_tool_used(player, event.entities, true)
     end
 end)
 

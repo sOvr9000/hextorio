@@ -163,13 +163,14 @@ end
 ---Add patrol points to the spider's autopilot by pathfinding from its current position to the destination hex.
 ---@param unit SpiderControlUnit
 ---@param to_hex_pos HexPos
+---@return boolean success
 function spider_control.enqueue_pathfind_hex_move(unit, to_hex_pos)
     local entity = unit.entity
-    if not entity or not entity.valid then return end
+    if not entity or not entity.valid then return false end
 
     local surface = entity.surface
     local state = hex_state_manager.get_hex_state_containing(surface, entity.position)
-    if not state then return end
+    if not state then return false end
 
     local cur_hex_pos = state.position
 
@@ -177,11 +178,11 @@ function spider_control.enqueue_pathfind_hex_move(unit, to_hex_pos)
     local to_hex_positions = hex_pathfinding.find_path(island, cur_hex_pos, to_hex_pos)
 
     if not to_hex_positions then
-        lib.log_error("spider_control.enqueue_pathfind_hex_move: Could not find path for spider")
-        return
+        return false
     end
 
     spider_control.enqueue_hex_move(unit, to_hex_positions)
+    return true
 end
 
 ---@param entity LuaEntity

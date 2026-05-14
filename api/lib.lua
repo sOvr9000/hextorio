@@ -1928,6 +1928,25 @@ function lib.add_quality_item_counts(quality_item_counts_to_modify, quality_item
     lib.normalize_quality_item_counts(quality_item_counts_to_modify)
 end
 
+---Subtract one QualityItemCounts from another in place, clamping counts to zero.
+---Entries that reach zero are removed.
+---@param quality_item_counts_to_modify QualityItemCounts
+---@param quality_item_counts_to_subtract QualityItemCounts
+function lib.subtract_quality_item_counts(quality_item_counts_to_modify, quality_item_counts_to_subtract)
+    for quality, t_sub in pairs(quality_item_counts_to_subtract) do
+        local t_modify = quality_item_counts_to_modify[quality]
+        if t_modify then
+            for item_name, count in pairs(t_sub) do
+                local result = (t_modify[item_name] or 0) - count
+                t_modify[item_name] = result > 0 and result or nil
+            end
+            if not next(t_modify) then
+                quality_item_counts_to_modify[quality] = nil
+            end
+        end
+    end
+end
+
 ---Negate each count in a QualityItemCounts, modifying it in place.
 ---@param quality_item_counts QualityItemCounts
 function lib.negate_quality_item_counts(quality_item_counts)
@@ -1993,9 +2012,9 @@ end
 ---@param qic_clamp QualityItemCounts
 function lib.quality_item_counts_clamp_upper(qic_modify, qic_clamp)
     for quality, modify_counts in pairs(qic_modify) do
-        local other_counts = qic_clamp[quality] or {}
-        for item_name, count in pairs(other_counts) do
-            modify_counts[item_name] = math.min(modify_counts[item_name] or 0, count)
+        local other_counts = qic_clamp[quality]
+        for item_name in pairs(modify_counts) do
+            modify_counts[item_name] = math.min(modify_counts[item_name], other_counts and other_counts[item_name] or 0)
         end
     end
 end
@@ -2004,9 +2023,10 @@ end
 ---@param qic_modify QualityItemCounts
 ---@param qic_clamp QualityItemCounts
 function lib.quality_item_counts_clamp_lower(qic_modify, qic_clamp)
-    for quality, modify_counts in pairs(qic_modify) do
-        local other_counts = qic_clamp[quality] or {}
-        for item_name, count in pairs(other_counts) do
+    for quality, clamp_counts in pairs(qic_clamp) do
+        if not qic_modify[quality] then qic_modify[quality] = {} end
+        local modify_counts = qic_modify[quality]
+        for item_name, count in pairs(clamp_counts) do
             modify_counts[item_name] = math.max(modify_counts[item_name] or 0, count)
         end
     end

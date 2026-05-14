@@ -3229,6 +3229,10 @@ function hex_grid.process_hex_core_pool()
     storage.hex_grid.cur_pool_idx = (storage.hex_grid.cur_pool_idx or 0) % #storage.hex_grid.pool + 1
     local pool = storage.hex_grid.pool[storage.hex_grid.cur_pool_idx]
 
+    if storage.hex_grid.cur_pool_idx == 1 then
+        event_system.trigger "hex-pool-cycle-completed"
+    end
+
     for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
         if state then
@@ -3238,6 +3242,9 @@ function hex_grid.process_hex_core_pool()
 
             if state.is_active then
                 event_system.trigger("active-hex-state-processed", state)
+            end
+            if state.is_in_spider_network then
+                event_system.trigger("spider-network-hex-state-processed", state)
             end
         end
     end

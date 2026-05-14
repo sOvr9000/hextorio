@@ -59,6 +59,8 @@
 ---| "hex-core-trade-item-clicked"
 ---| "hex-generated"
 ---| "hex-island-generated"
+---| "hex-pool-cycle-completed" When an iteration over all currently claimed hex states finishes
+---| "spider-network-hex-state-processed" When a hex state that belongs to a spider network passes through the hex pool, regardless of whether it is actively trading
 ---| "hex-rank-changed"
 ---| "hex-rank-factor-changed"
 ---| "initial-trades-added"

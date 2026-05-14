@@ -35,6 +35,18 @@ local hexport_tool = {
     small_icon = "__hextorio__/graphics/icons/hexport-tool-x24.png",
 }
 
+local spider_network_tool = {
+    type = "shortcut",
+    name = "spider-network-tool",
+    action = "spawn-item",
+    item_to_spawn = "spider-network-tool",
+    order = "z[hextorio]-c[spider-network-tool]",
+    icon_size = 32,
+    icon = "__hextorio__/graphics/icons/spider-network-tool-x32.png",
+    small_icon_size = 24,
+    small_icon = "__hextorio__/graphics/icons/spider-network-tool-x24.png",
+}
 
 
-data:extend({claim_tool, delete_core_tool, hexport_tool})
+
+data:extend({claim_tool, delete_core_tool, hexport_tool, spider_network_tool})

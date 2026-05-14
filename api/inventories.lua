@@ -328,9 +328,6 @@ function inventories.try_insert_quality_item_counts(inv, quality_item_counts)
                 if actual < amount then
                     all_succeeded = false
                 end
-            else
-                lib.log_error("inventories.try_add_quality_item_counts: amount<1 in quality item counts")
-                all_succeeded = false
             end
         end
         actual_inserted[quality] = qi
@@ -363,9 +360,6 @@ function inventories.try_remove_quality_item_counts(inv, quality_item_counts)
                 if actual < amount then
                     all_succeeded = false
                 end
-            else
-                lib.log_error("inventories.try_remove_quality_item_counts: amount<1 in quality item counts")
-                all_succeeded = false
             end
         end
         actual_removed[quality] = qi
