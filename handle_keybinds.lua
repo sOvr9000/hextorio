@@ -77,8 +77,15 @@ script.on_event("teleport-to-hex-core", function(event)
     if not hex_core then return end
     if hex_core.name ~= "hex-core" then return end
 
-    if not (quests.is_feature_unlocked "teleportation" or quests.is_feature_unlocked "teleportation-cross-planet") then
+    local is_tp_unlocked = quests.is_feature_unlocked "teleportation"
+    local is_cross_tp_unlocked = quests.is_feature_unlocked "teleportation-cross-planet"
+    if not is_tp_unlocked and not is_cross_tp_unlocked then
         player.print(lib.color_localized_string({"hextorio.teleportation-locked"}, "red"))
+        return
+    end
+
+    if not is_cross_tp_unlocked and hex_core.surface.name ~= player.character.surface.name then
+        player.print(lib.color_localized_string({"hextorio.teleportation-cross-planet-locked"}, "red"))
         return
     end
 
@@ -86,11 +93,6 @@ script.on_event("teleport-to-hex-core", function(event)
     if not state then return end
     if not state.claimed then
         player.print(lib.color_localized_string({"hextorio.cannot-teleport-to-unclaimed"}, "red"))
-        return
-    end
-
-    if hex_core.surface.name ~= player.character.surface.name then
-        player.print(lib.color_localized_string({"hextorio.teleportation-cross-planet-locked"}, "red"))
         return
     end
 
@@ -122,17 +124,18 @@ script.on_event("teleport-to-hex-core", function(event)
 
     storage.hex_grid.player_last_teleport_attempts[player.index] = nil
 
-    if quests.is_feature_unlocked "teleportation-cross-planet" then
-        if not lib.teleport_player_cross_surface(player, hex_core.position, hex_core.surface, true) then
-            player.print({"hextorio.empty-character-inventories"})
-            if player.character.vehicle then
-                player.print({"hextorio.empty-vehicle-inventories"})
-            end
-        end
+    if not is_cross_tp_unlocked then
+        lib.teleport_player(player, hex_core.position, surface, true)
         return
     end
 
-    lib.teleport_player(player, hex_core.position, surface, true)
+    local success = lib.teleport_player_cross_surface(player, hex_core.position, hex_core.surface, true)
+    if success then return end
+
+    player.print({"hextorio.empty-character-inventories"})
+    if player.character.vehicle then
+        player.print({"hextorio.empty-vehicle-inventories"})
+    end
 end)
 
 script.on_event("claim-hex-core", function(event)
