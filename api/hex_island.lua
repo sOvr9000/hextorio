@@ -17,6 +17,11 @@ local hex_island = {}
 ---@field seed int|nil Optional random seed for reproducible island generation
 ---@field start_pos HexPos|nil Optional starting hex position for island generation
 
+---@class HexIslandStorage
+---@field islands {[string]: HexSet} Mapping of surface names to the set of hexes which form the island on that surface
+---@field distances {[string]: IndexMap} Mapping of surface names to the BFS distance of each hex from the spawn hex on that surface
+---@field extents {[string]: int} Mapping of surface names to the BFS distance of the farthest hex from the spawn hex on that surface
+
 
 
 local island_generators = {}
@@ -63,13 +68,31 @@ function hex_island.register_events()
     event_system.register("surface-created", hex_island.process_surface_creation)
 end
 
+---@return HexIslandStorage
+function hex_island._get_hex_island_storage()
+    local hex_island_storage = storage.hex_island
+    if not hex_island_storage then
+        hex_island_storage = {}
+        storage.hex_island = hex_island_storage
+    end
+
+    if not hex_island_storage.islands then
+        hex_island_storage.islands = {}
+    end
+
+    if not hex_island_storage.distances then
+        hex_island_storage.distances = {}
+    end
+
+    if not hex_island_storage.extents then
+        hex_island_storage.extents = {}
+    end
+
+    return hex_island_storage
+end
+
 function hex_island.process_surface_creation(surface)
-    if not storage.hex_island then
-        storage.hex_island = {}
-    end
-    if not storage.hex_island.islands then
-        storage.hex_island.islands = {}
-    end
+    local hex_island_storage = hex_island._get_hex_island_storage()
 
     local total_hexes = lib.runtime_setting_value_as_int("total-hexes-" .. surface.name)
     local generator_name = lib.runtime_setting_value_as_string("world-generation-mode-" .. surface.name)
@@ -174,22 +197,14 @@ function hex_island.process_surface_creation(surface)
     lib.log("hex_island.process_surface_creation: Centering island")
     island = hex_island.auto_center(island)
 
-    storage.hex_island.islands[surface.name] = island
-
-    if not storage.hex_island.distances then
-        storage.hex_island.distances = {}
-    end
+    hex_island_storage.islands[surface.name] = island
 
     lib.log("hex_island.process_surface_creation: Calculating distances")
     local distances = hex_util.calculate_distances({q=0, r=0}, island)
-    storage.hex_island.distances[surface.name] = distances
-
-    if not storage.hex_island.extents then
-        storage.hex_island.extents = {}
-    end
+    hex_island_storage.distances[surface.name] = distances
 
     local extent = calculate_extent(distances)
-    storage.hex_island.extents[surface.name] = extent
+    hex_island_storage.extents[surface.name] = extent
 
     local actual_hex_count = hex_sets.size(island)
     lib.log(string.format("hex_island.process_surface_creation: Generated %d hexes for %s (target: %d, extent: %d)", actual_hex_count, surface.name, total_hexes, extent))
@@ -207,13 +222,9 @@ end
 ---@param hex_pos HexPos
 ---@return boolean
 function hex_island.is_land_hex(surface_name, hex_pos)
-    if not storage.hex_island then
-        storage.hex_island = {islands = {}}
-    elseif not storage.hex_island.islands then
-        storage.hex_island.islands = {}
-    end
+    local hex_island_storage = hex_island._get_hex_island_storage()
 
-    local island = storage.hex_island.islands[surface_name]
+    local island = hex_island_storage.islands[surface_name]
     if not island then
         lib.log_error("hex_island.is_land_hex: Could not find island structure for surface " .. surface_name)
         return false
@@ -233,13 +244,9 @@ end
 ---@param surface_name string
 ---@return HexSet
 function hex_island.get_island_hex_set(surface_name)
-    if not storage.hex_island then
-        storage.hex_island = {islands = {}}
-    elseif not storage.hex_island.islands then
-        storage.hex_island.islands = {}
-    end
+    local hex_island_storage = hex_island._get_hex_island_storage()
 
-    local island = storage.hex_island.islands[surface_name]
+    local island = hex_island_storage.islands[surface_name]
     if not island then
         lib.log_error("hex_island.get_island_hex_set: Could not find island structure for surface " .. surface_name)
         return {}
@@ -252,11 +259,7 @@ end
 ---@param surface_name string
 ---@return IndexMap
 function hex_island.get_island_distances(surface_name)
-    local hex_island_storage = storage.hex_island
-
-    if not hex_island_storage.distances then
-        hex_island_storage.distances = {}
-    end
+    local hex_island_storage = hex_island._get_hex_island_storage()
 
     local distances = hex_island_storage.distances[surface_name]
     if not distances then
@@ -277,11 +280,7 @@ end
 ---@param surface_name string
 ---@return int
 function hex_island.get_island_extent(surface_name)
-    local hex_island_storage = storage.hex_island
-
-    if not hex_island_storage.extents then
-        hex_island_storage.extents = {}
-    end
+    local hex_island_storage = hex_island._get_hex_island_storage()
 
     local extent = hex_island_storage.extents[surface_name]
     if not extent then
