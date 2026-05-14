@@ -23,6 +23,7 @@ local spider_control = {}
 function spider_control.register_events()
     event_system.register("entity-becoming-invalid", spider_control.on_entity_becoming_invalid)
     event_system.register("player-driving-state-changed", spider_control.on_player_driving_state_changed)
+    event_system.register("player-commanded-spiders", spider_control.on_player_commanded_spiders)
     event_system.register("spider-reached-patrol-point", spider_control.on_spider_reached_patrol_point)
 end
 
@@ -207,6 +208,17 @@ function spider_control.on_player_driving_state_changed(player, vehicle)
             event_system.trigger("player-entered-spider-control-vehicle", player, vehicle)
         else
             player.driving = false
+        end
+    end
+end
+
+---@param player LuaPlayer
+---@param spiders LuaEntity[]
+function spider_control.on_player_commanded_spiders(player, spiders)
+    for _, spider in pairs(spiders) do
+        local unit = spider_control.get_unit_from_entity(spider)
+        if unit then
+            spider_control.unregister_spider(unit)
         end
     end
 end
