@@ -105,8 +105,6 @@ function catalog_gui.register_events()
     end)
 
     event_system.register("post-item-values-recalculated", catalog_gui.reinitialize)
-
-    event_system.register("player-display-density-scale-changed", catalog_gui.reinitialize)
 end
 
 ---Reinitialize the catalog GUI for the given player, or all players if no player is provided.

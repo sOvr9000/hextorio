@@ -90,7 +90,6 @@ function hex_rank_gui.register_events()
     end)
 
     event_system.register("player-display-scale-changed", hex_rank_gui.reinitialize_hud)
-    event_system.register("player-display-density-scale-changed", hex_rank_gui.reinitialize_hud)
     event_system.register("player-display-resolution-changed", hex_rank_gui.reinitialize_hud)
 end
 
@@ -233,7 +232,7 @@ function hex_rank_gui.init_hex_rank_hud(player)
 
     local resolution = player.display_resolution
     hud.style.vertically_stretchable = true
-    hud.style.height = resolution.height * 0.98 * player.display_density_scale / player.display_scale
+    hud.style.height = resolution.height * 0.98 / player.display_scale
     hud.style.vertically_squashable = true
 
     local hex_rank_label = hud.add {

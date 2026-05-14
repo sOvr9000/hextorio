@@ -77,7 +77,6 @@
 ---| "player-closed-entity"
 ---| "player-coins-base-value-changed"
 ---| "player-commanded-spiders" When a player commanded spiders with a spidertron remote
----| "player-display-density-scale-changed"
 ---| "player-display-resolution-changed"
 ---| "player-display-scale-changed"
 ---| "player-driving-state-changed" When a player starts or stops driving a vehicle

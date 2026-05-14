@@ -646,13 +646,6 @@ script.on_event(defines.events.on_player_display_resolution_changed, function(ev
     event_system.trigger("player-display-resolution-changed", player)
 end)
 
-script.on_event(defines.events.on_player_display_density_scale_changed, function(event)
-    local player = game.get_player(event.player_index)
-    if not player then return end
-
-    event_system.trigger("player-display-density-scale-changed", player)
-end)
-
 script.on_event(defines.events.on_string_translated, function(event)
     event_system.trigger("string-translated", event)
 end)
