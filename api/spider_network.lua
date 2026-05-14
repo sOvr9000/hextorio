@@ -23,6 +23,7 @@ local RANK_UP_FILTER = {[2] = true, [3] = true, [5] = true}
 ---@alias SpiderNetworkOrder PickupOrder|DropoffOrder
 
 ---@class SpiderNetworkStorage
+---@field supported_entity_names StringSet
 ---@field spiders {[int]: {[int]: Tradertron}} Mapping for each surface ID of entity unit numbers to the Tradertron that is associated to that entity
 ---@field spider_list LuaEntity[] List of entities that are Tradertrons.
 ---@field orders_iterated_per_tick int
@@ -31,7 +32,7 @@ local RANK_UP_FILTER = {[2] = true, [3] = true, [5] = true}
 ---@field best_dispatch SpiderDispatch|nil
 ---@field orders SpiderNetworkOrder[]
 ---@field orders_set table Set of orders currently in the orders array, keyed by order reference for O(1) existence checks.
----@field hex_positions_with_order {[int]: {[int]: {pickup: {[string]: boolean}, dropoff: {[string]: boolean}}}} Mapping of hex positions to boolean values indicating whether a pickup or dropoff order already exists at that hex for a specific item.
+---@field hex_positions_with_order {[int]: {[int]: {pickup: StringSet, dropoff: StringSet}}} Mapping of hex positions to boolean values indicating whether a pickup or dropoff order already exists at that hex for a specific item.
 ---@field order_generator OrderGenerator
 ---@field active_trade_deliveries {[int]: boolean} Set of trade IDs for which a dropoff order is currently pending or in flight. Prevents generating duplicate pickup+dropoff sets for the same trade.
 
@@ -87,11 +88,8 @@ function spider_network.register_events()
     event_system.register("spider-reached-hex-state", spider_network.on_spider_reached_hex_state)
     event_system.register("player-entered-spider-control-vehicle", spider_network.on_player_entered_spider_control_vehicle)
     event_system.register("player-commanded-spiders", spider_network.on_player_commanded_spiders)
+    event_system.register("entity-built", spider_network.on_entity_built)
     event_system.register("trade-processed", spider_network.on_trade_processed)
-
-    event_system.register("player-built-entity", function(player, entity)
-        spider_network.register_spider(entity)
-    end)
 end
 
 ---@return SpiderNetworkStorage
@@ -154,7 +152,21 @@ function spider_network._get_spider_network_storage()
         sn_storage.hex_positions_with_order = {}
     end
 
+    if not sn_storage.supported_entity_names then
+        sn_storage.supported_entity_names = {
+            ["sentient-spider"] = true,
+        }
+    end
+
     return sn_storage
+end
+
+---Return whether an entity of a certain name is able to be added to the spider network, e.g. "sentient-spider".
+---@param entity_name string
+---@return boolean
+function spider_network.is_entity_name_supported(entity_name)
+    local sn_storage = spider_network._get_spider_network_storage()
+    return sn_storage.supported_entity_names[entity_name]
 end
 
 ---Update hex_positions_with_order tracking when an order is added or removed.
@@ -440,7 +452,7 @@ end
 ---@param entity LuaEntity
 ---@return Tradertron|nil
 function spider_network.register_spider(entity)
-    if not entity or not entity.valid then return end
+    if not entity or not entity.valid or not spider_network.is_entity_name_supported(entity.name) then return end
 
     local unit = spider_control.register_spider(entity, false)
     if not unit then return end
@@ -455,6 +467,8 @@ function spider_network.register_spider(entity)
     local spiders = spider_network.get_spider_storage_on_surface(entity.surface_index)
     spiders[entity.unit_number] = tradertron
     sn_storage.spider_list[#sn_storage.spider_list+1] = entity
+
+    game.print({"hextorio.spider-network-spiders-added", entity.gps_tag})
 
     return tradertron
 end
@@ -478,6 +492,8 @@ function spider_network.unregister_spider(tradertron)
     if idx then
         table.remove(sn_storage.spider_list, idx)
     end
+
+    game.print({"hextorio.spider-network-spiders-removed", entity.gps_tag})
 end
 
 ---@param state HexState
@@ -1134,6 +1150,32 @@ function spider_network._update_available_items(state)
     end
 end
 
+---Add an entity name to the set of names that can be added to the spider network.
+---@param entity_name string
+function spider_network.register_supported_entity_name(entity_name)
+    local sn_storage = spider_network._get_spider_network_storage()
+    sn_storage.supported_entity_names[entity_name] = true
+end
+
+---Remove an entity name from the set of names that can be added to the spider network.
+---@param entity_name string
+function spider_network.unregister_supported_entity_name(entity_name)
+    local sn_storage = spider_network._get_spider_network_storage()
+    sn_storage.supported_entity_names[entity_name] = false
+
+    for i = #sn_storage.spider_list, 1, -1 do
+        local spider = sn_storage.spider_list[i]
+        if spider and spider.valid then
+            if spider.name == entity_name then
+                local tradertron = spider_network.get_tradertron_from_entity(spider)
+                if tradertron then
+                    spider_network.unregister_spider(tradertron)
+                end
+            end
+        end
+    end
+end
+
 ---Scan a network hex's inventory and trades for the order generator.
 ---Fires for all spider network hexes regardless of active status, so rank-up trades are
 ---detected even when a hex has no items yet and is waiting for its first delivery.
@@ -1237,13 +1279,26 @@ function spider_network.on_player_entered_spider_control_vehicle(player, vehicle
     spider_network.unregister_spider(tradertron)
 end
 
+---@param entity LuaEntity
+function spider_network.on_entity_built(entity)
+    spider_network.register_spider(entity)
+end
+
 ---@param player LuaPlayer
 ---@param spiders LuaEntity[]
 function spider_network.on_player_commanded_spiders(player, spiders)
     for _, spider in pairs(spiders) do
         local tradertron = spider_network.get_tradertron_from_entity(spider)
-        if not tradertron then return end
-        spider_network.unregister_spider(tradertron)
+        if tradertron then
+            spider_network.unregister_spider(tradertron)
+        else
+            if spider.type == "spider-vehicle" then
+                local target = spider.follow_target
+                if target and target.name == "hex-core" then
+                    spider_network.register_spider(spider)
+                end
+            end
+        end
     end
 end
 
