@@ -618,7 +618,6 @@ script.on_event(defines.events.on_player_used_spidertron_remote, function(event)
     local spiders = player.spidertron_remote_selection
     if not spiders or not next(spiders) then return end
 
-    game.print(serpent.line(spiders))
     event_system.trigger("player-commanded-spiders", player, spiders, event.position)
 end)
 
