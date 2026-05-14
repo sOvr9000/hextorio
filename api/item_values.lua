@@ -387,7 +387,7 @@ function item_values.is_item_interplanetary(surface_name, item_name)
 end
 
 ---Return whether an item can be traded on a surface. An item is tradable if it's
----locally produceable, or if no planet can produce it from local raws and this
+---locally producible, or if no planet can produce it from local raws and this
 ---planet has a recipe for it.
 ---@param surface_name string
 ---@param item_name string

@@ -524,8 +524,10 @@ end
 
 function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if state.mode == "sink" or state.mode == "generator" then return end
-    if not state.hex_core or not state.hex_core.valid then return end
-    if not item_values.is_item_tradable(state.hex_core.surface.name, item_name) then return end
+
+    local hex_core = state.hex_core
+    if not hex_core or not hex_core.valid then return end
+    if not item_values.is_item_tradable(hex_core.surface.name, item_name) then return end
     if math.random() > storage.item_ranks.bronze_rank_bonus_effect then return end
 
     local trade = hex_grid.generate_random_trade(state, volume, false, item_name)
@@ -4074,21 +4076,19 @@ end
 function hex_grid.apply_extra_trades_bonus_retro(item_name)
     local added_trades = {}
 
-    for surface_id, flattened_surface_hexes in pairs(storage.hex_grid.flattened_surface_hexes) do
-        local surface = game.get_surface(surface_id)
-        if surface and not lib.is_space_platform(surface) then
-            local surface_name = surface.name
-            if not lib.is_catalog_item(surface_name, item_name) then
-                local volume = item_values.get_item_value(surface_name, item_name)
-                for _, hex_pos in pairs(flattened_surface_hexes) do
-                    local state = hex_state_manager.get_hex_state(surface, hex_pos)
-                    if state and state.trades then
-                        local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
-                        if trade and trade.hex_state_flat_index then
-                            -- Avoid interfering with currently active trading lines by deactivating the new trade.
-                            trades.set_trade_active(trade, false)
-                            table.insert(added_trades, trade)
-                        end
+    log("add extra trades for " .. item_name)
+
+    for surface_id, surface in pairs(game.surfaces) do
+        local surface_name = surface.name
+        if lib.is_vanilla_planet_name(surface_name) and lib.is_catalog_item(surface_name, item_name) then
+            local volume = item_values.get_item_value(surface_name, item_name)
+            for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_id)) do
+                if state.trades then
+                    local trade = hex_grid.apply_extra_trade_bonus(state, item_name, volume)
+                    if trade and trade.hex_state_flat_index then
+                        -- Avoid interfering with currently active trading lines by deactivating the new trade.
+                        trades.set_trade_active(trade, false)
+                        table.insert(added_trades, trade)
                     end
                 end
             end

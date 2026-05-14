@@ -231,17 +231,16 @@ function trade_generator.generate_item_names(surface_name, volume, params, allow
     end
 
     local set = sets.new()
+    if include_item then
+        sets.add(set, include_item)
+    end
     for i = 1, 6 do
         if #possible_items == 0 then break end
         local item_name = table.remove(possible_items, math.random(1, #possible_items))
         sets.add(set, item_name)
     end
+
     local trade_items = sets.to_array(set)
-
-    if include_item and not set[include_item] then
-        trade_items[math.random(1, #trade_items)] = include_item
-    end
-
     if #trade_items < 2 then
         lib.log_error("trade_generator.generate_item_names: Not enough items selected for trade")
         return {}, {}
@@ -276,6 +275,13 @@ function trade_generator.generate_item_names(surface_name, volume, params, allow
     local total_items = math.min(2 + math.floor(5 * t), #trade_items)
     local dists = possible_distributions[total_items]
     local num_inputs = dists[math.random(1, #dists)]
+
+    if include_item then
+        -- Bring include_item to front indices that'll be used for populating input and output item lists.
+        local idx_old = lib.table_index(trade_items, include_item)
+        local idx_new = math.random(1, total_items)
+        trade_items[idx_new], trade_items[idx_old] = trade_items[idx_old], trade_items[idx_new]
+    end
 
     local input_item_names = {}
     local output_item_names = {}
