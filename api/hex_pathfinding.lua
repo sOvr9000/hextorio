@@ -48,8 +48,9 @@ end
 
 ---@param came_from table
 ---@param current HexPos
+---@param omit_collinear boolean
 ---@return HexPos[]
-local function reconstruct_path(came_from, current)
+local function reconstruct_path(came_from, current, omit_collinear)
     local path = {}
     local pos = current
 
@@ -59,6 +60,18 @@ local function reconstruct_path(came_from, current)
         if not Q then break end
         pos = Q[pos.r]
     until not pos
+
+    if omit_collinear and #path >= 3 then
+        -- Omit collinear hexes to simplify path
+        for i = #path - 1, 2, -1 do
+            local hex1 = path[i-1]
+            local hex2 = path[i]
+            local hex3 = path[i+1]
+            if axial.is_collinear(hex1, hex2, hex3) then
+                table.remove(path, i)
+            end
+        end
+    end
 
     return path
 end
@@ -104,12 +117,15 @@ end
 ---@param hex_set HexSet
 ---@param from_hex_pos HexPos
 ---@param to_hex_pos HexPos
+---@param omit_collinear boolean|nil
 ---@return HexPos[]|nil
-function hex_pathfinding.find_path(hex_set, from_hex_pos, to_hex_pos)
+function hex_pathfinding.find_path(hex_set, from_hex_pos, to_hex_pos, omit_collinear)
     if not hex_sets.contains(hex_set, from_hex_pos) or not hex_sets.contains(hex_set, to_hex_pos) then
         lib.log_error("hex_pathfinding.find_path: Tried to find a path where at least one end point is not in the hex set.")
         return
     end
+
+    if omit_collinear == nil then omit_collinear = true end
 
     if axial.equals(from_hex_pos, to_hex_pos) then
         return {{q = from_hex_pos.q, r = from_hex_pos.r}}
@@ -133,7 +149,7 @@ function hex_pathfinding.find_path(hex_set, from_hex_pos, to_hex_pos)
         if not hex_sets.contains(closed, current_pos) then
             hex_sets.add(closed, current_pos)
             if axial.equals(current_pos, to_hex_pos) then
-                return reconstruct_path(came_from, current_pos)
+                return reconstruct_path(came_from, current_pos, omit_collinear)
             end
             local current_g = g_score[current_pos.q][current_pos.r]
             for _, neighbor in pairs(axial.get_adjacent_hexes(current_pos)) do

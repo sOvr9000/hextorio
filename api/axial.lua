@@ -169,6 +169,19 @@ function axial.distance(a, b)
             math.abs(a.r - b.r)) / 2
 end
 
+---Return whether the three hexes are collinear.
+---@param hex1 HexPos
+---@param hex2 HexPos
+---@param hex3 HexPos
+---@return boolean
+function axial.is_collinear(hex1, hex2, hex3)
+    local dq1 = hex2.q - hex1.q
+    local dr1 = hex2.r - hex1.r
+    local dq2 = hex3.q - hex1.q
+    local dr2 = hex3.r - hex1.r
+    return dq1 * dr2 == dr1 * dq2
+end
+
 -- Get a line of hexes from a to b
 function axial.line(a, b)
     local distance = axial.distance(a, b)
