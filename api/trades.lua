@@ -2785,7 +2785,7 @@ end
 ---@param entity_that_caused LuaEntity
 ---@param damage_type_prot LuaDamagePrototype|nil
 function trades.on_entity_killed_entity(entity_that_died, entity_that_caused, damage_type_prot)
-    if not damage_type_prot or damage_type_prot.name ~= "electric" or entity_that_caused.force.name ~= "player" then return end
+    if not damage_type_prot or damage_type_prot.name ~= "electric" and damage_type_prot.name ~= "electric-hv" or entity_that_caused.force.name ~= "player" then return end
 
     local transformation = terrain.get_surface_transformation(entity_that_died.surface)
     local hex_pos = axial.get_hex_containing(entity_that_died.position, transformation.scale, transformation.rotation)
