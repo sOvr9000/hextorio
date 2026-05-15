@@ -496,8 +496,9 @@ end
 
 ---Unregister a Tradertron from the spider network.
 ---@param tradertron Tradertron
-function spider_network.unregister_spider(tradertron)
-    spider_network.clear_orders(tradertron, false)
+---@param clear_autopilot boolean
+function spider_network.unregister_spider(tradertron, clear_autopilot)
+    spider_network.clear_orders(tradertron, false, clear_autopilot)
 
     local unit = tradertron.unit
     if not unit then return end
@@ -581,10 +582,13 @@ end
 ---Clear a Tradertron's current orders, forcing it to come to a stop.
 ---@param tradertron Tradertron
 ---@param discard_order boolean Whether to discard the order from the spider.  If false, the order is sent back to the network.
-function spider_network.clear_orders(tradertron, discard_order)
-    local entity = spider_network.get_entity_from_tradertron(tradertron)
-    if entity and entity.valid then
-        entity.autopilot_destination = nil
+---@param clear_autopilot boolean
+function spider_network.clear_orders(tradertron, discard_order, clear_autopilot)
+    if clear_autopilot then
+        local entity = spider_network.get_entity_from_tradertron(tradertron)
+        if entity and entity.valid then
+            entity.autopilot_destination = nil
+        end
     end
 
     local order = tradertron.order
@@ -740,7 +744,7 @@ function spider_network.handle_order(tradertron)
     --     end
     -- end
 
-    spider_network.clear_orders(tradertron, true)
+    spider_network.clear_orders(tradertron, true, true)
 
     if order.type == "dropoff" and order.trade_id then
         ---@cast order DropoffOrder
@@ -1027,7 +1031,7 @@ function spider_network.cancel_orders_for_trade(trade_id)
         if entity and entity.valid then
             local tradertron = spider_network.get_tradertron_from_entity(entity)
             if tradertron and tradertron.order and tradertron.order.trade_id == trade_id then
-                spider_network.clear_orders(tradertron, true)
+                spider_network.clear_orders(tradertron, true, true)
             end
         end
     end
@@ -1190,7 +1194,7 @@ function spider_network.unregister_supported_entity_name(entity_name)
             if spider.name == entity_name then
                 local tradertron = spider_network.get_tradertron_from_entity(spider)
                 if tradertron then
-                    spider_network.unregister_spider(tradertron)
+                    spider_network.unregister_spider(tradertron, true)
                 end
             end
         end
@@ -1292,7 +1296,7 @@ function spider_network.on_entity_becoming_invalid(entity)
     local tradertron = spider_network.get_tradertron_from_entity(entity)
     if not tradertron then return end
 
-    spider_network.unregister_spider(tradertron)
+    spider_network.unregister_spider(tradertron, false)
 end
 
 ---@param player LuaPlayer
@@ -1300,7 +1304,7 @@ end
 function spider_network.on_player_entered_spider_control_vehicle(player, vehicle)
     local tradertron = spider_network.get_tradertron_from_entity(vehicle)
     if not tradertron then return end
-    spider_network.unregister_spider(tradertron)
+    spider_network.unregister_spider(tradertron, true)
 end
 
 ---@param entity LuaEntity
@@ -1320,7 +1324,7 @@ function spider_network.on_player_commanded_spiders(player, spiders)
     for _, spider in pairs(spiders) do
         local tradertron = spider_network.get_tradertron_from_entity(spider)
         if tradertron then
-            spider_network.unregister_spider(tradertron)
+            spider_network.unregister_spider(tradertron, false)
         else
             if spider.type == "spider-vehicle" then
                 local target = spider.follow_target

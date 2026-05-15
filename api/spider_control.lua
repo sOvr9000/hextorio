@@ -87,7 +87,8 @@ function spider_control.get_spider_control_unit_id_from_entity(entity)
 end
 
 ---@param unit SpiderControlUnit
-function spider_control.unregister_spider(unit)
+---@param clear_autopilot boolean
+function spider_control.unregister_spider(unit, clear_autopilot)
     local sc_storage = spider_control._get_spider_control_storage()
     local entity = unit.entity
 
@@ -99,7 +100,7 @@ function spider_control.unregister_spider(unit)
 
     sc_storage.spiders[id] = nil
 
-    if unit.entity.valid then
+    if clear_autopilot and unit.entity.valid then
         unit.entity.autopilot_destination = nil
     end
 end
@@ -110,7 +111,7 @@ function spider_control.verify_unit_valid(unit)
     local entity = unit.entity
     if not entity or not entity.valid then
         lib.log_error("spider_control.verify_unit_valid: Spider control unit has missing or invalid entity; removing from system.")
-        spider_control.unregister_spider(unit)
+        spider_control.unregister_spider(unit, false)
         return false
     end
     return true
@@ -192,7 +193,7 @@ function spider_control.on_entity_becoming_invalid(entity)
     local unit = spider_control.get_unit_from_entity(entity)
     if not unit then return end
 
-    spider_control.unregister_spider(unit)
+    spider_control.unregister_spider(unit, false)
 end
 
 ---@param player LuaPlayer
@@ -216,7 +217,7 @@ function spider_control.on_player_commanded_spiders(player, spiders)
     for _, spider in pairs(spiders) do
         local unit = spider_control.get_unit_from_entity(spider)
         if unit then
-            spider_control.unregister_spider(unit)
+            spider_control.unregister_spider(unit, false)
         end
     end
 end
