@@ -7,12 +7,14 @@ local spider_control    = require "api.spider_control"
 local inventories       = require "api.inventories"
 local axial             = require "api.axial"
 local hex_state_manager = require "api.hex_state_manager"
+local hex_sets          = require "api.hex_sets"
 
 local spider_network = {}
 
 
 
 local MAX_ORDER_LIFETIME = 3600 -- one minute
+local ORDER_GENERATOR_WORK_PER_TICK = 64
 -- Rank 4 requires "trade recovery" which is too complex to source via spider network.
 local RANK_UP_FILTER = {[2] = true, [3] = true, [5] = true}
 
@@ -21,6 +23,9 @@ local RANK_UP_FILTER = {[2] = true, [3] = true, [5] = true}
 ---@alias TradertronMode "ranking"|"trading"
 ---@alias SpiderNetworkOrderType "pickup"|"dropoff"
 ---@alias SpiderNetworkOrder PickupOrder|DropoffOrder
+---@alias OrderGeneratorState "accumulating"|"calculating"
+---@alias OrderGeneratorPhase "snapshot-spiders"|"planning"
+---@alias PickupPlanPhase "scanning"|"placing-orders"
 
 ---@class SpiderNetworkStorage
 ---@field enabled boolean Whether the spider network should do its processing.
@@ -33,16 +38,40 @@ local RANK_UP_FILTER = {[2] = true, [3] = true, [5] = true}
 ---@field best_dispatch SpiderDispatch|nil
 ---@field orders SpiderNetworkOrder[]
 ---@field orders_set table Set of orders currently in the orders array, keyed by order reference for O(1) existence checks.
----@field hex_positions_with_order {[int]: {[int]: {pickup: StringSet, dropoff: StringSet}}} Mapping of hex positions to boolean values indicating whether a pickup or dropoff order already exists at that hex for a specific item.
 ---@field order_generator OrderGenerator
 ---@field active_trade_deliveries {[int]: boolean} Set of trade IDs for which a dropoff order is currently pending or in flight. Prevents generating duplicate pickup+dropoff sets for the same trade.
+---@field hex_positions_in_network {[int]: HexSet} Mapping of surface indices to hex positions currently in the spider network.
 
 ---@class OrderGenerator
----@field trade_ids_that_rank_up {[int]: int} Mapping of trade IDs to how many items in that trade can rank up.
----@field available_items {[string]: {[string]: {[string]: IndexMap}}} Mapping of surface names to mapping of quality names to mapping of item names to an IndexMap which maps hex positions to counts of respective item.
----@field available_coins {[string]: {[int]: {[int]: Coin}}} Mapping of surface names to Q -> R -> Coin available in that hex core's output inventory.
+---@field state OrderGeneratorState
+---@field accumulation_started_at_cycle_boundary boolean Whether rank-up accumulation started at a hex-pool cycle boundary.
+---@field trade_ids_that_rank_up {[int]: boolean} Set of trade IDs for which at least one item can rank up.
+---@field calculation_trade_ids {[int]: boolean}|nil Frozen trade IDs being processed during the calculation state.
+---@field calculation_trade_id_cursor int|nil Cursor for iterating calculation_trade_ids.
+---@field calculation_phase OrderGeneratorPhase|nil Sub-state used while calculating.
+---@field spider_scan_idx int|nil Cursor for rebuilding spider_items and spider_coins incrementally.
+---@field active_pickup_plan PickupPlan|nil Active pickup planning job.
 ---@field spider_items {[string]: {[string]: {[string]: int}}} Items currently in any spider's inventory, surface name -> quality -> item name -> count. Rebuilt each cycle to prevent creating pickups for items already in transit.
 ---@field spider_coins {[string]: Coin} Coins currently in any spider's inventory, by surface name.
+
+---@class PickupPlan
+---@field trade_id int
+---@field rank_ups int
+---@field surface_index int
+---@field destination_hex_pos HexPos
+---@field quality string
+---@field priority number
+---@field phase PickupPlanPhase
+---@field remaining_items {[string]: int}
+---@field remaining_coin_base_value number
+---@field pickup_hexes {[int]: {[int]: {items: {[string]: int}|nil, coin: Coin|nil}}}
+---@field scan_q int|nil
+---@field scan_r int|nil
+---@field order_q int|nil
+---@field order_r int|nil
+---@field already_have_items QualityItemCounts|nil
+---@field already_have_coins_bv number|nil
+---@field placed_any_order boolean|nil
 
 ---@class PickupOrder
 ---@field type SpiderNetworkOrderType
@@ -102,7 +131,7 @@ function spider_network._get_spider_network_storage()
         storage.spider_network = sn_storage
     end
 
-    if not sn_storage.enabled then
+    if sn_storage.enabled == nil then
         sn_storage.enabled = false
     end
 
@@ -139,14 +168,18 @@ function spider_network._get_spider_network_storage()
 
     if not sn_storage.order_generator then
         sn_storage.order_generator = {
+            state = "accumulating",
+            accumulation_started_at_cycle_boundary = false,
             trade_ids_that_rank_up = {},
-            available_items = {},
-            available_coins = {},
         }
     end
 
     local gen = sn_storage.order_generator
-    if not gen.available_coins then gen.available_coins = {} end
+    if not gen.state then gen.state = "accumulating" end
+    if gen.accumulation_started_at_cycle_boundary == nil then
+        gen.accumulation_started_at_cycle_boundary = false
+    end
+    if not gen.trade_ids_that_rank_up then gen.trade_ids_that_rank_up = {} end
     if not gen.spider_items then gen.spider_items = {} end
     if not gen.spider_coins then gen.spider_coins = {} end
 
@@ -154,8 +187,8 @@ function spider_network._get_spider_network_storage()
         sn_storage.active_trade_deliveries = {}
     end
 
-    if not sn_storage.hex_positions_with_order then
-        sn_storage.hex_positions_with_order = {}
+    if not sn_storage.hex_positions_in_network then
+        sn_storage.hex_positions_in_network = {}
     end
 
     if not sn_storage.supported_entity_names then
@@ -167,12 +200,38 @@ function spider_network._get_spider_network_storage()
     return sn_storage
 end
 
+---@param sn_storage SpiderNetworkStorage
+---@param surface_index int
+---@return HexSet
+function spider_network._get_network_hex_set_on_surface(sn_storage, surface_index)
+    local hex_set = sn_storage.hex_positions_in_network[surface_index]
+    if not hex_set then
+        hex_set = {}
+        sn_storage.hex_positions_in_network[surface_index] = hex_set
+    end
+    return hex_set
+end
+
+---@param sn_storage SpiderNetworkStorage
+---@param state HexState
+function spider_network._add_network_hex_position(sn_storage, state)
+    local hex_set = spider_network._get_network_hex_set_on_surface(sn_storage, state.surface_index)
+    hex_sets.add(hex_set, state.position)
+end
+
+---@param sn_storage SpiderNetworkStorage
+---@param state HexState
+function spider_network._remove_network_hex_position(sn_storage, state)
+    local hex_set = spider_network._get_network_hex_set_on_surface(sn_storage, state.surface_index)
+    hex_sets.remove(hex_set, state.position)
+end
+
 ---Return whether an entity of a certain name is able to be added to the spider network, e.g. "sentient-spider".
 ---@param entity_name string
 ---@return boolean
 function spider_network.is_entity_name_supported(entity_name)
     local sn_storage = spider_network._get_spider_network_storage()
-    return sn_storage.supported_entity_names[entity_name]
+    return sn_storage.supported_entity_names[entity_name] == true
 end
 
 ---Enable or disable the spider network processing.
@@ -189,56 +248,51 @@ function spider_network.is_enabled()
     return sn_storage.enabled
 end
 
----Update hex_positions_with_order tracking when an order is added or removed.
+---Update per-hex pending order tracking when an order is added or removed.
 ---@param order SpiderNetworkOrder
 ---@param add boolean True to mark items as pending, false to clear them.
 function spider_network._update_order_position_tracking(order, add)
-    local sn_storage = spider_network._get_spider_network_storage()
     local items = order.items
     local coin = order.coin
     if not items and not coin then return end
 
-    local by_surface = sn_storage.hex_positions_with_order
-    local surface_index = order.surface_index
-    local q = order.hex_pos.q
-    local r = order.hex_pos.r
+    local state = hex_state_manager.get_hex_state(order.surface_index, order.hex_pos, false)
+    if not state then return end
+
     local order_type = order.type
+    local tracking = state.spider_network_pending_orders
 
     if add then
-        if not by_surface[surface_index] then by_surface[surface_index] = {} end
-        if not by_surface[surface_index][q] then by_surface[surface_index][q] = {} end
-        if not by_surface[surface_index][q][r] then
-            by_surface[surface_index][q][r] = {pickup = {}, dropoff = {}}
+        if not tracking then
+            tracking = {pickup = {}, dropoff = {}}
+            state.spider_network_pending_orders = tracking
         end
-        local type_set = by_surface[surface_index][q][r][order_type]
-        if items then
-            for _, counts in pairs(items) do
-                for item_name in pairs(counts) do
-                    type_set[item_name] = true
-                end
-            end
-        end
-        if coin then
-            type_set["__coin__"] = true
+        if not tracking[order_type] then
+            tracking[order_type] = {}
         end
     else
-        local by_q = by_surface[surface_index]
-        if not by_q then return end
-        local by_r = by_q[q]
-        if not by_r then return end
-        local entry = by_r[r]
-        if not entry then return end
-        local type_set = entry[order_type]
-        if not type_set then return end
-        if items then
-            for _, counts in pairs(items) do
-                for item_name in pairs(counts) do
-                    type_set[item_name] = nil
-                end
+        if not tracking then return end
+    end
+
+    local type_set = tracking[order_type]
+    if not type_set then return end
+
+    if items then
+        for _, counts in pairs(items) do
+            for item_name in pairs(counts) do
+                type_set[item_name] = add or nil
             end
         end
-        if coin then
-            type_set["__coin__"] = nil
+    end
+    if coin then
+        type_set["__coin__"] = add or nil
+    end
+
+    if not add then
+        local pickup = tracking.pickup
+        local dropoff = tracking.dropoff
+        if (not pickup or not next(pickup)) and (not dropoff or not next(dropoff)) then
+            state.spider_network_pending_orders = nil
         end
     end
 end
@@ -246,6 +300,8 @@ end
 function spider_network._process_spiders()
     local sn_storage = spider_network._get_spider_network_storage()
     if not sn_storage.enabled then return end
+
+    spider_network._process_order_generator(sn_storage)
 
     local spider_list = sn_storage.spider_list
     local orders = sn_storage.orders
@@ -549,12 +605,19 @@ end
 ---@param state HexState
 function spider_network.register_hex_state(state)
     if not state.claimed or not state.hex_core or not state.hex_core.valid then return end
+    local sn_storage = spider_network._get_spider_network_storage()
     state.is_in_spider_network = true
+    spider_network._add_network_hex_position(sn_storage, state)
+    spider_network._update_hex_availability(state)
 end
 
 ---@param state HexState
 function spider_network.unregister_hex_state(state)
+    local sn_storage = spider_network._get_spider_network_storage()
     state.is_in_spider_network = nil
+    state.spider_network_available_items = nil
+    state.spider_network_available_coin = nil
+    spider_network._remove_network_hex_position(sn_storage, state)
 end
 
 ---Get a Tradertron from a SpiderVehicle entity if it's registered.
@@ -625,7 +688,6 @@ function spider_network.clear_orders(tradertron, discard_order, clear_autopilot)
     tradertron.order = nil
     spider_network._update_color(tradertron)
 
-    -- log("spider completed order")
     if discard_order then
         spider_network._update_order_position_tracking(order, false)
         local sn_storage = spider_network._get_spider_network_storage()
@@ -633,9 +695,7 @@ function spider_network.clear_orders(tradertron, discard_order, clear_autopilot)
             and not spider_network.trade_has_pending_or_active_dropoff(order.trade_id) then
             sn_storage.active_trade_deliveries[order.trade_id] = nil
         end
-        -- log("order discarded: " .. serpent.line(order))
     else
-        -- log("order NOT discarded: " .. serpent.line(order))
         spider_network._add_order(order)
     end
 end
@@ -643,7 +703,6 @@ end
 ---@param order SpiderNetworkOrder
 function spider_network._add_order(order)
     local sn_storage = spider_network._get_spider_network_storage()
-    -- log("adding order: " .. serpent.line(order))
     sn_storage.orders[#sn_storage.orders+1] = order
     sn_storage.orders_set[order] = true
     spider_network._update_order_position_tracking(order, true)
@@ -655,7 +714,6 @@ function spider_network._remove_order(order)
 
     local idx = lib.table_index(sn_storage.orders, order)
     if idx then
-        -- log("removing order: " .. serpent.line(order))
         table.remove(sn_storage.orders, idx)
     else
         lib.log_error("spider_network._remove_order: Order not found in orders list: " .. serpent.line(order) .. "\n" .. serpent.block(sn_storage.orders))
@@ -752,6 +810,7 @@ function spider_network.handle_order(tradertron)
 
     if order.type == "pickup" then
         inventories.transfer_coins_and_items(hex_core_inv, nil, spider_inv, nil, order.coin, order.items)
+        spider_network._update_hex_availability(state)
     else
         local coin, items
         if order.all_items then
@@ -762,16 +821,6 @@ function spider_network.handle_order(tradertron)
         end
         inventories.transfer_coins_and_items(spider_inv, nil, hex_core_inv, nil, coin, items)
     end
-
-    -- if order.type == "pickup" and order.trade_id then
-    --     local trade = trades.get_trade_from_id(order.trade_id)
-    --     if trade and trade.hex_state_flat_index then
-    --         local destination_state = trades.get_hex_state(trade)
-    --         if destination_state then
-    --             spider_network.create_dropoff_order(destination_state, order.coin, order.items, nil, order.priority, order.trade_id)
-    --         end
-    --     end
-    -- end
 
     spider_network.clear_orders(tradertron, true, true)
 
@@ -837,33 +886,26 @@ end
 ---Return whether a pending order of the given type exists at the given hex.
 ---If item_name is provided, checks specifically for that item; otherwise checks for any item.
 ---@param order_type SpiderNetworkOrderType
----@param surface_index int
----@param hex_pos HexPos
+---@param state HexState
 ---@param item_name string|nil
 ---@return boolean
-function spider_network.has_pending_order(order_type, surface_index, hex_pos, item_name)
-    local sn_storage = spider_network._get_spider_network_storage()
-    local by_q = sn_storage.hex_positions_with_order[surface_index]
-    if not by_q then return false end
-    local by_r = by_q[hex_pos.q]
-    if not by_r then return false end
-    local entry = by_r[hex_pos.r]
-    if not entry then return false end
-    local type_set = entry[order_type]
+function spider_network.has_pending_order(order_type, state, item_name)
+    local tracking = state.spider_network_pending_orders
+    if not tracking then return false end
+    local type_set = tracking[order_type]
     if not type_set then return false end
     return item_name and type_set[item_name] == true or next(type_set) ~= nil
 end
 
 ---Return whether any item in a QualityItemCounts set has a pending order of the given type at the given hex.
 ---@param order_type SpiderNetworkOrderType
----@param surface_index int
----@param hex_pos HexPos
+---@param state HexState
 ---@param quality_item_counts QualityItemCounts
 ---@return boolean
-function spider_network.any_item_has_pending_order(order_type, surface_index, hex_pos, quality_item_counts)
+function spider_network.any_item_has_pending_order(order_type, state, quality_item_counts)
     for _, counts in pairs(quality_item_counts) do
         for item_name in pairs(counts) do
-            if spider_network.has_pending_order(order_type, surface_index, hex_pos, item_name) then
+            if spider_network.has_pending_order(order_type, state, item_name) then
                 return true
             end
         end
@@ -871,85 +913,140 @@ function spider_network.any_item_has_pending_order(order_type, surface_index, he
     return false
 end
 
----Greedily assign pickup amounts for a single item from hex core inventories to cover `needed` count.
----Returns the remaining amount not covered by the available hexes.
----@param pickup_plan {[int]: {[int]: {[string]: int}}} Accumulated plan, modified in-place.
----@param item_hex_map IndexMap Mapping of hex Q -> R -> available count.
----@param item_name string
----@param needed int
----@return int remaining
-function spider_network._apply_pickup_for_item(pickup_plan, item_hex_map, item_name, needed)
-    for q, Q in pairs(item_hex_map) do
-        if needed <= 0 then break end
-        for r, count in pairs(Q) do
-            if needed <= 0 then break end
-            local take = math.min(count, needed)
-            if take > 0 then
-                if not pickup_plan[q] then pickup_plan[q] = {} end
-                if not pickup_plan[q][r] then pickup_plan[q][r] = {} end
-                pickup_plan[q][r][item_name] = (pickup_plan[q][r][item_name] or 0) + take
-                needed = needed - take
-            end
-        end
+---@param hex_set table
+---@param q_cursor int|nil
+---@param r_cursor int|nil
+---@return int|nil q
+---@return int|nil r
+function spider_network._next_hex_set_position(hex_set, q_cursor, r_cursor)
+    local q = q_cursor
+    local Q = q and hex_set[q]
+    if Q then
+        local r = r_cursor
+        if r and not Q[r] then r = nil end
+        local next_r = next(Q, r)
+        if next_r then return q, next_r end
     end
-    return needed
+
+    if q and not hex_set[q] then q = nil end
+    local next_q = next(hex_set, q)
+    while next_q do
+        local next_Q = hex_set[next_q]
+        local next_r = next_Q and next(next_Q)
+        if next_r then return next_q, next_r end
+        next_q = next(hex_set, next_q)
+    end
 end
 
----Greedily select hexes to pick coins from until the needed base value is covered.
----Pickup amounts are expressed as exact base-value Coin objects; coin_tiers.normalized handles
----cross-tier borrowing correctly during transfer (e.g. taking 5 hex-coins from 1 gravity-coin).
----Returns the remaining base value not covered.
----@param coin_plan {[int]: {[int]: Coin}} Accumulated coin plan, modified in-place.
----@param surface_coins_map {[int]: {[int]: Coin}} Q -> R -> Coin available.
----@param needed_base_value number
----@return number remaining
-function spider_network._apply_pickup_for_coin(coin_plan, surface_coins_map, needed_base_value)
-    for q, Q in pairs(surface_coins_map) do
-        if needed_base_value <= 0 then break end
-        for r, coin in pairs(Q) do
-            if needed_base_value <= 0 then break end
-            local available_bv = coin_tiers.to_base_value(coin)
-            if available_bv > 0 then
-                local take_bv = math.min(available_bv, needed_base_value)
-                if not coin_plan[q] then coin_plan[q] = {} end
-                coin_plan[q][r] = coin_tiers.from_base_value(take_bv)
-                needed_base_value = needed_base_value - take_bv
-            end
-        end
-    end
-    return needed_base_value
-end
-
----@param surface_index int
----@param plan {[int]: {[int]: any}}
+---@param plan PickupPlan
 ---@return boolean
-function spider_network._all_plan_hexes_in_network(surface_index, plan)
-    -- All contributing hexes must be connected to the spider network.
-    for q, Q in pairs(plan) do
-        for r, _ in pairs(Q) do
-            local state = hex_state_manager.get_hex_state(surface_index, {q = q, r = r})
-            if not state or not spider_network.is_hex_state_in_network(state) then
-                return false
-            end
-        end
-    end
+function spider_network._pickup_plan_is_satisfied(plan)
+    if plan.remaining_coin_base_value > 0 then return false end
+    if next(plan.remaining_items) then return false end
     return true
 end
 
----Generate pickup and dropoff orders for a ranking trade, sourcing items and coins across all hex cores in the network.
----Pickup orders are only placed when enough resources are available across the network to execute the trade.
----Does nothing if a delivery for this trade is already in progress (active_trade_deliveries).
----@param sn_storage SpiderNetworkStorage
----@param trade Trade
----@param rank_ups int
-function spider_network.generate_orders_for_ranking_trade(sn_storage, trade, rank_ups)
-    if sn_storage.active_trade_deliveries[trade.id] then return end
+---@param plan PickupPlan
+---@return boolean
+function spider_network._pickup_plan_has_pickups(plan)
+    return next(plan.pickup_hexes) ~= nil
+end
 
-    -- Re-check rank-ups at order-generation time; the trade may have been executed since
-    -- the hex scan that enqueued it, so the original rank_ups count could be stale.
-    local current_rank_ups = trades.count_item_rank_ups(trade, RANK_UP_FILTER)
-    if current_rank_ups == 0 then return end
-    rank_ups = current_rank_ups
+---@param plan PickupPlan
+---@param q int
+---@param r int
+---@return table
+function spider_network._get_pickup_plan_hex(plan, q, r)
+    local Q = plan.pickup_hexes[q]
+    if not Q then
+        Q = {}
+        plan.pickup_hexes[q] = Q
+    end
+
+    local entry = Q[r]
+    if not entry then
+        entry = {}
+        Q[r] = entry
+    end
+
+    return entry
+end
+
+---@param plan PickupPlan
+---@param state HexState
+function spider_network._scan_hex_for_pickup_plan(plan, state)
+    local q = state.position.q
+    local r = state.position.r
+    local quality_items = state.spider_network_available_items and state.spider_network_available_items[plan.quality]
+
+    if quality_items then
+        for item_name, needed in pairs(plan.remaining_items) do
+            if needed > 0 and not spider_network.has_pending_order("pickup", state, item_name) then
+                local count = quality_items[item_name] or 0
+                local take = math.min(count, needed)
+                if take > 0 then
+                    local entry = spider_network._get_pickup_plan_hex(plan, q, r)
+                    if not entry.items then entry.items = {} end
+                    entry.items[item_name] = (entry.items[item_name] or 0) + take
+                    local remaining = needed - take
+                    plan.remaining_items[item_name] = remaining > 0 and remaining or nil
+                end
+            end
+        end
+    end
+
+    if plan.remaining_coin_base_value <= 0 then return end
+    if spider_network.has_pending_order("pickup", state, "__coin__") then return end
+
+    local coin = state.spider_network_available_coin
+    local available_bv = coin and coin_tiers.to_base_value(coin) or 0
+    if available_bv <= 0 then return end
+
+    local take_bv = math.min(available_bv, plan.remaining_coin_base_value)
+    local entry = spider_network._get_pickup_plan_hex(plan, q, r)
+    entry.coin = coin_tiers.from_base_value(take_bv)
+    plan.remaining_coin_base_value = plan.remaining_coin_base_value - take_bv
+end
+
+---@param sn_storage SpiderNetworkStorage
+---@param plan PickupPlan
+---@param work_limit int
+---@return int work_done
+---@return boolean done
+function spider_network._process_pickup_plan_scan(sn_storage, plan, work_limit)
+    local hex_set = sn_storage.hex_positions_in_network[plan.surface_index] or {}
+    local work_done = 0
+
+    while work_done < work_limit do
+        if spider_network._pickup_plan_is_satisfied(plan) then return work_done, true end
+
+        local q, r = spider_network._next_hex_set_position(hex_set, plan.scan_q, plan.scan_r)
+        if not q or not r then return work_done, true end
+
+        plan.scan_q = q
+        plan.scan_r = r
+        work_done = work_done + 1
+
+        local state = hex_state_manager.get_hex_state(plan.surface_index, {q = q, r = r}, false)
+        if state and spider_network.is_hex_state_in_network(state) then
+            spider_network._scan_hex_for_pickup_plan(plan, state)
+        end
+    end
+
+    return work_done, false
+end
+
+---Start an incremental pickup plan for a ranking trade.
+---@param sn_storage SpiderNetworkStorage
+---@param trade_id int
+---@return PickupPlan|nil
+function spider_network._start_pickup_plan(sn_storage, trade_id)
+    if sn_storage.active_trade_deliveries[trade_id] then return end
+
+    local trade = trades.get_trade_from_id(trade_id)
+    if not trade or not trade.active then return end
+    local rank_ups = trades.count_item_rank_ups(trade, RANK_UP_FILTER)
+    if rank_ups == 0 then return end
 
     if not trade.hex_state_flat_index then return end
     local surface = game.get_surface(trade.surface_name)
@@ -959,39 +1056,61 @@ function spider_network.generate_orders_for_ranking_trade(sn_storage, trade, ran
     local state = hex_state_manager.get_hex_from_flat_index(surface_index, trade.hex_state_flat_index)
     if not state or not spider_network.is_hex_state_in_network(state) then return end
 
-    local items_plan, coins_plan = spider_network._resolve_pickup_plan(trade)
-    if not items_plan and not coins_plan then return end
-    if items_plan and not spider_network._all_plan_hexes_in_network(surface_index, items_plan) then return end
-    if coins_plan and not spider_network._all_plan_hexes_in_network(surface_index, coins_plan) then return end
-
-    local priority = 1 + rank_ups
     local quality = (trade.allowed_qualities and trade.allowed_qualities[1]) or "normal"
+    local generator = sn_storage.order_generator
+    local surface_name = trade.surface_name
+    local quality_spider = generator.spider_items[surface_name] and generator.spider_items[surface_name][quality]
 
-    sn_storage.active_trade_deliveries[trade.id] = true
-
-    -- Build a unified per-hex pickup table, merging items and coins that come from the same hex.
-    local all_pickup_hexes = {}
-    if items_plan then
-        for q, Q in pairs(items_plan) do
-            for r, item_amounts in pairs(Q) do
-                if not all_pickup_hexes[q] then all_pickup_hexes[q] = {} end
-                if not all_pickup_hexes[q][r] then all_pickup_hexes[q][r] = {} end
-                all_pickup_hexes[q][r].items = item_amounts
-            end
-        end
-    end
-    if coins_plan then
-        for q, Q in pairs(coins_plan) do
-            for r, coin in pairs(Q) do
-                if not all_pickup_hexes[q] then all_pickup_hexes[q] = {} end
-                if not all_pickup_hexes[q][r] then all_pickup_hexes[q][r] = {} end
-                all_pickup_hexes[q][r].coin = coin
+    local remaining_items = {}
+    for _, item in pairs(trade.input_items) do
+        if not lib.is_coin(item.name) then
+            local in_spiders = quality_spider and (quality_spider[item.name] or 0) or 0
+            local needed = item.count - in_spiders
+            if needed > 0 then
+                remaining_items[item.name] = (remaining_items[item.name] or 0) + needed
             end
         end
     end
 
-    -- Snapshot items already in the trade hex core's input inventory so each
-    -- dropoff only requests what the hex still actually needs.
+    local remaining_coin_base_value = 0
+    local required_coin = trades.get_input_coins_of_trade(trade, quality)
+    if required_coin then
+        local spider_coin_bv = generator.spider_coins[surface_name]
+            and coin_tiers.to_base_value(generator.spider_coins[surface_name]) or 0
+        remaining_coin_base_value = coin_tiers.to_base_value(required_coin) - spider_coin_bv
+        if remaining_coin_base_value < 0 then remaining_coin_base_value = 0 end
+    end
+
+    if not next(remaining_items) and remaining_coin_base_value == 0 then return end
+
+    ---@type PickupPlan
+    return {
+        trade_id = trade_id,
+        rank_ups = rank_ups,
+        surface_index = surface_index,
+        destination_hex_pos = {q = state.position.q, r = state.position.r},
+        quality = quality,
+        priority = 1 + rank_ups,
+        phase = "scanning",
+        remaining_items = remaining_items,
+        remaining_coin_base_value = remaining_coin_base_value,
+        pickup_hexes = {},
+    }
+end
+
+---@param sn_storage SpiderNetworkStorage
+---@param plan PickupPlan
+---@return boolean
+function spider_network._prepare_pickup_plan_order_placement(sn_storage, plan)
+    if sn_storage.active_trade_deliveries[plan.trade_id] then return false end
+
+    local trade = trades.get_trade_from_id(plan.trade_id)
+    if not trade or not trade.active then return false end
+    if trades.count_item_rank_ups(trade, RANK_UP_FILTER) == 0 then return false end
+
+    local state = hex_state_manager.get_hex_state(plan.surface_index, plan.destination_hex_pos, false)
+    if not state or not spider_network.is_hex_state_in_network(state) then return false end
+
     local already_have_items = {}
     local already_have_coins_bv = 0
     local inv = state.hex_core_input_inventory
@@ -1001,43 +1120,84 @@ function spider_network.generate_orders_for_ranking_trade(sn_storage, trade, ran
         already_have_coins_bv = coin_tiers.to_base_value(inv_coin)
     end
 
-    for q, Q in pairs(all_pickup_hexes) do
-        for r, pickup_data in pairs(Q) do
-            local hex_pos = {q = q, r = r}
-            local qic = pickup_data.items and {[quality] = pickup_data.items} or nil
+    plan.already_have_items = already_have_items
+    plan.already_have_coins_bv = already_have_coins_bv
+    plan.phase = "placing-orders"
+    sn_storage.active_trade_deliveries[plan.trade_id] = true
+    return true
+end
+
+---@param sn_storage SpiderNetworkStorage
+---@param plan PickupPlan
+---@param work_limit int
+---@return int work_done
+---@return boolean done
+function spider_network._process_pickup_plan_order_placement(sn_storage, plan, work_limit)
+    local trade = trades.get_trade_from_id(plan.trade_id)
+    if not trade or not trade.active or trades.count_item_rank_ups(trade, RANK_UP_FILTER) == 0 then
+        sn_storage.active_trade_deliveries[plan.trade_id] = nil
+        return 0, true
+    end
+    if not sn_storage.active_trade_deliveries[plan.trade_id] then return 0, true end
+
+    local destination_state = hex_state_manager.get_hex_state(plan.surface_index, plan.destination_hex_pos, false)
+    if not destination_state or not spider_network.is_hex_state_in_network(destination_state) then
+        sn_storage.active_trade_deliveries[plan.trade_id] = nil
+        return 0, true
+    end
+
+    local work_done = 0
+    while work_done < work_limit do
+        local q, r = spider_network._next_hex_set_position(plan.pickup_hexes, plan.order_q, plan.order_r)
+        if not q or not r then
+            if not plan.placed_any_order then
+                sn_storage.active_trade_deliveries[plan.trade_id] = nil
+            end
+            return work_done, true
+        end
+
+        plan.order_q = q
+        plan.order_r = r
+        work_done = work_done + 1
+
+        local pickup_data = plan.pickup_hexes[q][r]
+        local pickup_state = hex_state_manager.get_hex_state(plan.surface_index, {q = q, r = r}, false)
+        if pickup_state then
+            local qic = pickup_data.items and {[plan.quality] = pickup_data.items} or nil
             local coin = pickup_data.coin
-            local pickup_qic = (qic and not spider_network.any_item_has_pending_order("pickup", surface_index, hex_pos, qic)) and qic or nil
-            local pickup_coin = (coin and not spider_network.has_pending_order("pickup", surface_index, hex_pos, "__coin__")) and coin or nil
+            local pickup_qic = (qic and not spider_network.any_item_has_pending_order("pickup", pickup_state, qic)) and qic or nil
+            local pickup_coin = (coin and not spider_network.has_pending_order("pickup", pickup_state, "__coin__")) and coin or nil
             if pickup_qic or pickup_coin then
-                local pickup_state = hex_state_manager.get_hex_state(surface_index, hex_pos)
-                if pickup_state then
-                    spider_network.create_pickup_order(pickup_state, pickup_coin, pickup_qic, priority, trade.id)
-                end
+                spider_network.create_pickup_order(pickup_state, pickup_coin, pickup_qic, plan.priority, plan.trade_id)
+                plan.placed_any_order = true
 
                 local dropoff_qic = nil
-                if pickup_qic then
+                if pickup_qic and plan.already_have_items then
                     dropoff_qic = table.deepcopy(pickup_qic)
-                    lib.subtract_quality_item_counts(dropoff_qic, already_have_items)
-                    lib.subtract_quality_item_counts(already_have_items, pickup_qic)
+                    lib.subtract_quality_item_counts(dropoff_qic, plan.already_have_items)
+                    lib.subtract_quality_item_counts(plan.already_have_items, pickup_qic)
                     if not next(dropoff_qic) then dropoff_qic = nil end
                 end
 
                 local dropoff_coin = nil
-                if pickup_coin then
+                if pickup_coin and plan.already_have_coins_bv then
                     local coin_bv = coin_tiers.to_base_value(pickup_coin)
-                    local need_bv = math.max(0, coin_bv - already_have_coins_bv)
-                    already_have_coins_bv = math.max(0, already_have_coins_bv - coin_bv)
+                    local need_bv = math.max(0, coin_bv - plan.already_have_coins_bv)
+                    plan.already_have_coins_bv = math.max(0, plan.already_have_coins_bv - coin_bv)
                     if need_bv > 0 then
                         dropoff_coin = coin_tiers.from_base_value(need_bv)
                     end
                 end
 
                 if dropoff_qic or dropoff_coin then
-                    spider_network.create_dropoff_order(state, dropoff_coin, dropoff_qic, false, priority, trade.id)
+                    spider_network.create_dropoff_order(destination_state, dropoff_coin, dropoff_qic, false, plan.priority, plan.trade_id)
+                    plan.placed_any_order = true
                 end
             end
         end
     end
+
+    return work_done, false
 end
 
 ---Cancel all queued and in-flight orders associated with a given trade ID.
@@ -1068,140 +1228,23 @@ function spider_network.cancel_orders_for_trade(trade_id)
     sn_storage.active_trade_deliveries[trade_id] = nil
 end
 
----Resolve item and coin pickup plans from available network inventory to satisfy a trade's inputs.
----Returns nil items_plan when requirements cannot be met by the hex cores alone.
----Either plan may be an empty table when the trade has no inputs of that type.
----@param trade Trade
----@return {[int]: {[int]: {[string]: int}}}|nil items_plan Hex Q -> R -> item name -> count to pick up.
----@return {[int]: {[int]: Coin}}|nil coins_plan Hex Q -> R -> Coin to pick up.
-function spider_network._resolve_pickup_plan(trade)
-    local sn_storage = spider_network._get_spider_network_storage()
-    local generator = sn_storage.order_generator
-
-    local surface_name = trade.surface_name
-    local quality = (trade.allowed_qualities and trade.allowed_qualities[1]) or "normal"
-    local surface_avail = generator.available_items[surface_name]
-    local quality_avail = surface_avail and surface_avail[quality]
-    local quality_spider = generator.spider_items[surface_name] and generator.spider_items[surface_name][quality]
-
-    local items_plan = {}
-    for _, item in pairs(trade.input_items) do
-        if not lib.is_coin(item.name) then
-            local in_spiders = quality_spider and (quality_spider[item.name] or 0) or 0
-            local needed = item.count - in_spiders
-            if needed > 0 then
-                if not quality_avail then return end
-                local item_hex_map = quality_avail[item.name]
-                if not item_hex_map then return end
-                local remaining = spider_network._apply_pickup_for_item(items_plan, item_hex_map, item.name, needed)
-                if remaining > 0 then return end
-            end
-        end
-    end
-
-    local coins_plan = {}
-    local required_coin = trades.get_input_coins_of_trade(trade, quality)
-    if required_coin then
-        local spider_coin_bv = generator.spider_coins[surface_name]
-            and coin_tiers.to_base_value(generator.spider_coins[surface_name]) or 0
-        local needed_bv = coin_tiers.to_base_value(required_coin) - spider_coin_bv
-        if needed_bv > 0 then
-            local surface_coins = generator.available_coins[surface_name]
-            if not surface_coins then return end
-            local remaining_bv = spider_network._apply_pickup_for_coin(coins_plan, surface_coins, needed_bv)
-            if remaining_bv > 0 then return end
-        end
-    end
-
-    return items_plan, coins_plan
-end
-
----Update available_items and available_coins for a hex's current output inventory contents.
----Always clears old data for the hex first so stale entries don't linger.
+---Update a hex state's cached spider-network availability from its output inventory.
 ---@param state HexState
-function spider_network._update_available_items(state)
-    local sn_storage = spider_network._get_spider_network_storage()
-    local generator = sn_storage.order_generator
-
-    local surface_name = state.hex_core.surface.name
-    local q = state.position.q
-    local r = state.position.r
-    local available_items = generator.available_items
-    local available_coins = generator.available_coins
-
-    for _, quality_map in pairs(available_items[surface_name] or {}) do
-        for _, item_map in pairs(quality_map) do
-            local Q = item_map[q]
-            if Q then
-                Q[r] = nil
-                if not next(Q) then
-                    item_map[q] = nil
-                end
-            end
-        end
-    end
-
-    local surface_available_coins = available_coins[surface_name]
-    if surface_available_coins then
-        local Q = surface_available_coins[q]
-        if Q then
-            Q[r] = nil
-            if not next(Q) then
-                surface_available_coins[q] = nil
-            end
-        end
-    end
+function spider_network._update_hex_availability(state)
+    state.spider_network_available_items = nil
+    state.spider_network_available_coin = nil
 
     local output_inv = state.hex_core_output_inventory
     if not output_inv or not output_inv.valid then return end
 
     local inv_coin, inv_items = inventories.get_coins_and_items_of_inventory(output_inv)
     if not coin_tiers.is_zero(inv_coin) then
-        if not surface_available_coins then
-            surface_available_coins = {}
-            available_coins[surface_name] = surface_available_coins
-        end
-
-        local Q = surface_available_coins[q]
-        if not Q then
-            Q = {}
-            surface_available_coins[q] = Q
-        end
-
-        Q[r] = inv_coin
+        state.spider_network_available_coin = inv_coin
     end
 
     if not next(inv_items) then return end
 
-    local surface_available_items = available_items[surface_name]
-    if not surface_available_items then
-        surface_available_items = {}
-        available_items[surface_name] = surface_available_items
-    end
-
-    for quality, counts in pairs(inv_items) do
-        local quality_available = surface_available_items[quality]
-        if not quality_available then
-            quality_available = {}
-            surface_available_items[quality] = quality_available
-        end
-
-        for item_name, count in pairs(counts) do
-            local item_available = quality_available[item_name]
-            if not item_available then
-                item_available = {}
-                quality_available[item_name] = item_available
-            end
-
-            local Q = item_available[q]
-            if not Q then
-                Q = {}
-                item_available[q] = Q
-            end
-
-            Q[r] = count
-        end
-    end
+    state.spider_network_available_items = inv_items
 end
 
 ---Add an entity name to the set of names that can be added to the spider network.
@@ -1215,7 +1258,7 @@ end
 ---@param entity_name string
 function spider_network.unregister_supported_entity_name(entity_name)
     local sn_storage = spider_network._get_spider_network_storage()
-    sn_storage.supported_entity_names[entity_name] = false
+    sn_storage.supported_entity_names[entity_name] = nil
 
     for i = #sn_storage.spider_list, 1, -1 do
         local spider = sn_storage.spider_list[i]
@@ -1230,6 +1273,156 @@ function spider_network.unregister_supported_entity_name(entity_name)
     end
 end
 
+---@param generator OrderGenerator
+function spider_network._finish_order_generator_calculation(generator)
+    generator.state = "accumulating"
+    generator.accumulation_started_at_cycle_boundary = false
+    generator.calculation_trade_ids = nil
+    generator.calculation_trade_id_cursor = nil
+    generator.calculation_phase = nil
+    generator.spider_scan_idx = nil
+    generator.active_pickup_plan = nil
+end
+
+---@param generator OrderGenerator
+function spider_network._begin_order_generator_calculation(generator)
+    generator.state = "calculating"
+    generator.accumulation_started_at_cycle_boundary = false
+    generator.calculation_trade_ids = generator.trade_ids_that_rank_up
+    generator.trade_ids_that_rank_up = {}
+    generator.calculation_trade_id_cursor = nil
+    generator.calculation_phase = "snapshot-spiders"
+    generator.spider_scan_idx = 1
+    generator.active_pickup_plan = nil
+    generator.spider_items = {}
+    generator.spider_coins = {}
+end
+
+---@param sn_storage SpiderNetworkStorage
+---@param generator OrderGenerator
+---@param work_limit int
+---@return int work_done
+function spider_network._process_order_generator_spider_snapshot(sn_storage, generator, work_limit)
+    local spider_list = sn_storage.spider_list
+    local idx = generator.spider_scan_idx or 1
+    local work_done = 0
+
+    while work_done < work_limit and idx <= #spider_list do
+        local entity = spider_list[idx]
+        idx = idx + 1
+        work_done = work_done + 1
+
+        if entity and entity.valid then
+            local inv = entity.get_inventory(defines.inventory.spider_trunk)
+            if inv and inv.valid then
+                local inv_coin, inv_items = inventories.get_coins_and_items_of_inventory(inv)
+                local surface_name = entity.surface.name
+                for quality, counts in pairs(inv_items) do
+                    if not generator.spider_items[surface_name] then generator.spider_items[surface_name] = {} end
+                    if not generator.spider_items[surface_name][quality] then generator.spider_items[surface_name][quality] = {} end
+                    local q_map = generator.spider_items[surface_name][quality]
+                    for item_name, count in pairs(counts) do
+                        q_map[item_name] = (q_map[item_name] or 0) + count
+                    end
+                end
+                if coin_tiers.to_base_value(inv_coin) > 0 then
+                    generator.spider_coins[surface_name] = generator.spider_coins[surface_name]
+                        and coin_tiers.add(generator.spider_coins[surface_name], inv_coin) or inv_coin
+                end
+            end
+        end
+    end
+
+    generator.spider_scan_idx = idx
+    if idx > #spider_list then
+        generator.spider_scan_idx = nil
+        generator.calculation_phase = "planning"
+    end
+
+    return work_done
+end
+
+---@param generator OrderGenerator
+---@return int|nil trade_id
+function spider_network._next_order_generator_trade(generator)
+    local trade_ids = generator.calculation_trade_ids
+    if not trade_ids then return end
+
+    local trade_id = next(trade_ids, generator.calculation_trade_id_cursor)
+    generator.calculation_trade_id_cursor = trade_id
+    return trade_id
+end
+
+---@param sn_storage SpiderNetworkStorage
+---@param generator OrderGenerator
+---@param work_limit int
+---@return int work_done
+function spider_network._process_order_generator_planning(sn_storage, generator, work_limit)
+    local work_done = 0
+
+    while work_done < work_limit do
+        local plan = generator.active_pickup_plan
+        if not plan then
+            local trade_id = spider_network._next_order_generator_trade(generator)
+            if not trade_id then
+                spider_network._finish_order_generator_calculation(generator)
+                return work_done
+            end
+
+            generator.active_pickup_plan = spider_network._start_pickup_plan(sn_storage, trade_id)
+            work_done = work_done + 1
+            plan = generator.active_pickup_plan
+        end
+
+        if plan and plan.phase == "scanning" and work_done < work_limit then
+            local scan_work, done = spider_network._process_pickup_plan_scan(sn_storage, plan, work_limit - work_done)
+            work_done = work_done + scan_work
+            if done then
+                if spider_network._pickup_plan_is_satisfied(plan)
+                    and spider_network._pickup_plan_has_pickups(plan)
+                    and spider_network._prepare_pickup_plan_order_placement(sn_storage, plan)
+                then
+                    plan = generator.active_pickup_plan
+                else
+                    generator.active_pickup_plan = nil
+                    plan = nil
+                end
+            end
+        end
+
+        if plan and plan.phase == "placing-orders" and work_done < work_limit then
+            local placement_work, done = spider_network._process_pickup_plan_order_placement(sn_storage, plan, work_limit - work_done)
+            work_done = work_done + placement_work
+            if done then
+                generator.active_pickup_plan = nil
+            end
+        end
+
+        if work_done == 0 then
+            work_done = 1
+        end
+    end
+
+    return work_done
+end
+
+---@param sn_storage SpiderNetworkStorage
+function spider_network._process_order_generator(sn_storage)
+    local generator = sn_storage.order_generator
+    if generator.state ~= "calculating" then return end
+
+    local work_remaining = ORDER_GENERATOR_WORK_PER_TICK
+    if generator.calculation_phase == "snapshot-spiders" then
+        local work_done = spider_network._process_order_generator_spider_snapshot(sn_storage, generator, work_remaining)
+        work_remaining = work_remaining - work_done
+        if generator.calculation_phase == "snapshot-spiders" or work_remaining <= 0 then return end
+    end
+
+    if generator.calculation_phase == "planning" then
+        spider_network._process_order_generator_planning(sn_storage, generator, work_remaining)
+    end
+end
+
 ---Scan a network hex's inventory and trades for the order generator.
 ---Fires for all spider network hexes regardless of active status, so rank-up trades are
 ---detected even when a hex has no items yet and is waiting for its first delivery.
@@ -1241,7 +1434,10 @@ function spider_network.on_spider_network_hex_state_processed(state)
 
     local generator = sn_storage.order_generator
 
-    spider_network._update_available_items(state)
+    spider_network._add_network_hex_position(sn_storage, state)
+    spider_network._update_hex_availability(state)
+    if generator.state ~= "accumulating" then return end
+    if not generator.accumulation_started_at_cycle_boundary then return end
     if not state.trades then return end
 
     for _, trade_id in pairs(state.trades) do
@@ -1249,8 +1445,7 @@ function spider_network.on_spider_network_hex_state_processed(state)
         if trade and trade.active then
             local rank_ups = trades.count_item_rank_ups(trade, RANK_UP_FILTER)
             if rank_ups > 0 then
-                local existing = generator.trade_ids_that_rank_up[trade_id] or 0
-                generator.trade_ids_that_rank_up[trade_id] = math.max(existing, rank_ups)
+                generator.trade_ids_that_rank_up[trade_id] = true
             end
         end
     end
@@ -1261,46 +1456,19 @@ function spider_network.on_hex_pool_cycle_completed()
     if not sn_storage.enabled then return end
 
     local generator = sn_storage.order_generator
-    local trade_ids = generator.trade_ids_that_rank_up
-    if not next(trade_ids) then return end
+    if generator.state ~= "accumulating" then return end
 
-    -- Snapshot all spider inventories so resolve_pickup_plan can subtract items already in
-    -- transit. This covers the gap between a pickup completing (tracking cleared) and the
-    -- corresponding dropoff completing, during which the items live in the spider.
-    local spider_items = {}
-    local spider_coins = {}
-    for _, entity in pairs(sn_storage.spider_list) do
-        if entity and entity.valid then
-            local inv = entity.get_inventory(defines.inventory.spider_trunk)
-            if inv and inv.valid then
-                local inv_coin, inv_items = inventories.get_coins_and_items_of_inventory(inv)
-                local surface_name = entity.surface.name
-                for quality, counts in pairs(inv_items) do
-                    if not spider_items[surface_name] then spider_items[surface_name] = {} end
-                    if not spider_items[surface_name][quality] then spider_items[surface_name][quality] = {} end
-                    local q_map = spider_items[surface_name][quality]
-                    for item_name, count in pairs(counts) do
-                        q_map[item_name] = (q_map[item_name] or 0) + count
-                    end
-                end
-                if coin_tiers.to_base_value(inv_coin) > 0 then
-                    spider_coins[surface_name] = spider_coins[surface_name]
-                        and coin_tiers.add(spider_coins[surface_name], inv_coin) or inv_coin
-                end
-            end
-        end
-    end
-    generator.spider_items = spider_items
-    generator.spider_coins = spider_coins
-
-    for trade_id, rank_ups in pairs(trade_ids) do
-        local trade = trades.get_trade_from_id(trade_id)
-        if trade then
-            spider_network.generate_orders_for_ranking_trade(sn_storage, trade, rank_ups)
-        end
+    if not generator.accumulation_started_at_cycle_boundary then
+        generator.trade_ids_that_rank_up = {}
+        generator.accumulation_started_at_cycle_boundary = true
+        return
     end
 
-    generator.trade_ids_that_rank_up = {}
+    if next(generator.trade_ids_that_rank_up) then
+        spider_network._begin_order_generator_calculation(generator)
+    else
+        generator.trade_ids_that_rank_up = {}
+    end
 end
 
 ---@param entity LuaEntity

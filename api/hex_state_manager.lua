@@ -68,6 +68,9 @@ local hex_state_manager = {}
 ---@field strongboxes LuaEntity[]|nil Array of strongbox entities assigned to this hex.
 ---@field update_players int[]|nil Array of player indices for whom to update hex core GUI immediately when a trade occurs.
 ---@field is_in_spider_network boolean|nil Whether this hex state is currently in the planet's spider network.
+---@field spider_network_available_items QualityItemCounts|nil Items currently available to the spider network from this hex state's output inventory.
+---@field spider_network_available_coin Coin|nil Coins currently available to the spider network from this hex state's output inventory.
+---@field spider_network_pending_orders {pickup: StringSet, dropoff: StringSet}|nil Items and coins with queued or in-flight spider network orders at this hex state.
 
 
 
