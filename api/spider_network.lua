@@ -341,7 +341,31 @@ function spider_network.dispatch(dispatch)
     if not success then return end
 
     tradertron.order = order
+    spider_network._update_color(tradertron)
     spider_network._remove_order(order)
+end
+
+---@param tradertron Tradertron
+function spider_network._update_color(tradertron)
+    local entity = spider_network.get_entity_from_tradertron(tradertron)
+    if not entity or not entity.valid then return end
+
+    local order = tradertron.order
+    if not order then
+        entity.color = {0, 0, 0}
+    elseif order.type == "pickup" then
+        entity.color = {1, 0, 0.25}
+    elseif order.type == "dropoff" then
+        entity.color = {0, 0.75, 1}
+    end
+end
+
+---Reset a spider's color back to the default.
+---@param tradertron Tradertron
+function spider_network.reset_color(tradertron)
+    local entity = spider_network.get_entity_from_tradertron(tradertron)
+    if not entity or not entity.valid then return end
+    entity.color = {1, 0.5, 0, 0.5}
 end
 
 ---@param tradertron Tradertron
@@ -489,6 +513,8 @@ function spider_network.register_spider(entity)
     spiders[entity.unit_number] = tradertron
     sn_storage.spider_list[#sn_storage.spider_list+1] = entity
 
+    spider_network._update_color(tradertron)
+
     game.print({"hextorio.spider-network-spiders-added", entity.gps_tag})
 
     return tradertron
@@ -509,6 +535,8 @@ function spider_network.unregister_spider(tradertron, clear_autopilot)
     local sn_storage = spider_network._get_spider_network_storage()
     local spiders = spider_network.get_spider_storage_on_surface(entity.surface_index)
     spiders[entity.unit_number] = nil
+
+    spider_network.reset_color(tradertron)
 
     local idx = lib.table_index(sn_storage.spider_list, entity)
     if idx then
@@ -595,6 +623,7 @@ function spider_network.clear_orders(tradertron, discard_order, clear_autopilot)
     if not order then return end
 
     tradertron.order = nil
+    spider_network._update_color(tradertron)
 
     -- log("spider completed order")
     if discard_order then
