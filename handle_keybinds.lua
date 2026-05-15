@@ -98,17 +98,7 @@ script.on_event("teleport-to-hex-core", function(event)
 
     local surface = hex_core.surface
     local hex_pos = state.position
-
-    local bad_tp = false
-    for _, adj_pos in pairs(axial.get_adjacent_hexes(hex_pos)) do
-        local adj_state = hex_state_manager.get_hex_state(surface, adj_pos)
-        -- local dungeon = dungeons.get_dungeon_at_hex_pos(surface.index, adj_pos, false)
-        -- if dungeon and not dungeon.is_looted then
-        if adj_state and adj_state.is_dungeon then
-            bad_tp = true
-            break
-        end
-    end
+    local bad_tp = hex_state_manager.is_adjacent_to_dungeon(state)
 
     if not storage.hex_grid.player_last_teleport_attempts then
         storage.hex_grid.player_last_teleport_attempts = {}

@@ -25,6 +25,7 @@ local hex_state_manager = {}
 ---@field total_coins_consumed Coin
 
 ---@class HexState
+---@field surface_index int The index of the surface on which this hex state exists.
 ---@field position HexPos The position of this hex state.
 ---@field flat_index int|nil The index of the coordinates pointing to this hex state in its surface's flattened array of existing, generated hex coordinates.
 ---@field claimed boolean|nil Whether this hex state has been claimed yet.
@@ -126,7 +127,7 @@ function hex_state_manager.get_hex_state(surface, hex_pos, auto_create)
     local surface_hexes = hex_state_manager.get_surface_hexes(surface_id)
     if not surface_hexes then return end
 
-    local state = hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_pos, auto_create)
+    local state = hex_state_manager._get_hex_state_from_surface_hexes(surface_id, surface_hexes, hex_pos, auto_create)
     if not state then return end
 
     return state
@@ -174,11 +175,12 @@ function hex_state_manager.get_flattened_surface_hexes(surface)
 end
 
 ---Get a hex by its axial coordinates in a surface's hex state map.
+---@param surface_index int
 ---@param surface_hexes HexStateMap
 ---@param hex_pos HexPos
----@param auto_create boolean|nil If true and the hex state does not already exist, index and return a hex state containing only the provided position.
+---@param auto_create boolean|nil If true and the hex state does not already exist, index and return (but do not generate) a hex state containing only the provided position.
 ---@return HexState|nil
-function hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_pos, auto_create)
+function hex_state_manager._get_hex_state_from_surface_hexes(surface_index, surface_hexes, hex_pos, auto_create)
     local q = hex_pos.q
     local Q = surface_hexes[q]
     if not Q then
@@ -191,7 +193,7 @@ function hex_state_manager.get_hex_state_from_surface_hexes(surface_hexes, hex_p
     local state = Q[r]
     if not state then
         if not auto_create then return end
-        state = {position = {q=q, r=r}}
+        state = {surface_index = surface_index, position = {q=q, r=r}}
         Q[r] = state
     end
 
@@ -223,6 +225,24 @@ function hex_state_manager.get_hex_state_containing(surface, position)
     return hex_state_manager.get_hex_state(surface, hex_pos)
 end
 
+---Return all adjacent hex states to the one provided.
+---@param state HexState
+---@param auto_create boolean|nil If true and an adjacent hex state does not already exist, index and include (but do not generate) the adjacent hex state, containing only the position of the adjacent hex.
+---@return HexState[]
+function hex_state_manager.get_adjacent_hex_states(state, auto_create)
+    local surface_index = state.surface_index
+
+    local adj_states = {}
+    for _, adj_pos in pairs(axial.get_adjacent_hexes(state.position)) do
+        local adj_state = hex_state_manager.get_hex_state(surface_index, adj_pos, auto_create)
+        if adj_state then
+            adj_states[#adj_states+1] = adj_state
+        end
+    end
+
+    return adj_states
+end
+
 ---@param unit_number int
 ---@param surface_name string
 ---@param hex_pos HexPos
@@ -248,6 +268,18 @@ function hex_state_manager.unmap_entity(unit_number)
     end
 
     entity_map[unit_number] = nil
+end
+
+---Return whether the given hex state is adjacent to a hex state that is marked as being in an unlooted dungeon.
+---@param state HexState
+---@return boolean
+function hex_state_manager.is_adjacent_to_dungeon(state)
+    for _, adj_state in pairs(hex_state_manager.get_adjacent_hex_states(state, false)) do
+        if adj_state.is_dungeon then
+            return true
+        end
+    end
+    return false
 end
 
 ---Add an amount of an item to be picked up at the hex core in the given hex state.

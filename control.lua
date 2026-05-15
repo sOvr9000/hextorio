@@ -34,6 +34,7 @@ local item_tradability_solver = require "api.item_tradability_solver"
 local translations = require "api.translations"
 local spider_control = require "api.spider_control"
 local spider_network = require "api.spider_network"
+local hex_pathfinding = require "api.hex_pathfinding"
 
 migrations.load_handlers()
 
@@ -58,6 +59,7 @@ item_tradability_solver.register_events()
 translations.register_events()
 spider_control.register_events()
 spider_network.register_events()
+hex_pathfinding.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()

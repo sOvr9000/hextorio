@@ -174,9 +174,7 @@ function spider_control.enqueue_pathfind_hex_move(unit, to_hex_pos)
     if not state then return false end
 
     local cur_hex_pos = state.position
-
-    local island = hex_island.get_island_hex_set(surface.name)
-    local to_hex_positions = hex_pathfinding.find_path(island, cur_hex_pos, to_hex_pos, true)
+    local to_hex_positions = hex_pathfinding.find_path_on_surface(surface.index, cur_hex_pos, to_hex_pos, true)
 
     if not to_hex_positions then
         return false

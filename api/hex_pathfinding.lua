@@ -4,10 +4,21 @@
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 local lib      = require "api.lib"
+local hex_state_manager = require "api.hex_state_manager"
+local event_system      = require "api.event_system"
 
 local hex_pathfinding = {}
 
 
+
+---@class HexPathfindingStorage
+---@field traversable_hexes {[int]: HexSet}
+
+
+
+function hex_pathfinding.register_events()
+    event_system.register("hex-claimed", hex_pathfinding.on_hex_claimed)
+end
 
 ---@param heap table
 ---@param priority int
@@ -111,6 +122,35 @@ local function relax_neighbor(hex_set, open_heap, closed, g_score, came_from, ne
     heap_push(open_heap, tentative_g + axial.distance(neighbor, to_hex_pos), neighbor)
 end
 
+---@return HexPathfindingStorage
+function hex_pathfinding._get_hex_pathfinding_storage()
+    local hex_pathfinding_storage = storage.hex_pathfinding
+    if not hex_pathfinding_storage then
+        hex_pathfinding_storage = {}
+        storage.hex_pathfinding = hex_pathfinding_storage
+    end
+
+    if not hex_pathfinding_storage.traversable_hexes then
+        hex_pathfinding_storage.traversable_hexes = {}
+    end
+
+    return hex_pathfinding_storage
+end
+
+---@param surface_index int
+function hex_pathfinding.get_traversable_hexes_on_surface(surface_index)
+    local hex_pathfinding_storage = hex_pathfinding._get_hex_pathfinding_storage()
+    local traversable_hexes = hex_pathfinding_storage.traversable_hexes
+
+    local surface_traversable_hexes = traversable_hexes[surface_index]
+    if not surface_traversable_hexes then
+        surface_traversable_hexes = {}
+        traversable_hexes[surface_index] = surface_traversable_hexes
+    end
+
+    return surface_traversable_hexes
+end
+
 ---Return a path of hex positions from `from_hex_pos` to `to_hex_pos` within a hex set, including both end points.
 ---Returns `nil` if no path exists.
 ---Uses A* search.
@@ -155,6 +195,44 @@ function hex_pathfinding.find_path(hex_set, from_hex_pos, to_hex_pos, omit_colli
             for _, neighbor in pairs(axial.get_adjacent_hexes(current_pos)) do
                 relax_neighbor(hex_set, open_heap, closed, g_score, came_from, neighbor, current_g, current_pos, to_hex_pos)
             end
+        end
+    end
+end
+
+---Return a path of hex positions from `from_hex_pos` to `to_hex_pos` within the traversable hexes on a surface, including both end points.
+---Returns `nil` if no path exists or the traversable hexes on the given surface are not yet defined.
+---Uses A* search.
+---@param surface_index int
+---@param from_hex_pos HexPos
+---@param to_hex_pos HexPos
+---@param omit_collinear boolean|nil
+---@return HexPos[]|nil
+function hex_pathfinding.find_path_on_surface(surface_index, from_hex_pos, to_hex_pos, omit_collinear)
+    local traversable_hexes = hex_pathfinding.get_traversable_hexes_on_surface(surface_index)
+    return hex_pathfinding.find_path(traversable_hexes, from_hex_pos, to_hex_pos, omit_collinear)
+end
+
+---Recalculate the traversability of this hex in pathfinding.
+---
+---Hexes near dungeons and unclaimed hexes are intraversable.
+---@param state HexState
+function hex_pathfinding.recalculate_hex_traversability(state)
+    local surface_traversable_hexes = hex_pathfinding.get_traversable_hexes_on_surface(state.surface_index)
+    if not state.claimed or hex_state_manager.is_adjacent_to_dungeon(state) then
+        hex_sets.remove(surface_traversable_hexes, state.position)
+    else
+        hex_sets.add(surface_traversable_hexes, state.position)
+    end
+end
+
+---@param surface LuaSurface
+---@param state HexState
+function hex_pathfinding.on_hex_claimed(surface, state)
+    hex_pathfinding.recalculate_hex_traversability(state)
+    if state.was_dungeon then
+        local adj_states = hex_state_manager.get_adjacent_hex_states(state, false)
+        for _, adj_state in pairs(adj_states) do
+            hex_pathfinding.recalculate_hex_traversability(adj_state)
         end
     end
 end
