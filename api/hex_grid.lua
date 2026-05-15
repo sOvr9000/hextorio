@@ -4072,8 +4072,6 @@ end
 function hex_grid.apply_extra_trades_bonus_retro(item_name)
     local added_trades = {}
 
-    log("add extra trades for " .. item_name)
-
     for surface_id, surface in pairs(game.surfaces) do
         local surface_name = surface.name
         if lib.is_vanilla_planet_name(surface_name) and lib.is_catalog_item(surface_name, item_name) then
