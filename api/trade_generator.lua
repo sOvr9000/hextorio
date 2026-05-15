@@ -103,7 +103,11 @@ end
 ---@param include_item string|nil An item name to be forcefully included in the trade.
 ---@return TentativeTrade|nil
 function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
-    if not params then params = {} end
+    if not params then
+        params = {}
+    else
+        params = table.deepcopy(params)
+    end
     trade_generator.set_trade_generation_parameter_defaults(params)
 
     ---@type (Trade|TentativeTrade)[]
@@ -111,6 +115,19 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
     local slot = #candidate_trades + 1
 
     local coin_type = storage.coin_tiers.COIN_NAMES[1]
+
+    -- Blacklist input items in existing trades (making the spider network order fulfillment less finicky)
+    -- Two trades in a hex core can still have overlapping inputs if the guaranteed trades around the spawn hex happen to be like that.
+    local blacklist = params.item_sampling_filters.blacklist
+    if not blacklist then
+        blacklist = {}
+        params.item_sampling_filters.blacklist = blacklist
+    end
+    for _, trade in pairs(candidate_trades) do
+        for _, input_item in pairs(trade.input_items) do
+            blacklist[input_item.name] = true
+        end
+    end
 
     local attempts = 10
     for _ = 1, attempts do

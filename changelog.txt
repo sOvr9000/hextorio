@@ -13,6 +13,7 @@ Date: 15/5/26
     - Fixed that the "extra trade" effect from bronze ranked items wasn't applying to previously generated hex cores.
   Changes:
     - Changed completion requirements and rewards of the quest "The Factorio Must Grow".
+    - Randomly generated trades in a hex core can no longer have shared inputs, to mitigate the chances of putting in an item only for it to execute a trade different from what you expected.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.9
 Date: 13/5/26
