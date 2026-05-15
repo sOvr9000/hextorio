@@ -18,6 +18,7 @@ local hex_pathfinding = {}
 
 function hex_pathfinding.register_events()
     event_system.register("hex-claimed", hex_pathfinding.on_hex_claimed)
+    event_system.register("hex-generated", hex_pathfinding.on_hex_generated)
 end
 
 ---@param heap table
@@ -225,9 +226,8 @@ function hex_pathfinding.recalculate_hex_traversability(state)
     end
 end
 
----@param surface LuaSurface
 ---@param state HexState
-function hex_pathfinding.on_hex_claimed(surface, state)
+function hex_pathfinding._handle_traversability_changes(state)
     hex_pathfinding.recalculate_hex_traversability(state)
     if state.was_dungeon then
         local adj_states = hex_state_manager.get_adjacent_hex_states(state, false)
@@ -235,6 +235,20 @@ function hex_pathfinding.on_hex_claimed(surface, state)
             hex_pathfinding.recalculate_hex_traversability(adj_state)
         end
     end
+end
+
+---@param surface LuaSurface
+---@param state HexState
+function hex_pathfinding.on_hex_claimed(surface, state)
+    hex_pathfinding._handle_traversability_changes(state)
+end
+
+---@param surface_index int
+---@param hex_pos HexPos
+function hex_pathfinding.on_hex_generated(surface_index, hex_pos)
+    local state = hex_state_manager.get_hex_state(surface_index, hex_pos, false)
+    if not state then return end
+    hex_pathfinding._handle_traversability_changes(state)
 end
 
 
