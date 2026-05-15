@@ -325,21 +325,20 @@ end
 ---@param tradertron Tradertron
 ---@param order SpiderNetworkOrder
 ---@param order_idx int
----@return boolean popped Whether the order was popped from the orders list.
+---@return boolean popped Whether the order was popped from the orders list, e.g. when the order is too old to fulfill.
 function spider_network._process_order_for_spider(tradertron, order, order_idx)
-    local score = spider_network.compute_tradertron_score_for_order(tradertron, order)
-    if not score then return false end
-
     if order.tick_created + MAX_ORDER_LIFETIME < game.tick then
         spider_network._update_order_position_tracking(order, false)
         local sn_storage = spider_network._get_spider_network_storage()
         if order.trade_id then
             sn_storage.active_trade_deliveries[order.trade_id] = nil
         end
-        sn_storage.orders_set[order] = nil
-        table.remove(sn_storage.orders, order_idx)
+        spider_network._remove_order(order)
         return true
     end
+
+    local score = spider_network.compute_tradertron_score_for_order(tradertron, order)
+    if not score then return false end
 
     local best_score = tradertron.best_score
     if best_score and score <= best_score then return false end
