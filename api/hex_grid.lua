@@ -2505,7 +2505,7 @@ function hex_grid.add_initial_trades(state)
 
             Island extent is the distance to the farthest hex tile from spawn, measuring the length of the shortest valid path from spawn to the hex tile.
 
-            All hexes that are (30% * island extent) hex tiles away from spawn (again measuring shortest valid path length) sample with uniform distribution from all items that have values on the respective surface.
+            All hexes that are (30% * island extent) hex tiles away from spawn (again measuring shortest valid path length) sample with uniform distribution from all tradable items on the respective surface.
 
             Inside this 30% threshold, an exponential interpolation is made from the lowest item values to the highest, based on distance from spawn to this 30% threshold.
 
