@@ -734,6 +734,24 @@ return {
             prerequisites = {"farm-fresh-produce"},
         },
         {
+            name = "speed-demon",
+            conditions = {{type = "fastest-ship-speed", progress_requirement = 450}},
+            rewards = {
+                {
+                    type = "receive-items",
+                    value = {
+                        {name = "sentient-spider", count = 1},
+                    },
+                    notes = {"first-sentient-spider"},
+                },
+                {
+                    type = "unlock-feature",
+                    value = "spider-network",
+                },
+            },
+            prerequisites = {"yummy-co"},
+        },
+        {
             name = "biochemical-dungeon",
             conditions = {{type = "loot-dungeons-on", value = "gleba", progress_requirement = 1}},
             rewards = {{type = "all-trades-productivity", value = 5}, {type = "claim-free-hexes", value = {"gleba", 10}}},

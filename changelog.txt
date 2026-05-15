@@ -4,7 +4,7 @@ Date: 15/5/26
   Major Features:
     - Added spider networks (Sentient Spiders are now sentient).
   Features:
-    - (TODO) Added quest on Gleba.
+    - Added quest "Speed Demon" (post-Gleba).
   Minor Features:
     - Added command "/unlock-feature".
   Bugfixes:

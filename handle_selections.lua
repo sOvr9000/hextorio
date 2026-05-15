@@ -119,9 +119,13 @@ end
 ---@param entities LuaEntity[]
 ---@param reverse boolean
 local function on_spider_network_tool_used(player, entities, reverse)
+    if not quests.is_feature_unlocked "spider-network" then
+        player.print {"hextorio.spider-network-not-unlocked"}
+        return
+    end
+
     local added = 0
     local removed = 0
-
     for _, e in pairs(entities) do
         if e.name == "hex-core" then
             local state = hex_grid.get_hex_state_from_core(e)

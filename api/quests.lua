@@ -39,6 +39,7 @@ local quests = {}
 ---| "item-buff-enhancement"
 ---| "enhance-all"
 ---| "piggy-bank"
+---| "spider-network"
 
 ---@alias SingleQuestConditionValue string|number
 ---@alias SingleQuestRewardValue string|number|ItemStackIdentification

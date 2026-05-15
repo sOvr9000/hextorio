@@ -23,6 +23,7 @@ local RANK_UP_FILTER = {[2] = true, [3] = true, [5] = true}
 ---@alias SpiderNetworkOrder PickupOrder|DropoffOrder
 
 ---@class SpiderNetworkStorage
+---@field enabled boolean Whether the spider network should do its processing.
 ---@field supported_entity_names StringSet
 ---@field spiders {[int]: {[int]: Tradertron}} Mapping for each surface ID of entity unit numbers to the Tradertron that is associated to that entity
 ---@field spider_list LuaEntity[] List of entities that are Tradertrons.
@@ -90,6 +91,7 @@ function spider_network.register_events()
     event_system.register("player-commanded-spiders", spider_network.on_player_commanded_spiders)
     event_system.register("entity-built", spider_network.on_entity_built)
     event_system.register("trade-processed", spider_network.on_trade_processed)
+    event_system.register("quest-reward-received", spider_network.on_quest_reward_received)
 end
 
 ---@return SpiderNetworkStorage
@@ -98,6 +100,10 @@ function spider_network._get_spider_network_storage()
     if not sn_storage then
         sn_storage = {}
         storage.spider_network = sn_storage
+    end
+
+    if not sn_storage.enabled then
+        sn_storage.enabled = false
     end
 
     if not sn_storage.spiders then
@@ -169,6 +175,20 @@ function spider_network.is_entity_name_supported(entity_name)
     return sn_storage.supported_entity_names[entity_name]
 end
 
+---Enable or disable the spider network processing.
+---@param flag boolean
+function spider_network.set_enabled(flag)
+    local sn_storage = spider_network._get_spider_network_storage()
+    sn_storage.enabled = flag
+end
+
+---Whether the spider network is currently enabled.
+---@return boolean
+function spider_network.is_enabled()
+    local sn_storage = spider_network._get_spider_network_storage()
+    return sn_storage.enabled
+end
+
 ---Update hex_positions_with_order tracking when an order is added or removed.
 ---@param order SpiderNetworkOrder
 ---@param add boolean True to mark items as pending, false to clear them.
@@ -225,6 +245,8 @@ end
 
 function spider_network._process_spiders()
     local sn_storage = spider_network._get_spider_network_storage()
+    if not sn_storage.enabled then return end
+
     local spider_list = sn_storage.spider_list
     local orders = sn_storage.orders
     if #orders == 0 then return end
@@ -1180,9 +1202,10 @@ end
 ---detected even when a hex has no items yet and is waiting for its first delivery.
 ---@param state HexState
 function spider_network.on_spider_network_hex_state_processed(state)
+    local sn_storage = spider_network._get_spider_network_storage()
+    if not sn_storage.enabled then return end
     if not state.hex_core or not state.hex_core.valid then return end
 
-    local sn_storage = spider_network._get_spider_network_storage()
     local generator = sn_storage.order_generator
 
     spider_network._update_available_items(state)
@@ -1202,6 +1225,8 @@ end
 
 function spider_network.on_hex_pool_cycle_completed()
     local sn_storage = spider_network._get_spider_network_storage()
+    if not sn_storage.enabled then return end
+
     local generator = sn_storage.order_generator
     local trade_ids = generator.trade_ids_that_rank_up
     if not next(trade_ids) then return end
@@ -1280,12 +1305,18 @@ end
 
 ---@param entity LuaEntity
 function spider_network.on_entity_built(entity)
+    local sn_storage = spider_network._get_spider_network_storage()
+    if not sn_storage.enabled then return end
+
     spider_network.register_spider(entity)
 end
 
 ---@param player LuaPlayer
 ---@param spiders LuaEntity[]
 function spider_network.on_player_commanded_spiders(player, spiders)
+    local sn_storage = spider_network._get_spider_network_storage()
+    if not sn_storage.enabled then return end
+
     for _, spider in pairs(spiders) do
         local tradertron = spider_network.get_tradertron_from_entity(spider)
         if tradertron then
@@ -1306,10 +1337,20 @@ end
 ---@param total_inserted QualityItemCounts
 function spider_network.on_trade_processed(trade, total_removed, total_inserted)
     local sn_storage = spider_network._get_spider_network_storage()
+    if not sn_storage.enabled then return end
     if not sn_storage.active_trade_deliveries[trade.id] then return end
     if trades.count_item_rank_ups(trade, RANK_UP_FILTER) > 0 then return end
 
     spider_network.cancel_orders_for_trade(trade.id)
+end
+
+---@param reward_type QuestRewardType
+---@param reward_value QuestRewardValue
+function spider_network.on_quest_reward_received(reward_type, reward_value)
+    if reward_type ~= "unlock-feature" then return end
+    if reward_value ~= "spider-network" then return end
+
+    spider_network.set_enabled(true)
 end
 
 
