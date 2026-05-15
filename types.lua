@@ -30,6 +30,7 @@
 ---| "command-get-item-value"
 ---| "command-hextorio-debug"
 ---| "command-import-item-values"
+---| "command-unlock-feature"
 ---| "command-rank-up"
 ---| "command-rank-up-all"
 ---| "command-refresh-all-trades"

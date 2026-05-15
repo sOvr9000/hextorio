@@ -5,6 +5,8 @@ Date: 15/5/26
     - Added spider networks (Sentient Spiders are now sentient).
   Features:
     - (TODO) Added quest on Gleba.
+  Minor Features:
+    - Added command "/unlock-feature".
   Bugfixes:
     - Fixed that cross-planet teleportation didn't always work from remote view.
     - Fixed that the "Electric (HV)" damage type wasn't considered electric for ranking up items to gold stars.

@@ -61,6 +61,12 @@ local all_commands = {
         examples = {"/complete-quest ground-zero", "/complete-quest find-some-trades"},
     },
     {
+        name = "unlock-feature",
+        usage = "/unlock-feature <feature-name>",
+        params = {"string"},
+        examples = {"/unlock-feature hexports", "/unlock-feature teleportation-cross-planet"},
+    },
+    {
         name = "disable-quest",
         usage = "/disable-quest <quest-name>",
         params = {"string"},

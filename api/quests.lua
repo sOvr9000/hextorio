@@ -125,6 +125,32 @@ function quests.register_events()
         end
     end)
 
+    event_system.register("command-unlock-feature", function(player, params)
+        local feature_name = params[1]
+        if not feature_name then return end
+
+        local found = false
+        for _, quest in pairs(storage.quests.quests) do
+            for _, reward in pairs(quest.rewards) do
+                if reward.type == "unlock-feature" and reward.value == feature_name then
+                    found = true
+                    break
+                end
+            end
+            if found then
+                break
+            end
+        end
+
+        if not found then
+            player.print {"hextorio.command-invalid-feature", feature_name}
+            return
+        end
+
+        quests.unlock_feature(feature_name)
+        player.print {"hextorio.command-feature-unlocked", lib.color_localized_string(quests.get_feature_localized_name(feature_name), "orange", "heading-1")}
+    end)
+
     event_system.register("entity-killed-entity", quests.on_entity_killed_entity)
     event_system.register("post-entity-killed-entity", quests.on_post_entity_killed_entity)
     -- event_system.register("pre-player-died-to-entity", quests.on_pre_player_died_to_entity)
