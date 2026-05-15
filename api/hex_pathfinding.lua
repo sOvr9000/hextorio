@@ -219,7 +219,9 @@ end
 ---@param state HexState
 function hex_pathfinding.recalculate_hex_traversability(state)
     local surface_traversable_hexes = hex_pathfinding.get_traversable_hexes_on_surface(state.surface_index)
-    if not state.claimed or hex_state_manager.is_adjacent_to_dungeon(state) then
+    local surface = game.get_surface(state.surface_index)
+    local unclaimed_okay = surface ~= nil and surface.name == "fulgora"
+    if not unclaimed_okay and not state.claimed or hex_state_manager.is_adjacent_to_dungeon(state) then
         hex_sets.remove(surface_traversable_hexes, state.position)
     else
         hex_sets.add(surface_traversable_hexes, state.position)

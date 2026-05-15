@@ -13,9 +13,7 @@ return function()
 
         for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
             state.surface_index = surface_index
-            if state.claimed then
-                hex_pathfinding.recalculate_hex_traversability(state)
-            end
+            hex_pathfinding.recalculate_hex_traversability(state)
         end
     end
 end
