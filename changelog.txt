@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.1
-Date: 15/5/26
+Date: 19/5/26
+  Bugfixes:
+    - Fixed crash when the trade generator doesn't have enough tradable items from which to sample (e.g. on Aquilo).
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.0
 Date: 16/5/26

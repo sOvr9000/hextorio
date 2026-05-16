@@ -2,8 +2,9 @@
 local lib = require "api.lib"
 local sets = require "api.sets"
 local item_values = require "api.item_values"
-local coin_tiers = require "api.coin_tiers"
 local trade_loop_finder = require "api.trade_loop_finder"
+local weighted_choice = require "api.weighted_choice"
+local event_system = require "api.event_system"
 
 local trade_generator = {}
 
@@ -26,7 +27,24 @@ local trade_generator = {}
 ---@field max_count_per_item int|nil The maximum amount of each item allowed in the generated trade.  This feels reasonable at around 100, preventing from (e.g.) having to feed an egregious amount of items for a small return.
 ---@field allow_nil_return boolean|nil Whether to allow a nil trade if the generator cannot solve the item counts from a given set of items and item count constraints.  If false and the generator fails to approximate target_efficiency, then the item counts with the closest possible ratio given the other constraints are used. Defaults to true.
 
+---@class TradeShapeWeightedItem
+---@field num_inputs int
+---@field num_outputs int
+---@field weight number
 
+
+
+function trade_generator.register_events()
+    event_system.register("runtime-setting-changed-base-trade-efficiency", function()
+        storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
+    end)
+end
+
+function trade_generator.init()
+    local complexity = lib.runtime_setting_value_as_string "trade-complexity"
+    local weights = storage.trades.trade_shape_weights_lookup[complexity]
+    trade_generator.set_trade_shape_distribution(weights)
+end
 
 ---Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.
 ---
@@ -133,7 +151,7 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
     for _ = 1, attempts do
         local input_item_names, output_item_names = trade_generator.generate_item_names(surface_name, volume, params, allow_untradable, include_item)
 
-        if not next(output_item_names) and not next(input_item_names) then
+        if not next(output_item_names) or not next(input_item_names) then
             lib.log("trade_generator.generate_random: Not enough items centered around the value " .. volume)
             return
         end
@@ -263,35 +281,8 @@ function trade_generator.generate_item_names(surface_name, volume, params, allow
         return {}, {}
     end
 
-    local possible_distributions = {
-        [2] = {1},
-        [3] = {1, 2},
-        [4] = {1, 2, 2, 3}, -- Make two-to-two trades as common as trades with three items on one side
-        [5] = {2, 3},
-        [6] = {3},
-    }
-
-    local trade_complexity_mode = storage.trades.trade_complexity or "balanced"
-
-    local t
-    local r = math.random()
-    if trade_complexity_mode == "simple" then
-        -- Interpolation with x^2
-        -- Favors low values
-        t = r * r
-    elseif trade_complexity_mode == "balanced" then
-        -- Interpolation with x^1.15
-        -- Favors low values, but less so than x^2
-        t = r ^ 1.15
-    elseif trade_complexity_mode == "complex" then
-        -- Interpolation with x^0.75
-        -- Favors high values
-        t = r ^ 0.75
-    end
-
-    local total_items = math.min(2 + math.floor(5 * t), #trade_items)
-    local dists = possible_distributions[total_items]
-    local num_inputs = dists[math.random(1, #dists)]
+    local num_inputs, num_outputs = trade_generator._generate_random_trade_shape()
+    local total_items = num_inputs + num_outputs
 
     if include_item then
         -- Bring include_item to front indices that'll be used for populating input and output item lists.
@@ -310,13 +301,10 @@ function trade_generator.generate_item_names(surface_name, volume, params, allow
         end
     end
 
-    coin_tiers.validate_coin_names(input_item_names, volume)
-    coin_tiers.validate_coin_names(output_item_names, volume)
-
     return input_item_names, output_item_names
 end
 
----Given a trade with undefined output item counts, attempt to set the output counts to the values which best preserve a value ratio of the given `params.target_efficiency`.  If the solver fails (returning false), item counts are left undefined.
+---Given a trade with undefined item counts, attempt to set the counts to the values which best preserve the specified input-to-output value ratio (`params.target_efficiency`).
 ---@param surface_name string
 ---@param trade TentativeTrade
 ---@param params TradeGenerationParameters|nil
@@ -326,16 +314,17 @@ function trade_generator.solve_item_counts(surface_name, trade, params)
     trade_generator.set_trade_generation_parameter_defaults(params)
 
     -- Convert coins to lowest tier
+    local coin_name = storage.coin_tiers.COIN_NAMES[1]
     for _, input_item in pairs(trade.input_items) do
         if lib.is_coin(input_item.name) then
-            input_item.name = "hex-coin"
+            input_item.name = coin_name
             break
         end
     end
 
     for _, output_item in pairs(trade.output_items) do
         if lib.is_coin(output_item.name) then
-            output_item.name = "hex-coin"
+            output_item.name = coin_name
             break
         end
     end
@@ -607,6 +596,104 @@ function trade_generator.solve_item_counts(surface_name, trade, params)
     trade.output_items = working_outputs
 
     return solved
+end
+
+---Set the distribution of trade shapes during procedural generation.
+---
+---For example, this makes 25% of all trades be 1-1, and the rest 3-2:
+---```
+---local weights = {
+---  {num_inputs = 1, num_outputs = 1, weight = 1},
+---  {num_inputs = 3, num_outputs = 2, weight = 3},
+---}
+---trade_generator.set_trade_shape_distribution(weights)
+---```
+---@param weights TradeShapeWeightedItem[]
+function trade_generator.set_trade_shape_distribution(weights)
+    if type(weights) ~= "table" then
+        lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received: " .. tostring(weights))
+        return
+    end
+
+    for _, obj in pairs(weights) do
+        if
+            -- TODO: maybe put type checking into a lib function or something, like lib.is_int()
+               type(obj.num_inputs) ~= "number"
+            or type(obj.num_outputs) ~= "number"
+            or type(obj.weight) ~= "number"
+            or math.floor(obj.num_inputs) ~= obj.num_inputs
+            or math.floor(obj.num_outputs) ~= obj.num_outputs
+            or obj.num_inputs < 1
+            or obj.num_inputs > 3
+            or obj.num_outputs < 1
+            or obj.num_outputs > 3
+            or obj.weight <= 0
+        then
+            lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received:\n" .. serpent.block(weights))
+            return
+        end
+    end
+
+    lib.log("New weights set for trade shapes: " .. serpent.block(weights))
+
+    storage.trades.trade_shape_weights = weights
+    storage.trades.trade_shape_weighted_choice = nil
+end
+
+---Get the distribution currently used for sampling trade shapes during procedural generation.
+---@return TradeShapeWeightedItem[]|nil
+function trade_generator.get_trade_shape_distribution()
+    return storage.trades.trade_shape_weights
+end
+
+---@return WeightedChoice|nil
+function trade_generator.get_trade_shape_weighted_choice()
+    local trade_shape_wc = storage.trades.trade_shape_weighted_choice
+
+    if not trade_shape_wc then
+        local weights = trade_generator.get_trade_shape_distribution()
+        if not weights then
+            lib.log_error("trade_generator._get_trade_shape_weighted_choice: No weights set for trade shape sampling")
+            return
+        end
+
+        local wc = trade_generator._build_trade_shape_weighted_choice(weights)
+        if not wc then
+            lib.log_error("trade_generator._get_trade_shape_weighted_choice: Failed to create a weighted choice for trades given weights:\n" .. serpent.block(weights))
+            return
+        end
+
+        trade_shape_wc = wc
+        storage.trades.trade_shape_weighted_choice = trade_shape_wc
+    end
+
+    return trade_shape_wc
+end
+
+---@return int num_inputs, int num_outputs
+function trade_generator._generate_random_trade_shape()
+    local trade_shape_wc = trade_generator.get_trade_shape_weighted_choice()
+    if not trade_shape_wc then
+        return 1, 1
+    end
+
+    local item = weighted_choice.choice(trade_shape_wc)
+    return item[1], item[2]
+end
+
+---@param weights TradeShapeWeightedItem[]
+---@return WeightedChoice|nil
+function trade_generator._build_trade_shape_weighted_choice(weights)
+    local item_list = {}
+
+    for _, shape_item in pairs(weights) do
+        item_list[#item_list+1] = {
+            item = {shape_item.num_inputs, shape_item.num_outputs},
+            weight = shape_item.weight,
+        }
+    end
+
+    return weighted_choice.from_list(item_list)
 end
 
 

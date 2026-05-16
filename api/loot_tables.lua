@@ -67,7 +67,7 @@ end
 ---@param item_names string[]
 ---@param min_quality_tier int
 ---@param max_quality_tier int
----@return LootTable
+---@return LootTable|nil
 function loot_tables.new(surface_name, item_names, min_quality_tier, max_quality_tier)
     local loot_table = {loot = {}}
     local weights = {}
@@ -82,6 +82,11 @@ function loot_tables.new(surface_name, item_names, min_quality_tier, max_quality
         end
     end
     loot_table.wc = weighted_choice.new(weights)
+
+    if not loot_table.wc then
+        lib.log_error("loot_tables.new: Empty loot table created on surface " .. surface_name)
+        return
+    end
 
     return loot_table
 end
@@ -148,7 +153,7 @@ end
 ---@param loot_table LootTable
 ---@param min_value number
 ---@param max_value number
----@return LootTable
+---@return LootTable|nil
 function loot_tables.clip_items_by_value(loot_table, surface_name, min_value, max_value)
     local new_loot = {}
     local new_weights = {}
@@ -162,9 +167,15 @@ function loot_tables.clip_items_by_value(loot_table, surface_name, min_value, ma
         end
     end
 
+    local wc = weighted_choice.new(new_weights)
+    if not wc then
+        lib.log_error("loot_tables.clip_items_by_value: Empty loot table created on surface " .. surface_name .. " with min/max values " .. min_value .. " / " .. max_value)
+        return
+    end
+
     return {
         loot = new_loot,
-        wc = weighted_choice.new(new_weights)
+        wc = wc,
     }
 end
 

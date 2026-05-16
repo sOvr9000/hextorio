@@ -1,6 +1,7 @@
 
 require "util" -- For table.deepcopy()
 require "remotes"
+local trade_generator = require "api.trade_generator"
 
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
@@ -60,6 +61,7 @@ translations.register_events()
 spider_control.register_events()
 spider_network.register_events()
 hex_pathfinding.register_events()
+trade_generator.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -130,7 +132,6 @@ script.on_init(function()
     trades.fetch_base_trade_efficiency_settings()
 
     storage.hex_grid.sink_generator_efficiency = lib.runtime_setting_value_as_number "sink-generator-efficiency"
-    storage.trades.trade_complexity = lib.runtime_setting_value_as_string "trade-complexity"
     storage.trades.unresearched_penalty = lib.runtime_setting_value_as_number "unresearched-penalty"
     storage.trades.batch_processing_threshold = lib.runtime_setting_value_as_int "trade-batching-threshold"
     storage.trades.collection_batch_size = lib.runtime_setting_value_as_int "trade-collection-batch-size"
@@ -193,6 +194,7 @@ script.on_init(function()
     item_tradability_solver.init()
     item_ranks.init()
     quests.init()
+    trade_generator.init()
     hex_island.init()
     blueprints.init()
     dungeons.init()

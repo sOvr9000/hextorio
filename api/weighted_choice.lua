@@ -9,27 +9,52 @@ local weighted_choice = {}
 
 
 
----Create a new weighted choice object (which shallow copies the passed weights table)
+---Create a new weighted choice object from a  (which shallow copies the keys in the given weights)
 ---@param weights {[any]: number}
----@return WeightedChoice
+---@return WeightedChoice|nil
 function weighted_choice.new(weights)
     if not next(weights) then
         lib.log_error("weighted_choice.new: weights must not be empty")
+        return
     end
 
     local wc = {}
 
     local s = 0
     for item, weight in pairs(weights) do
-        -- shallow copy
-        wc[item] = weight
+        if weight > 0 then
+            -- shallow copy
+            wc[item] = weight
 
-        -- sum the weights for sampling
-        s = s + weight
+            -- sum the weights for sampling
+            s = s + weight
+        else
+            lib.log_error("weighted_choice.new: weight for " .. tostring(item) .. " is negative or zero; excluding item")
+        end
+    end
+
+    if not next(wc) then
+        lib.log_error("weighted_choice.new: cannot create empty weighted choice")
+        return
     end
 
     wc["__total_weight"] = s
     return wc
+end
+
+---Create a new weighted choice object from a list of weighted items.
+---@param weights_list {item: any, weight: number}[]
+---@return WeightedChoice|nil
+function weighted_choice.from_list(weights_list)
+    local weights = {}
+    for _, obj in pairs(weights_list) do
+        local item = obj.item
+        local weight = obj.weight
+        if item ~= nil and weight and weight > 0 then
+            weights[item] = (weights[item] or 0) + weight
+        end
+    end
+    return weighted_choice.new(weights)
 end
 
 -- Set an item's weight

@@ -159,14 +159,6 @@ function trades.register_events()
         storage.trades.sorting_batch_size = lib.runtime_setting_value_as_int "trade-sorting-batch-size"
     end)
 
-    event_system.register("runtime-setting-changed-base-trade-efficiency", function()
-        storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
-    end)
-
-    event_system.register("runtime-setting-changed-trade-complexity", function()
-        storage.trades.trade_complexity = lib.runtime_setting_value_as_string "trade-complexity"
-    end)
-
     event_system.register("entity-killed-entity", trades.on_entity_killed_entity)
     event_system.register("post-item-values-recalculated", trades.generate_surrounding_trades)
 end

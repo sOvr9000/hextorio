@@ -511,27 +511,29 @@ function dungeons.get_positions_for_maze(surface_id, start_pos, amount, max_dist
             local dist = axial.distance(pos, start_pos)
             weights[i] = 1 / math.max(1, dist * dist) -- dist is only zero on the start_pos
         end
+
         local wc = weighted_choice.new(weights)
+        if wc then
+            local idx = weighted_choice.choice(wc)
+            local cur = table.remove(open, idx)
 
-        local idx = weighted_choice.choice(wc)
-        local cur = table.remove(open, idx)
-
-        -- Add unvisited, unused adjacent hexes to the open list.
-        local adj_hexes = axial.get_adjacent_hexes(cur)
-        for _, adj in pairs(adj_hexes) do
-            local dist = axial.distance(adj, {q=0, r=0})
-            if dist >= min_dist and hex_island.is_land_hex(surface.name, adj) and axial.distance(adj, start_pos) <= max_dist then
-                local is_visited = hex_sets.contains(visited, adj)
-                local is_used = hex_sets.contains(used_hexes, adj)
-                if not is_visited and not is_used then
-                    table.insert(open, adj)
-                    hex_sets.add(visited, adj)
+            -- Add unvisited, unused adjacent hexes to the open list.
+            local adj_hexes = axial.get_adjacent_hexes(cur)
+            for _, adj in pairs(adj_hexes) do
+                local dist = axial.distance(adj, {q=0, r=0})
+                if dist >= min_dist and hex_island.is_land_hex(surface.name, adj) and axial.distance(adj, start_pos) <= max_dist then
+                    local is_visited = hex_sets.contains(visited, adj)
+                    local is_used = hex_sets.contains(used_hexes, adj)
+                    if not is_visited and not is_used then
+                        table.insert(open, adj)
+                        hex_sets.add(visited, adj)
+                    end
                 end
             end
-        end
 
-        -- Add the current hex to the positions list.
-        hex_sets.add(positions, cur)
+            -- Add the current hex to the positions list.
+            hex_sets.add(positions, cur)
+        end
     end
 
     return positions, open
@@ -690,7 +692,7 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
     local max_item_value = math.huge -- No upper limit. Allow for very rare but valuable loot.
     local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
 
-    if not next(better_loot_table.loot) then
+    if not better_loot_table or not next(better_loot_table.loot) then
         lib.log_error("dungeons.spawn_loot: dungeon loot value exceeded maximum (min_item_value = " .. min_item_value .. ")")
         return {}
     end
