@@ -5,6 +5,8 @@ Date: 15/5/26
     - Added spider networks (Sentient Spiders are now sentient).
   Features:
     - Added quest "Speed Demon" (post-Gleba).
+    - Added space platform starter pack which auto-deploys a Hexaclysm-class vessel.
+    - Added technology (post-Vulcanus) which unlocks the recipe for the Hexaclysm space platform starter pack.
   Minor Features:
     - Added command "/unlock-feature".
   Bugfixes:

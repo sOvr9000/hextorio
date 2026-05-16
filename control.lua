@@ -659,6 +659,13 @@ script.on_event(defines.events.on_player_driving_changed_state, function(event)
     event_system.trigger("player-driving-state-changed", player, event.entity)
 end)
 
+script.on_event(defines.events.on_trigger_created_entity, function(event)
+    local entity = event.entity
+    if not entity.valid then return end
+
+    event_system.trigger("trigger-created-entity", entity)
+end)
+
 script.on_configuration_changed(function(handler)
     local changes = handler.mod_changes.hextorio
     if changes and changes.old_version ~= changes.new_version then
