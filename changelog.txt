@@ -17,6 +17,8 @@ Date: 15/5/26
   Changes:
     - Changed completion requirements and rewards of the quest "The Factorio Must Grow".
     - Randomly generated trades in a hex core can no longer have shared inputs, to mitigate the chances of putting in an item only for it to execute a trade different from what you expected.
+  Locale:
+    - Removed orphaned entries in localization files.
 ---------------------------------------------------------------------------------------------------
 Version: 1.7.9
 Date: 13/5/26

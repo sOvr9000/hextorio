@@ -118,11 +118,6 @@ function hex_grid.register_events()
         local trade = trades.from_item_names(hex_core.surface.name, params[1], params[2], {target_efficiency = storage.trades.base_trade_efficiency, allow_nil_return = false})
         ---@cast trade Trade
 
-        -- if not trade then
-        --     player.print {"hextorio.command-trade-generation-failed"}
-        --     return
-        -- end
-
         hex_grid.add_trade(state, trade)
     end)
 
