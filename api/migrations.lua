@@ -173,12 +173,6 @@ function migrations.on_mod_updated(old_version, new_version)
         func()
         old_version = version_stepping[old_version]
     end
-
-    -- Reinitialize GUIs
-    lib.log("Reloading GUIs")
-    for _, player in pairs(game.players) do
-        gui.reinitialize_everything(player)
-    end
 end
 
 

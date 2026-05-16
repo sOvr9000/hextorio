@@ -671,7 +671,15 @@ script.on_configuration_changed(function(handler)
     if changes and changes.old_version ~= changes.new_version then
         migrations.on_mod_updated(changes.old_version, changes.new_version)
     end
+
     item_tradability_solver.solve()
+
+    -- Reinitialize GUIs
+    lib.log("Reloading GUIs")
+    for _, player in pairs(game.players) do
+        gui.reinitialize_everything(player)
+    end
+
     translations.init()
     event_system.init()
 end)
