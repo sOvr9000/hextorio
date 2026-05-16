@@ -252,7 +252,7 @@ return {
             conditions = {{type = "total-strongbox-level", progress_requirement = 10}, {type = "items-at-rank", value = 2, progress_requirement = 5}},
             rewards = {{type = "unlock-feature", value = "item-buff-enhancement"}, {type = "claim-free-hexes", value = {"nauvis", 3}}},
             prerequisites = {"exploration", "first-bronze-star"},
-            notes = {"strongbox-chance"},
+            notes = {"strongbox-chance", "strongboxes-removable"},
         },
         {
             name = "lockbreaker",
