@@ -15,6 +15,8 @@ Date: 15/5/26
     - Fixed that the "extra trade" effect from bronze ranked items wasn't applying to previously generated hex cores.
     - Fixed the vertical scroll bar from showing up in the middle of the screen on some monitors.
     - Fixed potential crashes related to updating other mods.
+  Balancing:
+    - Lowered the rocket capacity for each coin from 10 stacks to 100 items.
   Changes:
     - Changed completion requirements and rewards of the quest "The Factorio Must Grow".
     - Randomly generated trades in a hex core can no longer have shared inputs, to mitigate the chances of putting in an item only for it to execute a trade different from what you expected.
