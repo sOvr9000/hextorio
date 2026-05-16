@@ -1,8 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.1
 Date: 19/5/26
-  Bugfixes:
-    - Fixed crash when the trade generator doesn't have enough tradable items from which to sample (e.g. on Aquilo).
   Scripting:
     - Other mods can now overhaul the trade generator's shape sampling.
 ---------------------------------------------------------------------------------------------------
