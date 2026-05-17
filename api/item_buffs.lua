@@ -6,6 +6,7 @@ local item_ranks = require "api.item_ranks"
 local event_system = require "api.event_system"
 local inventories = require "api.inventories"
 local quests      = require "api.quests"
+local features = require "api.features"
 
 local item_buffs = {}
 
@@ -186,7 +187,7 @@ function item_buffs.register_events()
         if capsule_name:sub(1, 23) ~= "hexadic-resonator-tier-" then return end
 
         local feature_name = "item-buff-enhancement"
-        if not quests.is_feature_unlocked(feature_name) then
+        if not features.is_feature_unlocked(feature_name) then
             local quests_to_unlock = quests.get_quests_which_unlock(feature_name)
 
             local quest_str = {""}
@@ -695,7 +696,7 @@ function item_buffs._enhance_all_item_buffs_tick()
         storage.item_buffs.enhance_all.processing = false
         return
     end
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked) -- Check each time because the player can modify the coins they have available to spend while this processes over time.
     local item_names = storage.item_buffs.enhance_all.item_names
     local enhanced_items = storage.item_buffs.enhance_all.enhanced_items

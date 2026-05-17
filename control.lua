@@ -1,7 +1,6 @@
 
 require "util" -- For table.deepcopy()
 require "remotes"
-local trade_generator = require "api.trade_generator"
 
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
@@ -30,6 +29,8 @@ local passive_coin_buff = require "api.passive_coin_buff"
 local hex_rank = require "api.hex_rank"
 local gameplay_statistics = require "api.gameplay_statistics"
 local gsr = require "api.gameplay_statistics_recalculators"
+local trade_generator = require "api.trade_generator"
+local features = require "api.features"
 local item_value_solver = require "api.item_value_solver"
 local item_tradability_solver = require "api.item_tradability_solver"
 local translations = require "api.translations"
@@ -55,6 +56,7 @@ inventories.register_events()
 hex_rank.register_events()
 gameplay_statistics.register_events()
 gsr.register_events()
+features.register_events()
 item_value_solver.register_events()
 item_tradability_solver.register_events()
 translations.register_events()

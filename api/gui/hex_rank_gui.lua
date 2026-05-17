@@ -63,14 +63,7 @@ function hex_rank_gui.register_events()
     event_system.register_gui("gui-closed", "hex-rank", hex_rank_gui.hide_hex_rank)
 
     event_system.register("hex-rank-changed", hex_rank_gui.on_hex_rank_changed)
-
-    event_system.register("quest-reward-received", function(reward_type, value)
-        if reward_type == "unlock-feature" and value == "hex-rank" then
-            for _, player in pairs(game.connected_players) do
-                hex_rank_gui.reinitialize(player)
-            end
-        end
-    end)
+    event_system.register("feature-unlocked", hex_rank_gui.on_feature_unlocked)
 
     event_system.register("runtime-setting-changed-show-hex-rank-hud", function(player_index)
         local player = game.get_player(player_index)
@@ -384,6 +377,14 @@ function hex_rank_gui.on_hex_rank_changed(prev, new)
     for _, player in pairs(game.connected_players) do
         hex_rank_gui.update_hex_rank_hud(player, new)
         hex_rank_gui.update_hex_rank_gui(player)
+    end
+end
+
+---@param feature_name FeatureName
+function hex_rank_gui.on_feature_unlocked(feature_name)
+    if feature_name ~= "hex-rank" then return end
+    for _, player in pairs(game.connected_players) do
+        hex_rank_gui.reinitialize(player)
     end
 end
 

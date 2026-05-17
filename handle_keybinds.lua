@@ -1,11 +1,9 @@
 
 local lib = require "api.lib"
 local hex_grid = require "api.hex_grid"
-local quests = require "api.quests"
+local features = require "api.features"
 local gui = require "api.gui"
 local event_system = require "api.event_system"
-local axial        = require "api.axial"
-local dungeons     = require "api.dungeons"
 local hex_state_manager = require "api.hex_state_manager"
 
 
@@ -27,7 +25,7 @@ script.on_event("toggle-catalog", function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    if not quests.is_feature_unlocked "catalog" then return end
+    if not features.is_feature_unlocked "catalog" then return end
 
     if gui.core_gui.is_frame_open(player, "catalog") then
         gui.catalog.hide_catalog(player)
@@ -41,7 +39,7 @@ script.on_event("toggle-trade-overview", function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    if not quests.is_feature_unlocked "trade-overview" then return end
+    if not features.is_feature_unlocked "trade-overview" then return end
 
     if gui.core_gui.is_frame_open(player, "trade-overview") then
         gui.trade_overview.hide_trade_overview(player)
@@ -55,7 +53,7 @@ script.on_event("toggle-hex-rank", function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    if not quests.is_feature_unlocked "hex-rank" then return end
+    if not features.is_feature_unlocked "hex-rank" then return end
 
     if gui.core_gui.is_frame_open(player, "hex-rank") then
         gui.hex_rank.hide_hex_rank(player)
@@ -77,8 +75,8 @@ script.on_event("teleport-to-hex-core", function(event)
     if not hex_core then return end
     if hex_core.name ~= "hex-core" then return end
 
-    local is_tp_unlocked = quests.is_feature_unlocked "teleportation"
-    local is_cross_tp_unlocked = quests.is_feature_unlocked "teleportation-cross-planet"
+    local is_tp_unlocked = features.is_feature_unlocked "teleportation"
+    local is_cross_tp_unlocked = features.is_feature_unlocked "teleportation-cross-planet"
     if not is_tp_unlocked and not is_cross_tp_unlocked then
         player.print(lib.color_localized_string({"hextorio.teleportation-locked"}, "red"))
         return

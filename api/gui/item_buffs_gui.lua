@@ -1,13 +1,11 @@
 
-local sets = require "api.sets"
 local gui_stack = require "api.gui.gui_stack"
 local event_system = require "api.event_system"
 local core_gui     = require "api.gui.core_gui"
 local item_buffs = require "api.item_buffs"
 local item_ranks = require "api.item_ranks"
-local trades = require "api.trades"
 local lib = require "api.lib"
-local quests = require "api.quests"
+local features = require "api.features"
 
 local item_buffs_gui = {}
 
@@ -107,13 +105,13 @@ end
 function item_buffs_gui.update_item_buffs_frame(player)
     local frame = player.gui.screen["item-buffs"]
     if not frame then return end
-    if not quests.is_feature_unlocked "item-buffs" then return end
+    if not features.is_feature_unlocked "item-buffs" then return end
 
     local buff_table = frame["main-flow"]["right-frame"]["scroll-pane"]["buff-table"]
     buff_table.clear()
 
     local enhance_all = frame["main-flow"]["left-frame"]["button-flow"]["enhance-all"]
-    enhance_all.enabled = quests.is_feature_unlocked "enhance-all"
+    enhance_all.enabled = features.is_feature_unlocked "enhance-all"
 
     if enhance_all.enabled then
         enhance_all.tooltip = {"hextorio-gui.item-buff-enhance-all-tooltip"}

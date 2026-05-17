@@ -52,6 +52,7 @@
 ---| "entity-died"
 ---| "entity-killed-entity"
 ---| "entity-picked-up"
+---| "feature-unlocked"
 ---| "game-started"
 ---| "gameplay-statistic-changed"
 ---| "hex-claimed"

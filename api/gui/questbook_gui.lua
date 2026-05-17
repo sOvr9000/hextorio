@@ -4,6 +4,7 @@ local gui = require "api.gui.core_gui"
 local coin_tiers  = require "api.coin_tiers"
 local event_system = require "api.event_system"
 local quests = require "api.quests"
+local features = require "api.features"
 local gui_stack = require "api.gui.gui_stack"
 
 local questbook_gui = {}
@@ -393,7 +394,7 @@ function questbook_gui.add_reward_elements(elem, reward)
     local caption
     if reward_type == "unlock-feature" then
         ---@cast reward_value FeatureName
-        caption = quests.get_reward_localized_description(reward, "orange", "heading-2", quests.get_feature_localized_name(reward_value))
+        caption = quests.get_reward_localized_description(reward, "orange", "heading-2", features.get_feature_localized_name(reward_value))
     elseif reward_type == "receive-items" then
         caption = quests.get_reward_localized_description(reward)
     elseif type(reward_value) == "table" then
@@ -416,7 +417,7 @@ function questbook_gui.add_reward_elements(elem, reward)
         local feature_desc = reward_frame.add {
             type = "label",
             name = "feature-desc",
-            caption = lib.color_localized_string(quests.get_feature_localized_description(reward_value), "orange"),
+            caption = lib.color_localized_string(features.get_feature_localized_description(reward_value), "orange"),
         }
         feature_desc.style.single_line = false
         gui.auto_width(feature_desc)

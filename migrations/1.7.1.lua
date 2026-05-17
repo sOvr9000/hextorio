@@ -1,6 +1,6 @@
 
 local lib = require "api.lib"
-local quests = require "api.quests"
+local features = require "api.features"
 local coin_tiers = require "api.coin_tiers"
 local inventories = require "api.inventories"
 
@@ -69,7 +69,7 @@ return function()
         end
     end
 
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     for _, player in pairs(game.players) do
         local inv = lib.get_player_inventory(player)
         if inv and inv.valid then

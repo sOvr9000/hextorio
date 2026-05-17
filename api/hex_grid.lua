@@ -11,6 +11,7 @@ local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
 local coin_tiers = require "api.coin_tiers"
 local quests = require "api.quests"
+local features = require "api.features"
 local trades = require "api.trades"
 local item_ranks  = require "api.item_ranks"
 local dungeons = require "api.dungeons"
@@ -216,30 +217,24 @@ function hex_grid.register_events()
 
 
 
-    event_system.register("quest-reward-received", function(reward_type, value)
-        if reward_type == "unlock-feature" then
-            if value == "catalog" then
-                local all_trades = {}
-                for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
-                    for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
-                        if state.trades and state.claimed then
-                            for _, trade_id in pairs(state.trades) do
-                                table.insert(all_trades, trades.get_trade_from_id(trade_id))
-                            end
+    event_system.register("feature-unlocked", function(feature_name)
+        if feature_name == "catalog" then
+            local all_trades = {}
+            for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
+                for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
+                    if state.trades and state.claimed then
+                        for _, trade_id in pairs(state.trades) do
+                            table.insert(all_trades, trades.get_trade_from_id(trade_id))
                         end
                     end
                 end
-                trades.discover_items_in_trades(all_trades)
-            -- elseif value == "hexports" then
-            --     for surface_name, _ in pairs(storage.hex_grid.surface_hexes) do
-            --         for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface_name)) do
-            --             if state.claimed then
-            --                 hex_grid.spawn_hexport(state, true)
-            --             end
-            --         end
-            --     end
             end
-        elseif reward_type == "claim-free-hexes" then
+            trades.discover_items_in_trades(all_trades)
+        end
+    end)
+
+    event_system.register("quest-reward-received", function(reward_type, value)
+        if reward_type == "claim-free-hexes" then
             hex_grid.add_free_hex_claims(value[1], value[2])
         elseif reward_type == "reduce-biters" then
             hex_grid.reduce_biters(value * 0.01)
@@ -440,7 +435,7 @@ function hex_grid.add_trade(hex_core_state, trade)
 
     hex_grid.set_trade_allowed_qualities(hex_core, trade)
 
-    if hex_core_state.claimed and quests.is_feature_unlocked "catalog" then
+    if hex_core_state.claimed and features.is_feature_unlocked "catalog" then
         trades.discover_items_in_trades {trade}
     end
 
@@ -1852,7 +1847,7 @@ function hex_grid.can_claim_hex(player, surface, hex_pos, allow_nonland, check_c
                 return false
             end
 
-            player_inventory_coins = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+            player_inventory_coins = inventories.get_coin_from_inventory(inv, nil, features.is_feature_unlocked "piggy-bank")
         end
 
         if coin_tiers.lt(player_inventory_coins, coin) then
@@ -1925,7 +1920,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
         if not spent_last_free_claim and hex_grid.get_free_hex_claims(surface_name) == 0 and not lib.is_player_editor_like(by_player) then
             local inv = lib.get_player_inventory(by_player)
             if inv then
-                local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+                local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
                 local cost = state.claim_price
                 if not cost then
                     -- This shouldn't happen, but if some other rare edge case arises, this will prevent a crash.
@@ -1966,7 +1961,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     end
 
     if state.hex_core and state.hex_core.valid then
-        if quests.is_feature_unlocked "hexports" then
+        if features.is_feature_unlocked "hexports" then
             hex_grid.spawn_hexport(state)
         end
         hex_grid.try_generate_strongbox(state)
@@ -1979,7 +1974,7 @@ function hex_grid.claim_hex(surface_id, hex_pos, by_player, allow_nonland, spend
     hex_grid.fill_corners_between_claimed_hexes(surface, hex_pos, fill_tile_name)
 
     -- Add trade items to catalog list
-    if quests.is_feature_unlocked "catalog" then
+    if features.is_feature_unlocked "catalog" then
         trades.discover_items_in_trades(trades.convert_trade_id_array_to_trade_array(state.trades or {}))
     end
 
@@ -4421,7 +4416,7 @@ end
 ---@param train_stop LuaEntity
 function hex_grid.on_train_arrived_at_stop(train, train_stop)
     if not storage.train_trading.allow_two_headed_trains and lib.is_train_two_headed(train) then return end
-    if not quests.is_feature_unlocked "locomotive-trading" then return end
+    if not features.is_feature_unlocked "locomotive-trading" then return end
 
     local transformation = terrain.get_surface_transformation(train_stop.surface)
     local hex_pos = axial.get_hex_containing(train_stop.position, transformation.scale, transformation.rotation)
@@ -4475,7 +4470,7 @@ function hex_grid.on_strongbox_killed(sb_entity)
     gameplay_statistics.increment "total-strongbox-level"
 
     -- Include offline players
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     for _, player in pairs(game.players) do
         if is_piggy_bank_unlocked then
             -- This is to be done without normalizing the entire inventory, to avoid annoying situations where the coins you're about to grab suddenly transfer themselves into your piggy bank.

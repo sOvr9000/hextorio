@@ -4,7 +4,7 @@ local axial = require "api.axial"
 local terrain = require "api.terrain"
 local hex_grid = require "api.hex_grid"
 local coin_tiers = require "api.coin_tiers"
-local quests = require "api.quests"
+local features = require "api.features"
 local inventories = require "api.inventories"
 local spider_network = require "api.spider_network"
 
@@ -24,7 +24,7 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
     if not reverse then
         local inv = lib.get_player_inventory(player)
         if inv then
-            player_inventory_coins = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+            player_inventory_coins = inventories.get_coin_from_inventory(inv, nil, features.is_feature_unlocked "piggy-bank")
         end
     end
 
@@ -61,7 +61,7 @@ local function on_claim_tool_used(player, surface, entities, area, reverse, alt)
 end
 
 local function on_delete_core_tool_used(player, entities)
-    if not quests.is_feature_unlocked "hex-core-deletion" then
+    if not features.is_feature_unlocked "hex-core-deletion" then
         player.print({"hextorio.core-deletion-not-unlocked"})
         return
     end
@@ -69,7 +69,7 @@ local function on_delete_core_tool_used(player, entities)
     local inv = lib.get_player_inventory(player)
     if not inv then return end
 
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     local failed = false
     for _, e in pairs(entities) do
         if e.name == "hex-core" then
@@ -92,7 +92,7 @@ local function on_delete_core_tool_used(player, entities)
 end
 
 local function on_hexport_tool_used(player, entities, reverse)
-    if not quests.is_feature_unlocked "hexports" then
+    if not features.is_feature_unlocked "hexports" then
         player.print {"hextorio.hexports-not-unlocked"}
         return
     end
@@ -119,7 +119,7 @@ end
 ---@param entities LuaEntity[]
 ---@param reverse boolean
 local function on_spider_network_tool_used(player, entities, reverse)
-    if not quests.is_feature_unlocked "spider-network" then
+    if not features.is_feature_unlocked "spider-network" then
         player.print {"hextorio.spider-network-not-unlocked"}
         return
     end

@@ -2,6 +2,7 @@
 local lib = require "api.lib"
 local event_system = require "api.event_system"
 local sets         = require "api.sets"
+local features     = require "api.features"
 local gameplay_statistics = require "api.gameplay_statistics"
 
 local quests = {}
@@ -18,28 +19,6 @@ local quests = {}
 ---| "reduce-biters"
 ---| "all-trades-productivity"
 ---| "receive-spaceship"
-
----@alias FeatureName
----| "trade-overview"
----| "catalog"
----| "hex-rank"
----| "hexports"
----| "supercharging"
----| "resource-conversion"
----| "quantum-bazaar"
----| "trade-configuration"
----| "item-buffs"
----| "teleportation"
----| "teleportation-cross-planet"
----| "hex-core-deletion"
----| "generator-mode"
----| "sink-mode"
----| "locomotive-trading"
----| "quick-trading"
----| "item-buff-enhancement"
----| "enhance-all"
----| "piggy-bank"
----| "spider-network"
 
 ---@alias SingleQuestConditionValue string|number
 ---@alias SingleQuestRewardValue string|number|ItemStackIdentification
@@ -124,32 +103,6 @@ function quests.register_events()
         else
             lib.log_error("Couldn't find quest to unlock trade overview")
         end
-    end)
-
-    event_system.register("command-unlock-feature", function(player, params)
-        local feature_name = params[1]
-        if not feature_name then return end
-
-        local found = false
-        for _, quest in pairs(storage.quests.quests) do
-            for _, reward in pairs(quest.rewards) do
-                if reward.type == "unlock-feature" and reward.value == feature_name then
-                    found = true
-                    break
-                end
-            end
-            if found then
-                break
-            end
-        end
-
-        if not found then
-            player.print {"hextorio.command-invalid-feature", feature_name}
-            return
-        end
-
-        quests.unlock_feature(feature_name)
-        player.print {"hextorio.command-feature-unlocked", lib.color_localized_string(quests.get_feature_localized_name(feature_name), "orange", "heading-1")}
     end)
 
     event_system.register("entity-killed-entity", quests.on_entity_killed_entity)
@@ -430,14 +383,18 @@ end
 ---@return QuestReward|nil
 function quests.new_reward(params)
     if not params.type then
-        lib.log_error("Reward must have a type")
+        error("Reward must have a type")
         return
     end
+
     local reward = {
         type = params.type,
         value = params.value, -- can be nil
         notes = params.notes, -- can be nil
     }
+
+    local reward_value = reward.value
+
     local constant_notes = storage.quests.notes_per_reward_type[reward.type]
     if constant_notes then
         if not reward.notes then
@@ -448,9 +405,11 @@ function quests.new_reward(params)
             end
         end
     end
-    if reward.type == "unlock-feature" and not reward.value then
-        error("Reward of type \"unlock-feature\" must have a value")
+
+    if reward.type == "unlock-feature" and (type(reward_value) ~= "string" or not features.is_valid_feature_name(reward_value)) then
+        error("Reward of type \"unlock-feature\" must have a value that is a valid FeatureName")
     end
+
     return reward
 end
 
@@ -496,6 +455,7 @@ function quests.calculate_quest_order()
         quest.order = 0
     end
 
+    -- TODO: maybe switch to using BFS
     local visited = {}
     local function dfs(quest)
         if visited[quest.name] then return end
@@ -524,7 +484,7 @@ function quests.calculate_quest_order()
 
     dfs(quests.get_quest_from_name("ground-zero"))
 
-    -- Need to figure out why everything's still zero:
+    -- (TODO) Need to figure out why everything's still zero:
     -- for _, quest in pairs(storage.quests.quests) do
     --     log(quest.name .. " -> " .. quest.order)
     -- end
@@ -697,18 +657,6 @@ function quests.get_localized_note(note_name)
     return {"questbook-note." .. note_name}
 end
 
----@param feature_name FeatureName
----@return {[1]: string}
-function quests.get_feature_localized_name(feature_name)
-    return {"feature-name." .. feature_name}
-end
-
----@param feature_name FeatureName
----@return {[1]: string}
-function quests.get_feature_localized_description(feature_name)
-    return {"feature-description." .. feature_name}
-end
-
 ---@param quest QuestIdentification
 ---@return boolean
 function quests.is_complete(quest)
@@ -770,10 +718,12 @@ end
 ---Process the obtainment of a quest reward.
 ---@param reward QuestReward
 ---@param from_quest Quest|nil
-function quests.give_reward(reward, from_quest, trigger_reward_received)
-    if reward.type == "unlock-feature" then
-        storage.quests.unlocked_features[reward.value] = true
-    elseif reward.type == "receive-items" then
+function quests.give_reward(reward, from_quest)
+    local reward_type = reward.type
+    local reward_value = reward.value
+    if reward_type == "unlock-feature" and type(reward_value) == "string" then
+        features.unlock_feature(reward_value)
+    elseif reward_type == "receive-items" then
         if from_quest then
             for _, player in pairs(game.players) do
                 if lib.player_is_waiting_to_respawn(player) then
@@ -787,7 +737,7 @@ function quests.give_reward(reward, from_quest, trigger_reward_received)
         end
     end
 
-    event_system.trigger("quest-reward-received", reward.type, reward.value)
+    event_system.trigger("quest-reward-received", reward_type, reward_value)
 end
 
 ---Dish out the rewards of a quest.
@@ -882,9 +832,9 @@ function quests.print_quest_completion(quest)
         local s = {"", "\n"}
         if reward.type == "unlock-feature" then
             ---@cast reward_value FeatureName
-            table.insert(s, lib.color_localized_string(quests.get_feature_localized_name(reward_value), "orange", "heading-1"))
+            table.insert(s, lib.color_localized_string(features.get_feature_localized_name(reward_value), "orange", "heading-1"))
             table.insert(s, " ")
-            table.insert(s, lib.color_localized_string(quests.get_feature_localized_description(reward_value), "gray"))
+            table.insert(s, lib.color_localized_string(features.get_feature_localized_description(reward_value), "gray"))
         elseif reward.type == "receive-items" then
             ---@cast reward_value ItemStackIdentification[]
             local item_imgs = {}
@@ -946,10 +896,11 @@ function quests.print_quest_completion(quest)
     end
 end
 
--- Check if all conditions are satisfied.
+---Check if all conditions are satisfied.
 ---@param quest QuestIdentification
-function quests.check_quest_completion(quest)
+function quests.try_complete_quest(quest)
     if quests.is_complete(quest) then return end
+
     for _, condition in pairs(quest.conditions) do
         if condition.progress < condition.progress_requirement then
             return
@@ -985,7 +936,7 @@ function quests.set_progress(quest, condition, amount)
     if quests.is_complete(quest) then return end
     condition.progress = math.max(0, math.min(condition.progress_requirement, amount))
     if condition.progress >= condition.progress_requirement then
-        quests.check_quest_completion(quest)
+        quests.try_complete_quest(quest)
     end
 end
 
@@ -1030,18 +981,6 @@ function quests.on_gameplay_statistic_changed(stat_type, stat_value, prev_value,
             end
         end
     end
-end
-
----Return whether a given feature has been unlocked by any quest.
----@param feature_name FeatureName
-function quests.is_feature_unlocked(feature_name)
-    return storage.quests.unlocked_features[feature_name] == true
-end
-
----@param feature_name FeatureName
-function quests.unlock_feature(feature_name)
-    storage.quests.unlocked_features[feature_name] = true
-    event_system.trigger("quest-reward-received", "unlock-feature", feature_name)
 end
 
 ---Reveal a quest, making it visible in the questbook.

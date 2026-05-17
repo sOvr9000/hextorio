@@ -1,6 +1,6 @@
 
 local event_system = require "api.event_system"
-local quests = require "api.quests"
+local features = require "api.features"
 
 local tray_gui = {}
 
@@ -50,8 +50,7 @@ local BUTTON_DEFS = {
 
 
 function tray_gui.register_events()
-    event_system.register("quest-reward-received", function(reward_type, value)
-        if reward_type ~= "unlock-feature" then return end
+    event_system.register("feature-unlocked", function(feature_name)
         for _, player in pairs(game.players) do
             tray_gui.update_button_states(player)
         end
@@ -124,7 +123,7 @@ end
 ---@param elem LuaGuiElement
 ---@param def TrayButtonDefinition
 function tray_gui._update_button_state(elem, def)
-    if def.feature == nil or quests.is_feature_unlocked(def.feature) then
+    if def.feature == nil or features.is_feature_unlocked(def.feature) then
         elem.enabled = true
         elem.tooltip = def.tooltip
     else

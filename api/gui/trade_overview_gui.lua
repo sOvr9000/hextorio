@@ -4,7 +4,7 @@ local gui = require "api.gui.core_gui"
 local trades = require "api.trades"
 local sets = require "api.sets"
 local event_system = require "api.event_system"
-local quests = require "api.quests"
+local features = require "api.features"
 local gui_stack = require "api.gui.gui_stack"
 local core_gui = require "api.gui.core_gui"
 local trades_gui = require "api.gui.trades_gui"
@@ -1074,7 +1074,7 @@ function trade_overview_gui.on_trade_sorting_complete(player, sorted_lookup, sor
         quality_to_show = "normal",
         show_productivity_info = false,
         expanded = false,
-        is_configuration_unlocked = quests.is_feature_unlocked "trade-configuration",
+        is_configuration_unlocked = features.is_feature_unlocked "trade-configuration",
 
         batched = true,
         table_batch_def = {
@@ -1151,7 +1151,7 @@ function trade_overview_gui.on_trade_item_clicked(player, element, item_name, is
 end
 
 function trade_overview_gui.on_catalog_trade_overview_clicked(player, item_name, as_input)
-    if not quests.is_feature_unlocked "trade-overview" then return end
+    if not features.is_feature_unlocked "trade-overview" then return end
     local filter = trade_overview_gui.get_player_trade_overview_filter(player)
 
     if as_input then

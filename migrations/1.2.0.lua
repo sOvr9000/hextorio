@@ -2,6 +2,7 @@
 local lib = require "api.lib"
 local trades = require "api.trades"
 local quests = require "api.quests"
+local features = require "api.features"
 local hex_grid = require "api.hex_grid"
 local hex_state_manager = require "api.hex_state_manager"
 local dungeons = require "api.dungeons"
@@ -66,6 +67,6 @@ return function()
         end
     end
 
-    quests.unlock_feature "trade-configuration"
+    features.unlock_feature "trade-configuration"
     hex_grid.update_all_trades()
 end

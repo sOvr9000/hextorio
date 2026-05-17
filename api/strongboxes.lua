@@ -1,6 +1,6 @@
 
 local lib                 = require "api.lib"
-local quests              = require "api.quests"
+local features            = require "api.features"
 local coin_tiers          = require "api.coin_tiers"
 local piggy_bank          = require "api.piggy_bank"
 local inventories         = require "api.inventories"
@@ -153,7 +153,7 @@ function strongboxes.dish_out_rewards_retro(net_coins_diff)
     local coin_to_insert = coin_tiers.from_base_value(coin_diff)
 
     -- TODO: This is repeated code from hex_grid.on_strongbox_killed().  Put this coin insertion logic in one place and reuse it.
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     for _, player in pairs(game.players) do
         if is_piggy_bank_unlocked then
             -- This is to be done without normalizing the entire inventory, to avoid annoying situations where the coins you're about to grab suddenly transfer themselves into your piggy bank.

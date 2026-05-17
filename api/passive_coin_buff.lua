@@ -1,8 +1,7 @@
 
-local lib         = require "api.lib"
 local coin_tiers = require "api.coin_tiers"
 local inventories = require "api.inventories"
-local quests      = require "api.quests"
+local features = require "api.features"
 local piggy_bank  = require "api.piggy_bank"
 local gameplay_statistics = require "api.gameplay_statistics"
 
@@ -26,7 +25,7 @@ function passive_coin_buff.process_accumulation()
     local coin = passive_coin_buff.calculate_passive_gain(ticks_since_last_processing)
     if coin_tiers.is_negative(coin) or coin_tiers.is_zero(coin) then return end
 
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     for _, player in pairs(game.players) do
         if is_piggy_bank_unlocked then
             -- This is to be done without normalizing the entire inventory, to avoid annoying situations where the coins you're about to grab suddenly transfer themselves into your piggy bank.

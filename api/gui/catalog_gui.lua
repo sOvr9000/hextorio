@@ -8,7 +8,7 @@ local item_ranks = require "api.item_ranks"
 local trades = require "api.trades"
 local sets = require "api.sets"
 local event_system = require "api.event_system"
-local quests = require "api.quests"
+local features = require "api.features"
 local item_buffs = require "api.item_buffs"
 local gui_stack = require "api.gui.gui_stack"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
@@ -356,7 +356,7 @@ function catalog_gui.build_header(player, rank_obj, frame)
         direction = "horizontal",
     }
 
-    local show_buffs = quests.is_feature_unlocked "item-buffs"
+    local show_buffs = features.is_feature_unlocked "item-buffs"
 
     -- Display only discovered items so that the player can view them in the catalog.
     local elem_filter_names = {}
@@ -390,7 +390,7 @@ function catalog_gui.build_header(player, rank_obj, frame)
         open_in_trade_overview.tooltip = {"hextorio-gui.open-in-trade-overview-output"}
     end
 
-    if not quests.is_feature_unlocked "trade-overview" then
+    if not features.is_feature_unlocked "trade-overview" then
         open_in_trade_overview.enabled = false
     end
 
@@ -427,7 +427,7 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
     })
     bonuses_label.style.font = "heading-1"
 
-    if not quests.is_feature_unlocked "item-buffs" or rank_obj.rank < 2 or not next(buffs) then return end
+    if not features.is_feature_unlocked "item-buffs" or rank_obj.rank < 2 or not next(buffs) then return end
     item_buffs.fetch_settings()
 
     local item_buff_flow = frame.add {
@@ -437,7 +437,7 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
     }
 
     local is_buff_unlocked = item_buffs.is_unlocked(selection.item_name)
-    local is_enhancement_unlocked = quests.is_feature_unlocked "item-buff-enhancement"
+    local is_enhancement_unlocked = features.is_feature_unlocked "item-buff-enhancement"
     local item_buff_level = item_buffs.get_item_buff_level(selection.item_name)
     local cost = item_buffs.get_item_buff_cost(selection.item_name)
 
@@ -974,7 +974,7 @@ function catalog_gui.get_max_purchaseable_quantum_bazaar_stack(player)
 
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
 
-    local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+    local inv_coin = inventories.get_coin_from_inventory(inv, nil, features.is_feature_unlocked "piggy-bank")
     local purchaseable = math.floor(coin_tiers.divide_coins(inv_coin, coin_tiers.from_base_value(item_value / (storage.item_values.base_coin_value or 10))))
 
     return purchaseable
@@ -1005,7 +1005,7 @@ function catalog_gui.handle_quantum_bazaar_stack_purchase(player, count)
     local item_value = item_values.get_item_value(player.character.surface.name, selection.item_name, true, selection.bazaar_quality)
     local total_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value * count / (storage.item_values.base_coin_value or 10)))
 
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(total_coin, inv_coin) then
         -- This should no longer happen, but it's here just in case.
@@ -1050,7 +1050,7 @@ function catalog_gui.on_item_buff_button_click(player, elem)
     item_buffs.fetch_settings()
     local selection = catalog_gui.get_catalog_selection(player)
     local cost = item_buffs.get_item_buff_cost(selection.item_name)
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
 
     if coin_tiers.gt(cost, inv_coin) then
@@ -1171,7 +1171,7 @@ function catalog_gui.update_quantum_bazaar(player)
 
     local inv = lib.get_player_inventory(player)
     if inv then
-        local inv_coin = inventories.get_coin_from_inventory(inv, nil, quests.is_feature_unlocked "piggy-bank")
+        local inv_coin = inventories.get_coin_from_inventory(inv, nil, features.is_feature_unlocked "piggy-bank")
         no_coins_label.visible = coin_tiers.is_zero(inv_coin)
     end
 
@@ -1206,7 +1206,7 @@ function catalog_gui.on_quantum_bazaar_sell_inventory_clicked(player, elem)
 
     local received_coin = coin_tiers.ceil(inventories.get_total_coin_value(player.character.surface.name, inv, 5))
     inventories.remove_items_of_rank(inv, 5)
-    inventories.add_coin_to_inventory(inv, received_coin, nil, quests.is_feature_unlocked "piggy-bank")
+    inventories.add_coin_to_inventory(inv, received_coin, nil, features.is_feature_unlocked "piggy-bank")
 
     catalog_gui.update_catalog_inspect_frame(player)
 end
@@ -1234,7 +1234,7 @@ function catalog_gui.on_quantum_bazaar_sell_in_hand_clicked(player, elem)
     local item_value = item_values.get_item_value(player.character.surface.name, item_stack.name, true, item_stack.quality.name) * item_stack.count
     local received_coin = coin_tiers.ceil(coin_tiers.from_base_value(item_value / (storage.item_values.base_coin_value or 10)))
 
-    inventories.add_coin_to_inventory(inv, received_coin, nil, quests.is_feature_unlocked "piggy-bank")
+    inventories.add_coin_to_inventory(inv, received_coin, nil, features.is_feature_unlocked "piggy-bank")
     item_stack.clear()
 
     catalog_gui.update_catalog_inspect_frame(player)

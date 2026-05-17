@@ -813,7 +813,7 @@ end
 ---@param item_name string
 ---@return boolean
 function trades.mark_as_discovered(item_name)
-    -- if not quests.is_feature_unlocked "catalog" then return false end
+    -- if not features.is_feature_unlocked "catalog" then return false end
     if not lib.is_catalog_item(nil, item_name) or trades.is_item_discovered(item_name) then return false end
     storage.trades.discovered_items[item_name] = true
     return true

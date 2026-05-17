@@ -9,7 +9,7 @@ local coin_tiers  = require "api.coin_tiers"
 local trades = require "api.trades"
 local event_system = require "api.event_system"
 local gameplay_statistics = require "api.gameplay_statistics"
-local quests = require "api.quests"
+local features = require "api.features"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
 local trades_gui = require "api.gui.trades_gui"
 local inventories = require "api.inventories"
@@ -306,7 +306,7 @@ function hex_core_gui.update_hex_core(player)
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
 
-    frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion"
+    frame["hex-control-flow"]["delete-core"].visible = features.is_feature_unlocked "hex-core-deletion"
     frame["hex-control-flow"]["quick-trade"].visible = hex_core_gui.is_quick_trade_valid(player, state)
     frame["hex-control-flow"]["delete-strongbox-button"].visible = state.strongboxes ~= nil and #state.strongboxes > 0
     frame["hex-control-flow"]["delete-strongbox-button"].enabled = true
@@ -331,12 +331,12 @@ function hex_core_gui.update_hex_core(player)
         frame["claimed-by"].visible = true
         frame["claimed-by"].caption = {"hex-core-gui.claimed-by", claimed_by_name, lib.ticks_to_string(claimed_timestamp)}
 
-        local locomotive_trading_unlocked = quests.is_feature_unlocked "locomotive-trading"
+        local locomotive_trading_unlocked = features.is_feature_unlocked "locomotive-trading"
 
         frame["hex-control-flow"].visible = true
         frame["hex-control-flow"]["stats"].tooltip = lib.get_str_from_hex_core_stats(hex_grid.get_hex_core_stats(state))
-        frame["hex-control-flow"]["teleport"].visible = (quests.is_feature_unlocked "teleportation" or quests.is_feature_unlocked "teleportation-cross-planet") and not lib.is_player_editor_like(player) and state.hex_core ~= nil and player.character ~= nil
-        frame["hex-control-flow"]["toggle-hexport"].visible = quests.is_feature_unlocked "hexports"
+        frame["hex-control-flow"]["teleport"].visible = (features.is_feature_unlocked "teleportation" or features.is_feature_unlocked "teleportation-cross-planet") and not lib.is_player_editor_like(player) and state.hex_core ~= nil and player.character ~= nil
+        frame["hex-control-flow"]["toggle-hexport"].visible = features.is_feature_unlocked "hexports"
         frame["hex-control-flow"]["allow-locomotive-trading"].visible = locomotive_trading_unlocked
         frame["hex-control-flow"]["send-outputs-to-cargo-wagons"].visible = locomotive_trading_unlocked
 
@@ -363,7 +363,7 @@ function hex_core_gui.update_hex_core(player)
             frame["hex-control-flow"]["toggle-hexport"].sprite = "no-roboport"
         end
 
-        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and quests.is_feature_unlocked "supercharging"
+        frame["hex-control-flow"]["supercharge"].visible = not state.is_infinite and features.is_feature_unlocked "supercharging"
         if frame["hex-control-flow"]["supercharge"].visible then
             local cost = hex_grid.get_supercharge_cost(hex_core)
             frame["hex-control-flow"]["supercharge"].tooltip = {"",
@@ -375,7 +375,7 @@ function hex_core_gui.update_hex_core(player)
             }
         end
 
-        frame["hex-control-flow"]["convert-resources"].visible = quests.is_feature_unlocked "resource-conversion" and hex_grid.has_multiple_ore_types(state)
+        frame["hex-control-flow"]["convert-resources"].visible = features.is_feature_unlocked "resource-conversion" and hex_grid.has_multiple_ore_types(state)
         if frame["hex-control-flow"]["convert-resources"].visible then
             local cost = hex_grid.get_convert_resources_cost(hex_core)
             frame["hex-control-flow"]["convert-resources"].tooltip = {"",
@@ -388,7 +388,7 @@ function hex_core_gui.update_hex_core(player)
         end
 
         frame["hex-control-flow"]["delete-core"].enabled = true
-        frame["hex-control-flow"]["delete-core"].visible = quests.is_feature_unlocked "hex-core-deletion" and hex_grid.can_delete_hex_core(hex_core)
+        frame["hex-control-flow"]["delete-core"].visible = features.is_feature_unlocked "hex-core-deletion" and hex_grid.can_delete_hex_core(hex_core)
         if frame["hex-control-flow"]["delete-core"].visible then
             local cost = hex_grid.get_delete_core_cost(hex_core)
             frame["hex-control-flow"]["delete-core"].tooltip = {"",
@@ -400,8 +400,8 @@ function hex_core_gui.update_hex_core(player)
             }
         end
 
-        frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil and quests.is_feature_unlocked "sink-mode"
-        frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil and quests.is_feature_unlocked "generator-mode"
+        frame["hex-control-flow"]["sink-mode"].visible = state.mode == nil and features.is_feature_unlocked "sink-mode"
+        frame["hex-control-flow"]["generator-mode"].visible = state.mode == nil and features.is_feature_unlocked "generator-mode"
 
         local next_quality = hex_core.quality.next
         if next_quality then
@@ -493,7 +493,7 @@ function hex_core_gui.update_hex_core(player)
 
         show_productivity_info = true,
         expanded = true,
-        is_configuration_unlocked = quests.is_feature_unlocked "trade-configuration",
+        is_configuration_unlocked = features.is_feature_unlocked "trade-configuration",
     })
 
     hex_core_gui.update_hex_core_resources(player)
@@ -576,7 +576,7 @@ end
 function hex_core_gui.is_quick_trade_valid(player, state)
     if not state.claimed then return false end
     if not player.character then return false end
-    if not quests.is_feature_unlocked "quick-trading" then return false end
+    if not features.is_feature_unlocked "quick-trading" then return false end
     if not state.hex_core or not state.hex_core.valid or not state.trades or not next(state.trades) then return false end
     if not player.can_reach_entity(state.hex_core) then return false end
     if not player.character.can_reach_entity(state.hex_core) then return false end
@@ -628,7 +628,7 @@ function hex_core_gui.on_add_to_filters_button_click(player, element)
 end
 
 function hex_core_gui.on_trade_item_clicked(player, element)
-    if not quests.is_feature_unlocked "catalog" then return end
+    if not features.is_feature_unlocked "catalog" then return end
 
     local hex_core = lib.get_player_opened_entity(player)
     if not hex_core then return end
@@ -675,7 +675,7 @@ function hex_core_gui.on_convert_resources_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_convert_resources_cost(hex_core)
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
@@ -696,7 +696,7 @@ function hex_core_gui.on_upgrade_quality_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_quality_upgrade_cost(hex_core)
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
@@ -722,7 +722,7 @@ function hex_core_gui.on_supercharge_button_click(player, element)
     if not inv then return end
 
     local coin = hex_grid.get_supercharge_cost(hex_core)
-    local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+    local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
     local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
     if coin_tiers.gt(coin, inv_coin) then
         player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))
@@ -780,7 +780,7 @@ function hex_core_gui.on_teleport_button_click(player, element)
         return
     end
 
-    if not quests.is_feature_unlocked "teleportation-cross-planet" then
+    if not features.is_feature_unlocked "teleportation-cross-planet" then
         player.print(lib.color_localized_string({"hextorio.teleportation-cross-planet-locked"}, "red"))
         return
     end
@@ -818,7 +818,7 @@ function hex_core_gui.on_confirmation_button_click(player, element)
         if not inv then return end
 
         local coin = hex_grid.get_delete_core_cost(hex_core)
-        local is_piggy_bank_unlocked = quests.is_feature_unlocked "piggy-bank"
+        local is_piggy_bank_unlocked = features.is_feature_unlocked "piggy-bank"
         local inv_coin = inventories.get_coin_from_inventory(inv, nil, is_piggy_bank_unlocked)
         if coin_tiers.gt(coin, inv_coin) then
             player.print(lib.color_localized_string({"hextorio.cannot-afford-with-cost", coin_tiers.coin_to_text(coin), coin_tiers.coin_to_text(inv_coin)}, "red"))

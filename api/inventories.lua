@@ -11,7 +11,7 @@ local inventories = {}
 
 
 function inventories.register_events()
-    event_system.register("quest-reward-received", inventories.on_quest_reward_received)
+    event_system.register("feature-unlocked", inventories.on_feature_unlocked)
 end
 
 ---@param surface_name any
@@ -411,17 +411,13 @@ function inventories.transfer_coins_and_items(from_inv, from_use_piggy_bank, to_
     return transferred_items, transferred_coins, succeeded
 end
 
----@param reward_type QuestRewardType
----@param value any
-function inventories.on_quest_reward_received(reward_type, value)
-    if reward_type == "unlock-feature" then
-        if value == "piggy-bank" then
-            for _, player in pairs(game.players) do
-                local inv = player.get_main_inventory()
-                if inv then
-                    inventories.normalize_inventory(inv, true)
-                end
-            end
+---@param feature_name FeatureName
+function inventories.on_feature_unlocked(feature_name)
+    if feature_name ~= "piggy-bank" then return end
+    for _, player in pairs(game.players) do
+        local inv = player.get_main_inventory()
+        if inv then
+            inventories.normalize_inventory(inv, true)
         end
     end
 end

@@ -120,7 +120,7 @@ function spider_network.register_events()
     event_system.register("player-commanded-spiders", spider_network.on_player_commanded_spiders)
     event_system.register("entity-built", spider_network.on_entity_built)
     event_system.register("trade-processed", spider_network.on_trade_processed)
-    event_system.register("quest-reward-received", spider_network.on_quest_reward_received)
+    event_system.register("feature-unlocked", spider_network.on_feature_unlocked)
 end
 
 ---@return SpiderNetworkStorage
@@ -1545,12 +1545,9 @@ function spider_network.on_trade_processed(trade, total_removed, total_inserted)
     spider_network.cancel_orders_for_trade(trade.id)
 end
 
----@param reward_type QuestRewardType
----@param reward_value QuestRewardValue
-function spider_network.on_quest_reward_received(reward_type, reward_value)
-    if reward_type ~= "unlock-feature" then return end
-    if reward_value ~= "spider-network" then return end
-
+---@param feature_name FeatureName
+function spider_network.on_feature_unlocked(feature_name)
+    if feature_name ~= "spider-network" then return end
     spider_network.set_enabled(true)
 end
 

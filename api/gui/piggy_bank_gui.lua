@@ -5,7 +5,7 @@ local coin_tier_gui= require "api.gui.coin_tier_gui"
 local inventories  = require "api.inventories"
 local lib          = require "api.lib"
 local coin_tiers   = require "api.coin_tiers"
-local quests       = require "api.quests"
+local features = require "api.features"
 
 local piggy_bank_gui = {}
 
@@ -16,7 +16,7 @@ function piggy_bank_gui.register_events()
     event_system.register_gui("gui-clicked", "piggy-bank-deposit", piggy_bank_gui.on_piggy_bank_deposit_button_clicked)
 
     event_system.register("player-piggy-bank-changed", piggy_bank_gui.on_player_piggy_bank_changed)
-    event_system.register("quest-reward-received", piggy_bank_gui.on_quest_reward_received)
+    event_system.register("feature-unlocked", piggy_bank_gui.on_feature_unlocked)
 end
 
 ---@param player LuaPlayer
@@ -86,7 +86,7 @@ end
 function piggy_bank_gui.update_piggy_bank(player)
     local frame = piggy_bank_gui.get_or_create_piggy_bank_elem(player)
 
-    if not quests.is_feature_unlocked "piggy-bank" then
+    if not features.is_feature_unlocked "piggy-bank" then
         frame.visible = false
         return
     end
@@ -145,15 +145,11 @@ function piggy_bank_gui.on_piggy_bank_deposit_button_clicked(player, elem)
     inventories.remove_coin_from_inventory(inv, coins_in_inv, nil, false)
 end
 
----@param reward_type QuestRewardType
----@param value any
-function piggy_bank_gui.on_quest_reward_received(reward_type, value)
-    if reward_type == "unlock-feature" then
-        if value == "piggy-bank" then
-            for _, player in pairs(game.players) do
-                piggy_bank_gui.update_piggy_bank(player)
-            end
-        end
+---@param feature_name FeatureName
+function piggy_bank_gui.on_feature_unlocked(feature_name)
+    if feature_name ~= "piggy-bank" then return end
+    for _, player in pairs(game.players) do
+        piggy_bank_gui.update_piggy_bank(player)
     end
 end
 
