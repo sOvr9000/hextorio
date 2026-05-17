@@ -36,6 +36,7 @@ local translations = require "api.translations"
 local spider_control = require "api.spider_control"
 local spider_network = require "api.spider_network"
 local hex_pathfinding = require "api.hex_pathfinding"
+local trade_generator_tests = require "trade_generator_tests"
 
 migrations.load_handlers()
 
@@ -62,6 +63,7 @@ spider_control.register_events()
 spider_network.register_events()
 hex_pathfinding.register_events()
 trade_generator.register_events()
+trade_generator_tests.register_commands()
 
 gui.register_events()
 event_system.bind_gui_events()

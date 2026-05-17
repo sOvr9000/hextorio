@@ -8,6 +8,7 @@ local event_system = require "api.event_system"
 
 local trade_generator = {}
 
+local RANDOM_TRADE_ATTEMPTS = 10 -- Number of attempts to make when generating a random trade before giving up and returning nil.
 
 
 ---@class TentativeTrade Similar to a Trade, but during the process of its generation and before state initialization. Particularly, output item counts are nil until determined by the generator.
@@ -30,176 +31,11 @@ local trade_generator = {}
 ---@class TradeShapeWeightedItem
 ---@field num_inputs int
 ---@field num_outputs int
----@field weight number
-
-
-
-function trade_generator.register_events()
-    event_system.register("runtime-setting-changed-base-trade-efficiency", function()
-        storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
-    end)
-end
-
-function trade_generator.init()
-    local complexity = lib.runtime_setting_value_as_string "trade-complexity"
-    local weights = storage.trades.trade_shape_weights_lookup[complexity]
-    trade_generator.set_trade_shape_distribution(weights)
-end
-
----Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.
----
----Returns nil if the item names and params.target_efficiency do not allow for a valid solution.
----@param surface_name string
----@param input_item_names string[]
----@param output_item_names string[]
----@param params TradeGenerationParameters|nil
----@return TentativeTrade|nil
-function trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
-    if not params then params = {} end
-    trade_generator.set_trade_generation_parameter_defaults(params)
-
-    local surface = game.get_surface(surface_name)
-    if not surface then
-        lib.log_error("trade_generator.generate_from_item_names: Invalid surface name: " .. surface_name)
-        return
-    end
-
-    if lib.is_space_platform(surface) then
-        lib.log_error("trade_generator.generate_from_item_names: Attempting to create a trade for a space platform (illegal) with input_item_names = " .. serpent.line(input_item_names) .. ", output_item_names = " .. serpent.line(output_item_names))
-    end
-
-    if type(input_item_names) == "string" then
-        input_item_names = {input_item_names}
-    end
-    if type(output_item_names) == "string" then
-        output_item_names = {output_item_names}
-    end
-
-    for i = 1, #input_item_names do
-        if lib.is_coin(input_item_names[i]) then
-            input_item_names[i] = "hex-coin"
-        end
-    end
-    for i = 1, #output_item_names do
-        if lib.is_coin(output_item_names[i]) then
-            output_item_names[i] = "hex-coin"
-        end
-    end
-
-    local input_items = {}
-    for i, name in ipairs(input_item_names) do
-        input_items[i] = {name = name}
-    end
-    local output_items = {}
-    for i, name in ipairs(output_item_names) do
-        output_items[i] = {name = name}
-    end
-
-    ---@type TentativeTrade
-    local tentative = {
-        surface_name = surface_name,
-        input_items = input_items,
-        output_items = output_items,
-    }
-
-    local solved = trade_generator.solve_item_counts(surface_name, tentative, params)
-    if not solved and params.allow_nil_return then
-        return nil
-    end
-
-    return tentative
-end
-
----Generate a random trade for a hex by sampling item names near a given value, retrying until the result creates no simple two-trade loops with existing hex trades.
----
----Returns nil if a loop-free trade cannot be generated within the attempt limit.
----@param surface_name string
----@param existing_trades Trade[] The trades already belonging to the hex, used for loop detection.
----@param volume number The central item value for item name sampling.
----@param params TradeGenerationParameters|nil
----@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
----@param include_item string|nil An item name to be forcefully included in the trade.
----@return TentativeTrade|nil
-function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
-    if not params then
-        params = {}
-    else
-        params = table.deepcopy(params)
-    end
-    trade_generator.set_trade_generation_parameter_defaults(params)
-
-    ---@type (Trade|TentativeTrade)[]
-    local candidate_trades = table.deepcopy(existing_trades)
-    local slot = #candidate_trades + 1
-
-    local coin_type = storage.coin_tiers.COIN_NAMES[1]
-
-    -- Blacklist input items in existing trades (making the spider network order fulfillment less finicky)
-    -- Two trades in a hex core can still have overlapping inputs if the guaranteed trades around the spawn hex happen to be like that.
-    local blacklist = params.item_sampling_filters.blacklist
-    if not blacklist then
-        blacklist = {}
-        params.item_sampling_filters.blacklist = blacklist
-    end
-    for _, trade in pairs(candidate_trades) do
-        for _, input_item in pairs(trade.input_items) do
-            blacklist[input_item.name] = true
-        end
-    end
-
-    local attempts = 10
-    for _ = 1, attempts do
-        local input_item_names, output_item_names = trade_generator.generate_item_names(surface_name, volume, params, allow_untradable, include_item)
-
-        if not next(output_item_names) or not next(input_item_names) then
-            lib.log("trade_generator.generate_random: Not enough items centered around the value " .. volume)
-            return
-        end
-
-        local is_coin_trade = false
-        if #input_item_names == 1 and not next(output_item_names) then
-            table.insert(output_item_names, coin_type)
-            is_coin_trade = true
-        elseif #output_item_names == 1 and not next(input_item_names) then
-            table.insert(input_item_names, coin_type)
-            is_coin_trade = true
-        end
-
-        if not is_coin_trade and math.random() < lib.runtime_setting_value "coin-trade-chance" then
-            if math.random() < lib.runtime_setting_value "sell-trade-chance" then
-                local i = math.random(1, #output_item_names)
-                if #output_item_names[i] > 1 and output_item_names[i] == include_item then
-                    i = i % #output_item_names + 1
-                end
-                if output_item_names[i] ~= include_item then
-                    output_item_names[i] = coin_type
-                end
-            else
-                local i = math.random(1, #input_item_names)
-                if #input_item_names[i] > 1 and input_item_names[i] == include_item then
-                    i = i % #input_item_names + 1
-                end
-                if input_item_names[i] ~= include_item then
-                    input_item_names[math.random(1, #input_item_names)] = coin_type
-                end
-            end
-        end
-
-        local tentative = trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
-        if tentative then
-            candidate_trades[slot] = tentative
-            if not next(trade_loop_finder.find_simple_loops(candidate_trades)) then
-                return tentative
-            end
-        end
-    end
-
-    lib.log_error("trade_generator.generate_random: A trade failed to generate within " .. attempts .. " attempts.")
-end
+---@field weight number Weight of this shape. Set to 0 to disable shape selection.
 
 ---Replace undefined parameters with default values, modifying the table in place.
 ---@param params TradeGenerationParameters
-function trade_generator.set_trade_generation_parameter_defaults(params)
+local function set_trade_generation_parameter_defaults(params)
     if not params.target_efficiency then
         params.target_efficiency = 1
     end
@@ -225,17 +61,106 @@ function trade_generator.set_trade_generation_parameter_defaults(params)
     end
 end
 
----Sample random item names for inputs and outputs of a trade based on a central item value.
+---Set the distribution of trade shapes during procedural generation.
+---
+---For example, this makes 25% of all trades be 1-1, and the rest 3-2:
+---```
+---local weights = {
+---  {num_inputs = 1, num_outputs = 1, weight = 1},
+---  {num_inputs = 3, num_outputs = 2, weight = 3},
+---}
+---set_trade_shape_distribution(weights)
+---```
+---@param weights TradeShapeWeightedItem[]
+local function set_trade_shape_distribution(weights)
+    if type(weights) ~= "table" then
+        lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received: " .. tostring(weights))
+        return
+    end
+
+    for _, obj in pairs(weights) do
+        if
+               type(obj.num_inputs) ~= "number"
+            or type(obj.num_outputs) ~= "number"
+            or type(obj.weight) ~= "number"
+            or math.floor(obj.num_inputs) ~= obj.num_inputs
+            or math.floor(obj.num_outputs) ~= obj.num_outputs
+            or obj.num_inputs < 0
+            or obj.num_inputs > 3
+            or obj.num_outputs < 0
+            or obj.num_outputs > 3
+            or (obj.num_inputs == 0 and obj.num_outputs == 0)
+            or obj.weight < 0
+        then
+            lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received:\n" .. serpent.block(weights))
+            return
+        end
+    end
+
+    lib.log("New weights set for trade shapes: " .. serpent.block(weights))
+
+    storage.trades.trade_shape_weights = weights
+    storage.trades.trade_shape_weighted_choice = nil
+end
+
+---Get the distribution currently used for sampling trade shapes during procedural generation.
+---@return TradeShapeWeightedItem[]|nil
+local function get_trade_shape_distribution()
+    return storage.trades.trade_shape_weights
+end
+
+---@return int num_inputs, int num_outputs
+local function get_trade_shape()
+    -- Load cached weighted choice from storage.
+    local trade_shape_wc = storage.trades.trade_shape_weighted_choice
+
+    -- Build and cache weighted choice from configured trade-shape weights.
+    if not trade_shape_wc then
+        local weights = get_trade_shape_distribution()
+        if not weights then
+            lib.log_error("trade_generator.get_trade_shape: No weights set for trade shape sampling")
+            return 1, 1
+        end
+
+        local item_list = {}
+        for _, shape_item in pairs(weights) do
+            if shape_item.weight > 0 then
+                item_list[#item_list+1] = {
+                    item = {shape_item.num_inputs, shape_item.num_outputs},
+                    weight = shape_item.weight,
+                }
+            end
+        end
+
+        trade_shape_wc = weighted_choice.from_list(item_list)
+        if not trade_shape_wc then
+            lib.log_error("trade_generator.get_trade_shape: Failed to create a weighted choice for trades given weights:\n" .. serpent.block(weights))
+            return 1, 1
+        end
+
+        storage.trades.trade_shape_weighted_choice = trade_shape_wc
+    end
+
+    -- Sample one shape and fall back to 1-1 if unavailable. Should never happen since fallback exists above
+    if not trade_shape_wc then
+        return 1, 1
+    end
+
+    local item = weighted_choice.choice(trade_shape_wc)
+    return item[1], item[2]
+end
+
+---Sample random item names for inputs and outputs of a trade based on a central item value. Can generate coin trades
 ---@param surface_name string
 ---@param volume number The central item value.
 ---@param params TradeGenerationParameters|nil
 ---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
 ---@param include_item string|nil An item name to be forcefully included in the returned input or output items.
 ---@return string[], string[]
-function trade_generator.generate_item_names(surface_name, volume, params, allow_untradable, include_item)
+local function generate_item_names_for_trade(surface_name, volume, params, allow_untradable, include_item)
     if allow_untradable == nil then allow_untradable = false end
     if not params then params = {} end
-    trade_generator.set_trade_generation_parameter_defaults(params)
+    set_trade_generation_parameter_defaults(params)
 
     local ratio
     if params.target_efficiency >= 1 then
@@ -275,33 +200,229 @@ function trade_generator.generate_item_names(surface_name, volume, params, allow
         sets.add(set, item_name)
     end
 
-    local trade_items = sets.to_array(set)
-    if #trade_items < 2 then
-        lib.log_error("trade_generator.generate_item_names: Not enough items selected for trade")
+    local num_inputs, num_outputs = get_trade_shape()
+    local has_coin_input = num_inputs == 0
+    local has_coin_output = num_outputs == 0
+
+    local num_non_coin_inputs = has_coin_input and 0 or num_inputs
+    local num_non_coin_outputs = has_coin_output and 0 or num_outputs
+    local total_non_coin_items = num_non_coin_inputs + num_non_coin_outputs
+    if total_non_coin_items < 1 then
+        lib.log_error("trade_generator.generate_item_names: Invalid trade shape with no non-coin items: " .. serpent.line({num_inputs = num_inputs, num_outputs = num_outputs}))
         return {}, {}
     end
 
-    local num_inputs, num_outputs = trade_generator._generate_random_trade_shape()
-    local total_items = num_inputs + num_outputs
+    local trade_items = sets.to_array(set)
+    if #trade_items < total_non_coin_items then
+        lib.log_error("trade_generator.generate_item_names: Not enough items selected for trade shape " .. num_inputs .. "-" .. num_outputs .. "; selected=" .. #trade_items .. ", required=" .. total_non_coin_items)
+        return {}, {}
+    end
 
     if include_item then
-        -- Bring include_item to front indices that'll be used for populating input and output item lists.
+        -- Bring include_item to front indices that are used for non-coin item slots.
         local idx_old = lib.table_index(trade_items, include_item)
-        local idx_new = math.random(1, total_items)
+        local idx_new = math.random(1, total_non_coin_items)
         trade_items[idx_new], trade_items[idx_old] = trade_items[idx_old], trade_items[idx_new]
     end
 
     local input_item_names = {}
     local output_item_names = {}
-    for i = 1, total_items do
-        if i <= num_inputs then
-            input_item_names[i] = trade_items[i]
-        else
-            output_item_names[i - num_inputs] = trade_items[i]
+    local i = 1
+    for k = 1, num_non_coin_inputs do
+        input_item_names[k] = trade_items[i]
+        i = i + 1
+    end
+    for k = 1, num_non_coin_outputs do
+        output_item_names[k] = trade_items[i]
+        i = i + 1
+    end
+
+    if has_coin_input then input_item_names[1] = storage.coin_tiers.COIN_NAMES[1] end
+    if has_coin_output then output_item_names[1] = storage.coin_tiers.COIN_NAMES[1] end
+
+    return input_item_names, output_item_names
+end
+
+---Replace one non-include item in the trade with a coin according to coin-trade settings.
+---Returns true when an item was replaced.
+---@param input_item_names string[]
+---@param output_item_names string[]
+---@param include_item string|nil
+---@return boolean replaced
+local function inject_coins_into_trade(input_item_names, output_item_names, include_item)
+    local coin_name = storage.coin_tiers.COIN_NAMES[1]
+
+    local function get_replaceable_indices(items)
+        local indices = {}
+        for i, item_name in ipairs(items) do
+            if item_name ~= include_item and not lib.is_coin(item_name) then
+                indices[#indices + 1] = i
+            end
+        end
+        return indices
+    end
+
+    local input_indices = get_replaceable_indices(input_item_names)
+    local output_indices = get_replaceable_indices(output_item_names)
+
+    local prefer_output = math.random() < lib.runtime_setting_value_as_number "sell-trade-chance"
+
+    local target_items = prefer_output and output_item_names or input_item_names
+    local fallback_items = prefer_output and input_item_names or output_item_names
+    local target_indices = prefer_output and output_indices or input_indices
+    local fallback_indices = prefer_output and input_indices or output_indices
+
+    if #target_indices > 0 then
+        local idx = target_indices[math.random(1, #target_indices)]
+        target_items[idx] = coin_name
+        return true
+    end
+
+    if #fallback_indices > 0 then
+        local idx = fallback_indices[math.random(1, #fallback_indices)]
+        fallback_items[idx] = coin_name
+        return true
+    end
+
+    return false
+end
+
+--- 
+
+function trade_generator.register_events()
+    event_system.register("runtime-setting-changed-base-trade-efficiency", function()
+        storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
+    end)
+end
+
+function trade_generator.init()
+    local complexity = lib.runtime_setting_value_as_string "trade-complexity"
+    local weights = storage.trades.trade_shape_weights_lookup[complexity]
+    set_trade_shape_distribution(weights)
+end
+
+---Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.
+---
+---Returns nil if the item names and params.target_efficiency do not allow for a valid solution.
+---@param surface_name string
+---@param input_item_names string[]
+---@param output_item_names string[]
+---@param params TradeGenerationParameters|nil
+---@return TentativeTrade|nil
+function trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
+    if not params then params = {} end
+    set_trade_generation_parameter_defaults(params)
+
+    local surface = game.get_surface(surface_name)
+    if not surface then
+        lib.log_error("trade_generator.generate_from_item_names: Invalid surface name: " .. surface_name)
+        return
+    end
+
+    if lib.is_space_platform(surface) then
+        lib.log_error("trade_generator.generate_from_item_names: Attempting to create a trade for a space platform (illegal) with input_item_names = " .. serpent.line(input_item_names) .. ", output_item_names = " .. serpent.line(output_item_names))
+    end
+
+    -- TODO: this code does not match the expected types for the function. Should remove. 
+    if type(input_item_names) == "string" then
+        input_item_names = {input_item_names}
+    end
+    if type(output_item_names) == "string" then
+        output_item_names = {output_item_names}
+    end
+
+    local function is_empty(t) return type(t) ~= "table" or not next(t) end
+    local is_input_empty = is_empty(input_item_names)
+    local is_output_empty = is_empty(output_item_names)
+    if is_input_empty and is_output_empty then
+        lib.log_error("trade_generator.generate_from_item_names: Empty input and output item names received, with input_item_names = " .. serpent.line(input_item_names) .. ", output_item_names = " .. serpent.line(output_item_names))
+        return
+    end
+    if is_input_empty then input_item_names = {storage.coin_tiers.COIN_NAMES[1]} end
+    if is_output_empty then output_item_names = {storage.coin_tiers.COIN_NAMES[1]} end
+
+    for i = 1, #input_item_names do
+        if lib.is_coin(input_item_names[i]) then
+            input_item_names[i] = storage.coin_tiers.COIN_NAMES[1]
+        end
+    end
+    for i = 1, #output_item_names do
+        if lib.is_coin(output_item_names[i]) then
+            output_item_names[i] = storage.coin_tiers.COIN_NAMES[1]
         end
     end
 
-    return input_item_names, output_item_names
+    local input_items = {}
+    for i, name in ipairs(input_item_names) do
+        input_items[i] = {name = name}
+    end
+    local output_items = {}
+    for i, name in ipairs(output_item_names) do
+        output_items[i] = {name = name}
+    end
+
+    ---@type TentativeTrade
+    local tentative = {
+        surface_name = surface_name,
+        input_items = input_items,
+        output_items = output_items,
+    }
+
+    local solved = trade_generator.solve_item_counts(surface_name, tentative, params)
+    if not solved and params.allow_nil_return then
+        return nil
+    end
+
+    return tentative
+end
+
+---Generate a random trade for a hex by sampling item names near a given value, retrying until the result creates no simple two-trade loops with existing hex trades.
+---
+---Returns nil if a loop-free trade cannot be generated within the attempt limit.
+---@param surface_name string
+---@param existing_trades Trade[] The trades already belonging to the hex, used for loop detection.
+---@param volume number The central item value for item name sampling.
+---@param params TradeGenerationParameters|nil
+---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
+---@param include_item string|nil An item name to be forcefully included in the trade.
+---@return TentativeTrade|nil
+function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
+    params = params and table.deepcopy(params) or {}
+    set_trade_generation_parameter_defaults(params)
+
+    ---@type (Trade|TentativeTrade)[]
+    local candidate_trades = table.deepcopy(existing_trades)
+    local slot = #candidate_trades + 1
+
+    -- Blacklist input items in existing trades (making the spider network order fulfillment less finicky)
+    -- Two trades in a hex core can still have overlapping inputs if the guaranteed trades around the spawn hex happen to be like that.
+    if not params.item_sampling_filters.blacklist then
+        params.item_sampling_filters.blacklist = {}
+    end
+    for _, trade in pairs(candidate_trades) do
+        for _, input_item in pairs(trade.input_items) do
+            params.item_sampling_filters.blacklist[input_item.name] = true
+        end
+    end
+
+    for _ = 1, RANDOM_TRADE_ATTEMPTS do
+        local input_item_names, output_item_names = generate_item_names_for_trade(surface_name, volume, params, allow_untradable, include_item)
+        
+        if math.random() < lib.runtime_setting_value_as_number "coin-trade-chance" then
+            inject_coins_into_trade(input_item_names, output_item_names, include_item)
+        end
+
+        local tentative = trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
+
+        if tentative then
+            candidate_trades[slot] = tentative
+            if not next(trade_loop_finder.find_simple_loops(candidate_trades)) then
+                return tentative
+            end
+        end
+    end
+
+    lib.log_error("trade_generator.generate_random: A trade failed to generate within " .. RANDOM_TRADE_ATTEMPTS .. " attempts.")
 end
 
 ---Given a trade with undefined item counts, attempt to set the counts to the values which best preserve the specified input-to-output value ratio (`params.target_efficiency`).
@@ -311,7 +432,7 @@ end
 ---@return boolean solved Whether `params.target_efficiency` could be approximated with item counts while respecting item count constraints.
 function trade_generator.solve_item_counts(surface_name, trade, params)
     if not params then params = {} end
-    trade_generator.set_trade_generation_parameter_defaults(params)
+    set_trade_generation_parameter_defaults(params)
 
     -- Convert coins to lowest tier
     local coin_name = storage.coin_tiers.COIN_NAMES[1]
@@ -463,11 +584,11 @@ function trade_generator.solve_item_counts(surface_name, trade, params)
     total_output_value = new_total_output_value
 
     -- Special case: One of the sides of the trade consists of only coins (then this is a fast, exact calculation).
-    if #trade.input_items == 1 and trade.input_items[1].name == "hex-coin" then
+    if #trade.input_items == 1 and trade.input_items[1].name == storage.coin_tiers.COIN_NAMES[1] then
         -- Normally +0.5 to round, but this is +random() so that it chooses the closer value more often but sometimes the farther value to add variation.
         trade.input_items[1].count = math.max(1, math.floor(math.random() + total_output_value / (params.target_efficiency * input_item_values[1])))
         return true
-    elseif #trade.output_items == 1 and trade.output_items[1].name == "hex-coin" then
+    elseif #trade.output_items == 1 and trade.output_items[1].name == storage.coin_tiers.COIN_NAMES[1] then
         trade.output_items[1].count = math.max(1, math.floor(math.random() + total_input_value * params.target_efficiency / output_item_values[1]))
         return true
     end
@@ -597,105 +718,5 @@ function trade_generator.solve_item_counts(surface_name, trade, params)
 
     return solved
 end
-
----Set the distribution of trade shapes during procedural generation.
----
----For example, this makes 25% of all trades be 1-1, and the rest 3-2:
----```
----local weights = {
----  {num_inputs = 1, num_outputs = 1, weight = 1},
----  {num_inputs = 3, num_outputs = 2, weight = 3},
----}
----trade_generator.set_trade_shape_distribution(weights)
----```
----@param weights TradeShapeWeightedItem[]
-function trade_generator.set_trade_shape_distribution(weights)
-    if type(weights) ~= "table" then
-        lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received: " .. tostring(weights))
-        return
-    end
-
-    for _, obj in pairs(weights) do
-        if
-            -- TODO: maybe put type checking into a lib function or something, like lib.is_int()
-               type(obj.num_inputs) ~= "number"
-            or type(obj.num_outputs) ~= "number"
-            or type(obj.weight) ~= "number"
-            or math.floor(obj.num_inputs) ~= obj.num_inputs
-            or math.floor(obj.num_outputs) ~= obj.num_outputs
-            or obj.num_inputs < 1
-            or obj.num_inputs > 3
-            or obj.num_outputs < 1
-            or obj.num_outputs > 3
-            or obj.weight <= 0
-        then
-            lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received:\n" .. serpent.block(weights))
-            return
-        end
-    end
-
-    lib.log("New weights set for trade shapes: " .. serpent.block(weights))
-
-    storage.trades.trade_shape_weights = weights
-    storage.trades.trade_shape_weighted_choice = nil
-end
-
----Get the distribution currently used for sampling trade shapes during procedural generation.
----@return TradeShapeWeightedItem[]|nil
-function trade_generator.get_trade_shape_distribution()
-    return storage.trades.trade_shape_weights
-end
-
----@return WeightedChoice|nil
-function trade_generator.get_trade_shape_weighted_choice()
-    local trade_shape_wc = storage.trades.trade_shape_weighted_choice
-
-    if not trade_shape_wc then
-        local weights = trade_generator.get_trade_shape_distribution()
-        if not weights then
-            lib.log_error("trade_generator._get_trade_shape_weighted_choice: No weights set for trade shape sampling")
-            return
-        end
-
-        local wc = trade_generator._build_trade_shape_weighted_choice(weights)
-        if not wc then
-            lib.log_error("trade_generator._get_trade_shape_weighted_choice: Failed to create a weighted choice for trades given weights:\n" .. serpent.block(weights))
-            return
-        end
-
-        trade_shape_wc = wc
-        storage.trades.trade_shape_weighted_choice = trade_shape_wc
-    end
-
-    return trade_shape_wc
-end
-
----@return int num_inputs, int num_outputs
-function trade_generator._generate_random_trade_shape()
-    local trade_shape_wc = trade_generator.get_trade_shape_weighted_choice()
-    if not trade_shape_wc then
-        return 1, 1
-    end
-
-    local item = weighted_choice.choice(trade_shape_wc)
-    return item[1], item[2]
-end
-
----@param weights TradeShapeWeightedItem[]
----@return WeightedChoice|nil
-function trade_generator._build_trade_shape_weighted_choice(weights)
-    local item_list = {}
-
-    for _, shape_item in pairs(weights) do
-        item_list[#item_list+1] = {
-            item = {shape_item.num_inputs, shape_item.num_outputs},
-            weight = shape_item.weight,
-        }
-    end
-
-    return weighted_choice.from_list(item_list)
-end
-
-
 
 return trade_generator
