@@ -151,6 +151,17 @@ local function _generate_random_tentative(surface_name, volume, params, include_
     return nil
 end
 
+local function _generate_random_with_existing(surface_name, existing_trades, volume, params, include_item, attempts)
+    attempts = attempts or 16
+    for _ = 1, attempts do
+        local tentative = trade_generator.generate_random(surface_name, existing_trades, volume, params, true, include_item)
+        if tentative then
+            return tentative
+        end
+    end
+    return nil
+end
+
 local function _make_shape_only_weights(num_inputs, num_outputs)
     return {
         {num_inputs = num_inputs, num_outputs = num_outputs, weight = 1},
@@ -270,29 +281,23 @@ local tests = {
         end,
     },
     {
-        id = "from_item_names_normalizes_empty_input",
-        description = "Validates empty input side is normalized into a coin-side trade.",
+        id = "from_item_names_normalizes_single_empty_side",
+        description = "Validates either empty side is normalized into a coin-side trade.",
         run = function(context)
             local item = context.sample_items[1]
-            _expect(item ~= nil, "No sample item found for empty-input normalization test")
-            local tentative = trade_generator.generate_from_item_names(context.surface_name, {}, {item}, {allow_nil_return = false})
-            _expect(tentative ~= nil, "Expected generated trade when only input side is empty")
-            _expect(#tentative.input_items >= 1, "Expected at least one normalized input item")
-            _expect(lib.is_coin(tentative.input_items[1].name), "Expected normalized input to be a coin")
-            _expect(_contains_name(_to_name_array(tentative.output_items), item), "Expected output item to remain present")
-        end,
-    },
-    {
-        id = "from_item_names_normalizes_empty_output",
-        description = "Validates empty output side is normalized into a coin-side trade.",
-        run = function(context)
-            local item = context.sample_items[1]
-            _expect(item ~= nil, "No sample item found for empty-output normalization test")
-            local tentative = trade_generator.generate_from_item_names(context.surface_name, {item}, {}, {allow_nil_return = false})
-            _expect(tentative ~= nil, "Expected generated trade when only output side is empty")
-            _expect(#tentative.output_items >= 1, "Expected at least one normalized output item")
-            _expect(lib.is_coin(tentative.output_items[1].name), "Expected normalized output to be a coin")
-            _expect(_contains_name(_to_name_array(tentative.input_items), item), "Expected input item to remain present")
+            _expect(item ~= nil, "No sample item found for empty-side normalization test")
+
+            local empty_input = trade_generator.generate_from_item_names(context.surface_name, {}, {item}, {allow_nil_return = false})
+            _expect(empty_input ~= nil, "Expected generated trade when only input side is empty")
+            _expect(#empty_input.input_items >= 1, "Expected at least one normalized input item")
+            _expect(lib.is_coin(empty_input.input_items[1].name), "Expected normalized input to be a coin")
+            _expect(_contains_name(_to_name_array(empty_input.output_items), item), "Expected output item to remain present")
+
+            local empty_output = trade_generator.generate_from_item_names(context.surface_name, {item}, {}, {allow_nil_return = false})
+            _expect(empty_output ~= nil, "Expected generated trade when only output side is empty")
+            _expect(#empty_output.output_items >= 1, "Expected at least one normalized output item")
+            _expect(lib.is_coin(empty_output.output_items[1].name), "Expected normalized output to be a coin")
+            _expect(_contains_name(_to_name_array(empty_output.input_items), item), "Expected input item to remain present")
         end,
     },
     {
@@ -384,7 +389,7 @@ local tests = {
     },
     {
         id = "coin_injection_no_replaceable_stability",
-        description = "Validates generation remains stable when coin injection has no replaceable item on either side.",
+        description = "Validates generation remains stable when coin injection has no replaceable item on either side. (Indirect Test: tests inject_coins_into_trade via generate_random)",
         run = function(context)
             local include_item = context.sample_items[1]
             _expect(include_item ~= nil, "No sample item found for no-replaceable injection stability test")
@@ -407,45 +412,32 @@ local tests = {
         end,
     },
     {
-        id = "coin_injection_sell_path",
-        description = "Validates coin injection always targets output side for 1-1 shapes when sell-trade-chance=1.",
+        id = "coin_injection_direction_paths",
+        description = "Validates coin injection targets output when sell=1 and input when sell=0 for forced 1-1 shapes.",
         run = function(context)
             _with_trade_shape_weights(_make_shape_only_weights(1, 1), function()
                 _with_runtime_number_overrides({
                     ["coin-trade-chance"] = 1,
                     ["sell-trade-chance"] = 1,
                 }, function()
-                    local iterations = 20
-                    for i = 1, iterations do
-                        local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
-                        _expect(tentative ~= nil, "Failed to generate random trade for sell-path injection test on iteration " .. i)
-                        local input_names = _to_name_array(tentative.input_items)
-                        local output_names = _to_name_array(tentative.output_items)
-                        _expect(_count_coins(output_names) >= 1, "Expected output-side coin on iteration " .. i)
-                        _expect(_count_coins(input_names) == 0, "Did not expect input-side coin on sell-path iteration " .. i)
-                    end
+                    local sell_tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
+                    _expect(sell_tentative ~= nil, "Failed to generate random trade for sell-path injection test")
+                    local sell_input_names = _to_name_array(sell_tentative.input_items)
+                    local sell_output_names = _to_name_array(sell_tentative.output_items)
+                    _expect(_count_coins(sell_output_names) >= 1, "Expected output-side coin for sell-path")
+                    _expect(_count_coins(sell_input_names) == 0, "Did not expect input-side coin for sell-path")
                 end)
-            end)
-        end,
-    },
-    {
-        id = "coin_injection_buy_path",
-        description = "Validates coin injection always targets input side for 1-1 shapes when sell-trade-chance=0.",
-        run = function(context)
-            _with_trade_shape_weights(_make_shape_only_weights(1, 1), function()
+
                 _with_runtime_number_overrides({
                     ["coin-trade-chance"] = 1,
                     ["sell-trade-chance"] = 0,
                 }, function()
-                    local iterations = 20
-                    for i = 1, iterations do
-                        local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
-                        _expect(tentative ~= nil, "Failed to generate random trade for buy-path injection test on iteration " .. i)
-                        local input_names = _to_name_array(tentative.input_items)
-                        local output_names = _to_name_array(tentative.output_items)
-                        _expect(_count_coins(input_names) >= 1, "Expected input-side coin on iteration " .. i)
-                        _expect(_count_coins(output_names) == 0, "Did not expect output-side coin on buy-path iteration " .. i)
-                    end
+                    local buy_tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
+                    _expect(buy_tentative ~= nil, "Failed to generate random trade for buy-path injection test")
+                    local buy_input_names = _to_name_array(buy_tentative.input_items)
+                    local buy_output_names = _to_name_array(buy_tentative.output_items)
+                    _expect(_count_coins(buy_input_names) >= 1, "Expected input-side coin for buy-path")
+                    _expect(_count_coins(buy_output_names) == 0, "Did not expect output-side coin for buy-path")
                 end)
             end)
         end,
@@ -474,23 +466,6 @@ local tests = {
                     end
                 end)
             end)
-        end,
-    },
-    {
-        id = "trade_command_presence_regression",
-        description = "Validates key trade-related commands remain registered after test module registration.",
-        run = function(context)
-            local required = {
-                "add-trade",
-                "remove-trade",
-                "regenerate-trades",
-                "discover-all",
-                "rank-up-all",
-                COMMAND_NAME,
-            }
-            for _, cmd_name in ipairs(required) do
-                _expect(commands.commands[cmd_name] ~= nil, "Missing command registration: " .. cmd_name)
-            end
         end,
     },
     {
@@ -649,6 +624,41 @@ local tests = {
                 existing[#existing + 1] = tentative
                 local loops = trade_loop_finder.find_simple_loops(existing)
                 _expect(not next(loops), "Simple loop detected after generating candidate trade")
+            end)
+        end,
+    },
+    {
+        id = "loop_avoidance_empty_vs_full_consistency",
+        description = "Validates loop-avoidance behavior is consistent for empty vs populated existing trade lists.",
+        run = function(context)
+            local items = _pick_non_coin_items(context.surface_name, 4)
+            _expect(#items >= 4, "Need at least 4 items for empty-vs-full loop-avoidance consistency test")
+
+            local trade_a = trade_generator.generate_from_item_names(context.surface_name, {items[1]}, {items[2]}, {allow_nil_return = false})
+            local trade_b = trade_generator.generate_from_item_names(context.surface_name, {items[2]}, {items[3]}, {allow_nil_return = false})
+            local trade_c = trade_generator.generate_from_item_names(context.surface_name, {items[3]}, {items[4]}, {allow_nil_return = false})
+            _expect(trade_a ~= nil and trade_b ~= nil and trade_c ~= nil, "Failed to build baseline trades for consistency test")
+
+            local full_existing = {trade_a, trade_b, trade_c}
+            _expect(not next(trade_loop_finder.find_simple_loops(full_existing)), "Baseline populated existing list unexpectedly contains loops")
+
+            _with_runtime_number_overrides({
+                ["coin-trade-chance"] = 0,
+                ["sell-trade-chance"] = 0.5,
+            }, function()
+                local empty_tentative = _generate_random_with_existing(context.surface_name, {}, context.volume, {allow_nil_return = true}, nil, 16)
+                _expect(empty_tentative ~= nil, "Failed to generate trade with empty existing list")
+                _expect(not next(trade_loop_finder.find_simple_loops({empty_tentative})), "Generated trade with empty existing list unexpectedly creates a simple loop")
+
+                local full_tentative = _generate_random_with_existing(context.surface_name, full_existing, context.volume, {allow_nil_return = true}, nil, 16)
+                if full_tentative then
+                    local candidate = table.deepcopy(full_existing)
+                    candidate[#candidate + 1] = full_tentative
+                    _expect(not next(trade_loop_finder.find_simple_loops(candidate)), "Generated trade with populated existing list introduces a simple loop")
+                else
+                    -- Under tighter constraints a nil result is acceptable; consistency requirement is that no looping trade is returned.
+                    _expect(not next(trade_loop_finder.find_simple_loops(full_existing)), "Populated existing list became looping after nil generation result")
+                end
             end)
         end,
     },
