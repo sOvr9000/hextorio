@@ -9,7 +9,9 @@ local inventories = require "api.inventories"
 local trade_generator_tests = {}
 
 local COMMAND_NAME = "trade-generator-tests"
+local SAMPLE_COMMAND_NAME = "trade-generator-sample-distribution"
 local OUTPUT_FILE = "hextorio/trade_generator_tests.log"
+local SAMPLE_OUTPUT_FILE_PREFIX = "hextorio/trade_distribution_sample_"
 local MAX_TICKS_PER_TEST = 50
 
 -- API references (local docs):
@@ -18,6 +20,8 @@ local MAX_TICKS_PER_TEST = 50
 --   .reference/factorio-api-html/concepts/CustomCommandData.html
 -- - helpers.write_file:
 --   .reference/factorio-api-html/classes/LuaHelpers.html#write_file
+-- - helpers.table_to_json:
+--   .reference/factorio-api-html/classes/LuaHelpers.html#table_to_json
 -- - LuaPlayer.print:
 --   .reference/factorio-api-html/classes/LuaPlayer.html#print
 -- - script.on_nth_tick + NthTickEventData.tick:
@@ -758,6 +762,65 @@ local function _list_tests(player)
     end
 end
 
+local function _summarize_side(trade_items)
+    local coin_count = 0
+    local item_count = 0
+    for _, item in pairs(trade_items or {}) do
+        if item and item.name then
+            if lib.is_coin(item.name) then
+                coin_count = coin_count + 1
+            else
+                item_count = item_count + 1
+            end
+        end
+    end
+
+    if coin_count > 0 and item_count == 0 then
+        return "coin"
+    end
+    if coin_count == 0 and item_count > 0 then
+        return tostring(item_count)
+    end
+    if coin_count > 0 and item_count > 0 then
+        return "coin+" .. tostring(item_count)
+    end
+    return "empty"
+end
+
+local function _get_trade_category(tentative_trade)
+    local left = _summarize_side(tentative_trade and tentative_trade.input_items)
+    local right = _summarize_side(tentative_trade and tentative_trade.output_items)
+    return left .. "->" .. right
+end
+
+local function _build_probability_map(category_counts, total_count)
+    local out = {}
+    if total_count <= 0 then
+        return out
+    end
+    for category, count in pairs(category_counts) do
+        out[category] = count / total_count
+    end
+    return out
+end
+
+local function _distribution_error_l1(prev_probabilities, next_probabilities)
+    local visited = {}
+    local err = 0
+
+    for category, p in pairs(next_probabilities) do
+        err = err + math.abs(p - (prev_probabilities[category] or 0))
+        visited[category] = true
+    end
+    for category, p in pairs(prev_probabilities) do
+        if not visited[category] then
+            err = err + math.abs(p)
+        end
+    end
+
+    return err
+end
+
 ---@class TradeGeneratorTestRun
 ---@field player_index uint|nil
 ---@field selected_tests table[]
@@ -767,6 +830,23 @@ end
 ---@field passed int
 ---@field failed int
 local active_run = nil ---@type TradeGeneratorTestRun|nil
+
+---@class TradeDistributionSampleRun
+---@field player_index uint|nil
+---@field surface_name string
+---@field volume number
+---@field started_tick uint
+---@field wait_until_tick uint
+---@field tick_count int
+---@field samples_per_tick int
+---@field samples_attempted int
+---@field generated_count int
+---@field nil_count int
+---@field category_counts table<string, int>
+---@field previous_probabilities table<string, number>
+---@field last_error_l1 number
+---@field runtime_settings table
+local active_sampling_run = nil ---@type TradeDistributionSampleRun|nil
 
 local function _build_context(player)
     local surface = game.get_surface("nauvis") or (player and player.surface) or game.surfaces[1]
@@ -821,6 +901,82 @@ local function _safe_run_test_call(fn)
     return xpcall(fn, debug.traceback)
 end
 
+local function _start_distribution_sampling(player)
+    if active_run then
+        _emit(player, "A test run is active. Wait for it to finish before starting distribution sampling.")
+        return
+    end
+    if active_sampling_run then
+        _emit(player, "A distribution sampling run is already active.")
+        return
+    end
+
+    local context = _build_context(player)
+    local runtime_settings = {
+        coin_trade_chance = lib.runtime_setting_value_as_number("coin-trade-chance"),
+        sell_trade_chance = lib.runtime_setting_value_as_number("sell-trade-chance"),
+        trade_complexity = lib.runtime_setting_value_as_string("trade-complexity"),
+    }
+
+    active_sampling_run = {
+        player_index = player and player.index or nil,
+        surface_name = context.surface_name,
+        volume = context.volume,
+        started_tick = game.tick,
+        wait_until_tick = game.tick,
+        tick_count = 0,
+        samples_per_tick = 25,
+        samples_attempted = 0,
+        generated_count = 0,
+        nil_count = 0,
+        category_counts = {},
+        previous_probabilities = {},
+        last_error_l1 = 0,
+        runtime_settings = runtime_settings,
+    }
+
+    _emit(
+        player,
+        "Started distribution sampling: " .. active_sampling_run.samples_per_tick .. " trades/tick for "
+            .. MAX_TICKS_PER_TEST
+            .. " ticks on surface '"
+            .. context.surface_name
+            .. "'"
+    )
+end
+
+local function _finish_distribution_sampling(run, tick)
+    local player = _resolve_player(run.player_index)
+    local probabilities = _build_probability_map(run.category_counts, run.generated_count)
+    local output = {
+        metadata = {
+            command = SAMPLE_COMMAND_NAME,
+            started_tick = run.started_tick,
+            finished_tick = tick,
+            max_ticks = MAX_TICKS_PER_TEST,
+            samples_per_tick = run.samples_per_tick,
+            surface_name = run.surface_name,
+            volume = run.volume,
+            runtime_settings = run.runtime_settings,
+            error_metric = "l1_probability_distance_vs_previous_tick",
+        },
+        totals = {
+            ticks_sampled = run.tick_count,
+            samples_attempted = run.samples_attempted,
+            generated = run.generated_count,
+            nil_returns = run.nil_count,
+            final_error_l1_vs_previous_tick = run.last_error_l1,
+        },
+        category_counts = run.category_counts,
+        category_distribution = probabilities,
+    }
+
+    local filename = SAMPLE_OUTPUT_FILE_PREFIX .. tostring(run.started_tick) .. ".json"
+    helpers.write_file(filename, helpers.table_to_json(output), false)
+
+    _emit(player, "Distribution sampling completed. JSON written to script-output/" .. filename)
+end
+
 ---@param current {test:table, state:table|nil, initialized:boolean}
 ---@param context table
 ---@return boolean ok, any result_or_error
@@ -865,75 +1021,102 @@ local function _run_current_test_step(current, context)
 end
 
 function trade_generator_tests.on_tick(event)
-    if not active_run then return end
-
     local tick = event.tick
-    local player = _resolve_player(active_run.player_index)
+    if not active_run and not active_sampling_run then
+        return
+    end
 
-    if not active_run.current then
-        if active_run.next_index > #active_run.selected_tests then
-            _emit(player, "Completed. Passed=" .. active_run.passed .. " Failed=" .. active_run.failed .. " Total=" .. #active_run.selected_tests)
-            active_run = nil
-            return
+    if active_run then
+        local player = _resolve_player(active_run.player_index)
+
+        if not active_run.current then
+            if active_run.next_index > #active_run.selected_tests then
+                _emit(player, "Completed. Passed=" .. active_run.passed .. " Failed=" .. active_run.failed .. " Total=" .. #active_run.selected_tests)
+                active_run = nil
+            else
+                local index = active_run.next_index
+                local test = active_run.selected_tests[index]
+                active_run.next_index = index + 1
+
+                _emit(player, "[" .. index .. "/" .. #active_run.selected_tests .. "] " .. test.id .. " - " .. test.description)
+
+                active_run.current = {
+                    index = index,
+                    test = test,
+                    started_tick = tick,
+                    wait_until_tick = tick,
+                    state = nil,
+                    initialized = false,
+                }
+            end
         end
 
-        local index = active_run.next_index
-        local test = active_run.selected_tests[index]
-        active_run.next_index = index + 1
+        local current = active_run.current
+        if current then
+            if tick - current.started_tick > MAX_TICKS_PER_TEST then
+                active_run.failed = active_run.failed + 1
+                _emit(player, "FAIL: " .. current.test.id .. " :: timed out after " .. MAX_TICKS_PER_TEST .. " ticks")
+                active_run.current = nil
+            elseif tick >= current.wait_until_tick then
+                local ok, yielded = _run_current_test_step(current, active_run.context)
+                if not ok then
+                    active_run.failed = active_run.failed + 1
+                    _emit(player, "FAIL: " .. current.test.id .. " :: " .. tostring(yielded))
+                    active_run.current = nil
+                else
+                    local wait_ticks = 0
+                    local is_done = true
+                    if type(yielded) == "table" then
+                        if yielded.wait_ticks ~= nil then
+                            wait_ticks = math.max(1, math.floor(tonumber(yielded.wait_ticks) or 1))
+                            is_done = false
+                        elseif yielded.done ~= nil then
+                            is_done = yielded.done ~= false
+                        end
+                    end
 
-        _emit(player, "[" .. index .. "/" .. #active_run.selected_tests .. "] " .. test.id .. " - " .. test.description)
-
-        active_run.current = {
-            index = index,
-            test = test,
-            started_tick = tick,
-            wait_until_tick = tick,
-            state = nil,
-            initialized = false,
-        }
-    end
-
-    local current = active_run.current
-    if not current then return end
-
-    if tick - current.started_tick > MAX_TICKS_PER_TEST then
-        active_run.failed = active_run.failed + 1
-        _emit(player, "FAIL: " .. current.test.id .. " :: timed out after " .. MAX_TICKS_PER_TEST .. " ticks")
-        active_run.current = nil
-        return
-    end
-
-    if tick < current.wait_until_tick then
-        return
-    end
-
-    local ok, yielded = _run_current_test_step(current, active_run.context)
-    if not ok then
-        active_run.failed = active_run.failed + 1
-        _emit(player, "FAIL: " .. current.test.id .. " :: " .. tostring(yielded))
-        active_run.current = nil
-        return
-    end
-
-    local wait_ticks = 0
-    local is_done = true
-    if type(yielded) == "table" then
-        if yielded.wait_ticks ~= nil then
-            wait_ticks = math.max(1, math.floor(tonumber(yielded.wait_ticks) or 1))
-            is_done = false
-        elseif yielded.done ~= nil then
-            is_done = yielded.done ~= false
+                    if is_done then
+                        active_run.passed = active_run.passed + 1
+                        _emit(player, "PASS: " .. current.test.id)
+                        active_run.current = nil
+                    else
+                        current.wait_until_tick = tick + wait_ticks
+                    end
+                end
+            end
         end
     end
 
-    if is_done then
-        active_run.passed = active_run.passed + 1
-        _emit(player, "PASS: " .. current.test.id)
-        active_run.current = nil
-        return
-    end
+    if active_sampling_run then
+        local run = active_sampling_run
+        if tick >= run.wait_until_tick then
+            run.tick_count = run.tick_count + 1
 
-    current.wait_until_tick = tick + wait_ticks
+            for _ = 1, run.samples_per_tick do
+                run.samples_attempted = run.samples_attempted + 1
+                local tentative_trade = trade_generator.generate_random(run.surface_name, {}, run.volume, {allow_nil_return = true}, true, nil)
+                if tentative_trade then
+                    run.generated_count = run.generated_count + 1
+                    local category = _get_trade_category(tentative_trade)
+                    run.category_counts[category] = (run.category_counts[category] or 0) + 1
+                else
+                    run.nil_count = run.nil_count + 1
+                end
+            end
+
+            local current_probabilities = _build_probability_map(run.category_counts, run.generated_count)
+            local err = _distribution_error_l1(run.previous_probabilities, current_probabilities)
+            run.last_error_l1 = err
+            run.previous_probabilities = current_probabilities
+
+            if run.tick_count >= MAX_TICKS_PER_TEST then
+                _finish_distribution_sampling(run, tick)
+                active_sampling_run = nil
+            else
+                run.wait_until_tick = tick + 1
+            end
+        end
+    end
 end
 
 function trade_generator_tests.register_commands()
@@ -965,6 +1148,16 @@ function trade_generator_tests.register_commands()
             end
 
             _start_selected_tests(player, {test})
+        end
+    )
+
+    commands.remove_command(SAMPLE_COMMAND_NAME)
+    commands.add_command(
+        SAMPLE_COMMAND_NAME,
+        "/trade-generator-sample-distribution - Samples 1000 trades per tick and exports category distribution JSON to script-output.",
+        function(cmd)
+            local player = cmd.player_index and game.get_player(cmd.player_index) or nil
+            _start_distribution_sampling(player)
         end
     )
 end
