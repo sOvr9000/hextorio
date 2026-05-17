@@ -10,9 +10,14 @@ local trade_generator_tests = {}
 
 local COMMAND_NAME = "trade-generator-tests"
 local SAMPLE_COMMAND_NAME = "trade-generator-sample-distribution"
+local SAMPLE_ALL_PRESETS_COMMAND_NAME = "trade-generator-sample-all-presets"
+local SAMPLE_ALL_PRESETS_RANGE_COMMAND_NAME = "trade-generator-sample-all-presets-range"
+local SAMPLE_ALL_MODES_COMMAND_NAME = "trade-generator-sample-all-modes"
 local OUTPUT_FILE = "hextorio/trade_generator_tests.log"
 local SAMPLE_OUTPUT_FILE_PREFIX = "hextorio/trade_distribution_sample_"
-local MAX_TICKS_PER_TEST = 50
+local SAMPLE_ALL_PRESETS_OUTPUT_FILE_PREFIX = "hextorio/trade_distribution_all_presets_"
+local SAMPLE_ALL_PRESETS_RANGE_OUTPUT_FILE_PREFIX = "hextorio/trade_distribution_all_presets_range_"
+local MAX_TICKS_PER_TEST = 100
 
 -- API references (local docs):
 -- - commands.add_command + CustomCommandData.parameter:
@@ -80,21 +85,48 @@ local function _to_name_array(items)
     return out
 end
 
-local function _with_runtime_number_overrides(overrides, fn)
-    local old = lib.runtime_setting_value_as_number
-    lib.runtime_setting_value_as_number = function(name)
+local function _with_runtime_setting_overrides(overrides, fn)
+    local old_value = lib.runtime_setting_value
+    local old_number = lib.runtime_setting_value_as_number
+    local old_int = lib.runtime_setting_value_as_int
+    local old_boolean = lib.runtime_setting_value_as_boolean
+    local old_string = lib.runtime_setting_value_as_string
+    local old_color = lib.runtime_setting_value_as_color
+
+    local function value(name)
         local override = overrides[name]
         if override ~= nil then
             return override
         end
-        return old(name)
+        return old_value(name)
     end
 
+    lib.runtime_setting_value = value
+    lib.runtime_setting_value_as_number = function(name) return value(name) end
+    lib.runtime_setting_value_as_int = function(name) return value(name) end
+    lib.runtime_setting_value_as_boolean = function(name) return value(name) end
+    lib.runtime_setting_value_as_string = function(name) return value(name) end
+    lib.runtime_setting_value_as_color = function(name) return value(name) end
+
     local ok, result = xpcall(fn, debug.traceback)
-    lib.runtime_setting_value_as_number = old
+
+    lib.runtime_setting_value = old_value
+    lib.runtime_setting_value_as_number = old_number
+    lib.runtime_setting_value_as_int = old_int
+    lib.runtime_setting_value_as_boolean = old_boolean
+    lib.runtime_setting_value_as_string = old_string
+    lib.runtime_setting_value_as_color = old_color
 
     if not ok then error(result, 0) end
     return result
+end
+
+local function _with_runtime_number_overrides(overrides, fn)
+    return _with_runtime_setting_overrides(overrides, fn)
+end
+
+local function _with_runtime_string_overrides(overrides, fn)
+    return _with_runtime_setting_overrides(overrides, fn)
 end
 
 local function _with_trade_shape_weights(temp_weights, fn)
@@ -848,6 +880,109 @@ local active_run = nil ---@type TradeGeneratorTestRun|nil
 ---@field runtime_settings table
 local active_sampling_run = nil ---@type TradeDistributionSampleRun|nil
 
+---@class TradeAllPresetSamplingRun
+---@field player_index uint|nil
+---@field surface_name string
+---@field volume number
+---@field started_tick uint
+---@field wait_until_tick uint
+---@field phase string
+---@field presets string[]
+---@field current_index int
+---@field ticks_in_preset int
+---@field samples_per_tick int
+---@field generated int
+---@field nil_returns int
+---@field counts table<string, int>
+---@field expected_categories table<string, boolean>
+---@field results table<string, table>
+---@field runtime_settings table
+---@field generator_mode_actual string
+---@field active_weights_lookup_name string
+local active_all_preset_sampling_run = nil ---@type TradeAllPresetSamplingRun|nil
+
+---@class TradeAllPresetRangeSamplingRun
+---@field player_index uint|nil
+---@field mode_label string
+---@field surface_name string
+---@field volume number
+---@field started_tick uint
+---@field wait_until_tick uint
+---@field phase string
+---@field presets string[]
+---@field coin_trade_chance_values number[]
+---@field sell_trade_chance number
+---@field current_coin_index int
+---@field current_preset_index int
+---@field current_coin_trade_chance number
+---@field ticks_in_case int
+---@field samples_per_tick int
+---@field generated int
+---@field nil_returns int
+---@field counts table<string, int>
+---@field expected_categories table<string, boolean>
+---@field results table<string, table>
+---@field generator_mode_actual string
+---@field active_weights_lookup_name string
+local active_all_preset_range_sampling_run = nil ---@type TradeAllPresetRangeSamplingRun|nil
+
+---@class TradeAllModesSamplingRun
+---@field player_index uint|nil
+---@field original_mode string
+---@field current_phase int
+---@field phases table[]
+---@field wait_until_tick uint
+local active_all_modes_sampling_run = nil ---@type TradeAllModesSamplingRun|nil
+
+local function _sanitize_label(label)
+    local s = tostring(label or ""):lower()
+    s = s:gsub("%s+", "-")
+    s = s:gsub("[^%w%-_]", "")
+    if s == "" then
+        return "unlabeled"
+    end
+    return s
+end
+
+local function _build_shape_category_expectations(weights)
+    local expected_categories = {}
+    for _, shape in pairs(weights or {}) do
+        local left = shape.num_inputs == 0 and "coin" or tostring(shape.num_inputs)
+        local right = shape.num_outputs == 0 and "coin" or tostring(shape.num_outputs)
+        local key = left .. "->" .. right
+        if shape.weight > 0 then expected_categories[key] = true end
+    end
+    return expected_categories
+end
+
+---@return table lookup, string lookup_name, string mode
+local function _get_active_shape_lookup_for_generator()
+    local mode = "unknown"
+    if trade_generator.get_generator_mode then
+        mode = trade_generator.get_generator_mode()
+    end
+
+    local lookup_name = "trade_shape_weights_lookup"
+    if trade_generator.get_active_weights_lookup_name then
+        lookup_name = trade_generator.get_active_weights_lookup_name()
+    elseif mode == "legacy-main" then
+        lookup_name = "deprecated_trade_shape_weights_lookup_main"
+    end
+
+    local lookup = storage.trades[lookup_name]
+    return lookup, lookup_name, mode
+end
+
+local function _assert_mode_lookup_pair(mode, lookup_name)
+    if mode == "current" then
+        return lookup_name == "trade_shape_weights_lookup", "Expected lookup 'trade_shape_weights_lookup' for mode='current', got '" .. tostring(lookup_name) .. "'"
+    end
+    if mode == "legacy-main" then
+        return lookup_name == "deprecated_trade_shape_weights_lookup_main", "Expected lookup 'deprecated_trade_shape_weights_lookup_main' for mode='legacy-main', got '" .. tostring(lookup_name) .. "'"
+    end
+    return false, "Unknown generator mode: " .. tostring(mode)
+end
+
 local function _build_context(player)
     local surface = game.get_surface("nauvis") or (player and player.surface) or game.surfaces[1]
     _expect(surface ~= nil, "No valid surface found for tests")
@@ -877,6 +1012,10 @@ local function _start_selected_tests(player, selected_tests)
         _emit(player, "A test run is already active. Wait for it to complete before starting another run.")
         return
     end
+    if active_sampling_run or active_all_preset_sampling_run or active_all_preset_range_sampling_run or active_all_modes_sampling_run then
+        _emit(player, "A sampling run is already active. Wait for it to complete before starting tests.")
+        return
+    end
 
     local context = _build_context(player)
     active_run = {
@@ -904,6 +1043,18 @@ end
 local function _start_distribution_sampling(player)
     if active_run then
         _emit(player, "A test run is active. Wait for it to finish before starting distribution sampling.")
+        return
+    end
+    if active_all_preset_sampling_run then
+        _emit(player, "An all-preset sampling run is active. Wait for it to finish before starting distribution sampling.")
+        return
+    end
+    if active_all_preset_range_sampling_run then
+        _emit(player, "An all-preset range sampling run is active. Wait for it to finish before starting distribution sampling.")
+        return
+    end
+    if active_all_modes_sampling_run then
+        _emit(player, "An all-modes sampling run is active. Wait for it to finish before starting distribution sampling.")
         return
     end
     if active_sampling_run then
@@ -945,6 +1096,205 @@ local function _start_distribution_sampling(player)
     )
 end
 
+local function _start_all_preset_sampling(player, internal_call)
+    if active_run then
+        _emit(player, "A test run is active. Wait for it to finish before starting all-preset sampling.")
+        return
+    end
+    if active_sampling_run then
+        _emit(player, "A distribution sampling run is already active.")
+        return
+    end
+    if active_all_preset_sampling_run then
+        _emit(player, "An all-preset sampling run is already active.")
+        return
+    end
+    if active_all_preset_range_sampling_run then
+        _emit(player, "An all-preset range sampling run is already active.")
+        return
+    end
+    if active_all_modes_sampling_run and not internal_call then
+        _emit(player, "An all-modes sampling run is already active.")
+        return
+    end
+
+    local lookup, lookup_name, mode = _get_active_shape_lookup_for_generator()
+    if type(lookup) ~= "table" then
+        _emit(player, "Cannot start all-preset sampling: active trade-shape lookup '" .. tostring(lookup_name) .. "' is missing")
+        return
+    end
+    local pair_ok, pair_err = _assert_mode_lookup_pair(mode, lookup_name)
+    if not pair_ok then
+        _emit(player, "Cannot start all-preset sampling: " .. pair_err)
+        return
+    end
+
+    local presets = {"simple", "balanced", "complex"}
+    for _, preset in ipairs(presets) do
+        if type(lookup[preset]) ~= "table" then
+            _emit(player, "Cannot start all-preset sampling: missing preset table '" .. preset .. "'")
+            return
+        end
+    end
+
+    local context = _build_context(player)
+    active_all_preset_sampling_run = {
+        player_index = player and player.index or nil,
+        surface_name = context.surface_name,
+        volume = context.volume,
+        started_tick = game.tick,
+        wait_until_tick = game.tick,
+        phase = "start_preset",
+        presets = presets,
+        current_index = 1,
+        ticks_in_preset = 0,
+        samples_per_tick = 15,
+        generated = 0,
+        nil_returns = 0,
+        counts = {},
+        expected_categories = {},
+        results = {},
+        runtime_settings = {
+            coin_trade_chance = lib.runtime_setting_value_as_number("coin-trade-chance"),
+            sell_trade_chance = lib.runtime_setting_value_as_number("sell-trade-chance"),
+        },
+        generator_mode_actual = mode,
+        active_weights_lookup_name = lookup_name,
+    }
+
+    _emit(
+        player,
+        "Started all-preset sampling: "
+            .. active_all_preset_sampling_run.samples_per_tick
+            .. " trades/tick, "
+            .. MAX_TICKS_PER_TEST
+            .. " ticks per preset (simple, balanced, complex)"
+    )
+end
+
+local function _start_all_preset_range_sampling(player, mode_label, internal_call)
+    if active_run then
+        _emit(player, "A test run is active. Wait for it to finish before starting all-preset range sampling.")
+        return
+    end
+    if active_sampling_run then
+        _emit(player, "A distribution sampling run is already active.")
+        return
+    end
+    if active_all_preset_sampling_run then
+        _emit(player, "An all-preset sampling run is already active.")
+        return
+    end
+    if active_all_preset_range_sampling_run then
+        _emit(player, "An all-preset range sampling run is already active.")
+        return
+    end
+    if active_all_modes_sampling_run and not internal_call then
+        _emit(player, "An all-modes sampling run is already active.")
+        return
+    end
+
+    local lookup, lookup_name, mode = _get_active_shape_lookup_for_generator()
+    if type(lookup) ~= "table" then
+        _emit(player, "Cannot start all-preset range sampling: active trade-shape lookup '" .. tostring(lookup_name) .. "' is missing")
+        return
+    end
+    local pair_ok, pair_err = _assert_mode_lookup_pair(mode, lookup_name)
+    if not pair_ok then
+        _emit(player, "Cannot start all-preset range sampling: " .. pair_err)
+        return
+    end
+
+    local presets = {"simple", "balanced", "complex"}
+    for _, preset in ipairs(presets) do
+        if type(lookup[preset]) ~= "table" then
+            _emit(player, "Cannot start all-preset range sampling: missing preset table '" .. preset .. "'")
+            return
+        end
+    end
+
+    local context = _build_context(player)
+    local sanitized_mode_label = _sanitize_label(mode_label)
+    if sanitized_mode_label ~= "unlabeled" and sanitized_mode_label ~= mode then
+        _emit(
+            player,
+            "Aborting all-preset range sampling: mode label mismatch. Provided='"
+                .. sanitized_mode_label
+                .. "' actual='"
+                .. tostring(mode)
+                .. "'"
+        )
+        return
+    end
+    if sanitized_mode_label == "unlabeled" then
+        sanitized_mode_label = mode
+    end
+
+    active_all_preset_range_sampling_run = {
+        player_index = player and player.index or nil,
+        mode_label = sanitized_mode_label,
+        surface_name = context.surface_name,
+        volume = context.volume,
+        started_tick = game.tick,
+        wait_until_tick = game.tick,
+        phase = "start_case",
+        presets = presets,
+        coin_trade_chance_values = {0.2, 0.3, 0.5},
+        sell_trade_chance = 0.5,
+        current_coin_index = 1,
+        current_preset_index = 1,
+        ticks_in_case = 0,
+        samples_per_tick = 35,
+        generated = 0,
+        nil_returns = 0,
+        counts = {},
+        expected_categories = {},
+        results = {},
+        generator_mode_actual = mode,
+        active_weights_lookup_name = lookup_name,
+    }
+
+    _emit(
+        player,
+        "Started all-preset range sampling (mode='"
+            .. sanitized_mode_label
+            .. "'): coin-trade-chance in {0.20, 0.30, 0.50}, sell-trade-chance=0.50, "
+            .. MAX_TICKS_PER_TEST
+            .. " ticks per case"
+    )
+end
+
+local function _start_all_modes_sampling(player)
+    if active_run then
+        _emit(player, "A test run is active. Wait for it to finish before starting all-modes sampling.")
+        return
+    end
+    if active_sampling_run or active_all_preset_sampling_run or active_all_preset_range_sampling_run or active_all_modes_sampling_run then
+        _emit(player, "Another sampling run is already active.")
+        return
+    end
+    if not trade_generator.set_generator_mode_for_testing then
+        _emit(player, "Cannot start all-modes sampling: trade_generator.set_generator_mode_for_testing is unavailable")
+        return
+    end
+
+    local original_mode = trade_generator.get_generator_mode and trade_generator.get_generator_mode() or "current"
+    active_all_modes_sampling_run = {
+        player_index = player and player.index or nil,
+        original_mode = original_mode,
+        current_phase = 1,
+        phases = {
+            {mode = "current", kind = "all-presets"},
+            {mode = "current", kind = "range", label = "current"},
+            {mode = "legacy-main", kind = "all-presets"},
+            {mode = "legacy-main", kind = "range", label = "legacy-main"},
+        },
+        wait_until_tick = game.tick,
+    }
+
+    _emit(player, "Started all-modes sampling queue: current/all-presets, current/range, legacy/all-presets, legacy/range")
+end
+
 local function _finish_distribution_sampling(run, tick)
     local player = _resolve_player(run.player_index)
     local probabilities = _build_probability_map(run.category_counts, run.generated_count)
@@ -975,6 +1325,173 @@ local function _finish_distribution_sampling(run, tick)
     helpers.write_file(filename, helpers.table_to_json(output), false)
 
     _emit(player, "Distribution sampling completed. JSON written to script-output/" .. filename)
+end
+
+local function _finish_all_preset_sampling(run, tick, failed_reason)
+    local player = _resolve_player(run.player_index)
+    local status = failed_reason and "failed" or "completed"
+
+    -- Restore active weights to current runtime setting after this command.
+    local ok_restore, restore_err = xpcall(function()
+        trade_generator.init()
+    end, debug.traceback)
+    if not ok_restore then
+        failed_reason = (failed_reason or "Unknown failure") .. " | restore error: " .. tostring(restore_err)
+        status = "failed"
+    end
+
+    local output = {
+        metadata = {
+            command = SAMPLE_ALL_PRESETS_COMMAND_NAME,
+            status = status,
+            started_tick = run.started_tick,
+            finished_tick = tick,
+            max_ticks_per_preset = MAX_TICKS_PER_TEST,
+            samples_per_tick = run.samples_per_tick,
+            surface_name = run.surface_name,
+            volume = run.volume,
+            runtime_settings = run.runtime_settings,
+            generator_mode_actual = run.generator_mode_actual,
+            active_weights_lookup_name = run.active_weights_lookup_name,
+            presets = run.presets,
+            failure_reason = failed_reason,
+        },
+        preset_results = run.results,
+    }
+
+    local filename = SAMPLE_ALL_PRESETS_OUTPUT_FILE_PREFIX .. tostring(run.started_tick) .. ".json"
+    helpers.write_file(filename, helpers.table_to_json(output), false)
+
+    if failed_reason then
+        _emit(player, "All-preset sampling failed: " .. failed_reason)
+    else
+        _emit(player, "All-preset sampling completed successfully.")
+    end
+    _emit(player, "All-preset sampling JSON written to script-output/" .. filename)
+end
+
+local function _finish_all_preset_range_sampling(run, tick, failed_reason)
+    local player = _resolve_player(run.player_index)
+    local status = failed_reason and "failed" or "completed"
+
+    local ok_restore, restore_err = xpcall(function()
+        trade_generator.init()
+    end, debug.traceback)
+    if not ok_restore then
+        failed_reason = (failed_reason or "Unknown failure") .. " | restore error: " .. tostring(restore_err)
+        status = "failed"
+    end
+
+    local output = {
+        metadata = {
+            command = SAMPLE_ALL_PRESETS_RANGE_COMMAND_NAME,
+            status = status,
+            mode_label = run.mode_label,
+            generator_mode_actual = run.generator_mode_actual,
+            active_weights_lookup_name = run.active_weights_lookup_name,
+            started_tick = run.started_tick,
+            finished_tick = tick,
+            max_ticks_per_case = MAX_TICKS_PER_TEST,
+            samples_per_tick = run.samples_per_tick,
+            surface_name = run.surface_name,
+            volume = run.volume,
+            coin_trade_chance_values = run.coin_trade_chance_values,
+            sell_trade_chance = run.sell_trade_chance,
+            presets = run.presets,
+            failure_reason = failed_reason,
+        },
+        sweep_results = run.results,
+    }
+
+    local filename = SAMPLE_ALL_PRESETS_RANGE_OUTPUT_FILE_PREFIX
+        .. run.mode_label
+        .. "_"
+        .. tostring(run.started_tick)
+        .. ".json"
+    helpers.write_file(filename, helpers.table_to_json(output), false)
+
+    if failed_reason then
+        _emit(player, "All-preset range sampling failed: " .. failed_reason)
+    else
+        _emit(player, "All-preset range sampling completed successfully.")
+    end
+    _emit(player, "All-preset range sampling JSON written to script-output/" .. filename)
+end
+
+local function _begin_all_preset_phase(run)
+    local complexity = run.presets[run.current_index]
+    if not complexity then
+        return false, "No complexity preset for index " .. tostring(run.current_index)
+    end
+
+    _with_runtime_string_overrides({
+        ["trade-complexity"] = complexity,
+    }, function()
+        trade_generator.init()
+    end)
+
+    local lookup = storage.trades[run.active_weights_lookup_name]
+    if type(lookup) ~= "table" then
+        return false, "Active trade-shape lookup '" .. tostring(run.active_weights_lookup_name) .. "' missing at runtime"
+    end
+    local expected_weights = lookup[complexity]
+    if type(expected_weights) ~= "table" then
+        return false, "Missing expected weights for complexity '" .. complexity .. "' in '" .. tostring(run.active_weights_lookup_name) .. "'"
+    end
+    if storage.trades.trade_shape_weights ~= expected_weights then
+        return false, "trade_generator.init did not apply '" .. complexity .. "' preset"
+    end
+    if storage.trades.trade_shape_weighted_choice ~= nil then
+        return false, "Expected weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+    end
+
+    run.expected_categories = _build_shape_category_expectations(expected_weights)
+    run.ticks_in_preset = 0
+    run.generated = 0
+    run.nil_returns = 0
+    run.counts = {}
+    run.phase = "sample_preset"
+    return true, nil
+end
+
+local function _begin_all_preset_range_case(run)
+    local coin_trade_chance = run.coin_trade_chance_values[run.current_coin_index]
+    local complexity = run.presets[run.current_preset_index]
+    if coin_trade_chance == nil or complexity == nil then
+        return false, "Invalid range sampling index state"
+    end
+
+    _with_runtime_setting_overrides({
+        ["trade-complexity"] = complexity,
+    }, function()
+        trade_generator.init()
+    end)
+
+    local lookup = storage.trades[run.active_weights_lookup_name]
+    if type(lookup) ~= "table" then
+        return false, "Active trade-shape lookup '" .. tostring(run.active_weights_lookup_name) .. "' missing at runtime"
+    end
+    local expected_weights = lookup[complexity]
+    if type(expected_weights) ~= "table" then
+        return false, "Missing expected weights for complexity '" .. complexity .. "' in '" .. tostring(run.active_weights_lookup_name) .. "'"
+    end
+    if storage.trades.trade_shape_weights ~= expected_weights then
+        return false, "trade_generator.init did not apply '" .. complexity .. "' preset"
+    end
+    if storage.trades.trade_shape_weighted_choice ~= nil then
+        return false, "Expected weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+    end
+
+    run.expected_categories = _build_shape_category_expectations(expected_weights)
+    run.ticks_in_case = 0
+    run.generated = 0
+    run.nil_returns = 0
+    run.counts = {}
+    run.phase = "sample_case"
+
+    -- Keep currently sampled values in one place for the tick sampler.
+    run.current_coin_trade_chance = coin_trade_chance
+    return true, nil
 end
 
 ---@param current {test:table, state:table|nil, initialized:boolean}
@@ -1022,7 +1539,7 @@ end
 
 function trade_generator_tests.on_tick(event)
     local tick = event.tick
-    if not active_run and not active_sampling_run then
+    if not active_run and not active_sampling_run and not active_all_preset_sampling_run and not active_all_preset_range_sampling_run and not active_all_modes_sampling_run then
         return
     end
 
@@ -1053,10 +1570,11 @@ function trade_generator_tests.on_tick(event)
 
         local current = active_run.current
         if current then
-            if tick - current.started_tick > MAX_TICKS_PER_TEST then
-                active_run.failed = active_run.failed + 1
-                _emit(player, "FAIL: " .. current.test.id .. " :: timed out after " .. MAX_TICKS_PER_TEST .. " ticks")
-                active_run.current = nil
+    local timeout_ticks = (current.test and current.test.timeout_ticks) or MAX_TICKS_PER_TEST
+    if tick - current.started_tick > timeout_ticks then
+        active_run.failed = active_run.failed + 1
+        _emit(player, "FAIL: " .. current.test.id .. " :: timed out after " .. timeout_ticks .. " ticks")
+        active_run.current = nil
             elseif tick >= current.wait_until_tick then
                 local ok, yielded = _run_current_test_step(current, active_run.context)
                 if not ok then
@@ -1117,6 +1635,249 @@ function trade_generator_tests.on_tick(event)
             end
         end
     end
+
+    if active_all_preset_sampling_run then
+        local run = active_all_preset_sampling_run
+        if tick < run.wait_until_tick then
+            return
+        end
+
+        if run.current_index > #run.presets then
+            _finish_all_preset_sampling(run, tick, nil)
+            active_all_preset_sampling_run = nil
+            return
+        end
+
+        if run.phase == "start_preset" then
+            local ok, err = _begin_all_preset_phase(run)
+            if not ok then
+                _finish_all_preset_sampling(run, tick, err)
+                active_all_preset_sampling_run = nil
+                return
+            end
+
+            local complexity = run.presets[run.current_index]
+            local player = _resolve_player(run.player_index)
+            _emit(player, "Sampling preset '" .. complexity .. "' for " .. MAX_TICKS_PER_TEST .. " ticks")
+            run.wait_until_tick = tick + 1
+            return
+        end
+
+        _with_runtime_number_overrides({
+            ["coin-trade-chance"] = run.runtime_settings.coin_trade_chance,
+            ["sell-trade-chance"] = run.runtime_settings.sell_trade_chance,
+        }, function()
+            for _ = 1, run.samples_per_tick do
+                local tentative = trade_generator.generate_random(run.surface_name, {}, run.volume, {allow_nil_return = true}, true, nil)
+                if tentative then
+                    local category = _get_trade_category(tentative)
+                    run.counts[category] = (run.counts[category] or 0) + 1
+                    run.generated = run.generated + 1
+                else
+                    run.nil_returns = run.nil_returns + 1
+                end
+            end
+        end)
+
+        run.ticks_in_preset = run.ticks_in_preset + 1
+        if run.ticks_in_preset < MAX_TICKS_PER_TEST then
+            run.wait_until_tick = tick + 1
+            return
+        end
+
+        local complexity = run.presets[run.current_index]
+        if run.generated <= 0 then
+            _finish_all_preset_sampling(run, tick, "No trades were generated while sampling preset '" .. complexity .. "'")
+            active_all_preset_sampling_run = nil
+            return
+        end
+        run.results[complexity] = {
+            trade_complexity_source = complexity,
+            ticks_sampled = run.ticks_in_preset,
+            generated = run.generated,
+            nil_returns = run.nil_returns,
+            category_counts = table.deepcopy(run.counts),
+            category_distribution = _build_probability_map(run.counts, run.generated),
+        }
+
+        run.current_index = run.current_index + 1
+        run.phase = "start_preset"
+        run.wait_until_tick = tick + 1
+    end
+
+    if active_all_preset_range_sampling_run then
+        local run = active_all_preset_range_sampling_run
+        if tick < run.wait_until_tick then
+            return
+        end
+
+        if run.current_coin_index > #run.coin_trade_chance_values then
+            _finish_all_preset_range_sampling(run, tick, nil)
+            active_all_preset_range_sampling_run = nil
+            return
+        end
+
+        if run.phase == "start_case" then
+            local ok, err = _begin_all_preset_range_case(run)
+            if not ok then
+                _finish_all_preset_range_sampling(run, tick, err)
+                active_all_preset_range_sampling_run = nil
+                return
+            end
+
+            local complexity = run.presets[run.current_preset_index]
+            local player = _resolve_player(run.player_index)
+            _emit(
+                player,
+                "Range sampling case: coin-trade-chance="
+                    .. string.format("%.2f", run.current_coin_trade_chance)
+                    .. ", complexity='"
+                    .. complexity
+                    .. "' for "
+                    .. MAX_TICKS_PER_TEST
+                    .. " ticks"
+            )
+            run.wait_until_tick = tick + 1
+            return
+        end
+
+        _with_runtime_setting_overrides({
+            ["coin-trade-chance"] = run.current_coin_trade_chance,
+            ["sell-trade-chance"] = run.sell_trade_chance,
+        }, function()
+            for _ = 1, run.samples_per_tick do
+                local tentative = trade_generator.generate_random(run.surface_name, {}, run.volume, {allow_nil_return = true}, true, nil)
+                if tentative then
+                    local category = _get_trade_category(tentative)
+                    run.counts[category] = (run.counts[category] or 0) + 1
+                    run.generated = run.generated + 1
+                else
+                    run.nil_returns = run.nil_returns + 1
+                end
+            end
+        end)
+
+        run.ticks_in_case = run.ticks_in_case + 1
+        if run.ticks_in_case < MAX_TICKS_PER_TEST then
+            run.wait_until_tick = tick + 1
+            return
+        end
+
+        local complexity = run.presets[run.current_preset_index]
+        if run.generated <= 0 then
+            _finish_all_preset_range_sampling(run, tick, "No trades were generated for coin-trade-chance=" .. tostring(run.current_coin_trade_chance) .. ", complexity='" .. complexity .. "'")
+            active_all_preset_range_sampling_run = nil
+            return
+        end
+        local coin_category_count = 0
+        for category, count in pairs(run.counts) do
+            if string.find(category, "coin", 1, true) then
+                coin_category_count = coin_category_count + count
+            end
+        end
+
+        if run.current_coin_trade_chance == 0.2 then
+            local player = _resolve_player(run.player_index)
+            _emit(
+                player,
+                "Override parity probe @0.20 for complexity '"
+                    .. complexity
+                    .. "': coin_category_count="
+                    .. tostring(coin_category_count)
+            )
+        end
+
+        if run.current_coin_trade_chance == 0.2 and coin_category_count <= 0 then
+            _finish_all_preset_range_sampling(run, tick, "Override parity check failed: expected coin categories at coin-trade-chance=0.20 for complexity '" .. complexity .. "'")
+            active_all_preset_range_sampling_run = nil
+            return
+        end
+
+        local coin_key = string.format("%.2f", run.current_coin_trade_chance)
+        run.results[coin_key] = run.results[coin_key] or {}
+        run.results[coin_key][complexity] = {
+            trade_complexity_source = complexity,
+            ticks_sampled = run.ticks_in_case,
+            generated = run.generated,
+            nil_returns = run.nil_returns,
+            coin_category_count = coin_category_count,
+            category_counts = table.deepcopy(run.counts),
+            category_distribution = _build_probability_map(run.counts, run.generated),
+        }
+
+        if run.current_preset_index < #run.presets then
+            run.current_preset_index = run.current_preset_index + 1
+        else
+            run.current_preset_index = 1
+            run.current_coin_index = run.current_coin_index + 1
+        end
+        run.phase = "start_case"
+        run.wait_until_tick = tick + 1
+    end
+
+    if active_all_modes_sampling_run then
+        local run = active_all_modes_sampling_run
+        if tick < run.wait_until_tick then
+            return
+        end
+
+        if active_run or active_sampling_run or active_all_preset_sampling_run or active_all_preset_range_sampling_run then
+            return
+        end
+
+        local player = _resolve_player(run.player_index)
+        local phase = run.phases[run.current_phase]
+        if not phase then
+            local ok_restore_mode = trade_generator.set_generator_mode_for_testing(run.original_mode)
+            if ok_restore_mode then
+                trade_generator.init()
+            end
+            _emit(player, "All-modes sampling queue completed.")
+            active_all_modes_sampling_run = nil
+            return
+        end
+
+        local ok_mode, mode_err = trade_generator.set_generator_mode_for_testing(phase.mode)
+        if not ok_mode then
+            _emit(player, "All-modes sampling aborted: failed to set mode '" .. tostring(phase.mode) .. "' (" .. tostring(mode_err) .. ")")
+            trade_generator.set_generator_mode_for_testing(run.original_mode)
+            trade_generator.init()
+            active_all_modes_sampling_run = nil
+            return
+        end
+        trade_generator.init()
+
+        if phase.kind == "all-presets" then
+            _emit(player, "All-modes phase " .. run.current_phase .. "/4: mode='" .. phase.mode .. "', command='all-presets'")
+            _start_all_preset_sampling(player, true)
+            if not active_all_preset_sampling_run then
+                _emit(player, "All-modes sampling aborted: failed to start all-preset sampling in mode '" .. phase.mode .. "'")
+                trade_generator.set_generator_mode_for_testing(run.original_mode)
+                trade_generator.init()
+                active_all_modes_sampling_run = nil
+                return
+            end
+        elseif phase.kind == "range" then
+            _emit(player, "All-modes phase " .. run.current_phase .. "/4: mode='" .. phase.mode .. "', command='all-presets-range'")
+            _start_all_preset_range_sampling(player, phase.label or phase.mode, true)
+            if not active_all_preset_range_sampling_run then
+                _emit(player, "All-modes sampling aborted: failed to start range sampling in mode '" .. phase.mode .. "'")
+                trade_generator.set_generator_mode_for_testing(run.original_mode)
+                trade_generator.init()
+                active_all_modes_sampling_run = nil
+                return
+            end
+        else
+            _emit(player, "All-modes sampling aborted: unknown phase kind '" .. tostring(phase.kind) .. "'")
+            trade_generator.set_generator_mode_for_testing(run.original_mode)
+            trade_generator.init()
+            active_all_modes_sampling_run = nil
+            return
+        end
+
+        run.current_phase = run.current_phase + 1
+        run.wait_until_tick = tick + 1
+    end
 end
 
 function trade_generator_tests.register_commands()
@@ -1154,10 +1915,41 @@ function trade_generator_tests.register_commands()
     commands.remove_command(SAMPLE_COMMAND_NAME)
     commands.add_command(
         SAMPLE_COMMAND_NAME,
-        "/trade-generator-sample-distribution - Samples 1000 trades per tick and exports category distribution JSON to script-output.",
+        "/trade-generator-sample-distribution - Samples trades per tick for MAX_TICKS_PER_TEST and exports category distribution JSON to script-output.",
         function(cmd)
             local player = cmd.player_index and game.get_player(cmd.player_index) or nil
             _start_distribution_sampling(player)
+        end
+    )
+
+    commands.remove_command(SAMPLE_ALL_PRESETS_COMMAND_NAME)
+    commands.add_command(
+        SAMPLE_ALL_PRESETS_COMMAND_NAME,
+        "/trade-generator-sample-all-presets - Samples simple/balanced/complex presets sequentially with MAX_TICKS_PER_TEST budgets and exports JSON.",
+        function(cmd)
+            local player = cmd.player_index and game.get_player(cmd.player_index) or nil
+            _start_all_preset_sampling(player)
+        end
+    )
+
+    commands.remove_command(SAMPLE_ALL_PRESETS_RANGE_COMMAND_NAME)
+    commands.add_command(
+        SAMPLE_ALL_PRESETS_RANGE_COMMAND_NAME,
+        "/trade-generator-sample-all-presets-range [mode-label] - Sweeps coin-trade-chance (0.20, 0.30, 0.50) across simple/balanced/complex and exports one JSON matrix.",
+        function(cmd)
+            local player = cmd.player_index and game.get_player(cmd.player_index) or nil
+            local mode_label = cmd.parameter and cmd.parameter:match("^%s*(.-)%s*$") or ""
+            _start_all_preset_range_sampling(player, mode_label)
+        end
+    )
+
+    commands.remove_command(SAMPLE_ALL_MODES_COMMAND_NAME)
+    commands.add_command(
+        SAMPLE_ALL_MODES_COMMAND_NAME,
+        "/trade-generator-sample-all-modes - Runs current all-presets, current range, legacy all-presets, and legacy range sequentially.",
+        function(cmd)
+            local player = cmd.player_index and game.get_player(cmd.player_index) or nil
+            _start_all_modes_sampling(player)
         end
     )
 end

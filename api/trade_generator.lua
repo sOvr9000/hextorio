@@ -5,11 +5,75 @@ local item_values = require "api.item_values"
 local trade_loop_finder = require "api.trade_loop_finder"
 local weighted_choice = require "api.weighted_choice"
 local event_system = require "api.event_system"
+local trade_generator_legacy_main = require "api.trade_generator_legacy_main"
+local data_trades = require "data.trades"
 
 local trade_generator = {}
 
 local RANDOM_TRADE_ATTEMPTS = 10 -- Number of attempts to make when generating a random trade before giving up and returning nil.
+-- DEPRECATED toggle: temporary mode switch for legacy-main sampling only.
+-- Intended to be removed after comparison/sampling work is complete.
+local DEFAULT_GENERATOR_MODE = "current" -- "current" | "legacy-main"
+-- local DEFAULT_GENERATOR_MODE = "legacy-main" -- "current" | "legacy-main"
+local generator_mode = DEFAULT_GENERATOR_MODE
+local TRADE_SHAPE_LOOKUP_STORAGE_REVISION = 2
 
+local function refresh_trade_shape_lookup_storage(force_refresh)
+    if not storage or not storage.trades then return end
+
+    if not force_refresh and storage.trades.trade_shape_lookup_storage_revision == TRADE_SHAPE_LOOKUP_STORAGE_REVISION then
+        return
+    end
+
+    storage.trades.trade_shape_weights_lookup = table.deepcopy(data_trades.trade_shape_weights_lookup)
+    storage.trades.deprecated_trade_shape_weights_lookup_main = table.deepcopy(data_trades.deprecated_trade_shape_weights_lookup_main)
+    storage.trades.trade_shape_lookup_storage_revision = TRADE_SHAPE_LOOKUP_STORAGE_REVISION
+end
+
+---@return table weights_lookup, string lookup_name
+local function get_active_weights_lookup()
+    local lookup_name = "trade_shape_weights_lookup"
+    local weights_lookup = storage.trades.trade_shape_weights_lookup
+
+    if generator_mode == "legacy-main" then
+        if not storage.trades.deprecated_trade_shape_weights_lookup_main then
+            lib.log_error("trade_generator: deprecated legacy lookup missing in storage while mode='legacy-main'")
+            return nil, "deprecated_trade_shape_weights_lookup_main"
+        end
+        lookup_name = "deprecated_trade_shape_weights_lookup_main"
+        weights_lookup = storage.trades.deprecated_trade_shape_weights_lookup_main
+    end
+
+    return weights_lookup, lookup_name
+end
+
+---Read-only helper for diagnostics and sampling harness metadata.
+---@return "current"|"legacy-main"
+function trade_generator.get_generator_mode()
+    return generator_mode
+end
+
+---Read-only helper for diagnostics and sampling harness metadata.
+---@return "trade_shape_weights_lookup"|"deprecated_trade_shape_weights_lookup_main"
+function trade_generator.get_active_weights_lookup_name()
+    local _, lookup_name = get_active_weights_lookup()
+    return lookup_name
+end
+
+---DEPRECATED testing helper for temporary sampling workflows.
+---This mutates runtime generator mode and should not be used by gameplay logic.
+---@param mode "current"|"legacy-main"
+---@return boolean ok, string|nil error_message
+function trade_generator.set_generator_mode_for_testing(mode)
+    if mode ~= "current" and mode ~= "legacy-main" then
+        return false, "Invalid mode: " .. tostring(mode)
+    end
+    generator_mode = mode
+    if storage and storage.trades then
+        storage.trades.trade_shape_weighted_choice = nil
+    end
+    return true, nil
+end
 
 ---@class TentativeTrade Similar to a Trade, but during the process of its generation and before state initialization. Particularly, output item counts are nil until determined by the generator.
 ---@field surface_name string
@@ -293,11 +357,26 @@ function trade_generator.register_events()
     event_system.register("runtime-setting-changed-base-trade-efficiency", function()
         storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
     end)
+    event_system.register("runtime-setting-changed-trade-complexity", function()
+        trade_generator.init()
+    end)
 end
 
 function trade_generator.init()
+    refresh_trade_shape_lookup_storage(false)
+
     local complexity = lib.runtime_setting_value_as_string "trade-complexity"
-    local weights = storage.trades.trade_shape_weights_lookup[complexity]
+    local weights_lookup, lookup_name = get_active_weights_lookup()
+    if type(weights_lookup) ~= "table" then
+        lib.log_error("trade_generator.init: Missing active weights lookup '" .. tostring(lookup_name) .. "'")
+        return
+    end
+
+    local weights = weights_lookup[complexity]
+    if type(weights) ~= "table" then
+        lib.log_error("trade_generator.init: Missing complexity '" .. tostring(complexity) .. "' in lookup '" .. tostring(lookup_name) .. "'")
+        return
+    end
     set_trade_shape_distribution(weights)
 end
 
@@ -309,7 +388,7 @@ end
 ---@param output_item_names string[]
 ---@param params TradeGenerationParameters|nil
 ---@return TentativeTrade|nil
-function trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
+local function generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
     if not params then params = {} end
     set_trade_generation_parameter_defaults(params)
 
@@ -386,7 +465,7 @@ end
 ---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
 ---@param include_item string|nil An item name to be forcefully included in the trade.
 ---@return TentativeTrade|nil
-function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
+local function generate_random_current(surface_name, existing_trades, volume, params, allow_untradable, include_item)
     params = params and table.deepcopy(params) or {}
     set_trade_generation_parameter_defaults(params)
 
@@ -412,7 +491,7 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
             inject_coins_into_trade(input_item_names, output_item_names, include_item)
         end
 
-        local tentative = trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
+        local tentative = generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
 
         if tentative then
             candidate_trades[slot] = tentative
@@ -423,6 +502,36 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
     end
 
     lib.log_error("trade_generator.generate_random: A trade failed to generate within " .. RANDOM_TRADE_ATTEMPTS .. " attempts.")
+end
+
+function trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
+    if generator_mode == "legacy-main" then
+        return trade_generator_legacy_main.generate_from_item_names(
+            surface_name,
+            input_item_names,
+            output_item_names,
+            params,
+            trade_generator.solve_item_counts
+        )
+    end
+
+    return generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
+end
+
+function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
+    if generator_mode == "legacy-main" then
+        return trade_generator_legacy_main.generate_random(
+            surface_name,
+            existing_trades,
+            volume,
+            params,
+            allow_untradable,
+            include_item,
+            trade_generator.solve_item_counts
+        )
+    end
+
+    return generate_random_current(surface_name, existing_trades, volume, params, allow_untradable, include_item)
 end
 
 ---Given a trade with undefined item counts, attempt to set the counts to the values which best preserve the specified input-to-output value ratio (`params.target_efficiency`).

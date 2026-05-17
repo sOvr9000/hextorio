@@ -9,6 +9,7 @@
 -- local aquilo_only = {0,0,0,0,1}
 -- local not_aquilo = {1,1,1,1,0}
 
+local deprecated_trade_shape_weights_lookup_main = require "data.trades_legacy_main"
 
 
 return {
@@ -64,15 +65,15 @@ return {
             {num_inputs = 2, num_outputs = 0, weight = 0},
             {num_inputs = 3, num_outputs = 0, weight = 0},
 
-            {num_inputs = 1, num_outputs = 1, weight = 450},
-            {num_inputs = 1, num_outputs = 2, weight = 100},
-            {num_inputs = 1, num_outputs = 3, weight = 40},
-            {num_inputs = 2, num_outputs = 1, weight = 100},
-            {num_inputs = 2, num_outputs = 2, weight = 75},
-            {num_inputs = 2, num_outputs = 3, weight = 60},
-            {num_inputs = 3, num_outputs = 1, weight = 40},
-            {num_inputs = 3, num_outputs = 2, weight = 60},
-            {num_inputs = 3, num_outputs = 3, weight = 100},
+            {num_inputs = 1, num_outputs = 1, weight = 660},
+            {num_inputs = 1, num_outputs = 2, weight = 148},
+            {num_inputs = 1, num_outputs = 3, weight = 50},
+            {num_inputs = 2, num_outputs = 1, weight = 141},
+            {num_inputs = 2, num_outputs = 2, weight = 95},
+            {num_inputs = 2, num_outputs = 3, weight = 94},
+            {num_inputs = 3, num_outputs = 1, weight = 51},
+            {num_inputs = 3, num_outputs = 2, weight = 100},
+            {num_inputs = 3, num_outputs = 3, weight = 161},
         },
         ["balanced"] = {
             {num_inputs = 0, num_outputs = 1, weight = 0},
@@ -83,15 +84,15 @@ return {
             {num_inputs = 2, num_outputs = 0, weight = 0},
             {num_inputs = 3, num_outputs = 0, weight = 0},
 
-            {num_inputs = 1, num_outputs = 1, weight = 250},
-            {num_inputs = 1, num_outputs = 2, weight = 100},
-            {num_inputs = 1, num_outputs = 3, weight = 50},
-            {num_inputs = 2, num_outputs = 1, weight = 100},
-            {num_inputs = 2, num_outputs = 2, weight = 100},
-            {num_inputs = 2, num_outputs = 3, weight = 90},
-            {num_inputs = 3, num_outputs = 1, weight = 50},
-            {num_inputs = 3, num_outputs = 2, weight = 90},
-            {num_inputs = 3, num_outputs = 3, weight = 175},
+            {num_inputs = 1, num_outputs = 1, weight = 364},
+            {num_inputs = 1, num_outputs = 2, weight = 160},
+            {num_inputs = 1, num_outputs = 3, weight = 76},
+            {num_inputs = 2, num_outputs = 1, weight = 128},
+            {num_inputs = 2, num_outputs = 2, weight = 151},
+            {num_inputs = 2, num_outputs = 3, weight = 151},
+            {num_inputs = 3, num_outputs = 1, weight = 67},
+            {num_inputs = 3, num_outputs = 2, weight = 152},
+            {num_inputs = 3, num_outputs = 3, weight = 251},
         },
         ["complex"] = {
             {num_inputs = 0, num_outputs = 1, weight = 0},
@@ -102,17 +103,19 @@ return {
             {num_inputs = 2, num_outputs = 0, weight = 0},
             {num_inputs = 3, num_outputs = 0, weight = 0},
             
-            {num_inputs = 1, num_outputs = 1, weight = 120},
-            {num_inputs = 1, num_outputs = 2, weight = 90},
-            {num_inputs = 1, num_outputs = 3, weight = 50},
-            {num_inputs = 2, num_outputs = 1, weight = 90},
-            {num_inputs = 2, num_outputs = 2, weight = 100},
-            {num_inputs = 2, num_outputs = 3, weight = 120},
-            {num_inputs = 3, num_outputs = 1, weight = 50},
-            {num_inputs = 3, num_outputs = 2, weight = 120},
-            {num_inputs = 3, num_outputs = 3, weight = 250},
+            {num_inputs = 1, num_outputs = 1, weight = 177},
+            {num_inputs = 1, num_outputs = 2, weight = 124},
+            {num_inputs = 1, num_outputs = 3, weight = 90},
+            {num_inputs = 2, num_outputs = 1, weight = 119},
+            {num_inputs = 2, num_outputs = 2, weight = 143},
+            {num_inputs = 2, num_outputs = 3, weight = 178},
+            {num_inputs = 3, num_outputs = 1, weight = 90},
+            {num_inputs = 3, num_outputs = 2, weight = 181},
+            {num_inputs = 3, num_outputs = 3, weight = 398},
         },
     },
+    -- DEPRECATED: Legacy snapshot from `main` for temporary generator sampling/comparison.
+    deprecated_trade_shape_weights_lookup_main = deprecated_trade_shape_weights_lookup_main,
 
     base_trade_productivity = {}, -- Planet-wide buffs/debuffs to trade productivity.
     base_productivity = 0, -- Universal buff to trade productivity, regardless of planet.
