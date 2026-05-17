@@ -10,6 +10,7 @@ local trade_generator_tests = {}
 
 local COMMAND_NAME = "trade-generator-tests"
 local OUTPUT_FILE = "hextorio/trade_generator_tests.log"
+local MAX_TICKS_PER_TEST = 50
 
 -- API references (local docs):
 -- - commands.add_command + CustomCommandData.parameter:
@@ -19,6 +20,9 @@ local OUTPUT_FILE = "hextorio/trade_generator_tests.log"
 --   .reference/factorio-api-html/classes/LuaHelpers.html#write_file
 -- - LuaPlayer.print:
 --   .reference/factorio-api-html/classes/LuaPlayer.html#print
+-- - script.on_nth_tick + NthTickEventData.tick:
+--   .reference/factorio-api-html/classes/LuaBootstrap.html#on_nth_tick
+--   .reference/factorio-api-html/concepts/NthTickEventData.html
 
 local function _emit(player, message)
     local line = "[TradeGeneratorTests] " .. message
@@ -754,7 +758,17 @@ local function _list_tests(player)
     end
 end
 
-local function _run_selected_tests(player, selected_tests)
+---@class TradeGeneratorTestRun
+---@field player_index uint|nil
+---@field selected_tests table[]
+---@field context table
+---@field next_index int
+---@field current {index:int, test:table, started_tick:uint, wait_until_tick:uint, state:table|nil, initialized:boolean}|nil
+---@field passed int
+---@field failed int
+local active_run = nil ---@type TradeGeneratorTestRun|nil
+
+local function _build_context(player)
     local surface = game.get_surface("nauvis") or (player and player.surface) or game.surfaces[1]
     _expect(surface ~= nil, "No valid surface found for tests")
 
@@ -767,29 +781,164 @@ local function _run_selected_tests(player, selected_tests)
         surface_name = surface.name,
         sample_items = sample_items,
         volume = volume,
+        defer_ticks = function(num_ticks)
+            local n = tonumber(num_ticks) or 1
+            n = math.max(1, math.floor(n))
+            return {wait_ticks = n}
+        end,
+    }
+    context.defer = context.defer_ticks
+
+    return context
+end
+
+local function _start_selected_tests(player, selected_tests)
+    if active_run then
+        _emit(player, "A test run is already active. Wait for it to complete before starting another run.")
+        return
+    end
+
+    local context = _build_context(player)
+    active_run = {
+        player_index = player and player.index or nil,
+        selected_tests = selected_tests,
+        context = context,
+        next_index = 1,
+        current = nil,
+        passed = 0,
+        failed = 0,
     }
 
-    _emit(player, "Running " .. #selected_tests .. " test(s) on surface '" .. surface.name .. "'")
+    _emit(player, "Running " .. #selected_tests .. " test(s) on surface '" .. context.surface_name .. "' with deferred per-tick execution")
+end
 
-    local passed = 0
-    local failed = 0
+local function _resolve_player(player_index)
+    if not player_index then return nil end
+    return game.get_player(player_index)
+end
 
-    for i, test in ipairs(selected_tests) do
-        _emit(player, "[" .. i .. "/" .. #selected_tests .. "] " .. test.id .. " - " .. test.description)
-        local ok, err = xpcall(function() test.run(context) end, debug.traceback)
-        if ok then
-            passed = passed + 1
-            _emit(player, "PASS: " .. test.id)
-        else
-            failed = failed + 1
-            _emit(player, "FAIL: " .. test.id .. " :: " .. tostring(err))
+local function _safe_run_test_call(fn)
+    return xpcall(fn, debug.traceback)
+end
+
+---@param current {test:table, state:table|nil, initialized:boolean}
+---@param context table
+---@return boolean ok, any result_or_error
+local function _run_current_test_step(current, context)
+    local test = current.test
+
+    -- Deferred test protocol (no coroutines):
+    --   optional test.init(context) -> state table
+    --   required test.run_tick(context, state) for multi-tick tests
+    --   return nil or {done=true} to finish; return {wait_ticks=N} to continue later
+    if test.run_tick then
+        if not current.initialized then
+            current.initialized = true
+            if test.init then
+                local ok_init, state_or_err = _safe_run_test_call(function()
+                    return test.init(context)
+                end)
+                if not ok_init then
+                    return false, state_or_err
+                end
+                current.state = state_or_err
+            else
+                current.state = {}
+            end
+        end
+
+        return _safe_run_test_call(function()
+            return test.run_tick(context, current.state)
+        end)
+    end
+
+    -- Backward-compatible synchronous test path.
+    if current.initialized then
+        return true, {done = true}
+    end
+
+    current.initialized = true
+    return _safe_run_test_call(function()
+        test.run(context)
+        return {done = true}
+    end)
+end
+
+function trade_generator_tests.on_tick(event)
+    if not active_run then return end
+
+    local tick = event.tick
+    local player = _resolve_player(active_run.player_index)
+
+    if not active_run.current then
+        if active_run.next_index > #active_run.selected_tests then
+            _emit(player, "Completed. Passed=" .. active_run.passed .. " Failed=" .. active_run.failed .. " Total=" .. #active_run.selected_tests)
+            active_run = nil
+            return
+        end
+
+        local index = active_run.next_index
+        local test = active_run.selected_tests[index]
+        active_run.next_index = index + 1
+
+        _emit(player, "[" .. index .. "/" .. #active_run.selected_tests .. "] " .. test.id .. " - " .. test.description)
+
+        active_run.current = {
+            index = index,
+            test = test,
+            started_tick = tick,
+            wait_until_tick = tick,
+            state = nil,
+            initialized = false,
+        }
+    end
+
+    local current = active_run.current
+    if not current then return end
+
+    if tick - current.started_tick > MAX_TICKS_PER_TEST then
+        active_run.failed = active_run.failed + 1
+        _emit(player, "FAIL: " .. current.test.id .. " :: timed out after " .. MAX_TICKS_PER_TEST .. " ticks")
+        active_run.current = nil
+        return
+    end
+
+    if tick < current.wait_until_tick then
+        return
+    end
+
+    local ok, yielded = _run_current_test_step(current, active_run.context)
+    if not ok then
+        active_run.failed = active_run.failed + 1
+        _emit(player, "FAIL: " .. current.test.id .. " :: " .. tostring(yielded))
+        active_run.current = nil
+        return
+    end
+
+    local wait_ticks = 0
+    local is_done = true
+    if type(yielded) == "table" then
+        if yielded.wait_ticks ~= nil then
+            wait_ticks = math.max(1, math.floor(tonumber(yielded.wait_ticks) or 1))
+            is_done = false
+        elseif yielded.done ~= nil then
+            is_done = yielded.done ~= false
         end
     end
 
-    _emit(player, "Completed. Passed=" .. passed .. " Failed=" .. failed .. " Total=" .. #selected_tests)
+    if is_done then
+        active_run.passed = active_run.passed + 1
+        _emit(player, "PASS: " .. current.test.id)
+        active_run.current = nil
+        return
+    end
+
+    current.wait_until_tick = tick + wait_ticks
 end
 
 function trade_generator_tests.register_commands()
+    script.on_nth_tick(1, trade_generator_tests.on_tick)
+
     commands.remove_command(COMMAND_NAME)
     commands.add_command(
         COMMAND_NAME,
@@ -799,7 +948,7 @@ function trade_generator_tests.register_commands()
             local arg = cmd.parameter and cmd.parameter:match("^%s*(.-)%s*$") or ""
 
             if arg == "" or arg == "all" then
-                _run_selected_tests(player, tests)
+                _start_selected_tests(player, tests)
                 return
             end
 
@@ -815,7 +964,7 @@ function trade_generator_tests.register_commands()
                 return
             end
 
-            _run_selected_tests(player, {test})
+            _start_selected_tests(player, {test})
         end
     )
 end
