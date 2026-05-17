@@ -16,7 +16,7 @@ end
 
 ---@param surface_name any
 ---@param inv LuaInventory|nil
----@return table
+---@return Coin
 function inventories.get_total_coin_value(surface_name, inv, min_rank)
     if not inv then
         error("inventories.get_total_coin_value_in_inventory: inventory is nil")
@@ -44,7 +44,7 @@ end
 
 ---@param inv LuaInventory|nil
 ---@param min_rank int
----@return table
+---@return Coin
 function inventories.remove_items_of_rank(inv, min_rank)
     if not inv then
         error("inventories.remove_items_of_rank: inventory is nil")
