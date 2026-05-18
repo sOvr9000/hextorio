@@ -1148,7 +1148,7 @@ local function _start_all_preset_sampling(player, internal_call)
         presets = presets,
         current_index = 1,
         ticks_in_preset = 0,
-        samples_per_tick = 15,
+        samples_per_tick = 30,
         generated = 0,
         nil_returns = 0,
         counts = {},
@@ -1244,7 +1244,7 @@ local function _start_all_preset_range_sampling(player, mode_label, internal_cal
         current_coin_index = 1,
         current_preset_index = 1,
         ticks_in_case = 0,
-        samples_per_tick = 35,
+        samples_per_tick = 30,
         generated = 0,
         nil_returns = 0,
         counts = {},
@@ -1544,20 +1544,21 @@ function trade_generator_tests.on_tick(event)
     end
 
     if active_run then
-        local player = _resolve_player(active_run.player_index)
+        local run = active_run
+        local player = _resolve_player(run.player_index)
 
-        if not active_run.current then
-            if active_run.next_index > #active_run.selected_tests then
-                _emit(player, "Completed. Passed=" .. active_run.passed .. " Failed=" .. active_run.failed .. " Total=" .. #active_run.selected_tests)
+        if not run.current then
+            if run.next_index > #run.selected_tests then
+                _emit(player, "Completed. Passed=" .. run.passed .. " Failed=" .. run.failed .. " Total=" .. #run.selected_tests)
                 active_run = nil
             else
-                local index = active_run.next_index
-                local test = active_run.selected_tests[index]
-                active_run.next_index = index + 1
+                local index = run.next_index
+                local test = run.selected_tests[index]
+                run.next_index = index + 1
 
-                _emit(player, "[" .. index .. "/" .. #active_run.selected_tests .. "] " .. test.id .. " - " .. test.description)
+                _emit(player, "[" .. index .. "/" .. #run.selected_tests .. "] " .. test.id .. " - " .. test.description)
 
-                active_run.current = {
+                run.current = {
                     index = index,
                     test = test,
                     started_tick = tick,
@@ -1568,19 +1569,23 @@ function trade_generator_tests.on_tick(event)
             end
         end
 
-        local current = active_run.current
+        if not active_run then
+            return
+        end
+
+        local current = run.current
         if current then
     local timeout_ticks = (current.test and current.test.timeout_ticks) or MAX_TICKS_PER_TEST
     if tick - current.started_tick > timeout_ticks then
-        active_run.failed = active_run.failed + 1
+        run.failed = run.failed + 1
         _emit(player, "FAIL: " .. current.test.id .. " :: timed out after " .. timeout_ticks .. " ticks")
-        active_run.current = nil
+        run.current = nil
             elseif tick >= current.wait_until_tick then
-                local ok, yielded = _run_current_test_step(current, active_run.context)
+                local ok, yielded = _run_current_test_step(current, run.context)
                 if not ok then
-                    active_run.failed = active_run.failed + 1
+                    run.failed = run.failed + 1
                     _emit(player, "FAIL: " .. current.test.id .. " :: " .. tostring(yielded))
-                    active_run.current = nil
+                    run.current = nil
                 else
                     local wait_ticks = 0
                     local is_done = true
@@ -1594,9 +1599,9 @@ function trade_generator_tests.on_tick(event)
                     end
 
                     if is_done then
-                        active_run.passed = active_run.passed + 1
+                        run.passed = run.passed + 1
                         _emit(player, "PASS: " .. current.test.id)
-                        active_run.current = nil
+                        run.current = nil
                     else
                         current.wait_until_tick = tick + wait_ticks
                     end
