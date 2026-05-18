@@ -605,8 +605,6 @@ script.on_event(defines.events.on_surface_created, function (event)
 end)
 
 script.on_event(defines.events.on_research_finished, function(event)
-    trades.recalculate_researched_items()
-    trades.queue_productivity_update_job()
     event_system.trigger("research-completed", event.research)
 end)
 

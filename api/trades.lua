@@ -131,6 +131,7 @@ function trades.register_events()
     end)
 
     event_system.register("item-buff-changed-trade-productivity", function() trades.queue_productivity_update_job() end)
+    event_system.register("research-completed", trades.on_research_completed)
 
     local function fetch_and_queue_update(surface_name)
         trades.fetch_base_trade_productivity_settings(surface_name)
@@ -2674,6 +2675,25 @@ function trades.recalculate_researched_items()
 
     -- Add raw items to set
     researched_items = sets.union(researched_items, lib.get_raw_items())
+
+    -- Add burnt and spoiled results
+    for item_name, _ in pairs(researched_items) do
+        local prot = prototypes.item[item_name]
+        if prot then
+            if prot.spoil_result then
+                local spoil_result = prot.spoil_result.name
+                if lib.is_item(spoil_result) then
+                    sets.add(researched_items, spoil_result)
+                end
+            elseif prot.burnt_result then
+                local burnt_result = prot.burnt_result.name
+                if lib.is_item(burnt_result) then
+                    sets.add(researched_items, burnt_result)
+                end
+            end
+        end
+    end
+
     storage.trades.researched_items = researched_items
 end
 
@@ -2800,6 +2820,20 @@ function trades.on_entity_killed_entity(entity_that_died, entity_that_caused, da
             end
         end
     end
+end
+
+---@param tech LuaTechnology
+function trades.on_research_completed(tech)
+    local prot = tech.prototype
+
+    for _, effect in pairs(prot.effects) do
+        if effect.type == "unlock-recipe" then
+            trades.recalculate_researched_items()
+            break
+        end
+    end
+
+    trades.queue_productivity_update_job()
 end
 
 
