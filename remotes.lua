@@ -23,6 +23,7 @@ for _, api_name in pairs{
     "dungeons",
     "entity_util",
     "event_system",
+    "features",
     "gameplay_statistics",
     "gameplay_statistics_recalculators",
     "hex_grid",
