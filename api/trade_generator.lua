@@ -5,18 +5,12 @@ local item_values = require "api.item_values"
 local trade_loop_finder = require "api.trade_loop_finder"
 local weighted_choice = require "api.weighted_choice"
 local event_system = require "api.event_system"
-local trade_generator_legacy_main = require "api.trade_generator_legacy_main"
 local data_trades = require "data.trades"
 
 local trade_generator = {}
 
 local RANDOM_TRADE_ATTEMPTS = 10 -- Number of attempts to make when generating a random trade before giving up and returning nil.
--- DEPRECATED toggle: temporary mode switch for legacy-main sampling only.
--- Intended to be removed after comparison/sampling work is complete.
-local DEFAULT_GENERATOR_MODE = "current" -- "current" | "legacy-main"
--- local DEFAULT_GENERATOR_MODE = "legacy-main" -- "current" | "legacy-main"
-local generator_mode = DEFAULT_GENERATOR_MODE
-local TRADE_SHAPE_LOOKUP_STORAGE_REVISION = 3
+local TRADE_SHAPE_LOOKUP_STORAGE_REVISION = 4
 
 local function refresh_trade_shape_lookup_storage(force_refresh)
     if not storage or not storage.trades then return end
@@ -26,54 +20,10 @@ local function refresh_trade_shape_lookup_storage(force_refresh)
     end
 
     storage.trades.trade_shape_weights_lookup = table.deepcopy(data_trades.trade_shape_weights_lookup)
-    storage.trades.deprecated_trade_shape_weights_lookup_main = table.deepcopy(data_trades.deprecated_trade_shape_weights_lookup_main)
     storage.trades.trade_shape_lookup_storage_revision = TRADE_SHAPE_LOOKUP_STORAGE_REVISION
-end
-
----@return table weights_lookup, string lookup_name
-local function get_active_weights_lookup()
-    local lookup_name = "trade_shape_weights_lookup"
-    local weights_lookup = storage.trades.trade_shape_weights_lookup
-
-    if generator_mode == "legacy-main" then
-        if not storage.trades.deprecated_trade_shape_weights_lookup_main then
-            lib.log_error("trade_generator: deprecated legacy lookup missing in storage while mode='legacy-main'")
-            return nil, "deprecated_trade_shape_weights_lookup_main"
-        end
-        lookup_name = "deprecated_trade_shape_weights_lookup_main"
-        weights_lookup = storage.trades.deprecated_trade_shape_weights_lookup_main
-    end
-
-    return weights_lookup, lookup_name
-end
-
----Read-only helper for diagnostics and sampling harness metadata.
----@return "current"|"legacy-main"
-function trade_generator.get_generator_mode()
-    return generator_mode
-end
-
----Read-only helper for diagnostics and sampling harness metadata.
----@return "trade_shape_weights_lookup"|"deprecated_trade_shape_weights_lookup_main"
-function trade_generator.get_active_weights_lookup_name()
-    local _, lookup_name = get_active_weights_lookup()
-    return lookup_name
-end
-
----DEPRECATED testing helper for temporary sampling workflows.
----This mutates runtime generator mode and should not be used by gameplay logic.
----@param mode "current"|"legacy-main"
----@return boolean ok, string|nil error_message
-function trade_generator.set_generator_mode_for_testing(mode)
-    if mode ~= "current" and mode ~= "legacy-main" then
-        return false, "Invalid mode: " .. tostring(mode)
-    end
-    generator_mode = mode
-    if storage and storage.trades then
-        storage.trades.trade_shape_weighted_choice = nil
-        storage.trades.trade_shape_weighted_choice_by_group = nil
-    end
-    return true, nil
+    -- Remove stale legacy snapshot state when loading old saves.
+    local stale_lookup_key = "deprecated_" .. "trade_shape_weights_lookup_main"
+    storage.trades[stale_lookup_key] = nil
 end
 
 ---@class TentativeTrade Similar to a Trade, but during the process of its generation and before state initialization. Particularly, output item counts are nil until determined by the generator.
@@ -129,38 +79,6 @@ local function set_trade_generation_parameter_defaults(params)
     if params.allow_nil_return == nil then
         params.allow_nil_return = true
     end
-end
-
----@param weights TradeShapeWeightedItem[]
----@return boolean
-local function validate_flat_weights(weights)
-    if type(weights) ~= "table" then
-        return false
-    end
-
-    local has_positive_weight = false
-    for _, obj in pairs(weights) do
-        if
-               type(obj.num_inputs) ~= "number"
-            or type(obj.num_outputs) ~= "number"
-            or type(obj.weight) ~= "number"
-            or math.floor(obj.num_inputs) ~= obj.num_inputs
-            or math.floor(obj.num_outputs) ~= obj.num_outputs
-            or obj.num_inputs < 0
-            or obj.num_inputs > 3
-            or obj.num_outputs < 0
-            or obj.num_outputs > 3
-            or (obj.num_inputs == 0 and obj.num_outputs == 0)
-            or obj.weight < 0
-        then
-            return false
-        end
-        if obj.weight > 0 then
-            has_positive_weight = true
-        end
-    end
-
-    return has_positive_weight
 end
 
 ---@param weights TradeShapeWeightedItem[]
@@ -222,19 +140,6 @@ local function validate_grouped_trade_shape_distribution(grouped_weights)
     end
 
     return has_any_positive_group
-end
-
----@param weights TradeShapeWeightedItem[]
-local function set_trade_shape_distribution_legacy(weights)
-    if not validate_flat_weights(weights) then
-        lib.log_error("trade_generator.set_trade_shape_distribution_legacy: Invalid weights received:\n" .. serpent.block(weights))
-        return
-    end
-
-    lib.log("New legacy weights set for trade shapes: " .. serpent.block(weights))
-    storage.trades.trade_shape_weights = weights
-    storage.trades.trade_shape_weighted_choice = nil
-    storage.trades.trade_shape_weighted_choice_by_group = nil
 end
 
 ---@param grouped_weights TradeShapeWeightsByArchetype
@@ -468,7 +373,8 @@ function trade_generator.init()
     refresh_trade_shape_lookup_storage(false)
 
     local complexity = lib.runtime_setting_value_as_string "trade-complexity"
-    local weights_lookup, lookup_name = get_active_weights_lookup()
+    local lookup_name = "trade_shape_weights_lookup"
+    local weights_lookup = storage.trades[lookup_name]
     if type(weights_lookup) ~= "table" then
         lib.log_error("trade_generator.init: Missing active weights lookup '" .. tostring(lookup_name) .. "'")
         return
@@ -480,11 +386,7 @@ function trade_generator.init()
         return
     end
 
-    if generator_mode == "legacy-main" then
-        set_trade_shape_distribution_legacy(weights)
-    else
-        set_trade_shape_distribution_current(weights)
-    end
+    set_trade_shape_distribution_current(weights)
 end
 
 ---Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.
@@ -609,32 +511,10 @@ local function generate_random_current(surface_name, existing_trades, volume, pa
 end
 
 function trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
-    if generator_mode == "legacy-main" then
-        return trade_generator_legacy_main.generate_from_item_names(
-            surface_name,
-            input_item_names,
-            output_item_names,
-            params,
-            trade_generator.solve_item_counts
-        )
-    end
-
     return generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
 end
 
 function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
-    if generator_mode == "legacy-main" then
-        return trade_generator_legacy_main.generate_random(
-            surface_name,
-            existing_trades,
-            volume,
-            params,
-            allow_untradable,
-            include_item,
-            trade_generator.solve_item_counts
-        )
-    end
-
     return generate_random_current(surface_name, existing_trades, volume, params, allow_untradable, include_item)
 end
 

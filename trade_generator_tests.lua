@@ -12,12 +12,11 @@ local COMMAND_NAME = "trade-generator-tests"
 local SAMPLE_COMMAND_NAME = "trade-generator-sample-distribution"
 local SAMPLE_ALL_PRESETS_COMMAND_NAME = "trade-generator-sample-all-presets"
 local SAMPLE_ALL_PRESETS_RANGE_COMMAND_NAME = "trade-generator-sample-all-presets-range"
-local SAMPLE_ALL_MODES_COMMAND_NAME = "trade-generator-sample-all-modes"
 local OUTPUT_FILE = "hextorio/trade_generator_tests.log"
 local SAMPLE_OUTPUT_FILE_PREFIX = "hextorio/trade_distribution_sample_"
 local SAMPLE_ALL_PRESETS_OUTPUT_FILE_PREFIX = "hextorio/trade_distribution_all_presets_"
 local SAMPLE_ALL_PRESETS_RANGE_OUTPUT_FILE_PREFIX = "hextorio/trade_distribution_all_presets_range_"
-local MAX_TICKS_PER_TEST = 100
+local MAX_TICKS_PER_TEST = 5
 
 -- API references (local docs):
 -- - commands.add_command + CustomCommandData.parameter:
@@ -240,6 +239,7 @@ local tests = {
         id = "shape_validation_guard_regression",
         description = "Validates invalid shape config entries are rejected without replacing active trade-shape weights.",
         run = function(context)
+            trade_generator.init()
             local complexity = lib.runtime_setting_value_as_string "trade-complexity"
             local lookup = storage.trades.trade_shape_weights_lookup
             _expect(type(lookup) == "table" and type(lookup[complexity]) == "table", "Missing trade-shape lookup for complexity: " .. tostring(complexity))
@@ -274,6 +274,7 @@ local tests = {
         id = "shape_validation_empty_effective_pool",
         description = "Validates grouped shape config with no positive-weight entries is rejected without replacing active trade-shape weights.",
         run = function(context)
+            trade_generator.init()
             local complexity = lib.runtime_setting_value_as_string "trade-complexity"
             local lookup = storage.trades.trade_shape_weights_lookup
             _expect(type(lookup) == "table" and type(lookup[complexity]) == "table", "Missing trade-shape lookup for complexity: " .. tostring(complexity))
@@ -896,7 +897,6 @@ local active_sampling_run = nil ---@type TradeDistributionSampleRun|nil
 ---@field expected_categories table<string, boolean>
 ---@field results table<string, table>
 ---@field runtime_settings table
----@field generator_mode_actual string
 ---@field active_weights_lookup_name string
 local active_all_preset_sampling_run = nil ---@type TradeAllPresetSamplingRun|nil
 
@@ -921,17 +921,8 @@ local active_all_preset_sampling_run = nil ---@type TradeAllPresetSamplingRun|ni
 ---@field counts table<string, int>
 ---@field expected_categories table<string, boolean>
 ---@field results table<string, table>
----@field generator_mode_actual string
 ---@field active_weights_lookup_name string
 local active_all_preset_range_sampling_run = nil ---@type TradeAllPresetRangeSamplingRun|nil
-
----@class TradeAllModesSamplingRun
----@field player_index uint|nil
----@field original_mode string
----@field current_phase int
----@field phases table[]
----@field wait_until_tick uint
-local active_all_modes_sampling_run = nil ---@type TradeAllModesSamplingRun|nil
 
 local function _sanitize_label(label)
     local s = tostring(label or ""):lower()
@@ -991,32 +982,11 @@ local function _build_shape_category_expectations(weights)
     return expected_categories
 end
 
----@return table lookup, string lookup_name, string mode
+---@return table lookup, string lookup_name
 local function _get_active_shape_lookup_for_generator()
-    local mode = "unknown"
-    if trade_generator.get_generator_mode then
-        mode = trade_generator.get_generator_mode()
-    end
-
     local lookup_name = "trade_shape_weights_lookup"
-    if trade_generator.get_active_weights_lookup_name then
-        lookup_name = trade_generator.get_active_weights_lookup_name()
-    elseif mode == "legacy-main" then
-        lookup_name = "deprecated_trade_shape_weights_lookup_main"
-    end
-
     local lookup = storage.trades[lookup_name]
-    return lookup, lookup_name, mode
-end
-
-local function _assert_mode_lookup_pair(mode, lookup_name)
-    if mode == "current" then
-        return lookup_name == "trade_shape_weights_lookup", "Expected lookup 'trade_shape_weights_lookup' for mode='current', got '" .. tostring(lookup_name) .. "'"
-    end
-    if mode == "legacy-main" then
-        return lookup_name == "deprecated_trade_shape_weights_lookup_main", "Expected lookup 'deprecated_trade_shape_weights_lookup_main' for mode='legacy-main', got '" .. tostring(lookup_name) .. "'"
-    end
-    return false, "Unknown generator mode: " .. tostring(mode)
+    return lookup, lookup_name
 end
 
 local function _build_context(player)
@@ -1048,7 +1018,7 @@ local function _start_selected_tests(player, selected_tests)
         _emit(player, "A test run is already active. Wait for it to complete before starting another run.")
         return
     end
-    if active_sampling_run or active_all_preset_sampling_run or active_all_preset_range_sampling_run or active_all_modes_sampling_run then
+    if active_sampling_run or active_all_preset_sampling_run or active_all_preset_range_sampling_run then
         _emit(player, "A sampling run is already active. Wait for it to complete before starting tests.")
         return
     end
@@ -1089,10 +1059,6 @@ local function _start_distribution_sampling(player)
         _emit(player, "An all-preset range sampling run is active. Wait for it to finish before starting distribution sampling.")
         return
     end
-    if active_all_modes_sampling_run then
-        _emit(player, "An all-modes sampling run is active. Wait for it to finish before starting distribution sampling.")
-        return
-    end
     if active_sampling_run then
         _emit(player, "A distribution sampling run is already active.")
         return
@@ -1112,7 +1078,7 @@ local function _start_distribution_sampling(player)
         started_tick = game.tick,
         wait_until_tick = game.tick,
         tick_count = 0,
-        samples_per_tick = 25,
+        samples_per_tick = 5,
         samples_attempted = 0,
         generated_count = 0,
         nil_count = 0,
@@ -1132,7 +1098,7 @@ local function _start_distribution_sampling(player)
     )
 end
 
-local function _start_all_preset_sampling(player, internal_call)
+local function _start_all_preset_sampling(player)
     if active_run then
         _emit(player, "A test run is active. Wait for it to finish before starting all-preset sampling.")
         return
@@ -1149,19 +1115,9 @@ local function _start_all_preset_sampling(player, internal_call)
         _emit(player, "An all-preset range sampling run is already active.")
         return
     end
-    if active_all_modes_sampling_run and not internal_call then
-        _emit(player, "An all-modes sampling run is already active.")
-        return
-    end
-
-    local lookup, lookup_name, mode = _get_active_shape_lookup_for_generator()
+    local lookup, lookup_name = _get_active_shape_lookup_for_generator()
     if type(lookup) ~= "table" then
         _emit(player, "Cannot start all-preset sampling: active trade-shape lookup '" .. tostring(lookup_name) .. "' is missing")
-        return
-    end
-    local pair_ok, pair_err = _assert_mode_lookup_pair(mode, lookup_name)
-    if not pair_ok then
-        _emit(player, "Cannot start all-preset sampling: " .. pair_err)
         return
     end
 
@@ -1184,7 +1140,7 @@ local function _start_all_preset_sampling(player, internal_call)
         presets = presets,
         current_index = 1,
         ticks_in_preset = 0,
-        samples_per_tick = 30,
+        samples_per_tick = 5,
         generated = 0,
         nil_returns = 0,
         counts = {},
@@ -1194,7 +1150,6 @@ local function _start_all_preset_sampling(player, internal_call)
             coin_trade_chance = lib.runtime_setting_value_as_number("coin-trade-chance"),
             sell_trade_chance = lib.runtime_setting_value_as_number("sell-trade-chance"),
         },
-        generator_mode_actual = mode,
         active_weights_lookup_name = lookup_name,
     }
 
@@ -1208,7 +1163,7 @@ local function _start_all_preset_sampling(player, internal_call)
     )
 end
 
-local function _start_all_preset_range_sampling(player, mode_label, internal_call)
+local function _start_all_preset_range_sampling(player, mode_label)
     if active_run then
         _emit(player, "A test run is active. Wait for it to finish before starting all-preset range sampling.")
         return
@@ -1225,19 +1180,9 @@ local function _start_all_preset_range_sampling(player, mode_label, internal_cal
         _emit(player, "An all-preset range sampling run is already active.")
         return
     end
-    if active_all_modes_sampling_run and not internal_call then
-        _emit(player, "An all-modes sampling run is already active.")
-        return
-    end
-
-    local lookup, lookup_name, mode = _get_active_shape_lookup_for_generator()
+    local lookup, lookup_name = _get_active_shape_lookup_for_generator()
     if type(lookup) ~= "table" then
         _emit(player, "Cannot start all-preset range sampling: active trade-shape lookup '" .. tostring(lookup_name) .. "' is missing")
-        return
-    end
-    local pair_ok, pair_err = _assert_mode_lookup_pair(mode, lookup_name)
-    if not pair_ok then
-        _emit(player, "Cannot start all-preset range sampling: " .. pair_err)
         return
     end
 
@@ -1251,19 +1196,8 @@ local function _start_all_preset_range_sampling(player, mode_label, internal_cal
 
     local context = _build_context(player)
     local sanitized_mode_label = _sanitize_label(mode_label)
-    if sanitized_mode_label ~= "unlabeled" and sanitized_mode_label ~= mode then
-        _emit(
-            player,
-            "Aborting all-preset range sampling: mode label mismatch. Provided='"
-                .. sanitized_mode_label
-                .. "' actual='"
-                .. tostring(mode)
-                .. "'"
-        )
-        return
-    end
     if sanitized_mode_label == "unlabeled" then
-        sanitized_mode_label = mode
+        sanitized_mode_label = "current"
     end
 
     active_all_preset_range_sampling_run = {
@@ -1280,13 +1214,12 @@ local function _start_all_preset_range_sampling(player, mode_label, internal_cal
         current_coin_index = 1,
         current_preset_index = 1,
         ticks_in_case = 0,
-        samples_per_tick = 30,
+        samples_per_tick = 5,
         generated = 0,
         nil_returns = 0,
         counts = {},
         expected_categories = {},
         results = {},
-        generator_mode_actual = mode,
         active_weights_lookup_name = lookup_name,
     }
 
@@ -1298,37 +1231,6 @@ local function _start_all_preset_range_sampling(player, mode_label, internal_cal
             .. MAX_TICKS_PER_TEST
             .. " ticks per case"
     )
-end
-
-local function _start_all_modes_sampling(player)
-    if active_run then
-        _emit(player, "A test run is active. Wait for it to finish before starting all-modes sampling.")
-        return
-    end
-    if active_sampling_run or active_all_preset_sampling_run or active_all_preset_range_sampling_run or active_all_modes_sampling_run then
-        _emit(player, "Another sampling run is already active.")
-        return
-    end
-    if not trade_generator.set_generator_mode_for_testing then
-        _emit(player, "Cannot start all-modes sampling: trade_generator.set_generator_mode_for_testing is unavailable")
-        return
-    end
-
-    local original_mode = trade_generator.get_generator_mode and trade_generator.get_generator_mode() or "current"
-    active_all_modes_sampling_run = {
-        player_index = player and player.index or nil,
-        original_mode = original_mode,
-        current_phase = 1,
-        phases = {
-            {mode = "current", kind = "all-presets"},
-            {mode = "current", kind = "range", label = "current"},
-            {mode = "legacy-main", kind = "all-presets"},
-            {mode = "legacy-main", kind = "range", label = "legacy-main"},
-        },
-        wait_until_tick = game.tick,
-    }
-
-    _emit(player, "Started all-modes sampling queue: current/all-presets, current/range, legacy/all-presets, legacy/range")
 end
 
 local function _finish_distribution_sampling(run, tick)
@@ -1387,7 +1289,6 @@ local function _finish_all_preset_sampling(run, tick, failed_reason)
             surface_name = run.surface_name,
             volume = run.volume,
             runtime_settings = run.runtime_settings,
-            generator_mode_actual = run.generator_mode_actual,
             active_weights_lookup_name = run.active_weights_lookup_name,
             presets = run.presets,
             failure_reason = failed_reason,
@@ -1423,7 +1324,6 @@ local function _finish_all_preset_range_sampling(run, tick, failed_reason)
             command = SAMPLE_ALL_PRESETS_RANGE_COMMAND_NAME,
             status = status,
             mode_label = run.mode_label,
-            generator_mode_actual = run.generator_mode_actual,
             active_weights_lookup_name = run.active_weights_lookup_name,
             started_tick = run.started_tick,
             finished_tick = tick,
@@ -1477,14 +1377,8 @@ local function _begin_all_preset_phase(run)
     if storage.trades.trade_shape_weights ~= expected_weights then
         return false, "trade_generator.init did not apply '" .. complexity .. "' preset"
     end
-    if run.generator_mode_actual == "legacy-main" then
-        if storage.trades.trade_shape_weighted_choice ~= nil then
-            return false, "Expected legacy weighted-choice cache reset when initializing '" .. complexity .. "' preset"
-        end
-    else
-        if storage.trades.trade_shape_weighted_choice_by_group ~= nil then
-            return false, "Expected grouped weighted-choice cache reset when initializing '" .. complexity .. "' preset"
-        end
+    if storage.trades.trade_shape_weighted_choice_by_group ~= nil then
+        return false, "Expected grouped weighted-choice cache reset when initializing '" .. complexity .. "' preset"
     end
 
     run.expected_categories = _build_shape_category_expectations(expected_weights)
@@ -1520,14 +1414,8 @@ local function _begin_all_preset_range_case(run)
     if storage.trades.trade_shape_weights ~= expected_weights then
         return false, "trade_generator.init did not apply '" .. complexity .. "' preset"
     end
-    if run.generator_mode_actual == "legacy-main" then
-        if storage.trades.trade_shape_weighted_choice ~= nil then
-            return false, "Expected legacy weighted-choice cache reset when initializing '" .. complexity .. "' preset"
-        end
-    else
-        if storage.trades.trade_shape_weighted_choice_by_group ~= nil then
-            return false, "Expected grouped weighted-choice cache reset when initializing '" .. complexity .. "' preset"
-        end
+    if storage.trades.trade_shape_weighted_choice_by_group ~= nil then
+        return false, "Expected grouped weighted-choice cache reset when initializing '" .. complexity .. "' preset"
     end
 
     run.expected_categories = _build_shape_category_expectations(expected_weights)
@@ -1587,7 +1475,7 @@ end
 
 function trade_generator_tests.on_tick(event)
     local tick = event.tick
-    if not active_run and not active_sampling_run and not active_all_preset_sampling_run and not active_all_preset_range_sampling_run and not active_all_modes_sampling_run then
+    if not active_run and not active_sampling_run and not active_all_preset_sampling_run and not active_all_preset_range_sampling_run then
         return
     end
 
@@ -1868,69 +1756,6 @@ function trade_generator_tests.on_tick(event)
         run.wait_until_tick = tick + 1
     end
 
-    if active_all_modes_sampling_run then
-        local run = active_all_modes_sampling_run
-        if tick < run.wait_until_tick then
-            return
-        end
-
-        if active_run or active_sampling_run or active_all_preset_sampling_run or active_all_preset_range_sampling_run then
-            return
-        end
-
-        local player = _resolve_player(run.player_index)
-        local phase = run.phases[run.current_phase]
-        if not phase then
-            local ok_restore_mode = trade_generator.set_generator_mode_for_testing(run.original_mode)
-            if ok_restore_mode then
-                trade_generator.init()
-            end
-            _emit(player, "All-modes sampling queue completed.")
-            active_all_modes_sampling_run = nil
-            return
-        end
-
-        local ok_mode, mode_err = trade_generator.set_generator_mode_for_testing(phase.mode)
-        if not ok_mode then
-            _emit(player, "All-modes sampling aborted: failed to set mode '" .. tostring(phase.mode) .. "' (" .. tostring(mode_err) .. ")")
-            trade_generator.set_generator_mode_for_testing(run.original_mode)
-            trade_generator.init()
-            active_all_modes_sampling_run = nil
-            return
-        end
-        trade_generator.init()
-
-        if phase.kind == "all-presets" then
-            _emit(player, "All-modes phase " .. run.current_phase .. "/4: mode='" .. phase.mode .. "', command='all-presets'")
-            _start_all_preset_sampling(player, true)
-            if not active_all_preset_sampling_run then
-                _emit(player, "All-modes sampling aborted: failed to start all-preset sampling in mode '" .. phase.mode .. "'")
-                trade_generator.set_generator_mode_for_testing(run.original_mode)
-                trade_generator.init()
-                active_all_modes_sampling_run = nil
-                return
-            end
-        elseif phase.kind == "range" then
-            _emit(player, "All-modes phase " .. run.current_phase .. "/4: mode='" .. phase.mode .. "', command='all-presets-range'")
-            _start_all_preset_range_sampling(player, phase.label or phase.mode, true)
-            if not active_all_preset_range_sampling_run then
-                _emit(player, "All-modes sampling aborted: failed to start range sampling in mode '" .. phase.mode .. "'")
-                trade_generator.set_generator_mode_for_testing(run.original_mode)
-                trade_generator.init()
-                active_all_modes_sampling_run = nil
-                return
-            end
-        else
-            _emit(player, "All-modes sampling aborted: unknown phase kind '" .. tostring(phase.kind) .. "'")
-            trade_generator.set_generator_mode_for_testing(run.original_mode)
-            trade_generator.init()
-            active_all_modes_sampling_run = nil
-            return
-        end
-
-        run.current_phase = run.current_phase + 1
-        run.wait_until_tick = tick + 1
-    end
 end
 
 function trade_generator_tests.register_commands()
@@ -1996,15 +1821,6 @@ function trade_generator_tests.register_commands()
         end
     )
 
-    commands.remove_command(SAMPLE_ALL_MODES_COMMAND_NAME)
-    commands.add_command(
-        SAMPLE_ALL_MODES_COMMAND_NAME,
-        "/trade-generator-sample-all-modes - Runs current all-presets, current range, legacy all-presets, and legacy range sequentially.",
-        function(cmd)
-            local player = cmd.player_index and game.get_player(cmd.player_index) or nil
-            _start_all_modes_sampling(player)
-        end
-    )
 end
 
 return trade_generator_tests

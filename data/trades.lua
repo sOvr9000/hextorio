@@ -9,9 +9,6 @@
 -- local aquilo_only = {0,0,0,0,1}
 -- local not_aquilo = {1,1,1,1,0}
 
-local deprecated_trade_shape_weights_lookup_main = require "data.trades_legacy_main"
-
-
 return {
     starting_trades = {
         nauvis = {
@@ -166,9 +163,6 @@ return {
             },
         },
     },
-    -- DEPRECATED: Legacy snapshot from `main` for temporary generator sampling/comparison.
-    deprecated_trade_shape_weights_lookup_main = deprecated_trade_shape_weights_lookup_main,
-
     base_trade_productivity = {}, -- Planet-wide buffs/debuffs to trade productivity.
     base_productivity = 0, -- Universal buff to trade productivity, regardless of planet.
 
