@@ -318,6 +318,7 @@ script.on_event(defines.events.on_tick, function (event)
     trades.process_trade_export_jobs()
     quests.process_lightning_acceleration()
     spider_network._process_spiders()
+    inventories.process_tracked_inventories()
     item_value_solver.process_step()
 
     if storage.debug_spider then

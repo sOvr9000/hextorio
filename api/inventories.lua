@@ -8,10 +8,98 @@ local event_system = require "api.event_system"
 
 local inventories = {}
 
+local INVENTORIES_ITERATED_PER_TICK = 8
+
+
+
+---@class InventoriesStorage
+---@field tracked LuaInventory[] List of inventories tracked for coin merging.
+---@field tracked_lookup {[LuaInventory]: boolean} Mapping of inventories to whether that inventory is currently being tracked for coin merging.
+---@field tracked_idx int
+
 
 
 function inventories.register_events()
     event_system.register("feature-unlocked", inventories.on_feature_unlocked)
+    event_system.register("entity-built", inventories.on_entity_built)
+    event_system.register("entity-becoming-invalid", inventories.on_entity_becoming_invalid)
+end
+
+---@return InventoriesStorage
+function inventories._get_inventories_storage()
+    local inv_storage = storage.inventories
+    if not inv_storage then
+        inv_storage = {}
+        storage.inventories = inv_storage
+    end
+
+    if not inv_storage.tracked then
+        inv_storage.tracked = {}
+    end
+
+    if not inv_storage.tracked_lookup then
+        inv_storage.tracked_lookup = {}
+    end
+
+    if not inv_storage.tracked_idx then
+        inv_storage.tracked_idx = 1
+    end
+
+    return inv_storage
+end
+
+function inventories.process_tracked_inventories()
+    local inv_storage = inventories._get_inventories_storage()
+    local tracked = inv_storage.tracked
+    if not next(tracked) then return end
+
+    local tracked_lookup = inv_storage.tracked_lookup
+    local tracked_idx = inv_storage.tracked_idx
+
+    for _ = 1, INVENTORIES_ITERATED_PER_TICK do
+        local cur_inv = tracked[tracked_idx]
+        if not cur_inv then
+            tracked_idx = 1
+            cur_inv = tracked[tracked_idx]
+        end
+
+        if not cur_inv then break end
+
+        -- Why this works?  Don't know.  But it's the first workaround that worked for dealing with invalid inventories while trying to avoid iterating over the entire array of inventories in a single tick.
+        if not cur_inv.valid then
+            table.remove(tracked, tracked_idx)
+            tracked_idx = tracked_idx % #tracked + 1
+        else
+            if tracked_lookup[cur_inv] then
+                inventories.process_tracked_inventory(cur_inv)
+                tracked_idx = tracked_idx % #tracked + 1
+            else
+                table.remove(tracked, tracked_idx)
+            end
+        end
+    end
+
+    inv_storage.tracked_idx = tracked_idx
+end
+
+---@param inv LuaInventory
+function inventories.process_tracked_inventory(inv)
+    inventories.normalize_inventory(inv, false)
+end
+
+---Get the main inventory that an entity owns.
+---@param entity LuaEntity
+---@return LuaInventory|nil
+function inventories.get_entity_inventory(entity)
+    if not entity.valid then return end
+    local t = entity.type
+    if t == "container" or t == "logistic-container" then
+        return entity.get_inventory(defines.inventory.chest)
+    elseif t == "spider-vehicle" then
+        return entity.get_inventory(defines.inventory.spider_trunk)
+    elseif t == "car" then
+        return entity.get_inventory(defines.inventory.car_trunk)
+    end
 end
 
 ---@param surface_name any
@@ -229,8 +317,15 @@ function inventories.normalize_inventory(inventory, use_piggy_bank)
     storage.coin_tiers.is_processing[inventory] = true
 
     local coin = inventories.get_coin_from_inventory(inventory, nil, use_piggy_bank)
-    local normalized_coin = coin_tiers.normalized(coin)
-    inventories.update_inventory(inventory, coin, normalized_coin, nil, use_piggy_bank)
+
+    local normalized_coin
+    if coin_tiers.is_zero(coin) then
+        normalized_coin = coin_tiers.new()
+    else
+        normalized_coin = coin_tiers.normalized(coin)
+        inventories.update_inventory(inventory, coin, normalized_coin, nil, use_piggy_bank)
+    end
+
     storage.coin_tiers.is_processing[inventory] = nil
 
     return normalized_coin
@@ -411,6 +506,40 @@ function inventories.transfer_coins_and_items(from_inv, from_use_piggy_bank, to_
     return transferred_items, transferred_coins, succeeded
 end
 
+---Start tracking an inventory for coin merging.
+---@param inv LuaInventory
+function inventories.track_coin_merging(inv)
+    local inv_storage = inventories._get_inventories_storage()
+    inv_storage.tracked[#inv_storage.tracked+1] = inv
+    inv_storage.tracked_lookup[inv] = true
+end
+
+---Stop tracking an inventory for coin merging.
+---@param inv LuaInventory
+function inventories.untrack_coin_merging(inv)
+    local inv_storage = inventories._get_inventories_storage()
+    inv_storage.tracked_lookup[inv] = nil
+    -- The inventory gets removed from inv_storage.tracked on the tick that it gets visited.
+end
+
+---@param entity LuaEntity
+---@return boolean
+function inventories.try_track_entity(entity)
+    local inv = inventories.get_entity_inventory(entity)
+    if not inv or not inv.valid then return false end
+    inventories.track_coin_merging(inv)
+    return true
+end
+
+---@param entity LuaEntity
+---@return boolean
+function inventories.try_untrack_entity(entity)
+    local inv = inventories.get_entity_inventory(entity)
+    if not inv or not inv.valid then return false end
+    inventories.untrack_coin_merging(inv)
+    return true
+end
+
 ---@param feature_name FeatureName
 function inventories.on_feature_unlocked(feature_name)
     if feature_name ~= "piggy-bank" then return end
@@ -420,6 +549,16 @@ function inventories.on_feature_unlocked(feature_name)
             inventories.normalize_inventory(inv, true)
         end
     end
+end
+
+---@param entity LuaEntity
+function inventories.on_entity_built(entity)
+    inventories.try_track_entity(entity)
+end
+
+---@param entity LuaEntity
+function inventories.on_entity_becoming_invalid(entity)
+    inventories.try_untrack_entity(entity)
 end
 
 
