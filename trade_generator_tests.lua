@@ -5,6 +5,7 @@ local trade_generator = require "api.trade_generator"
 local coin_tiers = require "api.coin_tiers"
 local trade_loop_finder = require "api.trade_loop_finder"
 local inventories = require "api.inventories"
+local event_system = require "api.event_system"
 
 local trade_generator_tests = {}
 
@@ -65,6 +66,15 @@ local function _count_coins(names)
         end
     end
     return count
+end
+
+local function _contains_only_allowed_items(names, allowed_lookup)
+    for _, name in pairs(names or {}) do
+        if not lib.is_coin(name) and not allowed_lookup[name] then
+            return false
+        end
+    end
+    return true
 end
 
 local function _contains_name(names, target_name)
@@ -465,6 +475,165 @@ local tests = {
                     _expect(_count_coins(input_names) == 0, "Did not expect input coin for coin-output path")
                 end)
             end)
+        end,
+    },
+    {
+        id = "trade_limit_partition_build_validation",
+        description = "Validates per-surface source/sink partitions build with non-empty groups and strict override assignment.",
+        run = function(context)
+            trade_generator.rebuild_trade_limit_partitions(context.surface_name)
+            local partition = trade_generator.get_trade_limit_partition(context.surface_name)
+            _expect(partition ~= nil, "Missing partition state")
+            _expect(partition.valid == true, "Partition is invalid: " .. tostring(partition.error))
+            _expect(#(partition.source_items or {}) > 0, "Expected non-empty source partition")
+            _expect(#(partition.sink_items or {}) > 0, "Expected non-empty sink partition")
+
+            for item_name, _ in pairs(partition.source_lookup or {}) do
+                _expect(not (partition.sink_lookup or {})[item_name], "Item assigned to both source and sink: " .. item_name)
+            end
+
+            local overrides = ((storage.trades or {}).trade_limit_partition_overrides or {})[context.surface_name] or {}
+            for _, item_name in ipairs(overrides.sources or {}) do
+                if lib.is_item(item_name) and not lib.is_coin(item_name) and item_values.is_item_tradable(context.surface_name, item_name) then
+                    _expect((partition.source_lookup or {})[item_name] == true, "Strict source override not applied: " .. item_name)
+                end
+            end
+            for _, item_name in ipairs(overrides.sinks or {}) do
+                if lib.is_item(item_name) and not lib.is_coin(item_name) and item_values.is_item_tradable(context.surface_name, item_name) then
+                    _expect((partition.sink_lookup or {})[item_name] == true, "Strict sink override not applied: " .. item_name)
+                end
+            end
+        end,
+    },
+    {
+        id = "trade_limit_mode_behavior",
+        description = "Validates off/one-to-one/all-coin-trades mode behavior for random coin trade partition filtering.",
+        run = function(context)
+            trade_generator.rebuild_trade_limit_partitions(context.surface_name)
+            local partition = trade_generator.get_trade_limit_partition(context.surface_name)
+            _expect(partition and partition.valid, "Expected a valid partition for mode behavior test")
+
+            local nearby_items = item_values.get_items_near_value(context.surface_name, context.volume, 10, true, false, true)
+            local nearby_lookup = {}
+            for _, item_name in pairs(nearby_items or {}) do
+                nearby_lookup[item_name] = true
+            end
+
+            local sink_candidates = {}
+            for _, item_name in pairs(partition.sink_items or {}) do
+                if nearby_lookup[item_name] then
+                    sink_candidates[#sink_candidates + 1] = item_name
+                end
+                if #sink_candidates >= 3 then
+                    break
+                end
+            end
+
+            local sink_a = sink_candidates[1]
+            local sink_b = sink_candidates[2]
+            local sink_c = sink_candidates[3]
+            _expect(sink_a and sink_b and sink_c, "Need at least three sink items for mode behavior test")
+
+            local grouped_all_coin_input = _make_grouped_shape_only_weights("coin_input", 2, 1)
+            _with_trade_shape_weights(grouped_all_coin_input, function()
+                local params = {
+                    allow_nil_return = true,
+                    item_sampling_filters = {whitelist = {[sink_a] = true, [sink_b] = true}},
+                }
+
+                _with_runtime_setting_overrides({
+                    ["coin-trade-chance"] = 1,
+                    ["sell-trade-chance"] = 0,
+                    ["coin-trade-limit-mode"] = "off",
+                }, function()
+                    local input_names, output_names = trade_generator.generate_item_names(context.surface_name, context.volume, params, true, nil)
+                    _expect(#input_names > 0 and #output_names > 0, "Mode=off should not block sink-only candidate pool")
+                end)
+
+                _with_runtime_setting_overrides({
+                    ["coin-trade-chance"] = 1,
+                    ["sell-trade-chance"] = 0,
+                    ["coin-trade-limit-mode"] = "all-coin-trades",
+                }, function()
+                    local input_names, output_names = trade_generator.generate_item_names(context.surface_name, context.volume, params, true, nil)
+                    _expect(#input_names == 0 and #output_names == 0, "Mode=all-coin-trades should block sink-only candidate pool for coin_input")
+                end)
+            end)
+
+            local grouped_one_to_one_gate = _make_grouped_shape_only_weights("coin_input", 2, 2)
+            _with_trade_shape_weights(grouped_one_to_one_gate, function()
+                local params = {
+                    allow_nil_return = true,
+                    item_sampling_filters = {whitelist = {[sink_a] = true, [sink_b] = true, [sink_c] = true}},
+                }
+                _with_runtime_setting_overrides({
+                    ["coin-trade-chance"] = 1,
+                    ["sell-trade-chance"] = 0,
+                    ["coin-trade-limit-mode"] = "one-to-one-only",
+                }, function()
+                    local input_names, output_names = trade_generator.generate_item_names(context.surface_name, context.volume, params, true, nil)
+                    _expect(#input_names > 0 and #output_names > 0, "Mode=one-to-one-only should not constrain coin_input when output has more than one item")
+                end)
+            end)
+        end,
+    },
+    {
+        id = "trade_limit_side_exclusivity",
+        description = "Validates constrained sides use the configured source/sink partition under all-coin-trades mode.",
+        run = function(context)
+            trade_generator.rebuild_trade_limit_partitions(context.surface_name)
+            local partition = trade_generator.get_trade_limit_partition(context.surface_name)
+            _expect(partition and partition.valid, "Expected a valid partition for side exclusivity test")
+
+            local grouped = {
+                non_coin = {},
+                coin_input = _make_shape_only_weights(2, 2),
+                coin_output = _make_shape_only_weights(2, 2),
+            }
+            _with_trade_shape_weights(grouped, function()
+                _with_runtime_setting_overrides({
+                    ["coin-trade-chance"] = 1,
+                    ["sell-trade-chance"] = 0,
+                    ["coin-trade-limit-mode"] = "all-coin-trades",
+                }, function()
+                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 20)
+                    _expect(tentative ~= nil, "Failed to generate constrained coin_input trade")
+                    local output_names = _to_name_array(tentative.output_items)
+                    _expect(
+                        _contains_only_allowed_items(output_names, partition.source_lookup or {}),
+                        "coin_input constrained outputs included non-source item(s): " .. serpent.line(output_names)
+                    )
+                end)
+
+                _with_runtime_setting_overrides({
+                    ["coin-trade-chance"] = 1,
+                    ["sell-trade-chance"] = 1,
+                    ["coin-trade-limit-mode"] = "all-coin-trades",
+                }, function()
+                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 20)
+                    _expect(tentative ~= nil, "Failed to generate constrained coin_output trade")
+                    local input_names = _to_name_array(tentative.input_items)
+                    _expect(
+                        _contains_only_allowed_items(input_names, partition.sink_lookup or {}),
+                        "coin_output constrained inputs included non-sink item(s): " .. serpent.line(input_names)
+                    )
+                end)
+            end)
+        end,
+    },
+    {
+        id = "trade_limit_partition_commands",
+        description = "Validates trade-limit partition list/rebuild command events run and refresh partition state.",
+        run = function(context)
+            local before = trade_generator.get_trade_limit_partition(context.surface_name)
+            _expect(before ~= nil, "Missing partition before command test")
+
+            event_system.trigger("command-trade-limit-partitions", context.player, {"rebuild", context.surface_name})
+            local after_rebuild = trade_generator.get_trade_limit_partition(context.surface_name)
+            _expect(after_rebuild ~= nil, "Missing partition after rebuild command")
+            _expect(after_rebuild.valid == true, "Rebuild command produced invalid partition: " .. tostring(after_rebuild.error))
+
+            event_system.trigger("command-trade-limit-partitions", context.player, {"list", context.surface_name})
         end,
     },
     {

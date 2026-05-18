@@ -10,7 +10,18 @@ local data_trades = require "data.trades"
 local trade_generator = {}
 
 local RANDOM_TRADE_ATTEMPTS = 10 -- Number of attempts to make when generating a random trade before giving up and returning nil.
-local TRADE_SHAPE_LOOKUP_STORAGE_REVISION = 4
+local TRADE_SHAPE_LOOKUP_STORAGE_REVISION = 5
+local TRADE_LIMIT_MODE_OFF = "off"
+local TRADE_LIMIT_MODE_ONE_TO_ONE_ONLY = "one-to-one-only"
+local TRADE_LIMIT_MODE_ALL_COIN_TRADES = "all-coin-trades"
+
+local function get_trade_limit_mode()
+    local mode = lib.runtime_setting_value_as_string "coin-trade-limit-mode"
+    if mode == TRADE_LIMIT_MODE_ONE_TO_ONE_ONLY or mode == TRADE_LIMIT_MODE_ALL_COIN_TRADES then
+        return mode
+    end
+    return TRADE_LIMIT_MODE_OFF
+end
 
 local function refresh_trade_shape_lookup_storage(force_refresh)
     if not storage or not storage.trades then return end
@@ -20,6 +31,7 @@ local function refresh_trade_shape_lookup_storage(force_refresh)
     end
 
     storage.trades.trade_shape_weights_lookup = table.deepcopy(data_trades.trade_shape_weights_lookup)
+    storage.trades.trade_limit_partition_overrides = table.deepcopy(data_trades.trade_limit_partition_overrides or {})
     storage.trades.trade_shape_lookup_storage_revision = TRADE_SHAPE_LOOKUP_STORAGE_REVISION
     -- Remove stale legacy snapshot state when loading old saves.
     local stale_lookup_key = "deprecated_" .. "trade_shape_weights_lookup_main"
@@ -79,6 +91,259 @@ function trade_generator.set_trade_generation_parameter_defaults(params)
     if params.allow_nil_return == nil then
         params.allow_nil_return = true
     end
+end
+
+local function make_lookup_from_array(items)
+    local lookup = {}
+    for _, item_name in pairs(items or {}) do
+        if type(item_name) == "string" then
+            lookup[item_name] = true
+        end
+    end
+    return lookup
+end
+
+local function get_sorted_supported_surfaces()
+    local names = {}
+    for surface_name, _ in pairs(storage.SUPPORTED_PLANETS or {}) do
+        names[#names + 1] = surface_name
+    end
+    table.sort(names)
+    return names
+end
+
+local function build_trade_limit_partition(surface_name)
+    local surface_tradable = item_values.get_tradable_items(surface_name) or {}
+    local tradable_non_coin_items = {}
+    for item_name, is_tradable in pairs(surface_tradable) do
+        if is_tradable and lib.is_item(item_name) and not lib.is_coin(item_name) then
+            tradable_non_coin_items[#tradable_non_coin_items + 1] = item_name
+        end
+    end
+    table.sort(tradable_non_coin_items)
+
+    local tradable_lookup = make_lookup_from_array(tradable_non_coin_items)
+    local overrides = ((storage.trades or {}).trade_limit_partition_overrides or {})[surface_name] or {}
+    local source_overrides = overrides.sources or {}
+    local sink_overrides = overrides.sinks or {}
+    local source_override_lookup = make_lookup_from_array(source_overrides)
+    local sink_override_lookup = make_lookup_from_array(sink_overrides)
+
+    local sources = {}
+    local sinks = {}
+    local source_lookup = {}
+    local sink_lookup = {}
+    local assigned_lookup = {}
+
+    for item_name, _ in pairs(source_override_lookup) do
+        if sink_override_lookup[item_name] then
+            return {
+                surface_name = surface_name,
+                valid = false,
+                error = "Conflicting override item in both sources and sinks: " .. item_name,
+                tradable_non_coin_count = #tradable_non_coin_items,
+                source_items = {},
+                sink_items = {},
+                source_lookup = {},
+                sink_lookup = {},
+                reported_invalid = false,
+            }
+        end
+    end
+
+    for _, item_name in ipairs(source_overrides) do
+        if tradable_lookup[item_name] and not assigned_lookup[item_name] then
+            sources[#sources + 1] = item_name
+            source_lookup[item_name] = true
+            assigned_lookup[item_name] = true
+        end
+    end
+
+    for _, item_name in ipairs(sink_overrides) do
+        if tradable_lookup[item_name] and not assigned_lookup[item_name] then
+            sinks[#sinks + 1] = item_name
+            sink_lookup[item_name] = true
+            assigned_lookup[item_name] = true
+        end
+    end
+
+    local assign_to_source = true
+    for _, item_name in ipairs(tradable_non_coin_items) do
+        if not assigned_lookup[item_name] then
+            if assign_to_source then
+                sources[#sources + 1] = item_name
+                source_lookup[item_name] = true
+            else
+                sinks[#sinks + 1] = item_name
+                sink_lookup[item_name] = true
+            end
+            assigned_lookup[item_name] = true
+            assign_to_source = not assign_to_source
+        end
+    end
+
+    local valid = #sources > 0 and #sinks > 0
+    local error
+    if not valid then
+        error =
+            "Invalid partition for surface '"
+            .. surface_name
+            .. "': non-empty source and sink groups are required (sources="
+            .. #sources
+            .. ", sinks="
+            .. #sinks
+            .. ")."
+    end
+
+    return {
+        surface_name = surface_name,
+        valid = valid,
+        error = error,
+        tradable_non_coin_count = #tradable_non_coin_items,
+        source_items = sources,
+        sink_items = sinks,
+        source_lookup = source_lookup,
+        sink_lookup = sink_lookup,
+        reported_invalid = false,
+    }
+end
+
+local function rebuild_trade_limit_partitions(surface_name)
+    if not storage or not storage.trades then
+        return {}
+    end
+
+    local partitions = {}
+    if surface_name then
+        partitions[surface_name] = build_trade_limit_partition(surface_name)
+    else
+        for _, _surface_name in ipairs(get_sorted_supported_surfaces()) do
+            partitions[_surface_name] = build_trade_limit_partition(_surface_name)
+        end
+    end
+
+    storage.trades.trade_limit_partitions = storage.trades.trade_limit_partitions or {}
+    for _surface_name, state in pairs(partitions) do
+        storage.trades.trade_limit_partitions[_surface_name] = state
+    end
+    return partitions
+end
+
+local function get_trade_limit_partition(surface_name)
+    storage.trades.trade_limit_partitions = storage.trades.trade_limit_partitions or {}
+    local partition = storage.trades.trade_limit_partitions[surface_name]
+    if not partition then
+        partition = build_trade_limit_partition(surface_name)
+        storage.trades.trade_limit_partitions[surface_name] = partition
+    end
+
+    if not partition.valid and not partition.reported_invalid then
+        partition.reported_invalid = true
+        lib.log_error(
+            "trade_generator: Coin trade limit partition for surface '"
+            .. surface_name
+            .. "' is invalid. Coin trade limits are disabled for this surface. "
+            .. (partition.error or "")
+        )
+    end
+
+    return partition
+end
+
+local function get_trade_limit_constraint(surface_name, archetype, num_non_coin_inputs, num_non_coin_outputs)
+    if archetype == "non_coin" then
+        return nil, nil
+    end
+
+    local mode = get_trade_limit_mode()
+    if mode == TRADE_LIMIT_MODE_OFF then
+        return nil, nil
+    end
+
+    local enforce = false
+    if mode == TRADE_LIMIT_MODE_ALL_COIN_TRADES then
+        enforce = true
+    elseif mode == TRADE_LIMIT_MODE_ONE_TO_ONE_ONLY then
+        if archetype == "coin_input" then
+            enforce = num_non_coin_outputs == 1
+        elseif archetype == "coin_output" then
+            enforce = num_non_coin_inputs == 1
+        end
+    end
+
+    if not enforce then
+        return nil, nil
+    end
+
+    local partition = get_trade_limit_partition(surface_name)
+    if not partition or not partition.valid then
+        return nil, nil
+    end
+
+    if archetype == "coin_input" then
+        return partition.source_lookup, "output"
+    end
+    return partition.sink_lookup, "input"
+end
+
+local function get_allowed_slot_indices(total_non_coin_items, num_non_coin_inputs, constrained_side, allowed_lookup, include_item)
+    local indices = {}
+    for i = 1, total_non_coin_items do
+        local is_constrained = constrained_side == "input" and i <= num_non_coin_inputs
+            or constrained_side == "output" and i > num_non_coin_inputs
+        if not is_constrained or (allowed_lookup and allowed_lookup[include_item]) then
+            indices[#indices + 1] = i
+        end
+    end
+    return indices
+end
+
+local function sample_trade_items(candidate_items, total_non_coin_items, num_non_coin_inputs, constrained_side, allowed_lookup, include_item)
+    local trade_items = {}
+    local remaining = table.deepcopy(candidate_items or {})
+    local used = {}
+
+    local include_idx
+    if include_item then
+        local include_slots = get_allowed_slot_indices(total_non_coin_items, num_non_coin_inputs, constrained_side, allowed_lookup, include_item)
+        if #include_slots == 0 then
+            return nil
+        end
+        include_idx = include_slots[math.random(1, #include_slots)]
+        used[include_item] = true
+
+        local idx = lib.table_index(remaining, include_item)
+        if idx then
+            table.remove(remaining, idx)
+        end
+    end
+
+    for i = 1, total_non_coin_items do
+        if include_idx and i == include_idx then
+            trade_items[i] = include_item
+        else
+            local is_constrained = constrained_side == "input" and i <= num_non_coin_inputs
+                or constrained_side == "output" and i > num_non_coin_inputs
+
+            local eligible_indices = {}
+            for idx, item_name in ipairs(remaining) do
+                if not used[item_name] and (not is_constrained or (allowed_lookup and allowed_lookup[item_name])) then
+                    eligible_indices[#eligible_indices + 1] = idx
+                end
+            end
+
+            if #eligible_indices == 0 then
+                return nil
+            end
+
+            local chosen_remaining_idx = eligible_indices[math.random(1, #eligible_indices)]
+            local item_name = table.remove(remaining, chosen_remaining_idx)
+            trade_items[i] = item_name
+            used[item_name] = true
+        end
+    end
+
+    return trade_items
 end
 
 ---@param weights TradeShapeWeightedItem[]
@@ -290,16 +555,6 @@ local function generate_item_names_for_trade(surface_name, volume, archetype, pa
         return {}, {}
     end
 
-    local set = sets.new()
-    if include_item then
-        sets.add(set, include_item)
-    end
-    for i = 1, 6 do
-        if #possible_items == 0 then break end
-        local item_name = table.remove(possible_items, math.random(1, #possible_items))
-        sets.add(set, item_name)
-    end
-
     local num_inputs, num_outputs = get_trade_shape_for_group(archetype)
     local has_coin_input = archetype == "coin_input"
     local has_coin_output = archetype == "coin_output"
@@ -308,8 +563,38 @@ local function generate_item_names_for_trade(surface_name, volume, archetype, pa
     local num_non_coin_outputs = has_coin_output and math.max(0, num_outputs - 1) or num_outputs
     local total_non_coin_items = num_non_coin_inputs + num_non_coin_outputs
 
-    local trade_items = sets.to_array(set)
-    if #trade_items < total_non_coin_items then
+    local allowed_lookup, constrained_side = get_trade_limit_constraint(surface_name, archetype, num_non_coin_inputs, num_non_coin_outputs)
+
+    local set = sets.new()
+    if include_item then
+        sets.add(set, include_item)
+    end
+
+    local possible_items_copy = table.deepcopy(possible_items)
+    if constrained_side and allowed_lookup then
+        local constrained_count = constrained_side == "input" and num_non_coin_inputs or num_non_coin_outputs
+        local constrained_candidates = {}
+        for _, item_name in pairs(possible_items_copy) do
+            if allowed_lookup[item_name] then
+                constrained_candidates[#constrained_candidates + 1] = item_name
+            end
+        end
+        for _ = 1, math.min(constrained_count + 1, #constrained_candidates) do
+            local idx = math.random(1, #constrained_candidates)
+            sets.add(set, table.remove(constrained_candidates, idx))
+        end
+    end
+
+    for _ = 1, 6 do
+        if #possible_items_copy == 0 then
+            break
+        end
+        local item_name = table.remove(possible_items_copy, math.random(1, #possible_items_copy))
+        sets.add(set, item_name)
+    end
+
+    local candidate_items = sets.to_array(set)
+    if #candidate_items < total_non_coin_items then
         lib.log_error(
             "trade_generator.generate_item_names: Not enough items selected for trade shape "
                 .. num_inputs
@@ -318,18 +603,31 @@ local function generate_item_names_for_trade(surface_name, volume, archetype, pa
                 .. " archetype='"
                 .. archetype
                 .. "'; selected="
-                .. #trade_items
+                .. #candidate_items
                 .. ", required="
                 .. total_non_coin_items
         )
         return {}, {}
     end
 
-    if include_item then
-        -- Keep include_item in the non-coin slots so forced coin placement never replaces it.
-        local idx_old = lib.table_index(trade_items, include_item)
-        local idx_new = math.random(1, total_non_coin_items)
-        trade_items[idx_new], trade_items[idx_old] = trade_items[idx_old], trade_items[idx_new]
+    local trade_items = sample_trade_items(
+        candidate_items,
+        total_non_coin_items,
+        num_non_coin_inputs,
+        constrained_side,
+        allowed_lookup,
+        include_item
+    )
+    if not trade_items then
+        lib.log_error(
+            "trade_generator.generate_item_names: Failed constrained sampling for archetype='"
+                .. archetype
+                .. "' on surface='"
+                .. surface_name
+                .. "' with constrained_side="
+                .. tostring(constrained_side)
+        )
+        return {}, {}
     end
 
     local input_item_names = {}
@@ -358,7 +656,81 @@ local function generate_item_names_for_trade(surface_name, volume, archetype, pa
     return input_item_names, output_item_names
 end
 
---- 
+local function get_partition_preview(items, max_count)
+    local n = math.min(max_count or 4, #items)
+    local preview = {}
+    for i = 1, n do
+        preview[#preview + 1] = items[i]
+    end
+    return preview
+end
+
+local function print_partition_status(player, surface_name, partition)
+    local line = {
+        "",
+        "[trade-limit] surface=",
+        surface_name,
+        " valid=",
+        tostring(partition.valid),
+        " source_count=",
+        tostring(#(partition.source_items or {})),
+        " sink_count=",
+        tostring(#(partition.sink_items or {})),
+        " tradable_non_coin_count=",
+        tostring(partition.tradable_non_coin_count or 0),
+        " source_preview=",
+        serpent.line(get_partition_preview(partition.source_items or {}, 5)),
+        " sink_preview=",
+        serpent.line(get_partition_preview(partition.sink_items or {}, 5)),
+    }
+
+    if player and player.valid then
+        player.print(line)
+        if partition.error then
+            player.print("[trade-limit] error: " .. partition.error)
+        end
+    else
+        lib.log(line)
+        if partition.error then
+            lib.log_error("[trade-limit] " .. partition.error)
+        end
+    end
+end
+
+local function rebuild_partitions_command(player, surface_name)
+    if surface_name and not (storage.SUPPORTED_PLANETS or {})[surface_name] then
+        if player and player.valid then
+            player.print({"hextorio.command-invalid-surface"})
+        end
+        return
+    end
+
+    local rebuilt = rebuild_trade_limit_partitions(surface_name)
+    for _surface_name, partition in pairs(rebuilt) do
+        print_partition_status(player, _surface_name, partition)
+    end
+end
+
+local function list_partitions_command(player, surface_name)
+    if surface_name and not (storage.SUPPORTED_PLANETS or {})[surface_name] then
+        if player and player.valid then
+            player.print({"hextorio.command-invalid-surface"})
+        end
+        return
+    end
+
+    local partitions = storage.trades.trade_limit_partitions or {}
+    if surface_name then
+        local partition = partitions[surface_name] or get_trade_limit_partition(surface_name)
+        print_partition_status(player, surface_name, partition)
+        return
+    end
+
+    for _, _surface_name in ipairs(get_sorted_supported_surfaces()) do
+        local partition = partitions[_surface_name] or get_trade_limit_partition(_surface_name)
+        print_partition_status(player, _surface_name, partition)
+    end
+end
 
 function trade_generator.register_events()
     event_system.register("runtime-setting-changed-base-trade-efficiency", function()
@@ -366,6 +738,27 @@ function trade_generator.register_events()
     end)
     event_system.register("runtime-setting-changed-trade-complexity", function()
         trade_generator.init()
+    end)
+    event_system.register("runtime-setting-changed-coin-trade-limit-mode", function()
+        rebuild_trade_limit_partitions(nil)
+    end)
+    event_system.register("post-item-values-recalculated", function()
+        rebuild_trade_limit_partitions(nil)
+    end)
+    event_system.register("command-trade-limit-partitions", function(player, params)
+        local action = params[1]
+        local surface_name = params[2]
+        if action == "list" then
+            list_partitions_command(player, surface_name)
+            return
+        end
+        if action == "rebuild" then
+            rebuild_partitions_command(player, surface_name)
+            return
+        end
+        if player and player.valid then
+            player.print("Usage: /trade-limit-partitions <list|rebuild> [surface]")
+        end
     end)
 end
 
@@ -387,6 +780,24 @@ function trade_generator.init()
     end
 
     set_trade_shape_distribution(weights)
+    rebuild_trade_limit_partitions(nil)
+end
+
+---@param surface_name string
+---@return table
+function trade_generator.get_trade_limit_partition(surface_name)
+    return get_trade_limit_partition(surface_name)
+end
+
+---@param surface_name string|nil
+---@return {[string]: table}
+function trade_generator.rebuild_trade_limit_partitions(surface_name)
+    return rebuild_trade_limit_partitions(surface_name)
+end
+
+---@return string
+function trade_generator.get_trade_limit_mode()
+    return get_trade_limit_mode()
 end
 
 ---Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.

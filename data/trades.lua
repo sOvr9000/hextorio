@@ -163,6 +163,30 @@ return {
             },
         },
     },
+    -- Strict per-surface overrides for random coin-trade source/sink partitioning.
+    -- Listed items are authoritative assignments during partition rebuild.
+    trade_limit_partition_overrides = {
+        nauvis = {
+            sources = {"iron-ore", "copper-ore", "coal", "stone", "uranium-ore", "wood", "raw-fish"},
+            sinks = {},
+        },
+        vulcanus = {
+            sources = {"coal", "calcite", "tungsten-ore"},
+            sinks = {},
+        },
+        fulgora = {
+            sources = {"scrap", "holmium-ore"},
+            sinks = {},
+        },
+        gleba = {
+            sources = {"stone", "yumako", "jellynut"},
+            sinks = {},
+        },
+        aquilo = {
+            sources = {},
+            sinks = {},
+        },
+    },
     base_trade_productivity = {}, -- Planet-wide buffs/debuffs to trade productivity.
     base_productivity = 0, -- Universal buff to trade productivity, regardless of planet.
 

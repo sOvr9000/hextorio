@@ -104,6 +104,12 @@ local all_commands = {
         usage = "/reload-item-buff-effects",
     },
     {
+        name = "trade-limit-partitions",
+        usage = "/trade-limit-partitions <list|rebuild> [surface]",
+        params = {"string", "string?"},
+        examples = {"/trade-limit-partitions list", "/trade-limit-partitions list nauvis", "/trade-limit-partitions rebuild", "/trade-limit-partitions rebuild vulcanus"},
+    },
+    {
         name = "solve-item-values",
         usage = "/solve-item-values",
         requires_confirmation = true,

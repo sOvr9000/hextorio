@@ -44,6 +44,14 @@ data:extend({
         order = "t[trades]-c[coin-trade-chance]",
     },
     {
+        type = "string-setting",
+        name = "hextorio-coin-trade-limit-mode",
+        setting_type = "runtime-global",
+        default_value = "off",
+        allowed_values = {"off", "one-to-one-only", "all-coin-trades"},
+        order = "t[trades]-c[coin-trade-limit-mode]",
+    },
+    {
         type = "double-setting",
         name = "hextorio-sell-trade-chance",
         setting_type = "runtime-global",
