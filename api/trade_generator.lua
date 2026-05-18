@@ -55,7 +55,7 @@ end
 
 ---Replace undefined parameters with default values, modifying the table in place.
 ---@param params TradeGenerationParameters
-local function set_trade_generation_parameter_defaults(params)
+function trade_generator.set_trade_generation_parameter_defaults(params)
     if not params.target_efficiency then
         params.target_efficiency = 1
     end
@@ -143,9 +143,9 @@ local function validate_grouped_trade_shape_distribution(grouped_weights)
 end
 
 ---@param grouped_weights TradeShapeWeightsByArchetype
-local function set_trade_shape_distribution_current(grouped_weights)
+local function set_trade_shape_distribution(grouped_weights)
     if not validate_grouped_trade_shape_distribution(grouped_weights) then
-        lib.log_error("trade_generator.set_trade_shape_distribution_current: Invalid grouped weights received:\n" .. serpent.block(grouped_weights))
+        lib.log_error("trade_generator.set_trade_shape_distribution: Invalid grouped weights received:\n" .. serpent.block(grouped_weights))
         return
     end
 
@@ -157,16 +157,16 @@ end
 
 ---@param group_name "non_coin"|"coin_input"|"coin_output"
 ---@return int num_inputs, int num_outputs
-local function get_trade_shape_for_group_current(group_name)
+local function get_trade_shape_for_group(group_name)
     local grouped_weights = storage.trades.trade_shape_weights
     if type(grouped_weights) ~= "table" then
-        lib.log_error("trade_generator.get_trade_shape_for_group_current: No grouped weights set")
+        lib.log_error("trade_generator.get_trade_shape_for_group: No grouped weights set")
         return 1, 1
     end
 
     local group_weights = grouped_weights[group_name]
     if type(group_weights) ~= "table" then
-        lib.log_error("trade_generator.get_trade_shape_for_group_current: Missing group '" .. tostring(group_name) .. "'")
+        lib.log_error("trade_generator.get_trade_shape_for_group: Missing group '" .. tostring(group_name) .. "'")
         return 1, 1
     end
 
@@ -190,7 +190,7 @@ local function get_trade_shape_for_group_current(group_name)
 
         trade_shape_wc = weighted_choice.from_list(item_list)
         if not trade_shape_wc then
-            lib.log_error("trade_generator.get_trade_shape_for_group_current: Failed to create weighted choice for group '" .. tostring(group_name) .. "'")
+            lib.log_error("trade_generator.get_trade_shape_for_group: Failed to create weighted choice for group '" .. tostring(group_name) .. "'")
             return 1, 1
         end
 
@@ -206,7 +206,7 @@ local function get_trade_shape_for_group_current(group_name)
 end
 
 ---@return "non_coin"|"coin_input"|"coin_output"
-local function choose_trade_archetype_current()
+local function choose_trade_archetype()
     local grouped_weights = storage.trades.trade_shape_weights
     local function has_positive_weight_group(group_name)
         local group = type(grouped_weights) == "table" and grouped_weights[group_name] or nil
@@ -260,7 +260,7 @@ end
 local function generate_item_names_for_trade(surface_name, volume, archetype, params, allow_untradable, include_item)
     if allow_untradable == nil then allow_untradable = false end
     if not params then params = {} end
-    set_trade_generation_parameter_defaults(params)
+    trade_generator.set_trade_generation_parameter_defaults(params)
 
     local ratio
     if params.target_efficiency >= 1 then
@@ -300,7 +300,7 @@ local function generate_item_names_for_trade(surface_name, volume, archetype, pa
         sets.add(set, item_name)
     end
 
-    local num_inputs, num_outputs = get_trade_shape_for_group_current(archetype)
+    local num_inputs, num_outputs = get_trade_shape_for_group(archetype)
     local has_coin_input = archetype == "coin_input"
     local has_coin_output = archetype == "coin_output"
 
@@ -386,7 +386,7 @@ function trade_generator.init()
         return
     end
 
-    set_trade_shape_distribution_current(weights)
+    set_trade_shape_distribution(weights)
 end
 
 ---Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.
@@ -397,9 +397,9 @@ end
 ---@param output_item_names string[]
 ---@param params TradeGenerationParameters|nil
 ---@return TentativeTrade|nil
-local function generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
+function trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
     if not params then params = {} end
-    set_trade_generation_parameter_defaults(params)
+    trade_generator.set_trade_generation_parameter_defaults(params)
 
     local surface = game.get_surface(surface_name)
     if not surface then
@@ -464,6 +464,18 @@ local function generate_from_item_names_current(surface_name, input_item_names, 
     return tentative
 end
 
+---Sample random item names for inputs and outputs of a trade based on a central item value.
+---@param surface_name string
+---@param volume number The central item value.
+---@param params TradeGenerationParameters|nil
+---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
+---@param include_item string|nil An item name to be forcefully included in the returned input or output items.
+---@return string[], string[]
+function trade_generator.generate_item_names(surface_name, volume, params, allow_untradable, include_item)
+    local archetype = choose_trade_archetype()
+    return generate_item_names_for_trade(surface_name, volume, archetype, params, allow_untradable, include_item)
+end
+
 ---Generate a random trade for a hex by sampling item names near a given value, retrying until the result creates no simple two-trade loops with existing hex trades.
 ---
 ---Returns nil if a loop-free trade cannot be generated within the attempt limit.
@@ -474,9 +486,13 @@ end
 ---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
 ---@param include_item string|nil An item name to be forcefully included in the trade.
 ---@return TentativeTrade|nil
-local function generate_random_current(surface_name, existing_trades, volume, params, allow_untradable, include_item)
-    params = params and table.deepcopy(params) or {}
-    set_trade_generation_parameter_defaults(params)
+function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
+    if not params then
+        params = {}
+    else
+        params = table.deepcopy(params)
+    end
+    trade_generator.set_trade_generation_parameter_defaults(params)
 
     ---@type (Trade|TentativeTrade)[]
     local candidate_trades = table.deepcopy(existing_trades)
@@ -484,20 +500,21 @@ local function generate_random_current(surface_name, existing_trades, volume, pa
 
     -- Blacklist input items in existing trades (making the spider network order fulfillment less finicky)
     -- Two trades in a hex core can still have overlapping inputs if the guaranteed trades around the spawn hex happen to be like that.
-    if not params.item_sampling_filters.blacklist then
-        params.item_sampling_filters.blacklist = {}
+    local blacklist = params.item_sampling_filters.blacklist
+    if not blacklist then
+        blacklist = {}
+        params.item_sampling_filters.blacklist = blacklist
     end
     for _, trade in pairs(candidate_trades) do
         for _, input_item in pairs(trade.input_items) do
-            params.item_sampling_filters.blacklist[input_item.name] = true
+            blacklist[input_item.name] = true
         end
     end
 
     for _ = 1, RANDOM_TRADE_ATTEMPTS do
-        local archetype = choose_trade_archetype_current()
-        local input_item_names, output_item_names = generate_item_names_for_trade(surface_name, volume, archetype, params, allow_untradable, include_item)
+        local input_item_names, output_item_names = trade_generator.generate_item_names(surface_name, volume, params, allow_untradable, include_item)
 
-        local tentative = generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
+        local tentative = trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
 
         if tentative then
             candidate_trades[slot] = tentative
@@ -510,14 +527,6 @@ local function generate_random_current(surface_name, existing_trades, volume, pa
     lib.log_error("trade_generator.generate_random: A trade failed to generate within " .. RANDOM_TRADE_ATTEMPTS .. " attempts.")
 end
 
-function trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
-    return generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
-end
-
-function trade_generator.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item)
-    return generate_random_current(surface_name, existing_trades, volume, params, allow_untradable, include_item)
-end
-
 ---Given a trade with undefined item counts, attempt to set the counts to the values which best preserve the specified input-to-output value ratio (`params.target_efficiency`).
 ---@param surface_name string
 ---@param trade TentativeTrade
@@ -525,7 +534,7 @@ end
 ---@return boolean solved Whether `params.target_efficiency` could be approximated with item counts while respecting item count constraints.
 function trade_generator.solve_item_counts(surface_name, trade, params)
     if not params then params = {} end
-    set_trade_generation_parameter_defaults(params)
+    trade_generator.set_trade_generation_parameter_defaults(params)
 
     -- Convert coins to lowest tier
     local coin_name = storage.coin_tiers.COIN_NAMES[1]
