@@ -400,7 +400,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
             if not helpers.is_valid_sprite_path(sprite) then
                 sprite = "entity/" .. output_item.name
                 if not helpers.is_valid_sprite_path(sprite) then
-                    lib.log_error("trades_gui.add_trade_elements: Could not find sprite for item " .. output_item)
+                    lib.log_error("trades_gui.add_trade_elements: Could not find sprite for item " .. output_item.name)
 
                     ---@diagnostic disable-next-line
                     sprite = nil

@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.1
 Date: 19/5/26
+  Bugfixes:
+    - Fixed crash when modded items use non-standard sprite names (e.g. Text Plates).
   Scripting:
     - Other mods can now overhaul the trade generator's shape sampling.
 ---------------------------------------------------------------------------------------------------
