@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.1
-Date: 19/5/26
+Date: 18/5/26
   Features:
     - Most inventories are now periodically scanned for merging stacks of coins of the same tier.
   Bugfixes:
