@@ -16,7 +16,7 @@ local RANDOM_TRADE_ATTEMPTS = 10 -- Number of attempts to make when generating a
 local DEFAULT_GENERATOR_MODE = "current" -- "current" | "legacy-main"
 -- local DEFAULT_GENERATOR_MODE = "legacy-main" -- "current" | "legacy-main"
 local generator_mode = DEFAULT_GENERATOR_MODE
-local TRADE_SHAPE_LOOKUP_STORAGE_REVISION = 2
+local TRADE_SHAPE_LOOKUP_STORAGE_REVISION = 3
 
 local function refresh_trade_shape_lookup_storage(force_refresh)
     if not storage or not storage.trades then return end
@@ -71,6 +71,7 @@ function trade_generator.set_generator_mode_for_testing(mode)
     generator_mode = mode
     if storage and storage.trades then
         storage.trades.trade_shape_weighted_choice = nil
+        storage.trades.trade_shape_weighted_choice_by_group = nil
     end
     return true, nil
 end
@@ -96,6 +97,11 @@ end
 ---@field num_inputs int
 ---@field num_outputs int
 ---@field weight number Weight of this shape. Set to 0 to disable shape selection.
+
+---@class TradeShapeWeightsByArchetype
+---@field non_coin TradeShapeWeightedItem[]|nil
+---@field coin_input TradeShapeWeightedItem[]|nil
+---@field coin_output TradeShapeWeightedItem[]|nil
 
 ---Replace undefined parameters with default values, modifying the table in place.
 ---@param params TradeGenerationParameters
@@ -125,23 +131,14 @@ local function set_trade_generation_parameter_defaults(params)
     end
 end
 
----Set the distribution of trade shapes during procedural generation.
----
----For example, this makes 25% of all trades be 1-1, and the rest 3-2:
----```
----local weights = {
----  {num_inputs = 1, num_outputs = 1, weight = 1},
----  {num_inputs = 3, num_outputs = 2, weight = 3},
----}
----set_trade_shape_distribution(weights)
----```
 ---@param weights TradeShapeWeightedItem[]
-local function set_trade_shape_distribution(weights)
+---@return boolean
+local function validate_flat_weights(weights)
     if type(weights) ~= "table" then
-        lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received: " .. tostring(weights))
-        return
+        return false
     end
 
+    local has_positive_weight = false
     for _, obj in pairs(weights) do
         if
                type(obj.num_inputs) ~= "number"
@@ -156,40 +153,130 @@ local function set_trade_shape_distribution(weights)
             or (obj.num_inputs == 0 and obj.num_outputs == 0)
             or obj.weight < 0
         then
-            lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received:\n" .. serpent.block(weights))
-            return
+            return false
+        end
+        if obj.weight > 0 then
+            has_positive_weight = true
         end
     end
 
-    lib.log("New weights set for trade shapes: " .. serpent.block(weights))
+    return has_positive_weight
+end
 
+---@param weights TradeShapeWeightedItem[]
+---@return boolean
+local function validate_group_weights(weights)
+    if type(weights) ~= "table" then
+        return false
+    end
+
+    for _, obj in pairs(weights) do
+        if
+               type(obj.num_inputs) ~= "number"
+            or type(obj.num_outputs) ~= "number"
+            or type(obj.weight) ~= "number"
+            or math.floor(obj.num_inputs) ~= obj.num_inputs
+            or math.floor(obj.num_outputs) ~= obj.num_outputs
+            or obj.num_inputs < 1
+            or obj.num_inputs > 3
+            or obj.num_outputs < 1
+            or obj.num_outputs > 3
+            or obj.weight < 0
+        then
+            return false
+        end
+    end
+
+    return true
+end
+
+---@param grouped_weights TradeShapeWeightsByArchetype
+---@return boolean
+local function validate_grouped_trade_shape_distribution(grouped_weights)
+    if type(grouped_weights) ~= "table" then
+        return false
+    end
+
+    local groups = {"non_coin", "coin_input", "coin_output"}
+    local has_any_positive_group = false
+
+    for _, group_name in ipairs(groups) do
+        local weights = grouped_weights[group_name]
+        if weights ~= nil then
+            if not validate_group_weights(weights) then
+                return false
+            end
+
+            local has_group_positive_weight = false
+            for _, obj in pairs(weights) do
+                if obj.weight > 0 then
+                    has_group_positive_weight = true
+                    break
+                end
+            end
+
+            if has_group_positive_weight then
+                has_any_positive_group = true
+            end
+        end
+    end
+
+    return has_any_positive_group
+end
+
+---@param weights TradeShapeWeightedItem[]
+local function set_trade_shape_distribution_legacy(weights)
+    if not validate_flat_weights(weights) then
+        lib.log_error("trade_generator.set_trade_shape_distribution_legacy: Invalid weights received:\n" .. serpent.block(weights))
+        return
+    end
+
+    lib.log("New legacy weights set for trade shapes: " .. serpent.block(weights))
     storage.trades.trade_shape_weights = weights
+    storage.trades.trade_shape_weighted_choice = nil
+    storage.trades.trade_shape_weighted_choice_by_group = nil
+end
+
+---@param grouped_weights TradeShapeWeightsByArchetype
+local function set_trade_shape_distribution_current(grouped_weights)
+    if not validate_grouped_trade_shape_distribution(grouped_weights) then
+        lib.log_error("trade_generator.set_trade_shape_distribution_current: Invalid grouped weights received:\n" .. serpent.block(grouped_weights))
+        return
+    end
+
+    lib.log("New current grouped weights set for trade shapes: " .. serpent.block(grouped_weights))
+    storage.trades.trade_shape_weights = grouped_weights
+    storage.trades.trade_shape_weighted_choice_by_group = nil
     storage.trades.trade_shape_weighted_choice = nil
 end
 
----Get the distribution currently used for sampling trade shapes during procedural generation.
----@return TradeShapeWeightedItem[]|nil
-local function get_trade_shape_distribution()
-    return storage.trades.trade_shape_weights
-end
-
+---@param group_name "non_coin"|"coin_input"|"coin_output"
 ---@return int num_inputs, int num_outputs
-local function get_trade_shape()
-    -- Load cached weighted choice from storage.
-    local trade_shape_wc = storage.trades.trade_shape_weighted_choice
+local function get_trade_shape_for_group_current(group_name)
+    local grouped_weights = storage.trades.trade_shape_weights
+    if type(grouped_weights) ~= "table" then
+        lib.log_error("trade_generator.get_trade_shape_for_group_current: No grouped weights set")
+        return 1, 1
+    end
 
-    -- Build and cache weighted choice from configured trade-shape weights.
+    local group_weights = grouped_weights[group_name]
+    if type(group_weights) ~= "table" then
+        lib.log_error("trade_generator.get_trade_shape_for_group_current: Missing group '" .. tostring(group_name) .. "'")
+        return 1, 1
+    end
+
+    local by_group = storage.trades.trade_shape_weighted_choice_by_group
+    if type(by_group) ~= "table" then
+        by_group = {}
+        storage.trades.trade_shape_weighted_choice_by_group = by_group
+    end
+
+    local trade_shape_wc = by_group[group_name]
     if not trade_shape_wc then
-        local weights = get_trade_shape_distribution()
-        if not weights then
-            lib.log_error("trade_generator.get_trade_shape: No weights set for trade shape sampling")
-            return 1, 1
-        end
-
         local item_list = {}
-        for _, shape_item in pairs(weights) do
+        for _, shape_item in pairs(group_weights) do
             if shape_item.weight > 0 then
-                item_list[#item_list+1] = {
+                item_list[#item_list + 1] = {
                     item = {shape_item.num_inputs, shape_item.num_outputs},
                     weight = shape_item.weight,
                 }
@@ -198,30 +285,74 @@ local function get_trade_shape()
 
         trade_shape_wc = weighted_choice.from_list(item_list)
         if not trade_shape_wc then
-            lib.log_error("trade_generator.get_trade_shape: Failed to create a weighted choice for trades given weights:\n" .. serpent.block(weights))
+            lib.log_error("trade_generator.get_trade_shape_for_group_current: Failed to create weighted choice for group '" .. tostring(group_name) .. "'")
             return 1, 1
         end
 
-        storage.trades.trade_shape_weighted_choice = trade_shape_wc
-    end
-
-    -- Sample one shape and fall back to 1-1 if unavailable. Should never happen since fallback exists above
-    if not trade_shape_wc then
-        return 1, 1
+        by_group[group_name] = trade_shape_wc
     end
 
     local item = weighted_choice.choice(trade_shape_wc)
+    if not item then
+        return 1, 1
+    end
+
     return item[1], item[2]
+end
+
+---@return "non_coin"|"coin_input"|"coin_output"
+local function choose_trade_archetype_current()
+    local grouped_weights = storage.trades.trade_shape_weights
+    local function has_positive_weight_group(group_name)
+        local group = type(grouped_weights) == "table" and grouped_weights[group_name] or nil
+        if type(group) ~= "table" then
+            return false
+        end
+        for _, obj in pairs(group) do
+            if obj.weight > 0 then
+                return true
+            end
+        end
+        return false
+    end
+
+    local has_non_coin = has_positive_weight_group("non_coin")
+    local has_coin_input = has_positive_weight_group("coin_input")
+    local has_coin_output = has_positive_weight_group("coin_output")
+
+    local is_coin_trade = math.random() < lib.runtime_setting_value_as_number "coin-trade-chance"
+    if is_coin_trade and (has_coin_input or has_coin_output) then
+        local prefer_output = math.random() < lib.runtime_setting_value_as_number "sell-trade-chance"
+        if prefer_output and has_coin_output then
+            return "coin_output"
+        end
+        if (not prefer_output) and has_coin_input then
+            return "coin_input"
+        end
+        if has_coin_input then
+            return "coin_input"
+        end
+        return "coin_output"
+    end
+
+    if has_non_coin then
+        return "non_coin"
+    end
+    if has_coin_input then
+        return "coin_input"
+    end
+    return "coin_output"
 end
 
 ---Sample random item names for inputs and outputs of a trade based on a central item value. Can generate coin trades
 ---@param surface_name string
 ---@param volume number The central item value.
+---@param archetype "non_coin"|"coin_input"|"coin_output"
 ---@param params TradeGenerationParameters|nil
 ---@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
 ---@param include_item string|nil An item name to be forcefully included in the returned input or output items.
 ---@return string[], string[]
-local function generate_item_names_for_trade(surface_name, volume, params, allow_untradable, include_item)
+local function generate_item_names_for_trade(surface_name, volume, archetype, params, allow_untradable, include_item)
     if allow_untradable == nil then allow_untradable = false end
     if not params then params = {} end
     set_trade_generation_parameter_defaults(params)
@@ -264,26 +395,33 @@ local function generate_item_names_for_trade(surface_name, volume, params, allow
         sets.add(set, item_name)
     end
 
-    local num_inputs, num_outputs = get_trade_shape()
-    local has_coin_input = num_inputs == 0
-    local has_coin_output = num_outputs == 0
+    local num_inputs, num_outputs = get_trade_shape_for_group_current(archetype)
+    local has_coin_input = archetype == "coin_input"
+    local has_coin_output = archetype == "coin_output"
 
-    local num_non_coin_inputs = has_coin_input and 0 or num_inputs
-    local num_non_coin_outputs = has_coin_output and 0 or num_outputs
+    local num_non_coin_inputs = has_coin_input and math.max(0, num_inputs - 1) or num_inputs
+    local num_non_coin_outputs = has_coin_output and math.max(0, num_outputs - 1) or num_outputs
     local total_non_coin_items = num_non_coin_inputs + num_non_coin_outputs
-    if total_non_coin_items < 1 then
-        lib.log_error("trade_generator.generate_item_names: Invalid trade shape with no non-coin items: " .. serpent.line({num_inputs = num_inputs, num_outputs = num_outputs}))
-        return {}, {}
-    end
 
     local trade_items = sets.to_array(set)
     if #trade_items < total_non_coin_items then
-        lib.log_error("trade_generator.generate_item_names: Not enough items selected for trade shape " .. num_inputs .. "-" .. num_outputs .. "; selected=" .. #trade_items .. ", required=" .. total_non_coin_items)
+        lib.log_error(
+            "trade_generator.generate_item_names: Not enough items selected for trade shape "
+                .. num_inputs
+                .. "-"
+                .. num_outputs
+                .. " archetype='"
+                .. archetype
+                .. "'; selected="
+                .. #trade_items
+                .. ", required="
+                .. total_non_coin_items
+        )
         return {}, {}
     end
 
     if include_item then
-        -- Bring include_item to front indices that are used for non-coin item slots.
+        -- Keep include_item in the non-coin slots so forced coin placement never replaces it.
         local idx_old = lib.table_index(trade_items, include_item)
         local idx_new = math.random(1, total_non_coin_items)
         trade_items[idx_new], trade_items[idx_old] = trade_items[idx_old], trade_items[idx_new]
@@ -292,63 +430,27 @@ local function generate_item_names_for_trade(surface_name, volume, params, allow
     local input_item_names = {}
     local output_item_names = {}
     local i = 1
+    local input_offset = 0
+    local output_offset = 0
+    if has_coin_input then
+        input_item_names[1] = storage.coin_tiers.COIN_NAMES[1]
+        input_offset = 1
+    end
+    if has_coin_output then
+        output_item_names[1] = storage.coin_tiers.COIN_NAMES[1]
+        output_offset = 1
+    end
+
     for k = 1, num_non_coin_inputs do
-        input_item_names[k] = trade_items[i]
+        input_item_names[k + input_offset] = trade_items[i]
         i = i + 1
     end
     for k = 1, num_non_coin_outputs do
-        output_item_names[k] = trade_items[i]
+        output_item_names[k + output_offset] = trade_items[i]
         i = i + 1
     end
 
-    if has_coin_input then input_item_names[1] = storage.coin_tiers.COIN_NAMES[1] end
-    if has_coin_output then output_item_names[1] = storage.coin_tiers.COIN_NAMES[1] end
-
     return input_item_names, output_item_names
-end
-
----Replace one non-include item in the trade with a coin according to coin-trade settings.
----Returns true when an item was replaced.
----@param input_item_names string[]
----@param output_item_names string[]
----@param include_item string|nil
----@return boolean replaced
-local function inject_coins_into_trade(input_item_names, output_item_names, include_item)
-    local coin_name = storage.coin_tiers.COIN_NAMES[1]
-
-    local function get_replaceable_indices(items)
-        local indices = {}
-        for i, item_name in ipairs(items) do
-            if item_name ~= include_item and not lib.is_coin(item_name) then
-                indices[#indices + 1] = i
-            end
-        end
-        return indices
-    end
-
-    local input_indices = get_replaceable_indices(input_item_names)
-    local output_indices = get_replaceable_indices(output_item_names)
-
-    local prefer_output = math.random() < lib.runtime_setting_value_as_number "sell-trade-chance"
-
-    local target_items = prefer_output and output_item_names or input_item_names
-    local fallback_items = prefer_output and input_item_names or output_item_names
-    local target_indices = prefer_output and output_indices or input_indices
-    local fallback_indices = prefer_output and input_indices or output_indices
-
-    if #target_indices > 0 then
-        local idx = target_indices[math.random(1, #target_indices)]
-        target_items[idx] = coin_name
-        return true
-    end
-
-    if #fallback_indices > 0 then
-        local idx = fallback_indices[math.random(1, #fallback_indices)]
-        fallback_items[idx] = coin_name
-        return true
-    end
-
-    return false
 end
 
 --- 
@@ -377,7 +479,12 @@ function trade_generator.init()
         lib.log_error("trade_generator.init: Missing complexity '" .. tostring(complexity) .. "' in lookup '" .. tostring(lookup_name) .. "'")
         return
     end
-    set_trade_shape_distribution(weights)
+
+    if generator_mode == "legacy-main" then
+        set_trade_shape_distribution_legacy(weights)
+    else
+        set_trade_shape_distribution_current(weights)
+    end
 end
 
 ---Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.
@@ -485,11 +592,8 @@ local function generate_random_current(surface_name, existing_trades, volume, pa
     end
 
     for _ = 1, RANDOM_TRADE_ATTEMPTS do
-        local input_item_names, output_item_names = generate_item_names_for_trade(surface_name, volume, params, allow_untradable, include_item)
-        
-        if math.random() < lib.runtime_setting_value_as_number "coin-trade-chance" then
-            inject_coins_into_trade(input_item_names, output_item_names, include_item)
-        end
+        local archetype = choose_trade_archetype_current()
+        local input_item_names, output_item_names = generate_item_names_for_trade(surface_name, volume, archetype, params, allow_untradable, include_item)
 
         local tentative = generate_from_item_names_current(surface_name, input_item_names, output_item_names, params)
 

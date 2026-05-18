@@ -132,13 +132,16 @@ end
 local function _with_trade_shape_weights(temp_weights, fn)
     local old_weights = storage.trades.trade_shape_weights
     local old_wc = storage.trades.trade_shape_weighted_choice
+    local old_wc_by_group = storage.trades.trade_shape_weighted_choice_by_group
     storage.trades.trade_shape_weights = temp_weights
     storage.trades.trade_shape_weighted_choice = nil
+    storage.trades.trade_shape_weighted_choice_by_group = nil
 
     local ok, result = xpcall(fn, debug.traceback)
 
     storage.trades.trade_shape_weights = old_weights
     storage.trades.trade_shape_weighted_choice = old_wc
+    storage.trades.trade_shape_weighted_choice_by_group = old_wc_by_group
 
     if not ok then error(result, 0) end
     return result
@@ -208,6 +211,16 @@ local function _make_shape_only_weights(num_inputs, num_outputs)
     }
 end
 
+local function _make_grouped_shape_only_weights(group_name, num_inputs, num_outputs)
+    local out = {
+        non_coin = {},
+        coin_input = {},
+        coin_output = {},
+    }
+    out[group_name] = _make_shape_only_weights(num_inputs, num_outputs)
+    return out
+end
+
 local function _with_script_inventories(size_in, size_out, fn)
     local inv_in = game.create_inventory(size_in)
     local inv_out = game.create_inventory(size_out)
@@ -234,10 +247,15 @@ local tests = {
             local old_lookup_weights = lookup[complexity]
             local old_active_weights = storage.trades.trade_shape_weights
             local old_wc = storage.trades.trade_shape_weighted_choice
+            local old_wc_by_group = storage.trades.trade_shape_weighted_choice_by_group
 
             lookup[complexity] = {
-                {num_inputs = 0, num_outputs = 0, weight = 1},   -- invalid: both zero
-                {num_inputs = 1, num_outputs = 1, weight = -1},  -- invalid: negative weight
+                non_coin = {
+                    {num_inputs = 0, num_outputs = 1, weight = 1},   -- invalid: zero inputs in grouped mode
+                    {num_inputs = 1, num_outputs = 1, weight = -1},  -- invalid: negative weight
+                },
+                coin_input = {},
+                coin_output = {},
             }
 
             local ok, err = xpcall(function()
@@ -246,53 +264,77 @@ local tests = {
 
             lookup[complexity] = old_lookup_weights
             storage.trades.trade_shape_weighted_choice = old_wc
+            storage.trades.trade_shape_weighted_choice_by_group = old_wc_by_group
 
             _expect(ok, "trade_generator.init crashed on invalid shape config: " .. tostring(err))
             _expect(storage.trades.trade_shape_weights == old_active_weights, "Invalid shape config should not replace active trade-shape weights")
         end,
     },
     {
+        id = "shape_validation_empty_effective_pool",
+        description = "Validates grouped shape config with no positive-weight entries is rejected without replacing active trade-shape weights.",
+        run = function(context)
+            local complexity = lib.runtime_setting_value_as_string "trade-complexity"
+            local lookup = storage.trades.trade_shape_weights_lookup
+            _expect(type(lookup) == "table" and type(lookup[complexity]) == "table", "Missing trade-shape lookup for complexity: " .. tostring(complexity))
+
+            local old_lookup_weights = lookup[complexity]
+            local old_active_weights = storage.trades.trade_shape_weights
+            local old_wc = storage.trades.trade_shape_weighted_choice
+            local old_wc_by_group = storage.trades.trade_shape_weighted_choice_by_group
+
+            lookup[complexity] = {
+                non_coin = {{num_inputs = 1, num_outputs = 1, weight = 0}},
+                coin_input = {{num_inputs = 1, num_outputs = 1, weight = 0}},
+                coin_output = {{num_inputs = 1, num_outputs = 1, weight = 0}},
+            }
+
+            local ok, err = xpcall(function()
+                trade_generator.init()
+            end, debug.traceback)
+
+            lookup[complexity] = old_lookup_weights
+            storage.trades.trade_shape_weighted_choice = old_wc
+            storage.trades.trade_shape_weighted_choice_by_group = old_wc_by_group
+
+            _expect(ok, "trade_generator.init crashed on empty effective pool config: " .. tostring(err))
+            _expect(storage.trades.trade_shape_weights == old_active_weights, "Empty effective pool config should not replace active trade-shape weights")
+        end,
+    },
+    {
         id = "weights_placeholders_present",
-        description = "Validates that each complexity table includes the 0-weight coin-side placeholder shapes.",
+        description = "Validates grouped archetype schema exists and shape entries are positive-count with non-negative weights.",
         run = function(context)
             local lookup = storage.trades.trade_shape_weights_lookup
             _expect(type(lookup) == "table", "Missing storage.trades.trade_shape_weights_lookup")
 
-            for complexity, weights in pairs(lookup) do
-                local zero_weight_placeholders = 0
-                local expected_placeholders = {
-                    ["0->1"] = true,
-                    ["0->2"] = true,
-                    ["0->3"] = true,
-                    ["1->0"] = true,
-                    ["2->0"] = true,
-                    ["3->0"] = true,
-                }
-                for _, shape in pairs(weights) do
-                    _expect(shape.weight >= 0, "Negative weight found in " .. complexity)
-                    _expect(not (shape.num_inputs == 0 and shape.num_outputs == 0), "0->0 shape found in " .. complexity)
-                    if shape.weight == 0 and (shape.num_inputs == 0 or shape.num_outputs == 0) then
-                        zero_weight_placeholders = zero_weight_placeholders + 1
-                        local key = tostring(shape.num_inputs) .. "->" .. tostring(shape.num_outputs)
-                        expected_placeholders[key] = nil
+            for complexity, grouped in pairs(lookup) do
+                _expect(type(grouped) == "table", "Invalid grouped shape lookup for " .. complexity)
+                for _, group_name in ipairs({"non_coin", "coin_input", "coin_output"}) do
+                    local weights = grouped[group_name]
+                    _expect(type(weights) == "table", "Missing group '" .. group_name .. "' in " .. complexity)
+                    local has_positive_weight = false
+                    for _, shape in pairs(weights) do
+                        _expect(shape.weight >= 0, "Negative weight found in " .. complexity .. "." .. group_name)
+                        _expect(shape.num_inputs >= 1 and shape.num_inputs <= 3, "Invalid num_inputs in " .. complexity .. "." .. group_name)
+                        _expect(shape.num_outputs >= 1 and shape.num_outputs <= 3, "Invalid num_outputs in " .. complexity .. "." .. group_name)
+                        if shape.weight > 0 then
+                            has_positive_weight = true
+                        end
                     end
+                    _expect(has_positive_weight, "Group '" .. group_name .. "' has no positive weights in " .. complexity)
                 end
-                _expect(zero_weight_placeholders == 6, "Expected 6 zero-weight placeholders in " .. complexity .. ", found " .. zero_weight_placeholders)
-                _expect(next(expected_placeholders) == nil, "Missing one or more expected placeholder shapes in " .. complexity)
             end
         end,
     },
     {
         id = "weighted_choice_excludes_zero_weight_shapes",
-        description = "Validates weighted-choice cache does not contain any shape with 0 inputs or 0 outputs.",
+        description = "Validates grouped weighted-choice caches only contain positive-count shapes.",
         run = function(context)
             local lookup = storage.trades.trade_shape_weights_lookup
-            local sample_item = context.sample_items[1]
             local volume = context.volume
-            _expect(sample_item ~= nil, "No sample item found for weighted-choice test")
-
-            for complexity, weights in pairs(lookup) do
-                _with_trade_shape_weights(weights, function()
+            for complexity, grouped in pairs(lookup) do
+                _with_trade_shape_weights(grouped, function()
                     _with_runtime_number_overrides({
                         ["coin-trade-chance"] = 0,
                         ["sell-trade-chance"] = 0.5,
@@ -300,12 +342,28 @@ local tests = {
                         _generate_random_tentative(context.surface_name, volume, {allow_nil_return = true}, nil, 8)
                     end)
 
-                    local wc = storage.trades.trade_shape_weighted_choice
-                    _expect(wc ~= nil and wc.__total_weight and wc.__total_weight > 0, "No weighted-choice cache generated for " .. complexity)
-                    for shape, _ in pairs(wc) do
-                        if shape ~= "__total_weight" then
-                            _expect(shape[1] > 0, "Found zero-input sampled shape in " .. complexity)
-                            _expect(shape[2] > 0, "Found zero-output sampled shape in " .. complexity)
+                    local by_group = storage.trades.trade_shape_weighted_choice_by_group
+                    _expect(type(by_group) == "table", "No grouped weighted-choice cache generated for " .. complexity)
+
+                    for _, group_name in ipairs({"non_coin", "coin_input", "coin_output"}) do
+                        local has_positive_weight = false
+                        for _, shape in pairs(grouped[group_name] or {}) do
+                            if shape.weight > 0 then
+                                has_positive_weight = true
+                                break
+                            end
+                        end
+                        if has_positive_weight then
+                            local wc = by_group[group_name]
+                            if wc then
+                                _expect(wc.__total_weight and wc.__total_weight > 0, "Empty weighted choice for " .. complexity .. "." .. group_name)
+                                for shape, _ in pairs(wc) do
+                                    if shape ~= "__total_weight" then
+                                        _expect(shape[1] > 0, "Found zero-input sampled shape in " .. complexity .. "." .. group_name)
+                                        _expect(shape[2] > 0, "Found zero-output sampled shape in " .. complexity .. "." .. group_name)
+                                    end
+                                end
+                            end
                         end
                     end
                 end)
@@ -341,169 +399,110 @@ local tests = {
         end,
     },
     {
-        id = "coin_injection_disabled_regression",
-        description = "Validates random trades generated with coin-trade-chance=0 contain no coins when zero-side shapes are excluded.",
+        id = "coin_routing_non_coin_path",
+        description = "Validates non-coin path is selected when coin-trade-chance=0.",
         run = function(context)
-            local positive_non_coin_weights = {
-                {num_inputs = 1, num_outputs = 1, weight = 1},
-                {num_inputs = 1, num_outputs = 2, weight = 1},
-                {num_inputs = 2, num_outputs = 1, weight = 1},
-                {num_inputs = 2, num_outputs = 2, weight = 1},
+            local grouped = {
+                non_coin = _make_shape_only_weights(2, 2),
+                coin_input = _make_shape_only_weights(2, 2),
+                coin_output = _make_shape_only_weights(2, 2),
             }
-            _with_trade_shape_weights(positive_non_coin_weights, function()
+            _with_trade_shape_weights(grouped, function()
                 _with_runtime_number_overrides({
                     ["coin-trade-chance"] = 0,
                     ["sell-trade-chance"] = 0.5,
                 }, function()
                     local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 20)
-                    _expect(tentative ~= nil, "Failed to generate random trade with coin injection disabled")
+                    _expect(tentative ~= nil, "Failed to generate random trade for non-coin routing test")
                     local input_names = _to_name_array(tentative.input_items)
                     local output_names = _to_name_array(tentative.output_items)
-                    _expect(not _contains_coin(input_names), "Unexpected coin found in inputs when coin-trade-chance=0 and zero-side shapes excluded")
-                    _expect(not _contains_coin(output_names), "Unexpected coin found in outputs when coin-trade-chance=0 and zero-side shapes excluded")
+                    _expect(not _contains_coin(input_names), "Unexpected coin found in inputs when coin-trade-chance=0")
+                    _expect(not _contains_coin(output_names), "Unexpected coin found in outputs when coin-trade-chance=0")
                 end)
             end)
         end,
     },
     {
-        id = "zero_side_shape_coin_input_behavior",
-        description = "Validates a forced 0->N shape creates a coin input side and non-coin outputs.",
+        id = "coin_routing_coin_input_path",
+        description = "Validates coin-input path is selected when coin-trade-chance=1 and sell-trade-chance=0.",
         run = function(context)
-            _with_trade_shape_weights(_make_shape_only_weights(0, 2), function()
+            local grouped = _make_grouped_shape_only_weights("coin_input", 2, 2)
+            _with_trade_shape_weights(grouped, function()
                 _with_runtime_number_overrides({
-                    ["coin-trade-chance"] = 0,
-                    ["sell-trade-chance"] = 0.5,
+                    ["coin-trade-chance"] = 1,
+                    ["sell-trade-chance"] = 0,
                 }, function()
-                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 20)
-                    _expect(tentative ~= nil, "Failed to generate forced 0->2 shape trade")
+                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
+                    _expect(tentative ~= nil, "Failed to generate forced coin-input trade")
                     local input_names = _to_name_array(tentative.input_items)
                     local output_names = _to_name_array(tentative.output_items)
-                    _expect(#input_names == 1, "Expected exactly one input for 0->2 shape")
-                    _expect(lib.is_coin(input_names[1]), "Expected input side coin for 0->2 shape")
-                    _expect(#output_names == 2, "Expected exactly two outputs for 0->2 shape")
-                    _expect(not _contains_coin(output_names), "Expected non-coin outputs for 0->2 shape")
+                    _expect(#input_names == 2, "Expected two input items for coin-input path")
+                    _expect(_count_coins(input_names) == 1, "Expected exactly one input coin for coin-input path")
+                    _expect(#output_names == 2, "Expected two output items for coin-input path")
+                    _expect(_count_coins(output_names) == 0, "Did not expect output coin for coin-input path")
                 end)
             end)
         end,
     },
     {
-        id = "zero_side_shape_coin_output_behavior",
-        description = "Validates a forced N->0 shape creates a coin output side and non-coin inputs.",
+        id = "coin_routing_coin_output_path",
+        description = "Validates coin-output path is selected when coin-trade-chance=1 and sell-trade-chance=1.",
         run = function(context)
-            _with_trade_shape_weights(_make_shape_only_weights(2, 0), function()
-                _with_runtime_number_overrides({
-                    ["coin-trade-chance"] = 0,
-                    ["sell-trade-chance"] = 0.5,
-                }, function()
-                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 20)
-                    _expect(tentative ~= nil, "Failed to generate forced 2->0 shape trade")
-                    local input_names = _to_name_array(tentative.input_items)
-                    local output_names = _to_name_array(tentative.output_items)
-                    _expect(#output_names == 1, "Expected exactly one output for 2->0 shape")
-                    _expect(lib.is_coin(output_names[1]), "Expected output side coin for 2->0 shape")
-                    _expect(#input_names == 2, "Expected exactly two inputs for 2->0 shape")
-                    _expect(not _contains_coin(input_names), "Expected non-coin inputs for 2->0 shape")
-                end)
-            end)
-        end,
-    },
-    {
-        id = "coin_injection_fallback_side",
-        description = "Validates coin injection falls back to the opposite side when preferred side has no replaceable non-coin items.",
-        run = function(context)
-            _with_trade_shape_weights(_make_shape_only_weights(2, 0), function()
+            local grouped = _make_grouped_shape_only_weights("coin_output", 2, 2)
+            _with_trade_shape_weights(grouped, function()
                 _with_runtime_number_overrides({
                     ["coin-trade-chance"] = 1,
                     ["sell-trade-chance"] = 1,
                 }, function()
-                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 20)
-                    _expect(tentative ~= nil, "Failed to generate trade for fallback injection test")
+                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
+                    _expect(tentative ~= nil, "Failed to generate forced coin-output trade")
                     local input_names = _to_name_array(tentative.input_items)
                     local output_names = _to_name_array(tentative.output_items)
-                    _expect(#output_names == 1 and lib.is_coin(output_names[1]), "Expected forced coin-only preferred side for fallback test")
-                    _expect(#input_names == 2, "Expected two input slots for forced 2->0 shape")
-                    _expect(_count_coins(input_names) == 1, "Expected fallback injection to place exactly one coin on input side")
+                    _expect(#output_names == 2, "Expected two output items for coin-output path")
+                    _expect(_count_coins(output_names) == 1, "Expected exactly one output coin for coin-output path")
+                    _expect(#input_names == 2, "Expected two input items for coin-output path")
+                    _expect(_count_coins(input_names) == 0, "Did not expect input coin for coin-output path")
                 end)
             end)
         end,
     },
     {
-        id = "coin_injection_no_replaceable_stability",
-        description = "Validates generation remains stable when coin injection has no replaceable item on either side. (Indirect Test: tests inject_coins_into_trade via generate_random)",
+        id = "mixed_coin_item_archetype_generation",
+        description = "Validates mixed coin+item archetypes generate correctly and preserve include_item in non-coin slots.",
         run = function(context)
             local include_item = context.sample_items[1]
-            _expect(include_item ~= nil, "No sample item found for no-replaceable injection stability test")
+            _expect(include_item ~= nil, "No sample item found for mixed coin archetype test")
 
-            _with_trade_shape_weights(_make_shape_only_weights(0, 1), function()
+            local grouped = {
+                non_coin = {},
+                coin_input = _make_shape_only_weights(3, 2),
+                coin_output = _make_shape_only_weights(2, 3),
+            }
+            _with_trade_shape_weights(grouped, function()
+                _with_runtime_number_overrides({
+                    ["coin-trade-chance"] = 1,
+                    ["sell-trade-chance"] = 0,
+                }, function()
+                    local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, include_item, 20)
+                    _expect(tentative ~= nil, "Failed to generate mixed coin-input trade")
+                    local input_names = _to_name_array(tentative.input_items)
+                    local output_names = _to_name_array(tentative.output_items)
+                    _expect(#input_names == 3 and _count_coins(input_names) == 1, "Expected 3-input mixed trade with one input coin")
+                    _expect(#output_names == 2 and _count_coins(output_names) == 0, "Expected non-coin outputs for mixed coin-input trade")
+                    _expect(_contains_name(input_names, include_item) or _contains_name(output_names, include_item), "include_item missing in mixed coin-input trade")
+                end)
+
                 _with_runtime_number_overrides({
                     ["coin-trade-chance"] = 1,
                     ["sell-trade-chance"] = 1,
                 }, function()
                     local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, include_item, 20)
-                    _expect(tentative ~= nil, "Failed to generate trade for no-replaceable injection stability test")
-
+                    _expect(tentative ~= nil, "Failed to generate mixed coin-output trade")
                     local input_names = _to_name_array(tentative.input_items)
                     local output_names = _to_name_array(tentative.output_items)
-                    _expect(#input_names == 1 and lib.is_coin(input_names[1]), "Expected coin-only input side for forced 0->1 shape")
-                    _expect(#output_names == 1 and output_names[1] == include_item, "Expected include_item to remain as the only output when no replacement is possible")
-                    _expect(_count_coins(output_names) == 0, "Did not expect coin replacement on output when include_item is protected")
-                end)
-            end)
-        end,
-    },
-    {
-        id = "coin_injection_direction_paths",
-        description = "Validates coin injection targets output when sell=1 and input when sell=0 for forced 1-1 shapes.",
-        run = function(context)
-            _with_trade_shape_weights(_make_shape_only_weights(1, 1), function()
-                _with_runtime_number_overrides({
-                    ["coin-trade-chance"] = 1,
-                    ["sell-trade-chance"] = 1,
-                }, function()
-                    local sell_tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
-                    _expect(sell_tentative ~= nil, "Failed to generate random trade for sell-path injection test")
-                    local sell_input_names = _to_name_array(sell_tentative.input_items)
-                    local sell_output_names = _to_name_array(sell_tentative.output_items)
-                    _expect(_count_coins(sell_output_names) >= 1, "Expected output-side coin for sell-path")
-                    _expect(_count_coins(sell_input_names) == 0, "Did not expect input-side coin for sell-path")
-                end)
-
-                _with_runtime_number_overrides({
-                    ["coin-trade-chance"] = 1,
-                    ["sell-trade-chance"] = 0,
-                }, function()
-                    local buy_tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, nil, 12)
-                    _expect(buy_tentative ~= nil, "Failed to generate random trade for buy-path injection test")
-                    local buy_input_names = _to_name_array(buy_tentative.input_items)
-                    local buy_output_names = _to_name_array(buy_tentative.output_items)
-                    _expect(_count_coins(buy_input_names) >= 1, "Expected input-side coin for buy-path")
-                    _expect(_count_coins(buy_output_names) == 0, "Did not expect output-side coin for buy-path")
-                end)
-            end)
-        end,
-    },
-    {
-        id = "coin_injection_preserves_include_item",
-        description = "Validates coin injection does not replace include_item over repeated 1-1 generations.",
-        run = function(context)
-            local include_item = context.sample_items[1]
-            _expect(include_item ~= nil, "No sample item found for include-item preservation test")
-
-            _with_trade_shape_weights(_make_shape_only_weights(1, 1), function()
-                _with_runtime_number_overrides({
-                    ["coin-trade-chance"] = 1,
-                    ["sell-trade-chance"] = 1,
-                }, function()
-                    local iterations = 20
-                    for i = 1, iterations do
-                        local tentative = _generate_random_tentative(context.surface_name, context.volume, {allow_nil_return = true}, include_item, 12)
-                        _expect(tentative ~= nil, "Failed to generate random trade for include-item preservation test on iteration " .. i)
-
-                        local input_names = _to_name_array(tentative.input_items)
-                        local output_names = _to_name_array(tentative.output_items)
-                        _expect(_contains_name(input_names, include_item) or _contains_name(output_names, include_item), "include_item missing on iteration " .. i)
-                        _expect(_contains_coin(input_names) or _contains_coin(output_names), "Expected coin injection on iteration " .. i)
-                    end
+                    _expect(#input_names == 2 and _count_coins(input_names) == 0, "Expected non-coin inputs for mixed coin-output trade")
+                    _expect(#output_names == 3 and _count_coins(output_names) == 1, "Expected 3-output mixed trade with one output coin")
+                    _expect(_contains_name(input_names, include_item) or _contains_name(output_names, include_item), "include_item missing in mixed coin-output trade")
                 end)
             end)
         end,
@@ -946,12 +945,49 @@ end
 
 local function _build_shape_category_expectations(weights)
     local expected_categories = {}
-    for _, shape in pairs(weights or {}) do
-        local left = shape.num_inputs == 0 and "coin" or tostring(shape.num_inputs)
-        local right = shape.num_outputs == 0 and "coin" or tostring(shape.num_outputs)
-        local key = left .. "->" .. right
-        if shape.weight > 0 then expected_categories[key] = true end
+
+    local function add_shape(shape, group_name)
+        local function coin_side_label(non_coin_count)
+            if non_coin_count <= 0 then
+                return "coin"
+            end
+            return "coin+" .. tostring(non_coin_count)
+        end
+
+        local left
+        local right
+        if group_name == "coin_input" then
+            left = coin_side_label(shape.num_inputs - 1)
+            right = tostring(shape.num_outputs)
+        elseif group_name == "coin_output" then
+            left = tostring(shape.num_inputs)
+            right = coin_side_label(shape.num_outputs - 1)
+        else
+            left = tostring(shape.num_inputs)
+            right = tostring(shape.num_outputs)
+        end
+        expected_categories[left .. "->" .. right] = true
     end
+
+    if type(weights) == "table" and (weights.non_coin or weights.coin_input or weights.coin_output) then
+        for _, shape in pairs(weights.non_coin or {}) do
+            if shape.weight > 0 then add_shape(shape, "non_coin") end
+        end
+        for _, shape in pairs(weights.coin_input or {}) do
+            if shape.weight > 0 then add_shape(shape, "coin_input") end
+        end
+        for _, shape in pairs(weights.coin_output or {}) do
+            if shape.weight > 0 then add_shape(shape, "coin_output") end
+        end
+    else
+        for _, shape in pairs(weights or {}) do
+            local left = shape.num_inputs == 0 and "coin" or tostring(shape.num_inputs)
+            local right = shape.num_outputs == 0 and "coin" or tostring(shape.num_outputs)
+            local key = left .. "->" .. right
+            if shape.weight > 0 then expected_categories[key] = true end
+        end
+    end
+
     return expected_categories
 end
 
@@ -1441,8 +1477,14 @@ local function _begin_all_preset_phase(run)
     if storage.trades.trade_shape_weights ~= expected_weights then
         return false, "trade_generator.init did not apply '" .. complexity .. "' preset"
     end
-    if storage.trades.trade_shape_weighted_choice ~= nil then
-        return false, "Expected weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+    if run.generator_mode_actual == "legacy-main" then
+        if storage.trades.trade_shape_weighted_choice ~= nil then
+            return false, "Expected legacy weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+        end
+    else
+        if storage.trades.trade_shape_weighted_choice_by_group ~= nil then
+            return false, "Expected grouped weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+        end
     end
 
     run.expected_categories = _build_shape_category_expectations(expected_weights)
@@ -1478,8 +1520,14 @@ local function _begin_all_preset_range_case(run)
     if storage.trades.trade_shape_weights ~= expected_weights then
         return false, "trade_generator.init did not apply '" .. complexity .. "' preset"
     end
-    if storage.trades.trade_shape_weighted_choice ~= nil then
-        return false, "Expected weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+    if run.generator_mode_actual == "legacy-main" then
+        if storage.trades.trade_shape_weighted_choice ~= nil then
+            return false, "Expected legacy weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+        end
+    else
+        if storage.trades.trade_shape_weighted_choice_by_group ~= nil then
+            return false, "Expected grouped weighted-choice cache reset when initializing '" .. complexity .. "' preset"
+        end
     end
 
     run.expected_categories = _build_shape_category_expectations(expected_weights)
