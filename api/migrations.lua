@@ -122,7 +122,9 @@ local handlers = {}
 
 function migrations.load_handlers()
     for i = 1, #versions - 1 do
-        handlers[versions[i]] = require("migrations/" .. versions[i] .. ".lua")
+        local to_ver = versions[i + 1]
+        local major_minor, patch = to_ver:match("^(%d+%.%d+)%.(%d+)$")
+        handlers[versions[i]] = require("migrations/" .. major_minor .. "/" .. patch .. ".lua")
     end
 end
 
