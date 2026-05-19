@@ -191,6 +191,7 @@
 ---| "runtime-setting-changed-trade-batching-threshold"
 ---| "runtime-setting-changed-trade-collection-batch-size"
 ---| "runtime-setting-changed-trade-complexity"
+---| "runtime-setting-changed-trade-efficiency-per-item"
 ---| "runtime-setting-changed-trade-filtering-batch-size"
 ---| "runtime-setting-changed-trade-flying-text"
 ---| "runtime-setting-changed-trade-sorting-batch-size"

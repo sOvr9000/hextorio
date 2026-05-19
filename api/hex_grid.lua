@@ -382,7 +382,7 @@ end
 ---@param is_interplanetary boolean|nil
 ---@param include_item string|nil
 ---@return Trade|nil
-function hex_grid.generate_random_trade(hex_core_state, volume, is_interplanetary, include_item)
+function hex_grid.generate_random_trade_for_hex(hex_core_state, volume, is_interplanetary, include_item)
     if not hex_core_state then
         lib.log_error("hex_grid.generate_random_trade: hex core state is nil")
         return
@@ -520,7 +520,7 @@ function hex_grid.apply_extra_trade_bonus(state, item_name, volume)
     if not item_values.is_item_tradable(hex_core.surface.name, item_name) then return end
     if math.random() > storage.item_ranks.bronze_rank_bonus_effect then return end
 
-    local trade = hex_grid.generate_random_trade(state, volume, false, item_name)
+    local trade = hex_grid.generate_random_trade_for_hex(state, volume, false, item_name)
     if not trade then
         lib.log_error("hex_grid.apply_extra_trade_bonus: failed to get random trade item name from volume = " .. volume)
         return
@@ -2533,7 +2533,7 @@ function hex_grid.add_initial_trades(state)
                 local random_volume_uniform = item_values.get_item_value(surface_name, items_sorted_by_value[math.random(1, #items_sorted_by_value)])
                 local random_volume = math.exp(math.log(random_volume_by_dist) * (1 - dist_factor) + math.log(random_volume_uniform) * dist_factor)
 
-                local trade = hex_grid.generate_random_trade(state, random_volume)
+                local trade = hex_grid.generate_random_trade_for_hex(state, random_volume)
                 if trade then
                     hex_grid.add_trade(state, trade)
                     trades_added[#trades_added+1] = trade

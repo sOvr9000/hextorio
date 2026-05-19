@@ -797,19 +797,6 @@ function trades.new_coin_trade(surface_name, item_name, target_efficiency)
     -- Note: nil is impossible to be returned for coin trades, assuming target_efficiency isn't extremely large or small (which should never happen since the mod setting has min and max values)
 end
 
----Generate a random trade on a given surface with a central value for input and output items.
----@param surface_name string
----@param volume number
----@param params TradeGenerationParameters
----@param allow_untradable boolean|nil Whether to include items that are initially untradable on the given surface. Defaults to false.
----@param include_item string|nil
----@return Trade|nil
-function trades.random(surface_name, volume, params, allow_untradable, include_item)
-    local tentative = trade_generator.generate_random(surface_name, {}, volume, params, allow_untradable, include_item)
-    if not tentative then return end
-    return trades.initialize_trade_state(tentative)
-end
-
 ---Return whether the item is now discovered if it wasn't previously.
 ---@param item_name string
 ---@return boolean

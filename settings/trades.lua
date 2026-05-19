@@ -10,12 +10,21 @@ data:extend({
         order = "a[important]-a[balancing]-s[base-trade-efficiency]",
     },
     {
+        type = "double-setting",
+        name = "hextorio-trade-efficiency-per-item",
+        setting_type = "runtime-global",
+        default_value = 0.07,
+        minimum_value = -1,
+        maximum_value = 1,
+        order = "a[important]-a[balancing]-s[trade-efficiency-per-item]",
+    },
+    {
         type = "string-setting",
         name = "hextorio-trade-complexity",
         setting_type = "runtime-global",
         default_value = "balanced",
         allowed_values = {"simple", "balanced", "complex"},
-        order = "a[important]-a[balancing]-s[trade-complexity]",
+        order = "a[important]-a[balancing]-t[trade-complexity]",
     },
     {
         type = "double-setting",
@@ -24,14 +33,14 @@ data:extend({
         default_value = 5,
         minimum_value = -10,
         maximum_value = 100,
-        order = "a[important]-a[balancing]-s[unresearched-penalty]",
+        order = "a[important]-a[balancing]-t[unresearched-penalty]",
     },
     {
         type = "bool-setting",
         setting_type = "runtime-global",
         name = "hextorio-allow-two-headed-trains",
         default_value = false,
-        order = "a[important]-b[balancing]-s[allow-two-headed-trains]",
+        order = "a[important]-b[balancing]-u[allow-two-headed-trains]",
     },
 
     {

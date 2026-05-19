@@ -243,6 +243,17 @@ function lib.rounded_position(pos, offset_by_half)
     return {x = math.floor(0.5 + (pos.x or pos[1])), y = math.floor(0.5 + (pos.y or pos[2]))}
 end
 
+---Return `x * (1 + mult)` if mult is nonnegative.
+---Otherwise, return `x / (1 - mult)`.
+---@param x number
+---@param mult number
+function lib.apply_multiplier(x, mult)
+    if mult < 0 then
+        return x / (1 - mult)
+    end
+    return x * (1 + mult)
+end
+
 ---@param name string
 ---@return boolean|string|number|Color.0|{ [1]: number, [2]: number, [3]: number, [4]: number }
 function lib.startup_setting_value(name)

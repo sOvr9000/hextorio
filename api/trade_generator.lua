@@ -26,6 +26,7 @@ local trade_generator = {}
 ---@field max_stacks_per_item number|nil The maximum number of stacks allowed per item in the generated trade.  For example, if this is 2, then item count for beacons would not exceed 2*20 = 40. Can be a non-integer.
 ---@field max_count_per_item int|nil The maximum amount of each item allowed in the generated trade.  This feels reasonable at around 100, preventing from (e.g.) having to feed an egregious amount of items for a small return.
 ---@field allow_nil_return boolean|nil Whether to allow a nil trade if the generator cannot solve the item counts from a given set of items and item count constraints.  If false and the generator fails to approximate target_efficiency, then the item counts with the closest possible ratio given the other constraints are used. Defaults to true.
+---@field scale_target_efficiency_by_items boolean|nil Whether to automatically multiply target_efficiency by `1 + setting_value * total_items`, where `total_items` is the total number of unique item types in the trade, and `setting_value` is the value of the setting `"hextorio-trade-efficiency-per-item"`.  If the setting value is negative, the target_efficiency is instead divided by `1 - setting_value * total_items`.
 
 ---@class TradeShapeWeightedItem
 ---@field num_inputs int
@@ -37,6 +38,10 @@ local trade_generator = {}
 function trade_generator.register_events()
     event_system.register("runtime-setting-changed-base-trade-efficiency", function()
         storage.trades.base_trade_efficiency = lib.runtime_setting_value_as_number "base-trade-efficiency"
+    end)
+
+    event_system.register("runtime-setting-changed-trade-efficiency-per-item", function()
+        storage.trades.trade_efficiency_per_item = lib.runtime_setting_value_as_number "trade-efficiency-per-item"
     end)
 end
 
@@ -223,6 +228,33 @@ function trade_generator.set_trade_generation_parameter_defaults(params)
     if params.allow_nil_return == nil then
         params.allow_nil_return = true
     end
+
+    if params.scale_target_efficiency_by_items == nil then
+        params.scale_target_efficiency_by_items = true
+    end
+end
+
+---Get the current value of the setting "Trade Efficiency Per Item".
+---@return number
+function trade_generator.get_trade_efficiency_per_item()
+    local eff = storage.trades.trade_efficiency_per_item
+    if not eff then
+        eff = lib.runtime_setting_value_as_number "trade-efficiency-per-item"
+        storage.trades.trade_efficiency_per_item = eff
+    end
+    return eff
+end
+
+---Multiply trade efficiency by a factor based on the total number of unique items in a trade, modifying the table in place.
+---@param params TradeGenerationParameters
+---@param total_items int
+function trade_generator.scale_trade_efficiency_by_total_items(params, total_items)
+    local setting_value = trade_generator.get_trade_efficiency_per_item()
+
+    -- Apply a multiplier only at three items or more.
+    local mult = setting_value * (total_items - 2)
+
+    params.target_efficiency = lib.apply_multiplier(params.target_efficiency, mult)
 end
 
 ---Sample random item names for inputs and outputs of a trade based on a central item value.
@@ -234,17 +266,30 @@ end
 ---@return string[], string[]
 function trade_generator.generate_item_names(surface_name, volume, params, allow_untradable, include_item)
     if allow_untradable == nil then allow_untradable = false end
-    if not params then params = {} end
-    trade_generator.set_trade_generation_parameter_defaults(params)
 
-    local ratio
-    if params.target_efficiency >= 1 then
-        ratio = 10 * params.target_efficiency
+    if not params then
+        params = {}
     else
-        ratio = 10 / params.target_efficiency
+        params = table.deepcopy(params)
     end
 
-    local possible_items = item_values.get_items_near_value(surface_name, volume, ratio, true, false, allow_untradable)
+    local num_inputs, num_outputs = trade_generator._generate_random_trade_shape()
+    local total_items = num_inputs + num_outputs
+
+    trade_generator.set_trade_generation_parameter_defaults(params)
+
+    if params.scale_target_efficiency_by_items then
+        trade_generator.scale_trade_efficiency_by_total_items(params, total_items)
+    end
+
+    local input_to_output_value_ratio
+    if params.target_efficiency >= 1 then
+        input_to_output_value_ratio = 10 * params.target_efficiency
+    else
+        input_to_output_value_ratio = 10 / params.target_efficiency
+    end
+
+    local possible_items = item_values.get_items_near_value(surface_name, volume, input_to_output_value_ratio, true, false, allow_untradable)
 
     -- Apply whitelist filter
     if params.item_sampling_filters.whitelist then
@@ -281,9 +326,6 @@ function trade_generator.generate_item_names(surface_name, volume, params, allow
         return {}, {}
     end
 
-    local num_inputs, num_outputs = trade_generator._generate_random_trade_shape()
-    local total_items = num_inputs + num_outputs
-
     if include_item then
         -- Bring include_item to front indices that'll be used for populating input and output item lists.
         local idx_old = lib.table_index(trade_items, include_item)
@@ -310,8 +352,18 @@ end
 ---@param params TradeGenerationParameters|nil
 ---@return boolean solved Whether `params.target_efficiency` could be approximated with item counts while respecting item count constraints.
 function trade_generator.solve_item_counts(surface_name, trade, params)
-    if not params then params = {} end
+    if not params then
+        params = {}
+    else
+        params = table.deepcopy(params)
+    end
+
     trade_generator.set_trade_generation_parameter_defaults(params)
+
+    if params.scale_target_efficiency_by_items then
+        local total_items = #trade.input_items + #trade.output_items
+        trade_generator.scale_trade_efficiency_by_total_items(params, total_items)
+    end
 
     -- Convert coins to lowest tier
     local coin_name = storage.coin_tiers.COIN_NAMES[1]
