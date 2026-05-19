@@ -1,6 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.2
 Date: 20/5/26
+  Minor Features:
+    - Added "Hextorio Title Theme" music. (Can be disabled in startup settings.)
+    - Replaced main menu simulations with Hextorio background image. (Can be disabled in startup settings.)
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.1
 Date: 18/5/26
