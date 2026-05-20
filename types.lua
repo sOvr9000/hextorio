@@ -20,6 +20,7 @@
 ---| "active-hex-state-processed" When a hex state gets processed for executing trades
 ---| "catalog-item-buffs-button-clicked"
 ---| "catalog-trade-overview-clicked"
+---| "chunk-generated"
 ---| "command-add-trade"
 ---| "command-claim"
 ---| "command-complete-quest"
@@ -79,6 +80,7 @@
 ---| "player-closed-entity"
 ---| "player-coins-base-value-changed"
 ---| "player-commanded-spiders" When a player commanded spiders with a spidertron remote
+---| "player-created"
 ---| "player-display-resolution-changed"
 ---| "player-display-scale-changed"
 ---| "player-driving-state-changed" When a player starts or stops driving a vehicle

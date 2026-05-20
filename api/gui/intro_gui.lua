@@ -18,7 +18,6 @@ function intro_gui.register_events()
     end)
 
     event_system.register("player-joined", function(player)
-        if storage.initialization and not storage.initialization.has_game_started then return end
         intro_gui.show_once(player)
     end)
 

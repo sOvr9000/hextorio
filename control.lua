@@ -7,7 +7,6 @@ local hex_grid = require "api.hex_grid"
 local coin_tiers = require "api.coin_tiers"
 local gui = require "api.gui"
 local initialization = require "api.initialization"
-local sets = require "api.sets"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
 local event_system= require "api.event_system"
@@ -64,6 +63,7 @@ spider_control.register_events()
 spider_network.register_events()
 hex_pathfinding.register_events()
 trade_generator.register_events()
+initialization.register_events()
 
 gui.register_events()
 event_system.bind_gui_events()
@@ -75,7 +75,6 @@ require "handle_coin_splitting"
 
 local data_intro_gui = require "data.intro_gui"
 local data_constants = require "data.constants"
-local data_initialization = require "data.initialization"
 local data_item_values = require "data.item_values"
 local data_hex_grid = require "data.hex_grid"
 local data_coin_tiers = require "data.coin_tiers"
@@ -91,15 +90,6 @@ local data_strongboxes = require "data.strongboxes"
 
 
 
-local function attempt_initialization()
-    if #game.players == 0 then return end
-    if not storage.initialization.is_temp_surface_ready then return end
-    if storage.initialization.is_nauvis_generating then return end
-    initialization.on_nauvis_generating()
-end
-
-
-
 script.on_init(function()
     storage.cached = {} -- For reusing results from expensive function calls like geometric calculations between axial and rectangular coordinate systems.
     storage.cooldowns = {} -- Player-specific cooldowns for various operations like performance-impacting commands (such as /simple-trade-loops)
@@ -112,9 +102,9 @@ script.on_init(function()
         aquilo = true,
     }
 
+    storage.initialization = {}
     storage.intro_gui = data_intro_gui
     storage.constants = data_constants
-    storage.initialization = data_initialization
     storage.item_values = data_item_values
     storage.hex_grid = data_hex_grid
     storage.coin_tiers = data_coin_tiers
@@ -128,21 +118,6 @@ script.on_init(function()
     storage.item_buffs = data_item_buffs
     storage.strongboxes = data_strongboxes
 
-    hex_grid.update_hexlight_default_colors()
-    hex_grid.fetch_claim_cost_multiplier_settings()
-    trades.fetch_base_trade_productivity_settings()
-    trades.fetch_base_trade_efficiency_settings()
-
-    storage.hex_grid.sink_generator_efficiency = lib.runtime_setting_value_as_number "sink-generator-efficiency"
-    storage.trades.unresearched_penalty = lib.runtime_setting_value_as_number "unresearched-penalty"
-    storage.trades.batch_processing_threshold = lib.runtime_setting_value_as_int "trade-batching-threshold"
-    storage.trades.collection_batch_size = lib.runtime_setting_value_as_int "trade-collection-batch-size"
-    storage.trades.filtering_batch_size = lib.runtime_setting_value_as_int "trade-filtering-batch-size"
-    storage.trades.sorting_batch_size = lib.runtime_setting_value_as_int "trade-sorting-batch-size"
-    trades.recalculate_researched_items()
-
-    storage.hex_grid.pool_size = lib.runtime_setting_value_as_int "hex-pool-size"
-
     storage.ammo_type_per_entity = {
         ["gun-turret"] = "bullet_type",
         ["dungeon-gun-turret"] = "bullet_type",
@@ -151,47 +126,17 @@ script.on_init(function()
         ["dungeon-railgun-turret"] = "railgun_type",
     }
 
-    local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
-    storage.hex_grid.mgs["nauvis"] = mgs_original
+    storage.hex_grid.sink_generator_efficiency = lib.runtime_setting_value_as_number "sink-generator-efficiency"
+    storage.hex_grid.pool_size = lib.runtime_setting_value_as_int "hex-pool-size"
+    storage.trades.unresearched_penalty = lib.runtime_setting_value_as_number "unresearched-penalty"
+    storage.trades.batch_processing_threshold = lib.runtime_setting_value_as_int "trade-batching-threshold"
+    storage.trades.collection_batch_size = lib.runtime_setting_value_as_int "trade-collection-batch-size"
+    storage.trades.filtering_batch_size = lib.runtime_setting_value_as_int "trade-filtering-batch-size"
+    storage.trades.sorting_batch_size = lib.runtime_setting_value_as_int "trade-sorting-batch-size"
+    storage.item_ranks.bronze_rank_bonus_effect = lib.runtime_setting_value "rank-2-effect"
 
-    local mgs = game.surfaces.nauvis.map_gen_settings
-    mgs.autoplace_controls.water.size = 0
-    mgs.autoplace_controls.coal.size = 0
-    mgs.autoplace_controls.stone.size = 0
-    mgs.autoplace_controls["copper-ore"].size = 0
-    mgs.autoplace_controls["iron-ore"].size = 0
-    mgs.autoplace_controls["uranium-ore"].size = 0
-    mgs.autoplace_controls["crude-oil"].size = 0
-    mgs.autoplace_controls["enemy-base"].size = 0
-    mgs.autoplace_settings.tile.settings.water.size = 0
-    mgs.autoplace_settings.tile.settings.deepwater.size = 0
-    game.surfaces.nauvis.map_gen_settings = mgs
-
-    local iron_frequency = lib.runtime_setting_value "iron-ore-frequency"
-    local copper_ore_frequency = lib.runtime_setting_value "copper-ore-frequency"
-    local coal_frequency = lib.runtime_setting_value "nauvis-coal-frequency"
-    local stone_frequency = lib.runtime_setting_value "nauvis-stone-frequency"
-    -- local uranium_ore_frequency = lib.runtime_setting_value "uranium-ore-frequency"
-
-    -- Define default nauvis resource randomization based on map gen settings frequencies
-    storage.hex_grid.resource_weighted_choice.nauvis = {}
-    storage.hex_grid.resource_weighted_choice.nauvis.resources = weighted_choice.new {
-        ["iron-ore"] = mgs_original.autoplace_controls["iron-ore"].size * iron_frequency,
-        ["copper-ore"] = mgs_original.autoplace_controls["copper-ore"].size * copper_ore_frequency,
-        ["coal"] = mgs_original.autoplace_controls["coal"].size * coal_frequency,
-        ["stone"] = mgs_original.autoplace_controls["stone"].size * stone_frequency,
-        -- ["uranium-ore"] = mgs_original.autoplace_controls["uranium-ore"].size * uranium_ore_frequency,
-    }
-    storage.hex_grid.resource_weighted_choice.nauvis.wells = weighted_choice.new {
-        ["crude-oil"] = 1,
-    }
-    storage.hex_grid.resource_weighted_choice.nauvis.uranium = weighted_choice.new {
-        ["uranium-ore"] = 1,
-    }
-
-    local temp = game.create_surface("hextorio-temp", mgs)
-    temp.request_to_generate_chunks({0, 0}, 0)
-
+    hex_grid.init()
+    trades.init()
     coin_tiers.init()
     item_tradability_solver.init()
     item_ranks.init()
@@ -205,63 +150,13 @@ script.on_init(function()
     piggy_bank.init()
     translations.init()
     event_system.init()
-
-    -- Disable crash site generation, may be done by other mods anyway.
-    if remote.interfaces.freeplay then
-        storage.disable_crashsite = remote.call("freeplay", "get_disable_crashsite")
-        storage.skip_intro = remote.call("freeplay", "get_skip_intro")
-
-        remote.call("freeplay", "set_disable_crashsite", true)
-        remote.call("freeplay", "set_skip_intro", true)
-    end
-
-    storage.item_ranks.bronze_rank_bonus_effect = lib.runtime_setting_value "rank-2-effect"
-
-    local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
-    trades.generate_interplanetary_trade_locations("nauvis", num_trades)
-
-    -- Set enemy force color.
-    game.forces.enemy.custom_color = {0.6, 0.1, 0.6}
-
-    -- Testing lib functions
-    -- for _, t in pairs {
-    --     {0.427, 1000, 1000},
-    --     {0.429, 1000, 1000},
-    --     {0.6180339887},
-    --     {0.6180339887, 128, 128},
-    --     {0.25, 5000, 5000},
-    -- } do
-    --     local num, den = lib.get_rational_approximation(t[1], 1.0001, t[2], t[3])
-    --     log(t[1] .. " = " .. num .. " / " .. den)
-    -- end
+    initialization.init()
 end)
 
 script.on_event(defines.events.on_chunk_generated, function(event)
     local surface = event.surface
-    local chunk_position = event.position
-
-    if surface.name == "hextorio-temp" then
-        if chunk_position.x == 0 and chunk_position.y == 0 then
-            storage.initialization.is_temp_surface_ready = true
-            attempt_initialization()
-            return
-        end
-    end
-
-    if surface.name == "nauvis" then
-        if chunk_position.x == 0 and chunk_position.y == 0 then
-            if storage.initialization.is_nauvis_generating then
-                initialization.on_nauvis_generated()
-                return
-            end
-        end
-    end
-
-    if lib.is_space_platform(surface) then return end
-    if surface.name == "hextorio-temp" then return end
-    if storage.initialization.is_nauvis_generating then return end
-
-    hex_grid.on_chunk_generated(surface.name, chunk_position)
+    if not storage.SUPPORTED_PLANETS[surface.name] then return end
+    event_system.trigger("chunk-generated", surface, event.position)
 end)
 
 script.on_nth_tick(60 * 30, function()
@@ -273,39 +168,11 @@ script.on_nth_tick(300, function()
     event_system.trigger "dungeon-update"
 end)
 
-script.on_nth_tick(60, function()
-    -- The nil character issue is really hard to fix "correctly".  This is a surefire way to do it.
-    if not storage.initialization.has_game_started or storage.initialization.stop_checking_nil_character then return end
-    local all = true
-    for _, player in pairs(game.connected_players) do
-        if not player.character then
-            player.create_character()
-            all = false
-        end
-    end
-    if all then
-        storage.initialization.stop_checking_nil_character = true
-    end
-end)
-
 script.on_nth_tick(20, function()
     hex_grid.process_claim_queue()
 end)
 
 script.on_event(defines.events.on_tick, function (event)
-    if storage.initialization.has_game_started and not storage.initialization.intro_finished then
-        if event.tick == storage.initialization.game_start_tick + 60 then
-            game.print(lib.color_localized_string({"hextorio.intro"}, "yellow", "heading-1"))
-            if not lib.is_hextreme_enabled() then
-                game.print(lib.color_localized_string({"hextorio.hextreme-disabled"}, "pink", "heading-1"))
-            end
-            -- if not lib.startup_setting_value "pvp-mode" then
-            --     game.print(lib.color_localized_string({"hextorio.try-pvp"}, "orange", "heading-1"))
-            -- end
-            storage.initialization.intro_finished = true
-        end
-    end
-
     hex_grid.process_hex_core_pool()
     dungeons._tick_turret_reload()
     item_buffs._enhance_all_item_buffs_tick()
@@ -376,7 +243,7 @@ script.on_event(defines.events.on_player_created, function(event)
     local player = game.get_player(event.player_index)
     if not player then return end
 
-    attempt_initialization()
+    event_system.trigger("player-created", player)
 end)
 
 script.on_event(defines.events.on_player_joined_game, function(event)

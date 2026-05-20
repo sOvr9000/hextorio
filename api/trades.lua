@@ -164,6 +164,12 @@ function trades.register_events()
     event_system.register("post-item-values-recalculated", trades.generate_surrounding_trades)
 end
 
+function trades.init()
+    trades.fetch_base_trade_productivity_settings()
+    trades.fetch_base_trade_efficiency_settings()
+    trades.recalculate_researched_items()
+end
+
 
 
 ---Generate the guaranteed trades near spawn, intended to be called only on game start after the item value solver finishes its job.

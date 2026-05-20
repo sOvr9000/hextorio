@@ -40,6 +40,8 @@ local hex_grid = {}
 
 
 function hex_grid.register_events()
+    event_system.register("chunk-generated", hex_grid.on_chunk_generated)
+
     event_system.register("runtime-setting-changed-trade-flying-text", function(player_index)
         local player = game.get_player(player_index)
         if not player then return end
@@ -349,6 +351,11 @@ function hex_grid.register_events()
     event_system.register("hex-island-generated", hex_grid.on_hex_island_generated)
     event_system.register("post-item-values-recalculated", hex_grid.on_item_values_recalculated)
     event_system.register("post-runtime-setting-changed-base-trade-efficiency", hex_grid.on_post_base_trade_efficiency_changed)
+end
+
+function hex_grid.init()
+    hex_grid.update_hexlight_default_colors()
+    hex_grid.fetch_claim_cost_multiplier_settings()
 end
 
 ---Get the state of a hex from a hex core entity
@@ -2172,48 +2179,6 @@ function hex_grid.get_free_hex_claims(surface_name)
         return 0
     end
     return storage.hex_grid.free_hex_claims[surface_name] or 0
-end
-
--- Handle chunk generation event for the hex grid
-function hex_grid.on_chunk_generated(surface, chunk_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-    local surface_id = lib.get_surface_id(surface)
-    surface = game.surfaces[surface_id]
-
-    if not allowed_surfaces[surface.name] then return end
-
-    -- Default values
-    local transformation = terrain.get_surface_transformation(surface)
-
-    if not transformation then
-        lib.log_error("hex_grid.on_chunk_generated: No transformation found")
-        return
-    end
-
-    hex_grid_scale = transformation.scale
-    hex_grid_rotation = transformation.rotation
-    stroke_width = transformation.stroke_width
-
-    -- Convert chunk position to rectangle coordinates
-    local top_left, bottom_right = lib.chunk_to_rect(chunk_pos)
-
-    -- Find all hexes that overlap with this chunk
-    local overlapping_hexes = axial.get_overlapping_hexes(
-        top_left, bottom_right, hex_grid_scale, hex_grid_rotation
-    )
-
-    -- Try to initialize each overlapping hex if not already generated
-    for _, hex_pos in pairs(overlapping_hexes) do
-        if storage.initialization.has_game_started or storage.initialization.is_nauvis_generating then
-            -- Only initialize if possible
-            if hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation) then
-                hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-                hex_grid.initialize_adjacent_hexes(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
-            end
-        end
-    end
-
-    -- Return the hexes that were processed for this chunk
-    return overlapping_hexes
 end
 
 ---Return whether a hex state can be initialized at the given hex position on the given surface.
@@ -4558,7 +4523,7 @@ function hex_grid.on_item_values_recalculated()
     for _, surface in pairs(game.surfaces) do
         if lib.is_vanilla_planet_name(surface.name) then
             for _, state in pairs(hex_state_manager.get_flattened_surface_hexes(surface)) do
-                if state.hex_core and state.generated then
+                if state.hex_core and state.hex_core.valid and state.generated then
                     if not state.trades or not next(state.trades) then
                         hex_grid.add_initial_trades(state)
                     else
@@ -4572,6 +4537,47 @@ end
 
 function hex_grid.on_post_base_trade_efficiency_changed()
     hex_grid.reevaluate_all_trades()
+end
+
+---@param surface LuaSurface
+---@param chunk_pos ChunkPosition
+function hex_grid.on_chunk_generated(surface, chunk_pos)
+    local surface_id = lib.get_surface_id(surface)
+    surface = game.surfaces[surface_id]
+
+    if not allowed_surfaces[surface.name] then return end
+
+    -- Default values
+    local transformation = terrain.get_surface_transformation(surface)
+
+    if not transformation then
+        lib.log_error("hex_grid.on_chunk_generated: No transformation found")
+        return
+    end
+
+    local hex_grid_scale = transformation.scale
+    local hex_grid_rotation = transformation.rotation
+    local stroke_width = transformation.stroke_width
+
+    -- Convert chunk position to rectangle coordinates
+    local top_left, bottom_right = lib.chunk_to_rect(chunk_pos)
+
+    -- Find all hexes that overlap with this chunk
+    local overlapping_hexes = axial.get_overlapping_hexes(
+        top_left, bottom_right, hex_grid_scale, hex_grid_rotation
+    )
+
+    -- Try to initialize each overlapping hex if not already generated
+    for _, hex_pos in pairs(overlapping_hexes) do
+        -- Only initialize if possible
+        if hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation) then
+            hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+            hex_grid.initialize_adjacent_hexes(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+        end
+    end
+
+    -- Return the hexes that were processed for this chunk
+    return overlapping_hexes
 end
 
 
