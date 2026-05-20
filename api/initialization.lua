@@ -84,18 +84,20 @@ function initialization.init()
     local water_names = {"water", "deepwater", "water-green", "deepwater-green", "water-shallow", "water-mud"}
     local water_set = sets.new(water_names)
 
+    local default_tile = surface.get_tile(0, 0).name
+
     local function nearest_land_tile(pos)
-        for radius = 1, 20 do
+        for radius = 1, 4 do
             for dx = -radius, radius do
                 for dy = -radius, radius do
                     if math.abs(dx) == radius or math.abs(dy) == radius then
                         local t = surface.get_tile(pos.x + dx, pos.y + dy)
-                        if not water_set[t.name] then return t.name end
+                        if t.valid and not water_set[t.name] then return t.name end
                     end
                 end
             end
         end
-        return "grass-1"
+        return default_tile
     end
 
     for chunk in surface.get_chunks() do
@@ -158,7 +160,7 @@ function initialization.init()
 end
 
 ---@param player LuaPlayer
-function initialization.on_player_created(player)
+function initialization.give_starting_coins(player)
     local surface = player.surface
 
     local spawn_hex = {q=0, r=0}
@@ -176,6 +178,11 @@ function initialization.on_player_created(player)
 
     -- Give starting items
     player.insert{name = "hex-coin", count = cost_of_first_hexes}
+end
+
+---@param player LuaPlayer
+function initialization.on_player_created(player)
+    initialization.give_starting_coins(player)
 end
 
 -- Called when the player is on Nauvis and the origin chunk on the temporary surface is generated
