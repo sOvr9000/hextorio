@@ -1,11 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.2
-Date: 20/5/26
+Date: 21/5/26
+  Features:
+    - Added mod setting "Trade Efficiency Per Item", which controls how much the input-to-output value ratio is scaled per unique item in a trade.
   Minor Features:
     - Added "Hextorio Title Theme" music. (Can be disabled in startup settings.)
     - Replaced main menu simulations with Hextorio background image. (Can be disabled in startup settings.)
-  Bugfixes:
-    - Fixed that depleted uranium cells were always being considered unresearched and were getting trade productivity penalties.
   Changes:
     - Moved game initialization from intermediate surface creation to direct Nauvis alteration.
     - Improved the description for the "Receive Spaceship" reward to display the name of the ship that'll be received.
@@ -14,13 +14,13 @@ Date: 20/5/26
       - never runs out of ammo, even when constantly flying,
       - uses a cruise control system, maintaining a speed of 150+ km/s,
       - and collects only the asteroid chunks that are needed.
-  Features:
-    - Added mod setting "Trade Efficiency Per Item", which controls how much the input-to-output value ratio is scaled per unique item in a trade.
   Balancing:
     - Trade efficiency (output value ÷ input value) is now scaled based on the number of unique item types in each trade.
       - Existing trades in saves are not automatically migrated to use this due to that migration likely being a destructive action.
       - To force-recalculate the new ratios for existing trades, run /solve-item-values.
       - Newly generated trades in migrated saves will not requiring running this command.
+  Bugfixes:
+    - Fixed that depleted uranium cells were always being considered unresearched and were getting trade productivity penalties.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.1
 Date: 18/5/26
