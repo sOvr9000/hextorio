@@ -9,6 +9,11 @@ Date: 20/5/26
   Changes:
     - Moved game initialization from intermediate surface creation to direct Nauvis alteration.
     - Improved the description for the "Receive Spaceship" reward to display the name of the ship that'll be received.
+    - Improved the Hexaclysm ship so that it:
+      - never runs out of solar power, even while near Fulgora,
+      - never runs out of ammo, even when constantly flying,
+      - uses a cruise control system, maintaining a speed of 150+ km/s,
+      - and collects only the asteroid chunks that are needed.
   Features:
     - Added mod setting "Trade Efficiency Per Item", which controls how much the input-to-output value ratio is scaled per unique item in a trade.
   Balancing:
