@@ -4,6 +4,8 @@ Date: 20/5/26
   Minor Features:
     - Added "Hextorio Title Theme" music. (Can be disabled in startup settings.)
     - Replaced main menu simulations with Hextorio background image. (Can be disabled in startup settings.)
+  Changes:
+    - Moved game initialization from intermediate surface creation to direct Nauvis alteration.
   Features:
     - Added mod setting "Trade Eff. Per Item", which controls how much the input-to-output value ratio is scaled per unique item in a trade.
   Balancing:
