@@ -2688,6 +2688,8 @@ function trades.recalculate_researched_items()
     end
 
     storage.trades.researched_items = researched_items
+
+    trades.queue_productivity_update_job()
 end
 
 ---Redetermine item counts in a trade given a new target efficiency

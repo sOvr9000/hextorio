@@ -4,6 +4,8 @@ Date: 20/5/26
   Minor Features:
     - Added "Hextorio Title Theme" music. (Can be disabled in startup settings.)
     - Replaced main menu simulations with Hextorio background image. (Can be disabled in startup settings.)
+  Bugfixes:
+    - Fixed that depleted uranium cells were always being considered unresearched and were getting trade productivity penalties.
   Changes:
     - Moved game initialization from intermediate surface creation to direct Nauvis alteration.
   Features:
