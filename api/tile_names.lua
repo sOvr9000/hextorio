@@ -321,11 +321,11 @@ function tile_names.is_player_placeable_tile(name)
     return tile_names.lookup.space_age_player_placeable[name] == true
 end
 
--- ---@param name string
--- ---@return boolean
--- function tile_names.can_spawn_fish(name)
---     return name == "water" or name == "deepwater"
--- end
+---@param name string
+---@return boolean
+function tile_names.can_spawn_fish(name)
+    return name == "water" or name == "deepwater"
+end
 
 
 

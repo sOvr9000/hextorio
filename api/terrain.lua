@@ -62,15 +62,15 @@ function terrain.set_tiles(surface, positions, tile_type, ignore_tiles, quality)
 
     surface.set_tiles(tiles)
 
-    -- if tile_names.can_spawn_fish(tile_type) then
-    --     local num_fish_tiles = math.floor(#tiles * (0.008 + math.random() * 0.004) + 0.5)
-    --     for i = 1, num_fish_tiles do
-    --         if #tiles == 0 then break end
-    --         local tile = table.remove(tiles, math.random(1, #tiles))
-    --         local fish = surface.create_entity({name = "fish", position = tile.position, quality = quality})
-    --         -- I can try to spawn them with quality, but they won't have quality.  Oops.
-    --     end
-    -- end
+    if tile_names.can_spawn_fish(tile_type) then
+        local num_fish_tiles = math.floor(#tiles * (0.008 + math.random() * 0.004) + 0.5)
+        for i = 1, num_fish_tiles do
+            if #tiles == 0 then break end
+            local tile = table.remove(tiles, math.random(1, #tiles))
+            local fish = surface.create_entity({name = "fish", position = tile.position, quality = quality})
+            -- I can try to spawn them with quality, but they won't have quality.  Oops.
+        end
+    end
 end
 
 -- Set all tiles within a hex to tile_type
