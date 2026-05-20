@@ -6,6 +6,7 @@ local event_system = require "api.event_system"
 local quests = require "api.quests"
 local features = require "api.features"
 local gui_stack = require "api.gui.gui_stack"
+local space_platforms = require "api.space_platforms"
 
 local questbook_gui = {}
 
@@ -397,6 +398,9 @@ function questbook_gui.add_reward_elements(elem, reward)
         caption = quests.get_reward_localized_description(reward, "orange", "heading-2", features.get_feature_localized_name(reward_value))
     elseif reward_type == "receive-items" then
         caption = quests.get_reward_localized_description(reward)
+    elseif reward_type == "receive-spaceship" then
+        ---@cast reward_value string
+        caption = quests.get_reward_localized_description(reward, space_platforms.get_platform_name(reward_value))
     elseif type(reward_value) == "table" then
         caption = quests.get_reward_localized_description(reward, "green", "heading-2", table.unpack(reward_value))
     else

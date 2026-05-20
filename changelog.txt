@@ -8,6 +8,7 @@ Date: 20/5/26
     - Fixed that depleted uranium cells were always being considered unresearched and were getting trade productivity penalties.
   Changes:
     - Moved game initialization from intermediate surface creation to direct Nauvis alteration.
+    - Improved the description for the "Receive Spaceship" reward to display the name of the ship that'll be received.
   Features:
     - Added mod setting "Trade Efficiency Per Item", which controls how much the input-to-output value ratio is scaled per unique item in a trade.
   Balancing:
