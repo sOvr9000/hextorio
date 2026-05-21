@@ -103,6 +103,7 @@ function hex_island.process_surface_creation(surface)
         local mgs = storage.hex_grid.mgs[surface.name]
         if not mgs then
             lib.log_error("hex_island.init: No map gen settings found for surface " .. surface.name)
+            return
         end
 
         local land_chance

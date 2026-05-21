@@ -19,7 +19,6 @@ function initialization.register_events()
     event_system.register("player-created", initialization.on_player_created)
 end
 
--- Called when the game is ready to start
 function initialization.init()
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then

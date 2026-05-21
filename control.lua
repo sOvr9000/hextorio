@@ -142,7 +142,6 @@ script.on_init(function()
     item_ranks.init()
     quests.init()
     trade_generator.init()
-    hex_island.init()
     blueprints.init()
     dungeons.init()
     train_trading.init()
@@ -151,6 +150,9 @@ script.on_init(function()
     translations.init()
     event_system.init()
     initialization.init()
+
+    -- Must be done after initialization so that map generation settings are stored
+    hex_island.init()
 end)
 
 script.on_event(defines.events.on_chunk_generated, function(event)
