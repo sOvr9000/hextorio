@@ -1,6 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.4
 Date: 26/5/26
+  Balancing:
+    - Buffed distractor combat robots to be valid options for destroying dungeons on some planets:
+      - Increased deployment speed from 2/s to 2.5/s.
+      - Increased physical and laser resistances from 0% to 10%.
+      - Increased shooting range from 18 to 24.
+      - Increased shooting speed from 1.5/s to 3/s.
+      - Increased damage from 5 to 15.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.3
 Date: 21/5/26
