@@ -93,6 +93,8 @@ function dungeons.register_events()
         hex_sets.add(used, hex_pos)
     end)
 
+    event_system.register("loot-tables-initialized", dungeons.on_loot_tables_initialized)
+
     event_system.register("runtime-setting-changed-dungeon-min-dist", function()
         storage.dungeons.min_dist = lib.runtime_setting_value "dungeon-min-dist"
     end)
@@ -296,7 +298,7 @@ function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotati
     dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
 
     -- Spawn loot
-    dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
+    dungeons.spawn_loot_chests(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
 
     if surface.name == "fulgora" then
         local transformation = terrain.get_surface_transformation(surface_id)
@@ -668,32 +670,12 @@ end
 ---@param dungeon Dungeon
 ---@param hex_pos HexPos
 ---@return LuaEntity[]
-function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
+function dungeons.spawn_loot_chests(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation)
     if not storage.loot_tables then return {} end
 
     local prot = dungeons.get_prototype_of_dungeon(dungeon)
     if not prot then
         lib.log_error("dungeons.spawn_loot: No prototype found for dungeon " .. dungeon.id)
-        return {}
-    end
-
-    local loot_table = loot_tables.get_loot_table(dungeon.surface.name, "dungeon")
-    if not loot_table then
-        lib.log_error("dungeons.spawn_loot: No loot table found for dungeon on surface " .. dungeon.surface.name)
-        return {}
-    end
-
-    local dist = axial.distance(hex_pos, {q = 0, r = 0}) - 2
-    dist = math.max(0, dist) -- Shouldn't need this, but it's here just in case.
-
-    local loot_value = prot.loot_value * (1 + dist * 0.0625) * lib.runtime_setting_value("dungeon-loot-scale-" .. dungeon.surface.name)
-    local expected_num_samples = prot.rolls
-    local min_item_value = loot_value / (10 * expected_num_samples * (prot.amount_scaling or 1))
-    local max_item_value = math.huge -- No upper limit. Allow for very rare but valuable loot.
-    local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
-
-    if not better_loot_table or not next(better_loot_table.loot) then
-        lib.log_error("dungeons.spawn_loot: dungeon loot value exceeded maximum (min_item_value = " .. min_item_value .. ")")
         return {}
     end
 
@@ -712,51 +694,91 @@ function dungeons.spawn_loot(dungeon, hex_pos, hex_grid_scale, hex_grid_rotation
             }
 
             if chest then
-                local inv = chest.get_inventory(defines.inventory.chest)
-                if inv then
-                    local max_num_samples = #inv
-                    local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling or 1)
-
-                    local total_coin_value = 0
-                    for _, item in pairs(loot_items) do
-                        local item_name = item.loot_item.item_name
-                        local quality = lib.get_quality_at_tier(item.loot_item.quality_tier)
-                        local count = item.count
-                        inv.insert {
-                            name = item_name,
-                            quality = quality,
-                            count = count,
-                        }
-                        total_coin_value = total_coin_value + item_values.get_item_value(dungeon.surface.name, item_name, true, quality) * count
-                    end
-
-                    local coin = coin_tiers.from_base_value(total_coin_value / (10 * (storage.item_values.base_coin_value or 10))) -- multiply base coin value by 10 because coins in dungeon chests are 1/10 of total item value in them
-                    coin = coin_tiers.floor(coin) -- If 0 < coin value < 1, then item insertion could crash because inventory item insertion/removal cannot be done with count < 1.
-                    inventories.add_coin_to_inventory(inv, coin)
-
-                    -- Additionally roll for extra items
-                    for item_name, chance in pairs(prot.item_rolls) do
-                        local count = lib.multi_roll(chance)
-                        if count > 0 then
-                            inv.insert {
-                                name = item_name,
-                                count = count,
-                            }
-                        end
-                    end
-
-                    inv.sort_and_merge()
-                end
-
                 chest.destructible = false
-
                 table.insert(entities, chest)
                 table.insert(dungeon.loot_chests, chest)
             end
         end
     end
 
+    dungeons.insert_loot(dungeon, entities)
+
     return entities
+end
+
+---Add loot to the inventories of chests in a dungeon.
+---@param dungeon Dungeon
+---@param chests LuaEntity[]
+function dungeons.insert_loot(dungeon, chests)
+    local prot = dungeons.get_prototype_of_dungeon(dungeon)
+    if not prot then
+        lib.log_error("dungeons.insert_loot: No prototype found for dungeon " .. dungeon.id)
+        return
+    end
+
+    local loot_table = loot_tables.get_loot_table(dungeon.surface.name, "dungeon")
+    if not loot_table then
+        lib.log_error("dungeons.insert_loot: No loot table found for dungeon on surface " .. dungeon.surface.name)
+        return
+    end
+
+    local _, origin_tile = next(dungeon.maze.tiles)
+    if not origin_tile then return end
+
+    local hex_pos = origin_tile.pos
+    local dist = axial.distance(hex_pos, {q = 0, r = 0}) - 2
+    dist = math.max(0, dist) -- Shouldn't need this, but it's here just in case.
+
+    local loot_value = prot.loot_value * (1 + dist * 0.0625) * lib.runtime_setting_value("dungeon-loot-scale-" .. dungeon.surface.name)
+    local expected_num_samples = prot.rolls
+    local min_item_value = loot_value / (10 * expected_num_samples * (prot.amount_scaling or 1))
+    local max_item_value = math.huge -- No upper limit. Allow for very rare but valuable loot.
+    local better_loot_table = loot_tables.clip_items_by_value(loot_table, dungeon.surface.name, min_item_value, max_item_value)
+
+    if not better_loot_table or not next(better_loot_table.loot) then
+        lib.log_error("dungeons.insert_loot: dungeon loot value exceeded maximum (min_item_value = " .. min_item_value .. ")")
+        return
+    end
+
+    for _, chest in pairs(chests) do
+        local inv = chest.get_inventory(defines.inventory.chest)
+        if inv and inv.valid then
+            inv.clear()
+
+            local max_num_samples = #inv
+            local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling or 1)
+
+            local total_coin_value = 0
+            for _, item in pairs(loot_items) do
+                local item_name = item.loot_item.item_name
+                local quality = lib.get_quality_at_tier(item.loot_item.quality_tier)
+                local count = item.count
+                inv.insert {
+                    name = item_name,
+                    quality = quality,
+                    count = count,
+                }
+                total_coin_value = total_coin_value + item_values.get_item_value(dungeon.surface.name, item_name, true, quality) * count
+            end
+
+            local coin = coin_tiers.from_base_value(total_coin_value / (10 * (storage.item_values.base_coin_value or 10))) -- multiply base coin value by 10 because coins in dungeon chests are 1/10 of total item value in them
+            coin = coin_tiers.floor(coin) -- If 0 < coin value < 1, then item insertion could crash because inventory item insertion/removal cannot be done with count < 1.
+            inventories.add_coin_to_inventory(inv, coin)
+
+            -- Additionally roll for extra items
+            for item_name, chance in pairs(prot.item_rolls) do
+                local count = lib.multi_roll(chance)
+                if count > 0 then
+                    inv.insert {
+                        name = item_name,
+                        count = count,
+                    }
+                end
+            end
+
+            inv.sort_and_merge()
+        end
+    end
 end
 
 ---Remove a chest from a dungeon's record of loot chests.
@@ -902,6 +924,18 @@ function dungeons._tick_turret_reload()
 
     storage.dungeons.queued_reload_dungeon_indices[params.dungeon_id] = nil
     table.remove(storage.dungeons.queued_reloads, queue_idx)
+end
+
+function dungeons.on_loot_tables_initialized()
+    lib.log("dungeons.on_loot_tables_initialized: Regenerating loot in dungeon chests")
+
+    for _, dungeon in pairs(storage.dungeons.dungeons) do
+        if not dungeon.is_looted then
+            dungeons.insert_loot(dungeon, dungeon.loot_chests)
+        end
+    end
+
+    lib.log("dungeons.on_loot_tables_initialized: Finished regenerating loot")
 end
 
 ---@param new_data table

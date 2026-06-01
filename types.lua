@@ -74,8 +74,10 @@
 ---| "item-buffs-enhance-all-finished"
 ---| "item-buffs-gui-closed"
 ---| "item-rank-up"
+---| "item-tradability-recalculated" When tradability flags for items are recalculated
 ---| "item-values-recalculated"
 ---| "lightning-struck-character"
+---| "loot-tables-initialized" When loot table data is initialized
 ---| "player-built-entity"
 ---| "player-closed-entity"
 ---| "player-coins-base-value-changed"

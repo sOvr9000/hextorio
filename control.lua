@@ -544,7 +544,7 @@ script.on_configuration_changed(function(handler)
         migrations.on_mod_updated(changes.old_version, changes.new_version)
     end
 
-    item_tradability_solver.solve()
+    item_value_solver.run()
 
     -- Reinitialize GUIs
     lib.log("Reloading GUIs")

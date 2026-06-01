@@ -25,11 +25,13 @@ local loot_tables = {}
 
 
 function loot_tables.register_events()
-    event_system.register("post-item-values-recalculated", loot_tables.init)
+    event_system.register("item-tradability-recalculated", loot_tables.init)
 end
 
 ---Initialize loot tables.
 function loot_tables.init()
+    lib.log("loot_tables.init: Initializing loot tables")
+
     storage.loot_tables = {
         surface_loot_tables = {},
     }
@@ -40,6 +42,10 @@ function loot_tables.init()
             dungeon = loot_tables.new(surface_name, item_names, 1, 6)
         }
     end
+
+    lib.log("loot_tables.init: Finished initializing loot tables")
+
+    event_system.trigger "loot-tables-initialized"
 end
 
 

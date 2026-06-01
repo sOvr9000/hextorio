@@ -603,6 +603,8 @@ function item_tradability_solver.solve()
     storage.item_values.local_items = nil
 
     lib.log("Tradability solver: complete")
+
+    event_system.trigger "item-tradability-recalculated"
 end
 
 
