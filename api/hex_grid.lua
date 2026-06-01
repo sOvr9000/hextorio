@@ -4364,7 +4364,7 @@ function hex_grid.reevaluate_trades(state)
             local trade = trades.get_trade_from_id(trade_id)
             if trade then
                 if trades.has_untradable_items(trade) then
-                    table.remove(state.trades, i)
+                    hex_grid.remove_trade_by_index(state, i, false)
                     lib.log("hex_grid.reevaluate_trades: Removed trade because it contains items no longer tradable on the planet: " .. lib.tostring_trade(trade))
                 else
                     trades.recalculate_item_counts(trade, params)

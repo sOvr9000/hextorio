@@ -2217,13 +2217,13 @@ function trades.has_untradable_items(trade)
     local surface_name = trade.surface_name
 
     for _, input_item in pairs(trade.input_items) do
-        if not item_values.is_item_tradable(surface_name, input_item.name) then
+        if not item_values.is_item_tradable(surface_name, input_item.name) and not item_values.is_item_interplanetary(surface_name, input_item.name) then
             return true
         end
     end
 
     for _, output_item in pairs(trade.output_items) do
-        if not item_values.is_item_tradable(surface_name, output_item.name) then
+        if not item_values.is_item_tradable(surface_name, output_item.name) and not item_values.is_item_interplanetary(surface_name, output_item.name) then
             return true
         end
     end
