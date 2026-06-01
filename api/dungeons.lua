@@ -250,9 +250,6 @@ function dungeons.is_dungeon_hex(surface_id, hex_pos)
     -- If there is a dungeon at this position, return true.
     if dungeon_idx[hex_pos.q] and dungeon_idx[hex_pos.q][hex_pos.r] then
         return true
-        -- local idx = dungeon_idx[hex_pos.q][hex_pos.r]
-        -- local dungeon = storage.dungeons.dungeons[idx]
-        -- if dungeon then return true end
     end
 
     return false
@@ -476,14 +473,6 @@ function dungeons.init_maze(dungeon, start_pos)
         lib.log_error("dungeons.init_maze: Failed to generate dungeon maze")
         return false
     end
-
-    -- Determine which hexes are internal.
-    -- for _, tile in pairs(dungeon.maze.tiles) do
-    --     local is_internal = #hex_maze.get_adjacent_tiles(dungeon.maze, tile.pos) == 6
-    --     if is_internal then
-    --         hex_sets.add(dungeon.internal_hexes, tile.pos)
-    --     end
-    -- end
 
     return true
 end
@@ -886,12 +875,8 @@ end
 function dungeons._tick_turret_reload()
     if not next(storage.dungeons.queued_reloads or {}) then return end
 
-    -- local prof = game.create_profiler()
-
     local queue_idx = game.tick % #storage.dungeons.queued_reloads + 1
     local params = storage.dungeons.queued_reloads[queue_idx]
-
-
 
     local turrets = {}
     for i = 1, 20 do
@@ -907,16 +892,9 @@ function dungeons._tick_turret_reload()
     if next(turrets) and params.ammo and params.progress and params.turrets then
         lib.reload_turrets(turrets, params.ammo)
         if params.progress < #params.turrets then
-            -- prof.stop()
-            -- log("tick:")
-            -- log(prof)
             return
         end
     end
-
-    -- log("reload finished for " .. params.dungeon_id)
-    -- prof.stop()
-    -- log(prof)
 
     if not storage.dungeons.queued_reload_dungeon_indices then
         storage.dungeons.queued_reload_dungeon_indices = {}
