@@ -2210,6 +2210,27 @@ function trades.has_item(trade, item_name)
     return trades.has_item_as_input(trade, item_name) or trades.has_item_as_output(trade, item_name)
 end
 
+---Return whether the trade has any items that are untradable in its inputs or outputs.
+---@param trade Trade
+---@return boolean
+function trades.has_untradable_items(trade)
+    local surface_name = trade.surface_name
+
+    for _, input_item in pairs(trade.input_items) do
+        if not item_values.is_item_tradable(surface_name, input_item.name) then
+            return true
+        end
+    end
+
+    for _, output_item in pairs(trade.output_items) do
+        if not item_values.is_item_tradable(surface_name, output_item.name) then
+            return true
+        end
+    end
+
+    return false
+end
+
 ---Get how much of the item the trade needs for input.
 ---@param trade Trade
 ---@param item_name string

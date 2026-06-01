@@ -4358,10 +4358,18 @@ function hex_grid.reevaluate_trades(state)
         params.target_efficiency = params.target_efficiency * storage.hex_grid.sink_generator_efficiency
     end
 
-    for _, trade_id in pairs(state.trades) do
-        local trade = trades.get_trade_from_id(trade_id)
-        if trade then
-            trades.recalculate_item_counts(trade, params)
+    for i = #state.trades, 1, -1 do
+        local trade_id = state.trades[i]
+        if trade_id then
+            local trade = trades.get_trade_from_id(trade_id)
+            if trade then
+                if trades.has_untradable_items(trade) then
+                    table.remove(state.trades, i)
+                    lib.log("hex_grid.reevaluate_trades: Removed trade because it contains items no longer tradable on the planet: " .. lib.tostring_trade(trade))
+                else
+                    trades.recalculate_item_counts(trade, params)
+                end
+            end
         end
     end
 end
