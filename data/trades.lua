@@ -96,6 +96,12 @@ return {
     unresearched_penalty = 0,
 
     guaranteed_trades = {},
+    tournament = {
+        version = 1,
+        enabled = false,
+        settings_hash = "",
+        per_surface = {},
+    },
 
     discovered_items = {},
     researched_items = {},
@@ -111,4 +117,3 @@ return {
     trade_sorting_jobs = {}, ---@type TradeSortingJob[]
     trade_export_jobs = {}, ---@type TradeExportJob[]
 }
-

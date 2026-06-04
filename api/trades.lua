@@ -14,6 +14,7 @@ local hex_state_manager = require "api.hex_state_manager"
 local hex_util          = require "api.hex_util"
 local hex_sets          = require "api.hex_sets"
 local trade_generator   = require "api.trade_generator"
+local tournament_trades = require "api.tournament_trades"
 
 
 
@@ -313,6 +314,12 @@ function trades.initialize_trade_state(trade)
         is_interplanetary = is_interplanetary,
         has_untradable_items = has_untradable_items,
     }
+
+    for key, value in pairs(trade) do
+        if key == "tournament_managed" or type(key) == "string" and key:sub(1, 11) == "tournament_" then
+            new[key] = value
+        end
+    end
 
     trades.check_productivity(new)
 
@@ -2790,6 +2797,8 @@ function trades.migrate_old_data()
     if not storage.trades.base_trade_efficiency then
         trades.fetch_base_trade_efficiency_settings()
     end
+
+    tournament_trades.ensure_storage()
 
     if not storage.trades.productivity_update_jobs then
         storage.trades.productivity_update_jobs = {}

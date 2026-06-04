@@ -4,6 +4,8 @@ local space_platforms = require "api.space_platforms"
 local sets = require "api.sets"
 local coin_tiers = require "api.coin_tiers"
 local inventories = require "api.inventories"
+local tournament_trades = require "api.tournament_trades"
+local trade_generator = require "api.trade_generator"
 
 
 
@@ -98,6 +100,12 @@ local all_commands = {
         name = "regenerate-trades",
         usage = "/regenerate-trades",
         requires_confirmation = true,
+    },
+    {
+        name = "validate-tournament-trades",
+        usage = "/validate-tournament-trades [surface] [scope]",
+        params = {"string?", "string?"},
+        examples = {"/validate-tournament-trades", "/validate-tournament-trades nauvis bins", "/validate-tournament-trades aquilo full"},
     },
     {
         name = "reload-item-buff-effects",
@@ -434,6 +442,8 @@ function on_command(player, command, params)
             }
         end
         -- lib.unstuck_player(player)
+    elseif command == "validate-tournament-trades" then
+        tournament_trades.validate_command(player, params, trade_generator)
     end
 
     event_system.trigger("command-" .. command, player, params)
@@ -446,8 +456,17 @@ function parse_command(command)
     end
 
     -- Fetch the player who called the command
-    local player = game.get_player(command.player_index)
-    if not player then return end
+    local player = command.player_index and game.get_player(command.player_index) or nil
+    if not player then
+        if command.name == "validate-tournament-trades" then
+            local params = {}
+            for token in string.gmatch(command.parameter or "", "%S+") do
+                params[#params + 1] = token
+            end
+            tournament_trades.validate_command(nil, params, trade_generator)
+        end
+        return
+    end
 
     if not public_commands[command.name] and not player.admin then
         player.print {"hextorio.admin-command-only"}

@@ -5,6 +5,7 @@ local item_values = require "api.item_values"
 local trade_loop_finder = require "api.trade_loop_finder"
 local weighted_choice = require "api.weighted_choice"
 local event_system = require "api.event_system"
+local tournament_trades = require "api.tournament_trades"
 
 local trade_generator = {}
 
@@ -133,6 +134,14 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
     end
     trade_generator.set_trade_generation_parameter_defaults(params)
 
+    local tournament_trade, tournament_reason = tournament_trades.generate_random(surface_name, existing_trades, volume, params, allow_untradable, include_item, trade_generator)
+    if tournament_trade then
+        return tournament_trade
+    end
+    if not tournament_trades.should_fallback(tournament_reason) then
+        return nil
+    end
+
     ---@type (Trade|TentativeTrade)[]
     local candidate_trades = table.deepcopy(existing_trades)
     local slot = #candidate_trades + 1
@@ -192,6 +201,9 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
 
         local tentative = trade_generator.generate_from_item_names(surface_name, input_item_names, output_item_names, params)
         if tentative then
+            if tournament_reason and tournament_reason ~= "disabled" and tournament_reason ~= "legacy_surface" then
+                tentative.tournament_fallback_reason = tournament_reason
+            end
             candidate_trades[slot] = tentative
             if not next(trade_loop_finder.find_simple_loops(candidate_trades)) then
                 return tentative
