@@ -108,6 +108,12 @@ local all_commands = {
         examples = {"/validate-tournament-trades", "/validate-tournament-trades nauvis bins", "/validate-tournament-trades aquilo full"},
     },
     {
+        name = "catalog-bin-debug",
+        usage = "/catalog-bin-debug [on|off|toggle]",
+        params = {"string?"},
+        examples = {"/catalog-bin-debug", "/catalog-bin-debug on", "/catalog-bin-debug off"},
+    },
+    {
         name = "reload-item-buff-effects",
         usage = "/reload-item-buff-effects",
     },
@@ -444,6 +450,25 @@ function on_command(player, command, params)
         -- lib.unstuck_player(player)
     elseif command == "validate-tournament-trades" then
         tournament_trades.validate_command(player, params, trade_generator)
+    elseif command == "catalog-bin-debug" then
+        local mode = params[1] or "toggle"
+        local enabled
+        if mode == "on" then
+            enabled = tournament_trades.set_catalog_bin_debug_enabled(true)
+        elseif mode == "off" then
+            enabled = tournament_trades.set_catalog_bin_debug_enabled(false)
+        elseif mode == "toggle" then
+            enabled = tournament_trades.toggle_catalog_bin_debug_enabled()
+        else
+            player.print {"hextorio.command-catalog-bin-debug-invalid"}
+            return
+        end
+        event_system.trigger("tournament-bin-debug-display-changed")
+        if enabled then
+            player.print {"hextorio.command-catalog-bin-debug-on"}
+        else
+            player.print {"hextorio.command-catalog-bin-debug-off"}
+        end
     end
 
     event_system.trigger("command-" .. command, player, params)

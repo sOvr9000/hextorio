@@ -99,6 +99,7 @@ return {
     tournament = {
         version = 1,
         enabled = false,
+        catalog_bin_debug_enabled = false,
         settings_hash = "",
         per_surface = {},
     },

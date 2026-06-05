@@ -56,6 +56,7 @@ function tournament_trades.ensure_storage()
         t = {
             version = VERSION,
             enabled = false,
+            catalog_bin_debug_enabled = false,
             settings_hash = "",
             per_surface = {},
         }
@@ -63,6 +64,7 @@ function tournament_trades.ensure_storage()
     end
 
     t.enabled = lib.runtime_setting_value_as_boolean "tournament-trades-enabled"
+    t.catalog_bin_debug_enabled = t.catalog_bin_debug_enabled == true
     t.settings_hash = tournament_trades.get_settings_hash()
     t.per_surface = t.per_surface or {}
     return t
@@ -70,12 +72,30 @@ end
 
 function tournament_trades.reset_storage()
     if not storage.trades then return end
+    local catalog_bin_debug_enabled = tournament_trades.is_catalog_bin_debug_enabled()
     storage.trades.tournament = {
         version = VERSION,
         enabled = lib.runtime_setting_value_as_boolean "tournament-trades-enabled",
+        catalog_bin_debug_enabled = catalog_bin_debug_enabled,
         settings_hash = tournament_trades.get_settings_hash(),
         per_surface = {},
     }
+end
+
+function tournament_trades.is_catalog_bin_debug_enabled()
+    local t = storage.trades and storage.trades.tournament
+    return t and t.catalog_bin_debug_enabled == true
+end
+
+function tournament_trades.set_catalog_bin_debug_enabled(enabled)
+    local t = tournament_trades.ensure_storage()
+    if not t then return false end
+    t.catalog_bin_debug_enabled = enabled == true
+    return t.catalog_bin_debug_enabled
+end
+
+function tournament_trades.toggle_catalog_bin_debug_enabled()
+    return tournament_trades.set_catalog_bin_debug_enabled(not tournament_trades.is_catalog_bin_debug_enabled())
 end
 
 function tournament_trades.get_settings_hash()
@@ -747,6 +767,122 @@ function tournament_trades.validate_surface(surface_name, scope, generator)
     end
 
     return table.concat(lines, "\n")
+end
+
+local function format_edge_debug(edge)
+    local efficiency = tournament_trades.efficiency_multiplier(edge.edge_type)
+    return tostring(edge.dest_bin) .. " (" .. edge.edge_type .. ", distance " .. edge.distance .. ", weight " .. edge.weight .. ", efficiency x" .. string.format("%.2f", efficiency) .. ")"
+end
+
+local function format_incoming_edge_debug(edge)
+    local efficiency = tournament_trades.efficiency_multiplier(edge.edge_type)
+    return tostring(edge.source_bin) .. " (" .. edge.edge_type .. ", distance " .. edge.distance .. ", weight " .. edge.weight .. ", efficiency x" .. string.format("%.2f", efficiency) .. ")"
+end
+
+function tournament_trades.get_item_bin_debug_info(surface_name, item_name)
+    if not surface_name or not item_name then return end
+
+    local info = {
+        surface_name = surface_name,
+        item_name = item_name,
+    }
+
+    if not lib.is_item(item_name) then
+        info.reason = "not an item prototype"
+        return info
+    end
+
+    local surface_data, reason = tournament_trades.get_surface_data(surface_name, true)
+    if not surface_data then
+        info.reason = reason or "no tournament surface data"
+        return info
+    end
+
+    info.order = surface_data.order
+    info.coin_policy = surface_data.coin_policy
+    info.coin_bin = surface_data.coin_bin
+    info.configured_coin_bin = surface_data.configured_coin_bin
+
+    local bin_index = surface_data.item_to_bin[item_name]
+    if not bin_index then
+        info.reason = "item is not eligible for tournament binning on this planet"
+        return info
+    end
+
+    local bin = surface_data.bins[bin_index]
+    info.bin = bin_index
+    info.bin_total_item_count = bin.total_item_count
+    info.bin_non_coin_item_count = bin.non_coin_item_count
+    info.bin_contains_coins = bin.contains_coins
+    info.bin_coin_only = bin.coin_only
+    info.outgoing_bins = {}
+    info.incoming_bins = {}
+
+    for _, edge in ipairs(surface_data.graph[bin_index] or {}) do
+        info.outgoing_bins[#info.outgoing_bins + 1] = edge
+    end
+
+    for source_bin = 1, surface_data.order do
+        if source_bin ~= bin_index then
+            local distance = tournament_trades.edge_distance(surface_data.order, source_bin, bin_index)
+            if tournament_trades.is_legal_edge(surface_data.order, source_bin, bin_index) then
+                local edge_type = tournament_trades.classify_edge(surface_data.order, distance)
+                info.incoming_bins[#info.incoming_bins + 1] = {
+                    source_bin = source_bin,
+                    dest_bin = bin_index,
+                    distance = distance,
+                    edge_type = edge_type,
+                    weight = tournament_trades.edge_weight(edge_type),
+                }
+            end
+        end
+    end
+
+    return info
+end
+
+function tournament_trades.get_item_bin_debug_localised_string(surface_name, item_name)
+    local info = tournament_trades.get_item_bin_debug_info(surface_name, item_name)
+    if not info then return end
+
+    local surface_text = "[img=space-location." .. tostring(info.surface_name) .. "] " .. tostring(info.surface_name)
+    local item_text = "[item=" .. tostring(info.item_name) .. "] " .. tostring(info.item_name)
+    local lines = {
+        "Item: " .. item_text,
+        "Planet: " .. surface_text,
+    }
+
+    local function debug_string()
+        return {"", "[font=heading-2][color=cyan]", {"hextorio-gui.tournament-bin-debug-heading"}, "[.color][.font]\n", table.concat(lines, "\n")}
+    end
+
+    if not info.bin then
+        lines[#lines + 1] = "Status: [color=red]not binned[.color]"
+        lines[#lines + 1] = "Reason: " .. tostring(info.reason)
+        if info.order then
+            lines[#lines + 1] = "Tournament order: " .. tostring(info.order)
+            lines[#lines + 1] = "Coin policy: " .. tostring(info.coin_policy)
+        end
+        return debug_string()
+    end
+
+    local outgoing = {}
+    for _, edge in ipairs(info.outgoing_bins) do
+        outgoing[#outgoing + 1] = format_edge_debug(edge)
+    end
+    local incoming = {}
+    for _, edge in ipairs(info.incoming_bins) do
+        incoming[#incoming + 1] = format_incoming_edge_debug(edge)
+    end
+
+    lines[#lines + 1] = "Status: [color=green]binned and tournament-eligible[.color]"
+    lines[#lines + 1] = "Assigned bin: " .. tostring(info.bin) .. " of " .. tostring(info.order)
+    lines[#lines + 1] = "Coin policy: " .. tostring(info.coin_policy) .. "; coin bin: " .. tostring(info.coin_bin) .. " (configured " .. tostring(info.configured_coin_bin) .. ")"
+    lines[#lines + 1] = "Bin population: " .. tostring(info.bin_total_item_count) .. " total items; " .. tostring(info.bin_non_coin_item_count) .. " non-coin items; contains coins: " .. tostring(info.bin_contains_coins) .. "; coin-only: " .. tostring(info.bin_coin_only)
+    lines[#lines + 1] = "Outgoing legal bins: " .. table.concat(outgoing, ", ")
+    lines[#lines + 1] = "Incoming legal bins: " .. table.concat(incoming, ", ")
+    lines[#lines + 1] = "Interpretation: generated trades may use this item as an input when the trade leaves this bin, or as an output when the trade enters this bin."
+    return debug_string()
 end
 
 function tournament_trades.validate_command(player, params, generator)
