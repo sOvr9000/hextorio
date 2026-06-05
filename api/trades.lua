@@ -256,6 +256,8 @@ end
 function trades.initialize_trade_state(trade)
     storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
 
+    trade_generator.normalize_trade_coin_items(trade)
+
     local input_items = trade.input_items
     local output_items = trade.output_items
 
@@ -516,7 +518,7 @@ function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
     local values = {}
     for _, input_item in pairs(trade.input_items) do
         if lib.is_coin(input_item.name) then
-            values[input_item.name] = input_item.count
+            values[input_item.name] = (values[input_item.name] or 0) + input_item.count
         end
     end
     local coin = coin_tiers.from_coin_values_by_name(values)
@@ -535,7 +537,7 @@ function trades.get_output_coins_of_trade(trade, quality)
     local values = {}
     for _, output_item in pairs(trade.output_items) do
         if lib.is_coin(output_item.name) then
-            values[output_item.name] = output_item.count
+            values[output_item.name] = (values[output_item.name] or 0) + output_item.count
         end
     end
     local coin = coin_tiers.from_coin_values_by_name(values)

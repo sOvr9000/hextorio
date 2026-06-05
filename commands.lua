@@ -466,6 +466,9 @@ function on_command(player, command, params)
         event_system.trigger("tournament-bin-debug-display-changed")
         if enabled then
             player.print {"hextorio.command-catalog-bin-debug-on"}
+            if not tournament_trades.is_generation_enabled() then
+                player.print {"hextorio.command-catalog-bin-debug-generation-off"}
+            end
         else
             player.print {"hextorio.command-catalog-bin-debug-off"}
         end

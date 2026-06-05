@@ -98,6 +98,10 @@ function tournament_trades.toggle_catalog_bin_debug_enabled()
     return tournament_trades.set_catalog_bin_debug_enabled(not tournament_trades.is_catalog_bin_debug_enabled())
 end
 
+function tournament_trades.is_generation_enabled()
+    return lib.runtime_setting_value_as_boolean "tournament-trades-enabled"
+end
+
 function tournament_trades.get_settings_hash()
     local parts = {
         tostring(lib.runtime_setting_value_as_boolean "tournament-trades-enabled"),
@@ -357,6 +361,7 @@ function tournament_trades.build_surface_data(surface_name, ignore_disabled)
     local surface_data = {
         surface_name = surface_name,
         order = order,
+        generation_enabled = tournament_trades.is_generation_enabled(),
         coin_policy = coin_policy,
         coin_bin = coin_bin,
         configured_coin_bin = configured_coin_bin,
@@ -439,18 +444,22 @@ function tournament_trades.choose_items_from_bin(bin, count, include_item)
 
     local names = {}
     local used = {}
+    local has_coin = false
     if include_item then
         names[#names + 1] = include_item
         used[include_item] = true
+        has_coin = lib.is_coin(include_item)
     end
 
     local attempts = #bin.items * 2
     while #names < count and attempts > 0 do
         attempts = attempts - 1
         local item_name = bin.items[math.random(1, #bin.items)]
-        if not used[item_name] then
+        local is_coin = lib.is_coin(item_name)
+        if not used[item_name] and (not is_coin or not has_coin) then
             names[#names + 1] = item_name
             used[item_name] = true
+            has_coin = has_coin or is_coin
         end
     end
 
@@ -464,12 +473,22 @@ function tournament_trades.validate_tentative(tentative, surface_data)
         return false, "illegal-edge"
     end
 
+    local input_seen = {}
     for _, input_item in ipairs(tentative.input_items) do
+        if input_seen[input_item.name] then
+            return false, "duplicate-input-item"
+        end
+        input_seen[input_item.name] = true
         if surface_data.item_to_bin[input_item.name] ~= source_bin then
             return false, "input-bin-mismatch"
         end
     end
+    local output_seen = {}
     for _, output_item in ipairs(tentative.output_items) do
+        if output_seen[output_item.name] then
+            return false, "duplicate-output-item"
+        end
+        output_seen[output_item.name] = true
         if surface_data.item_to_bin[output_item.name] ~= dest_bin then
             return false, "output-bin-mismatch"
         end
@@ -501,6 +520,7 @@ function tournament_trades.make_tentative(surface_name, input_item_names, output
     if not solved and params.allow_nil_return then
         return nil
     end
+    generator.normalize_trade_coin_items(tentative)
     return tentative
 end
 
@@ -677,7 +697,7 @@ function tournament_trades.validate_bins(surface_data)
 end
 
 function tournament_trades.validate_generated(surface_data)
-    local result = {passed = true, warnings = {}, failures = {}, checked = 0, managed = 0, exempt_coin = 0}
+    local result = {passed = true, warnings = {}, failures = {}, checked = 0, managed = 0, fallback = 0, unmanaged = 0, exempt_coin = 0}
     local by_surface = ((storage.trades or {}).tree or {}).by_surface or {}
     local surface_trades = by_surface[surface_data.surface_name] or {}
     local all_trades = ((storage.trades or {}).tree or {}).all_trades_lookup or {}
@@ -692,9 +712,25 @@ function tournament_trades.validate_generated(surface_data)
                 result.passed = false
                 result.failures[#result.failures + 1] = "trade " .. tostring(trade.id) .. ": " .. reason
             end
+        elseif trade and trade.tournament_fallback_reason then
+            result.fallback = result.fallback + 1
         elseif trade and surface_data.coin_policy == "legacy" and (trade.has_coins_in_input or trade.has_coins_in_output) then
             result.exempt_coin = result.exempt_coin + 1
+        elseif trade then
+            result.unmanaged = result.unmanaged + 1
         end
+    end
+
+    if not tournament_trades.is_generation_enabled() then
+        result.warnings[#result.warnings + 1] = "tournament generation is disabled; checked trades are expected to be legacy/unmanaged even though theoretical bins can still be inspected"
+    elseif result.checked > 0 and result.managed == 0 then
+        result.warnings[#result.warnings + 1] = "no tournament-managed trades found on this surface; use /regenerate-trades after enabling the Tournament Trades runtime setting"
+    elseif result.unmanaged > 0 then
+        result.warnings[#result.warnings + 1] = result.unmanaged .. " unmanaged legacy/manual/guaranteed trades are present and are not constrained by tournament bins"
+    end
+
+    if result.fallback > 0 then
+        result.warnings[#result.warnings + 1] = result.fallback .. " trades used fallback legacy generation and are not constrained by tournament bins"
     end
 
     return result
@@ -730,13 +766,13 @@ function tournament_trades.validate_surface(surface_name, scope, generator)
     scope = scope or "full"
     local lines = {
         "Tournament validation for " .. surface_name,
-        "order=" .. surface_data.order .. " policy=" .. surface_data.coin_policy .. " coin_bin=" .. surface_data.coin_bin,
+        "enabled=" .. tostring(tournament_trades.is_generation_enabled()) .. " order=" .. surface_data.order .. " policy=" .. surface_data.coin_policy .. " coin_bin=" .. surface_data.coin_bin,
     }
 
     local function append_result(label, result)
         lines[#lines + 1] = label .. ": " .. (result.passed and "PASS" or "FAIL")
         if result.checked then
-            lines[#lines + 1] = "  checked=" .. result.checked .. " managed=" .. result.managed .. " legacy_coin_exempt=" .. result.exempt_coin
+            lines[#lines + 1] = "  checked=" .. result.checked .. " managed=" .. result.managed .. " fallback=" .. result.fallback .. " unmanaged=" .. result.unmanaged .. " legacy_coin_exempt=" .. result.exempt_coin
         end
         if result.coin_items then
             lines[#lines + 1] = "  coin_items=" .. result.coin_items .. " non_coin_in_coin_bin=" .. result.non_coin_in_coin_bin
@@ -799,6 +835,7 @@ function tournament_trades.get_item_bin_debug_info(surface_name, item_name)
     end
 
     info.order = surface_data.order
+    info.generation_enabled = tournament_trades.is_generation_enabled()
     info.coin_policy = surface_data.coin_policy
     info.coin_bin = surface_data.coin_bin
     info.configured_coin_bin = surface_data.configured_coin_bin
@@ -857,6 +894,9 @@ function tournament_trades.get_item_bin_debug_localised_string(surface_name, ite
     end
 
     if not info.bin then
+        if info.generation_enabled == false then
+            lines[#lines + 1] = "Generation: [color=red]OFF[.color] - actual newly generated trades use legacy random generation until the [color=cyan]Tournament Trades[.color] runtime setting is enabled."
+        end
         lines[#lines + 1] = "Status: [color=red]not binned[.color]"
         lines[#lines + 1] = "Reason: " .. tostring(info.reason)
         if info.order then
@@ -875,6 +915,11 @@ function tournament_trades.get_item_bin_debug_localised_string(surface_name, ite
         incoming[#incoming + 1] = format_incoming_edge_debug(edge)
     end
 
+    if info.generation_enabled then
+        lines[#lines + 1] = "Generation: [color=green]ON[.color] - newly generated random trades on this planet should use directed tournament bins."
+    else
+        lines[#lines + 1] = "Generation: [color=red]OFF[.color] - these are theoretical bins only; actual newly generated trades use legacy random generation until the [color=cyan]Tournament Trades[.color] runtime setting is enabled."
+    end
     lines[#lines + 1] = "Status: [color=green]binned and tournament-eligible[.color]"
     lines[#lines + 1] = "Assigned bin: " .. tostring(info.bin) .. " of " .. tostring(info.order)
     lines[#lines + 1] = "Coin policy: " .. tostring(info.coin_policy) .. "; coin bin: " .. tostring(info.coin_bin) .. " (configured " .. tostring(info.configured_coin_bin) .. ")"
