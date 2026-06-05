@@ -152,6 +152,10 @@ function tournament_trades.get_coin_policy()
     return lib.runtime_setting_value_as_string "tournament-coin-trade-policy"
 end
 
+function tournament_trades.get_binning_mode()
+    return lib.runtime_setting_value_as_string "tournament-binning-mode"
+end
+
 function tournament_trades.get_coin_bin(order)
     local configured = lib.runtime_setting_value_as_int "tournament-coin-bin-index"
     if configured < 1 or configured > order then
@@ -269,6 +273,65 @@ function tournament_trades.get_eligible_items(surface_name, coin_policy)
     return deduped
 end
 
+local function get_value_band(surface_name, item_name)
+    local value = math.max(1, item_values.get_item_value(surface_name, item_name))
+    return math.floor(math.log(value) * 2)
+end
+
+local function get_item_family_key(item_name)
+    local prot = prototypes.item[item_name] or {}
+    local stack_size = prot.stack_size or 1
+    local stack_band
+    if stack_size <= 1 then
+        stack_band = "single"
+    elseif stack_size <= 10 then
+        stack_band = "small"
+    elseif stack_size <= 50 then
+        stack_band = "medium"
+    else
+        stack_band = "bulk"
+    end
+
+    return table.concat({
+        prot.place_result and "placeable" or "item",
+        prot.place_as_equipment_result and "equipment" or "inventory",
+        prot.fuel_category or "nonfuel",
+        prot.burnt_result and "burnt-result" or "no-burnt-result",
+        lib.is_spoilable(item_name) and "spoilable" or "stable",
+        stack_band,
+    }, "|")
+end
+
+function tournament_trades.sort_items_for_binning(surface_name, items, binning_mode)
+    local mode = binning_mode or tournament_trades.get_binning_mode()
+
+    table.sort(items, function(a, b)
+        local av = item_values.get_item_value(surface_name, a)
+        local bv = item_values.get_item_value(surface_name, b)
+
+        if mode == "manual-debug" then
+            return a < b
+        elseif mode == "recipe-value-clustering" then
+            local af = get_item_family_key(a)
+            local bf = get_item_family_key(b)
+            if af ~= bf then return af < bf end
+            local ab = get_value_band(surface_name, a)
+            local bb = get_value_band(surface_name, b)
+            if ab ~= bb then return ab < bb end
+        elseif mode == "wfc" then
+            local ab = get_value_band(surface_name, a)
+            local bb = get_value_band(surface_name, b)
+            if ab ~= bb then return ab < bb end
+            local af = get_item_family_key(a)
+            local bf = get_item_family_key(b)
+            if af ~= bf then return af < bf end
+        end
+
+        if av == bv then return a < b end
+        return av < bv
+    end)
+end
+
 function tournament_trades.create_empty_bins(order)
     local bins = {}
     for i = 1, order do
@@ -330,6 +393,7 @@ function tournament_trades.build_surface_data(surface_name, ignore_disabled)
     end
 
     local coin_policy = tournament_trades.get_coin_policy()
+    local binning_mode = tournament_trades.get_binning_mode()
     local coin_bin, configured_coin_bin = tournament_trades.get_coin_bin(order)
     local bins = tournament_trades.create_empty_bins(order)
     local item_to_bin = {}
@@ -350,6 +414,7 @@ function tournament_trades.build_surface_data(surface_name, ignore_disabled)
             normal_items[#normal_items + 1] = item_name
         end
     end
+    tournament_trades.sort_items_for_binning(surface_name, normal_items, binning_mode)
 
     for i, item_name in ipairs(normal_items) do
         local target_bin = allowed_bins[((i - 1) % #allowed_bins) + 1]
@@ -364,6 +429,7 @@ function tournament_trades.build_surface_data(surface_name, ignore_disabled)
         order = order,
         generation_enabled = tournament_trades.is_generation_enabled(),
         coin_policy = coin_policy,
+        binning_mode = binning_mode,
         coin_bin = coin_bin,
         configured_coin_bin = configured_coin_bin,
         residues = table.deepcopy(tournament_trades.get_residues(order)),
@@ -767,7 +833,7 @@ function tournament_trades.validate_surface(surface_name, scope, generator)
     scope = scope or "full"
     local lines = {
         "Tournament validation for " .. surface_name,
-        "enabled=" .. tostring(tournament_trades.is_generation_enabled()) .. " order=" .. surface_data.order .. " policy=" .. surface_data.coin_policy .. " coin_bin=" .. surface_data.coin_bin,
+        "enabled=" .. tostring(tournament_trades.is_generation_enabled()) .. " order=" .. surface_data.order .. " policy=" .. surface_data.coin_policy .. " binning=" .. tostring(surface_data.binning_mode) .. " coin_bin=" .. surface_data.coin_bin,
     }
 
     local function append_result(label, result)
@@ -838,6 +904,7 @@ function tournament_trades.get_item_bin_debug_info(surface_name, item_name)
     info.order = surface_data.order
     info.generation_enabled = tournament_trades.is_generation_enabled()
     info.coin_policy = surface_data.coin_policy
+    info.binning_mode = surface_data.binning_mode
     info.coin_bin = surface_data.coin_bin
     info.configured_coin_bin = surface_data.configured_coin_bin
 
@@ -902,6 +969,7 @@ function tournament_trades.get_item_bin_debug_localised_string(surface_name, ite
         lines[#lines + 1] = "Reason: " .. tostring(info.reason)
         if info.order then
             lines[#lines + 1] = "Tournament order: " .. tostring(info.order)
+            lines[#lines + 1] = "Binning mode: " .. tostring(info.binning_mode)
             lines[#lines + 1] = "Coin policy: " .. tostring(info.coin_policy)
         end
         return debug_string()
@@ -923,6 +991,7 @@ function tournament_trades.get_item_bin_debug_localised_string(surface_name, ite
     end
     lines[#lines + 1] = "Status: [color=green]binned and tournament-eligible[.color]"
     lines[#lines + 1] = "Assigned bin: " .. tostring(info.bin) .. " of " .. tostring(info.order)
+    lines[#lines + 1] = "Binning mode: " .. tostring(info.binning_mode)
     lines[#lines + 1] = "Coin policy: " .. tostring(info.coin_policy) .. "; coin bin: " .. tostring(info.coin_bin) .. " (configured " .. tostring(info.configured_coin_bin) .. ")"
     lines[#lines + 1] = "Bin population: " .. tostring(info.bin_total_item_count) .. " total items; " .. tostring(info.bin_non_coin_item_count) .. " non-coin items; contains coins: " .. tostring(info.bin_contains_coins) .. "; coin-only: " .. tostring(info.bin_coin_only)
     lines[#lines + 1] = "Outgoing legal bins: " .. table.concat(outgoing, ", ")
