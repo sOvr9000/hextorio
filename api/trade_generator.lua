@@ -53,67 +53,6 @@ function trade_generator.init()
     trade_generator.set_trade_shape_distribution(weights)
 end
 
-local function normalize_coin_items(items)
-    local normalized_items = {}
-    local non_coin_totals = {}
-    local non_coin_order = {}
-    local coin_base_value = 0
-    local first_coin_index = nil
-
-    for _, item in ipairs(items) do
-        if lib.is_coin(item.name) then
-            first_coin_index = first_coin_index or (#normalized_items + 1)
-            local tier = storage.coin_tiers.COIN_TIERS_BY_NAME[item.name] or 1
-            coin_base_value = coin_base_value + (item.count or 0) * coin_tiers.get_scale_of_tier(tier)
-        elseif non_coin_totals[item.name] then
-            non_coin_totals[item.name] = non_coin_totals[item.name] + (item.count or 0)
-        else
-            non_coin_order[#non_coin_order + 1] = item.name
-            non_coin_totals[item.name] = item.count or 0
-            normalized_items[#normalized_items + 1] = {
-                name = item.name,
-                count = item.count or 0,
-            }
-        end
-    end
-
-    local by_name = {}
-    for _, item in ipairs(normalized_items) do
-        by_name[item.name] = item
-    end
-    for _, item_name in ipairs(non_coin_order) do
-        by_name[item_name].count = non_coin_totals[item_name]
-    end
-
-    if coin_base_value <= 0 then
-        return normalized_items
-    end
-
-    local coin = coin_tiers.from_base_value(coin_base_value)
-    coin = coin_tiers.floor(coin)
-
-    local coin_items = {}
-    for tier, count in ipairs(coin.values) do
-        if count > 0 then
-            coin_items[#coin_items + 1] = {
-                name = storage.coin_tiers.COIN_NAMES[tier],
-                count = count,
-            }
-        end
-    end
-
-    for i = #coin_items, 1, -1 do
-        table.insert(normalized_items, first_coin_index, coin_items[i])
-    end
-
-    return normalized_items
-end
-
-function trade_generator.normalize_trade_coin_items(trade)
-    trade.input_items = normalize_coin_items(trade.input_items)
-    trade.output_items = normalize_coin_items(trade.output_items)
-end
-
 ---Generate a trade between select items and solve for the item counts, returning a TentativeTrade object ready for initialization as a complete Trade object.
 ---
 ---Returns nil if the item names and params.target_efficiency do not allow for a valid solution.
@@ -175,7 +114,7 @@ function trade_generator.generate_from_item_names(surface_name, input_item_names
         return nil
     end
 
-    trade_generator.normalize_trade_coin_items(tentative)
+    coin_tiers.canonicalize_trade_items(tentative)
     return tentative
 end
 

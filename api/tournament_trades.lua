@@ -4,6 +4,7 @@ local item_values = require "api.item_values"
 local trade_loop_finder = require "api.trade_loop_finder"
 local weighted_choice = require "api.weighted_choice"
 local event_system = require "api.event_system"
+local coin_tiers = require "api.coin_tiers"
 
 local tournament_trades = {}
 
@@ -520,7 +521,7 @@ function tournament_trades.make_tentative(surface_name, input_item_names, output
     if not solved and params.allow_nil_return then
         return nil
     end
-    generator.normalize_trade_coin_items(tentative)
+    coin_tiers.canonicalize_trade_items(tentative)
     return tentative
 end
 

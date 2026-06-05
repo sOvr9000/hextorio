@@ -256,7 +256,7 @@ end
 function trades.initialize_trade_state(trade)
     storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
 
-    trade_generator.normalize_trade_coin_items(trade)
+    coin_tiers.canonicalize_trade_items(trade)
 
     local input_items = trade.input_items
     local output_items = trade.output_items
