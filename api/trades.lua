@@ -14,6 +14,7 @@ local hex_state_manager = require "api.hex_state_manager"
 local hex_util          = require "api.hex_util"
 local hex_sets          = require "api.hex_sets"
 local trade_generator   = require "api.trade_generator"
+local tournament_trades = require "api.tournament_trades"
 
 
 
@@ -255,6 +256,8 @@ end
 function trades.initialize_trade_state(trade)
     storage.trades.trade_id_ctr = (storage.trades.trade_id_ctr or 0) + 1
 
+    coin_tiers.canonicalize_trade_items(trade)
+
     local input_items = trade.input_items
     local output_items = trade.output_items
 
@@ -313,6 +316,12 @@ function trades.initialize_trade_state(trade)
         is_interplanetary = is_interplanetary,
         has_untradable_items = has_untradable_items,
     }
+
+    for key, value in pairs(trade) do
+        if key == "tournament_managed" or type(key) == "string" and key:sub(1, 11) == "tournament_" then
+            new[key] = value
+        end
+    end
 
     trades.check_productivity(new)
 
@@ -509,7 +518,7 @@ function trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
     local values = {}
     for _, input_item in pairs(trade.input_items) do
         if lib.is_coin(input_item.name) then
-            values[input_item.name] = input_item.count
+            values[input_item.name] = (values[input_item.name] or 0) + input_item.count
         end
     end
     local coin = coin_tiers.from_coin_values_by_name(values)
@@ -528,7 +537,7 @@ function trades.get_output_coins_of_trade(trade, quality)
     local values = {}
     for _, output_item in pairs(trade.output_items) do
         if lib.is_coin(output_item.name) then
-            values[output_item.name] = output_item.count
+            values[output_item.name] = (values[output_item.name] or 0) + output_item.count
         end
     end
     local coin = coin_tiers.from_coin_values_by_name(values)
@@ -2790,6 +2799,8 @@ function trades.migrate_old_data()
     if not storage.trades.base_trade_efficiency then
         trades.fetch_base_trade_efficiency_settings()
     end
+
+    tournament_trades.ensure_storage()
 
     if not storage.trades.productivity_update_jobs then
         storage.trades.productivity_update_jobs = {}

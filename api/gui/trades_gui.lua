@@ -28,6 +28,54 @@ local trades_gui = {}
 
 
 
+---@param trade Trade
+---@param is_input boolean
+---@param quality string
+---@param quality_cost_mult number
+---@return TradeItem[]
+function trades_gui.get_display_items_for_side(trade, is_input, quality, quality_cost_mult)
+    local source_items = is_input and trade.input_items or trade.output_items
+    local display_items = {}
+    local first_coin_index = nil
+
+    for _, item in ipairs(source_items) do
+        if lib.is_coin(item.name) then
+            first_coin_index = first_coin_index or (#display_items + 1)
+        else
+            display_items[#display_items + 1] = {
+                name = item.name,
+                count = item.count,
+            }
+        end
+    end
+
+    if not first_coin_index then
+        return display_items
+    end
+
+    local coin
+    if is_input then
+        coin = trades.get_input_coins_of_trade(trade, quality, quality_cost_mult)
+    else
+        coin = trades.get_output_coins_of_trade(trade, quality)
+    end
+    if coin_tiers.is_zero(coin) then
+        return display_items
+    end
+
+    local tier = coin_tiers.get_tier_for_display(coin)
+    local coin_name = coin_tiers.get_name_of_tier(tier)
+    local _, count = coin_tiers.to_base_values(coin, tier)
+    table.insert(display_items, first_coin_index, {
+        name = coin_name,
+        count = math.ceil(count),
+    })
+
+    return display_items
+end
+
+
+
 function trades_gui.register_events()
     event_system.register_gui("gui-clicked", "ping-button", trades_gui.on_ping_button_clicked)
     event_system.register_gui("gui-clicked", "core-finder", trades_gui.on_core_finder_button_click)
@@ -289,10 +337,13 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
         end
     end
 
+    local input_display_items = trades_gui.get_display_items_for_side(trade, true, quality_to_show, quality_cost_mult)
+    local output_display_items = trades_gui.get_display_items_for_side(trade, false, quality_to_show, quality_cost_mult)
+
     local total_empty = 0
     for i = 1, 3 do
-        if i <= #trade.input_items then
-            local input_item = trade.input_items[i]
+        if i <= #input_display_items then
+            local input_item = input_display_items[i]
 
             local sprite = "item/" .. input_item.name
             if not helpers.is_valid_sprite_path(sprite) then
@@ -314,14 +365,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 raise_hover_events = true,
             }
 
-            if lib.is_coin(input_item.name) then
-                local coin = trades.get_input_coins_of_trade(trade, quality_to_show, quality_cost_mult)
-                local tier = coin_tiers.get_tier_for_display(coin)
-                local coin_name = coin_tiers.get_name_of_tier(tier)
-                local base_value, other_value = coin_tiers.to_base_values(coin, tier)
-                input_sprite_button.number = math.ceil(other_value)
-                input_sprite_button.sprite = "item/" .. coin_name
-            else
+            if not lib.is_coin(input_item.name) then
                 input_sprite_button.quality = quality_to_show
             end
             gui.give_item_tooltip(player, trade.surface_name, input_sprite_button)
@@ -393,8 +437,8 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
 
     for i = 1, 3 do
         local j = 4 - i
-        if j <= #trade.output_items then
-            local output_item = trade.output_items[j]
+        if j <= #output_display_items then
+            local output_item = output_display_items[j]
 
             local sprite = "item/" .. output_item.name
             if not helpers.is_valid_sprite_path(sprite) then
@@ -416,14 +460,7 @@ function trades_gui.add_trade_elements(player, element, trade, trade_number, par
                 raise_hover_events = true,
             }
 
-            if lib.is_coin(output_item.name) then
-                local coin = trades.get_output_coins_of_trade(trade, quality_to_show)
-                local tier = coin_tiers.get_tier_for_display(coin)
-                local coin_name = coin_tiers.get_name_of_tier(tier)
-                local base_value, other_value = coin_tiers.to_base_values(coin, tier)
-                output_sprite_button.number = math.ceil(other_value)
-                output_sprite_button.sprite = "item/" .. coin_name
-            else
+            if not lib.is_coin(output_item.name) then
                 output_sprite_button.quality = quality_to_show
             end
             gui.give_item_tooltip(player, trade.surface_name, output_sprite_button)

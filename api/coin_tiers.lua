@@ -65,6 +65,69 @@ function coin_tiers.from_coin_values_by_name(coin_values_by_name)
     return coin_tiers.new(values)
 end
 
+---Collapse duplicate item rows and compress all coin rows to canonical denominations.
+---@param items TradeItem[]|TentativeTradeItem[]
+---@return TradeItem[]
+function coin_tiers.canonicalize_trade_item_list(items)
+    local canonical_items = {}
+    local non_coin_by_name = {}
+    local coin_values = coin_tiers.new_coin_values()
+    local first_coin_index = nil
+
+    for _, item in ipairs(items or {}) do
+        local count = item.count or 0
+        if lib.is_coin(item.name) then
+            first_coin_index = first_coin_index or (#canonical_items + 1)
+            local tier = storage.coin_tiers.COIN_TIERS_BY_NAME[item.name] or 1
+            coin_values[tier] = coin_values[tier] + count
+        else
+            local existing = non_coin_by_name[item.name]
+            if existing then
+                existing.count = existing.count + count
+            else
+                existing = {
+                    name = item.name,
+                    count = count,
+                }
+                canonical_items[#canonical_items + 1] = existing
+                non_coin_by_name[item.name] = existing
+            end
+        end
+    end
+
+    if not first_coin_index then
+        return canonical_items
+    end
+
+    local coin = coin_tiers.floor(coin_tiers.new(coin_values))
+    if coin_tiers.is_zero(coin) then
+        return canonical_items
+    end
+
+    local coin_items = {}
+    for tier, count in ipairs(coin.values) do
+        if count > 0 then
+            coin_items[#coin_items + 1] = {
+                name = storage.coin_tiers.COIN_NAMES[tier],
+                count = count,
+            }
+        end
+    end
+
+    for i = #coin_items, 1, -1 do
+        table.insert(canonical_items, first_coin_index, coin_items[i])
+    end
+
+    return canonical_items
+end
+
+---Canonicalize both sides of a trade-like object in place.
+---@param trade Trade|TentativeTrade
+function coin_tiers.canonicalize_trade_items(trade)
+    trade.input_items = coin_tiers.canonicalize_trade_item_list(trade.input_items)
+    trade.output_items = coin_tiers.canonicalize_trade_item_list(trade.output_items)
+end
+
 ---Make a copy of a coin object.
 ---@param coin Coin
 ---@return Coin

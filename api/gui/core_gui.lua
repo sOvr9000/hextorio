@@ -8,6 +8,7 @@ local item_values = require "api.item_values"
 local event_system  = require "api.event_system"
 local item_buffs = require "api.item_buffs"
 local passive_coin_buff = require "api.passive_coin_buff"
+local tournament_trades = require "api.tournament_trades"
 
 local core_gui = {}
 
@@ -153,6 +154,7 @@ function core_gui.give_item_tooltip(player, surface_name, element)
     local scaled_value = value / hex_coin_value * lib.get_quality_value_scale(quality)
 
     local rank_str = {""}
+    local tournament_bin_str = {""}
     if lib.is_catalog_item(nil, item_name) then
         local rank = item_ranks.get_item_rank(item_name)
         local left_half
@@ -160,6 +162,13 @@ function core_gui.give_item_tooltip(player, surface_name, element)
             left_half = core_gui.get_bronze_sprite_half(item_name)
         end
         rank_str = {"", lib.color_localized_string({"hextorio-gui.rank"}, "white", "heading-1"), " " , lib.get_rank_img_str(rank, left_half), "\n\n"}
+
+        if tournament_trades.is_catalog_bin_debug_enabled() then
+            local bin_debug = tournament_trades.get_item_bin_debug_localised_string(surface_name, item_name)
+            if bin_debug then
+                tournament_bin_str = {"", bin_debug, "\n\n"}
+            end
+        end
     end
 
     local item_img_rich_text = "[" .. rich_type .. "=" .. item_name .. ",quality=" .. quality .. "]"
@@ -169,6 +178,7 @@ function core_gui.give_item_tooltip(player, surface_name, element)
         prototypes[rich_type][item_name].localised_name,
         "\n-=-=-=-=-=-=-=-=-\n",
         rank_str,
+        tournament_bin_str,
         location_rich_text .. " [font=heading-2][color=green]",
         {"hextorio-gui.item-value"},
         "[.color][.font]\n" .. item_img_rich_text .. "x1 = ",

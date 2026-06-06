@@ -13,6 +13,7 @@ local item_buffs = require "api.item_buffs"
 local gui_stack = require "api.gui.gui_stack"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
 local translations  = require "api.translations"
+local tournament_trades = require "api.tournament_trades"
 
 local catalog_gui = {}
 
@@ -105,6 +106,13 @@ function catalog_gui.register_events()
     end)
 
     event_system.register("post-item-values-recalculated", catalog_gui.reinitialize)
+    event_system.register("tournament-bin-debug-display-changed", function()
+        for _, player in pairs(game.connected_players) do
+            if catalog_gui.is_catalog_open(player) then
+                catalog_gui.update_catalog(player)
+            end
+        end
+    end)
 end
 
 ---Reinitialize the catalog GUI for the given player, or all players if no player is provided.
@@ -427,6 +435,8 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
     })
     bonuses_label.style.font = "heading-1"
 
+    catalog_gui.build_tournament_bin_debug(player, selection, frame)
+
     if not features.is_feature_unlocked "item-buffs" or rank_obj.rank < 2 or not next(buffs) then return end
     item_buffs.fetch_settings()
 
@@ -571,6 +581,22 @@ function catalog_gui.build_item_buffs(player, rank_obj, frame)
             }
         end
     end
+end
+
+function catalog_gui.build_tournament_bin_debug(player, selection, frame)
+    if not tournament_trades.is_catalog_bin_debug_enabled() then return end
+
+    local bin_debug = tournament_trades.get_item_bin_debug_localised_string(selection.surface_name, selection.item_name)
+    if not bin_debug then return end
+
+    local label = frame.add {
+        type = "label",
+        name = "tournament-bin-debug",
+        caption = bin_debug,
+    }
+    label.style.single_line = false
+    label.style.horizontally_stretchable = true
+    label.style.horizontally_squashable = true
 end
 
 function catalog_gui.build_rank_bonuses(player, rank_obj, frame)
