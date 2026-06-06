@@ -7,8 +7,67 @@ local weighted_choice = require "api.weighted_choice"
 local event_system = require "api.event_system"
 local tournament_trades = require "api.tournament_trades"
 local coin_tiers = require "api.coin_tiers"
+local data_trades = require "data.trades"
 
 local trade_generator = {}
+
+
+
+---Return whether the given value is a valid distribution of weighted trade shapes.
+---@param weights any
+---@return boolean
+function trade_generator.is_valid_trade_shape_distribution(weights)
+    local distribution_validation = {
+        weights_is_table = type(weights) == "table",
+        weights_is_not_empty = type(weights) == "table" and next(weights) ~= nil,
+    }
+
+    if
+           not distribution_validation.weights_is_table
+        or not distribution_validation.weights_is_not_empty
+    then
+        return false
+    end
+
+    for _, shape in pairs(weights) do
+        local shape_validation = {
+            shape_is_table = type(shape) == "table",
+        }
+
+        shape_validation.shape_num_inputs_is_number =
+            shape_validation.shape_is_table and type(shape.num_inputs) == "number"
+        shape_validation.shape_num_outputs_is_number =
+            shape_validation.shape_is_table and type(shape.num_outputs) == "number"
+        shape_validation.shape_weight_is_number =
+            shape_validation.shape_is_table and type(shape.weight) == "number"
+        shape_validation.shape_num_inputs_is_integer =
+            shape_validation.shape_num_inputs_is_number and math.floor(shape.num_inputs) == shape.num_inputs
+        shape_validation.shape_num_outputs_is_integer =
+            shape_validation.shape_num_outputs_is_number and math.floor(shape.num_outputs) == shape.num_outputs
+        shape_validation.shape_num_inputs_is_in_range =
+            shape_validation.shape_num_inputs_is_number and shape.num_inputs >= 1 and shape.num_inputs <= 3
+        shape_validation.shape_num_outputs_is_in_range =
+            shape_validation.shape_num_outputs_is_number and shape.num_outputs >= 1 and shape.num_outputs <= 3
+        shape_validation.shape_weight_is_positive =
+            shape_validation.shape_weight_is_number and shape.weight > 0
+
+        if
+               not shape_validation.shape_is_table
+            or not shape_validation.shape_num_inputs_is_number
+            or not shape_validation.shape_num_outputs_is_number
+            or not shape_validation.shape_weight_is_number
+            or not shape_validation.shape_num_inputs_is_integer
+            or not shape_validation.shape_num_outputs_is_integer
+            or not shape_validation.shape_num_inputs_is_in_range
+            or not shape_validation.shape_num_outputs_is_in_range
+            or not shape_validation.shape_weight_is_positive
+        then
+            return false
+        end
+    end
+
+    return true
+end
 
 
 
@@ -45,11 +104,20 @@ function trade_generator.register_events()
     event_system.register("runtime-setting-changed-trade-efficiency-per-item", function()
         storage.trades.trade_efficiency_per_item = lib.runtime_setting_value_as_number "trade-efficiency-per-item"
     end)
+
+    event_system.register("runtime-setting-changed-trade-complexity", function()
+        trade_generator.init()
+    end)
 end
 
 function trade_generator.init()
     local complexity = lib.runtime_setting_value_as_string "trade-complexity"
-    local weights = storage.trades.trade_shape_weights_lookup[complexity]
+    local weights_lookup = storage.trades.trade_shape_weights_lookup
+    local weights = type(weights_lookup) == "table" and weights_lookup[complexity] or nil
+    if not trade_generator.is_valid_trade_shape_distribution(weights) then
+        storage.trades.trade_shape_weights_lookup = table.deepcopy(data_trades.trade_shape_weights_lookup)
+        weights = storage.trades.trade_shape_weights_lookup[complexity]
+    end
     trade_generator.set_trade_shape_distribution(weights)
 end
 
@@ -676,28 +744,9 @@ end
 ---```
 ---@param weights TradeShapeWeightedItem[]
 function trade_generator.set_trade_shape_distribution(weights)
-    if type(weights) ~= "table" then
-        lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received: " .. tostring(weights))
+    if not trade_generator.is_valid_trade_shape_distribution(weights) then
+        lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received:\n" .. serpent.block(weights))
         return
-    end
-
-    for _, obj in pairs(weights) do
-        if
-            -- TODO: maybe put type checking into a lib function or something, like lib.is_int()
-               type(obj.num_inputs) ~= "number"
-            or type(obj.num_outputs) ~= "number"
-            or type(obj.weight) ~= "number"
-            or math.floor(obj.num_inputs) ~= obj.num_inputs
-            or math.floor(obj.num_outputs) ~= obj.num_outputs
-            or obj.num_inputs < 1
-            or obj.num_inputs > 3
-            or obj.num_outputs < 1
-            or obj.num_outputs > 3
-            or obj.weight <= 0
-        then
-            lib.log_error("trade_generator.set_trade_shape_distribution: Invalid weights received:\n" .. serpent.block(weights))
-            return
-        end
     end
 
     lib.log("New weights set for trade shapes: " .. serpent.block(weights))
@@ -714,15 +763,18 @@ end
 
 ---@return WeightedChoice|nil
 function trade_generator.get_trade_shape_weighted_choice()
-    local trade_shape_wc = storage.trades.trade_shape_weighted_choice
-
-    if not trade_shape_wc then
-        local weights = trade_generator.get_trade_shape_distribution()
-        if not weights then
-            lib.log_error("trade_generator._get_trade_shape_weighted_choice: No weights set for trade shape sampling")
+    local weights = trade_generator.get_trade_shape_distribution()
+    if not trade_generator.is_valid_trade_shape_distribution(weights) then
+        trade_generator.init()
+        weights = trade_generator.get_trade_shape_distribution()
+        if not trade_generator.is_valid_trade_shape_distribution(weights) then
+            lib.log_error("trade_generator._get_trade_shape_weighted_choice: No valid weights set for trade shape sampling")
             return
         end
+    end
 
+    local trade_shape_wc = storage.trades.trade_shape_weighted_choice
+    if not trade_shape_wc then
         local wc = trade_generator._build_trade_shape_weighted_choice(weights)
         if not wc then
             lib.log_error("trade_generator._get_trade_shape_weighted_choice: Failed to create a weighted choice for trades given weights:\n" .. serpent.block(weights))
