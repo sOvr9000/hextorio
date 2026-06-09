@@ -152,6 +152,8 @@ function lib.get_rational_approximation(x, epsilon, max_numerator, max_denominat
         end
 
         local ratio = abs_x * den / num
+
+        -- Can use lib.is_ratio_symmetrically_le() here, but it's faster to check this explicitly to avoid division overhead.
         if ratio >= epsilon_inv and ratio <= epsilon then
             -- log("break: " .. ratio .. " >= " .. epsilon_inv .. " and " .. ratio .. " <= " .. epsilon)
             break
@@ -175,6 +177,20 @@ function lib.get_rational_approximation(x, epsilon, max_numerator, max_denominat
     end
 
     return num, den
+end
+
+---Return whether `max(x, 1/x) <= max(target, 1/target)`.
+---@param x number
+---@param target number
+---@return boolean
+function lib.is_ratio_symmetrically_le(x, target)
+    if x < 1 then
+        x = 1 / x
+    end
+    if target < 1 then
+        target = 1 / target
+    end
+    return x <= target
 end
 
 ---@param surface LuaSurface|SurfaceIdentification|int|string

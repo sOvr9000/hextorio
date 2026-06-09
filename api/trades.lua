@@ -2713,10 +2713,32 @@ function trades.recalculate_researched_items()
     trades.queue_productivity_update_job()
 end
 
----Redetermine item counts in a trade given a new target efficiency
+---Return whether a trade's output/input value ratio matches the given target efficiency.
 ---@param trade Trade
 ---@param params TradeGenerationParameters
-function trades.recalculate_item_counts(trade, params)
+---@return boolean
+function trades.is_value_ratio_correct(trade, params)
+    if not params.target_efficiency or not params.target_efficiency_epsilon then
+        lib.log("trades.is_value_ratio_correct: Target efficiency or epsilon not found in params, using default value(s).")
+        params = table.deepcopy(params)
+        trade_generator.set_trade_generation_parameter_defaults(params)
+    end
+
+    local ratio = trades.get_trade_value_ratio(trade.surface_name, trade) / params.target_efficiency
+    return lib.is_ratio_symmetrically_le(ratio, params.target_efficiency_epsilon)
+end
+
+---Redetermine item counts in a trade given a new target efficiency if it's not already approximated with the current item counts.
+---@param trade Trade
+---@param params TradeGenerationParameters
+function trades.try_recalculate_item_counts(trade, params)
+    if trades.is_value_ratio_correct(trade, params) then
+        -- log("okay ratio: " .. lib.tostring_trade(trade) .. " (ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. ", target = " .. params.target_efficiency .. ", epsilon = " .. params.target_efficiency_epsilon .. ")")
+        return
+    end
+
+    lib.log("trades.try_recalculate_item_counts: Recalculating item counts in trade due to item value changes (prev ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. ", target = " .. (params.target_efficiency or 1) .. "):\n" .. lib.tostring_trade(trade))
+
     trade_generator.solve_item_counts(
         trade.surface_name,
 
@@ -2726,6 +2748,8 @@ function trades.recalculate_item_counts(trade, params)
 
         params
     )
+
+    lib.log("trades.try_recalculate_item_counts: New item counts (new ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. "):\n" .. lib.tostring_trade(trade))
 end
 
 ---@param surface_name string|nil

@@ -4346,13 +4346,9 @@ function hex_grid.reevaluate_trades(state)
     local params = {
         target_efficiency = storage.trades.base_trade_efficiency,
         allow_nil_return = false,
-
-        -- use defaults for now?
-        target_efficiency_epsilon = nil,
-        item_sampling_filters = nil,
-        max_stacks_per_item = nil,
-        max_count_per_item = nil,
     }
+
+    trade_generator.set_trade_generation_parameter_defaults(params)
 
     if hex_grid.get_hex_core_mode(state) == "sink" or hex_grid.get_hex_core_mode(state) == "generator" then
         params.target_efficiency = params.target_efficiency * storage.hex_grid.sink_generator_efficiency
@@ -4367,7 +4363,7 @@ function hex_grid.reevaluate_trades(state)
                     hex_grid.remove_trade_by_index(state, i, false)
                     lib.log("hex_grid.reevaluate_trades: Removed trade because it contains items no longer tradable on the planet: " .. lib.tostring_trade(trade))
                 else
-                    trades.recalculate_item_counts(trade, params)
+                    trades.try_recalculate_item_counts(trade, params)
                 end
             end
         end
