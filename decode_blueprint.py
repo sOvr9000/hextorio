@@ -84,6 +84,7 @@ def compute_costs(blueprint: dict) -> list[tuple[str, int]]:
         counts[entity["name"]] += 1
     for tile in bp.get("tiles", []):
         counts[tile["name"]] += 1
+    counts.pop("space-platform-hub", None)
     return sorted(counts.items())
 
 

@@ -4,6 +4,7 @@ Date: 1/6/26
   Bugfixes:
     - Fixed that trades were getting altered unnecessarily on mod config change (adding or removing mods, or updating this mod).
       - Affected trades will still get reevaluated if necessary due to recipe or item acquisition changes.
+    - Fixed that the hexaclysm space platform starter pack recipe contained a space platform hub.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.4
 Date: 1/6/26
