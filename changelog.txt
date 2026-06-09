@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.5
-Date: 1/6/26
+Date: 9/6/26
   Bugfixes:
     - Fixed that trades were getting altered unnecessarily on mod config change (adding or removing mods, or updating this mod).
       - Affected trades will still get reevaluated if necessary due to recipe or item acquisition changes.
