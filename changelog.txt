@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.6
-Date: 9/6/26
+Date: 10/6/26
+  Bugfixes:
+    - Fix invalid entity crash caused by picking up a dungeon chest and then changing mod configuration.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.5
 Date: 9/6/26

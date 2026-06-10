@@ -730,42 +730,44 @@ function dungeons.insert_loot(dungeon, chests)
     end
 
     for _, chest in pairs(chests) do
-        local inv = chest.get_inventory(defines.inventory.chest)
-        if inv and inv.valid then
-            inv.clear()
+        if chest.valid then
+            local inv = chest.get_inventory(defines.inventory.chest)
+            if inv and inv.valid then
+                inv.clear()
 
-            local max_num_samples = #inv
-            local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling or 1)
+                local max_num_samples = #inv
+                local loot_items = loot_tables.sample_until_total_value(better_loot_table, dungeon.surface.name, expected_num_samples, max_num_samples, loot_value, prot.amount_scaling or 1)
 
-            local total_coin_value = 0
-            for _, item in pairs(loot_items) do
-                local item_name = item.loot_item.item_name
-                local quality = lib.get_quality_at_tier(item.loot_item.quality_tier)
-                local count = item.count
-                inv.insert {
-                    name = item_name,
-                    quality = quality,
-                    count = count,
-                }
-                total_coin_value = total_coin_value + item_values.get_item_value(dungeon.surface.name, item_name, true, quality) * count
-            end
-
-            local coin = coin_tiers.from_base_value(total_coin_value / (10 * (storage.item_values.base_coin_value or 10))) -- multiply base coin value by 10 because coins in dungeon chests are 1/10 of total item value in them
-            coin = coin_tiers.floor(coin) -- If 0 < coin value < 1, then item insertion could crash because inventory item insertion/removal cannot be done with count < 1.
-            inventories.add_coin_to_inventory(inv, coin)
-
-            -- Additionally roll for extra items
-            for item_name, chance in pairs(prot.item_rolls) do
-                local count = lib.multi_roll(chance)
-                if count > 0 then
+                local total_coin_value = 0
+                for _, item in pairs(loot_items) do
+                    local item_name = item.loot_item.item_name
+                    local quality = lib.get_quality_at_tier(item.loot_item.quality_tier)
+                    local count = item.count
                     inv.insert {
                         name = item_name,
+                        quality = quality,
                         count = count,
                     }
+                    total_coin_value = total_coin_value + item_values.get_item_value(dungeon.surface.name, item_name, true, quality) * count
                 end
-            end
 
-            inv.sort_and_merge()
+                local coin = coin_tiers.from_base_value(total_coin_value / (10 * (storage.item_values.base_coin_value or 10))) -- multiply base coin value by 10 because coins in dungeon chests are 1/10 of total item value in them
+                coin = coin_tiers.floor(coin) -- If 0 < coin value < 1, then item insertion could crash because inventory item insertion/removal cannot be done with count < 1.
+                inventories.add_coin_to_inventory(inv, coin)
+
+                -- Additionally roll for extra items
+                for item_name, chance in pairs(prot.item_rolls) do
+                    local count = lib.multi_roll(chance)
+                    if count > 0 then
+                        inv.insert {
+                            name = item_name,
+                            count = count,
+                        }
+                    end
+                end
+
+                inv.sort_and_merge()
+            end
         end
     end
 end
