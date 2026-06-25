@@ -395,8 +395,8 @@ data:extend{
         type = "sprite",
         name = "item-buff-enhance-all",
         filename = "__hextorio__/graphics/icons/big-bonus.png",
-        width = 56,
-        height = 56,
+        width = 48,
+        height = 48,
     },
     {
         type = "sprite",
