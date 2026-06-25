@@ -2550,6 +2550,18 @@ function lib.get_planet_order_category(surface_name)
     end
 end
 
+---Get the damage trigger effect item from a list of trigger effect items.
+---@param target_effects TriggerEffectItem[]
+---@param damage_type string
+---@return data.DamageEntityTriggerEffectItem|nil
+function lib.get_damage_trigger_effect(target_effects, damage_type)
+    for _, target_effect in pairs(target_effects) do
+        if target_effect.type == "damage" and target_effect.damage.type == damage_type then
+            return target_effect ---@diagnostic disable-line
+        end
+    end
+end
+
 
 
 return lib
