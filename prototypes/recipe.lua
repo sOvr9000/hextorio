@@ -380,13 +380,13 @@ for i = 2, 6 do
         },
         results = {
             -- Chance of not degrading
-            {type = "item", name = "hexadic-resonator-tier-" .. i, amount = 1, probability = 1 - degrade_chance, ignored_by_productivity = 1},
+            {type = "item", name = "hexadic-resonator-tier-" .. i, amount = 1, independent_probability = 1 - degrade_chance, ignored_by_productivity = 1},
 
             -- Chance of degrading
-            {type = "item", name = "hexadic-resonator-tier-" .. (i - 1), amount = 1, probability = degrade_chance, ignored_by_productivity = 1},
+            {type = "item", name = "hexadic-resonator-tier-" .. (i - 1), amount = 1, independent_probability = degrade_chance, ignored_by_productivity = 1},
 
             -- Byproduct (what we want)
-            {type = "item", name = "hexadic-resonator-tier-1", amount = 1, probability = i * 0.1},
+            {type = "item", name = "hexadic-resonator-tier-1", amount = 1, independent_probability = i * 0.1},
         },
         icons = {
             {
