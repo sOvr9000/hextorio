@@ -871,6 +871,7 @@ end
 -- regardless of type being fluid or item. And surfaces is the table of surface names where the recipe is able to be used.
 -- Product amounts are the average amount per batch if random (between some min and max and/or with some probability)
 -- Product amounts are also increased if the recipe can only be made in a +50% prod kind of building.
+---@param recipe LuaRecipePrototype
 function lib.normalize_recipe_structure(recipe)
     local r = {
         name = recipe.name,
@@ -881,17 +882,16 @@ function lib.normalize_recipe_structure(recipe)
     for _, ing in pairs(recipe.ingredients) do
         table.insert(r.ingredients, {name = ing.name, amount = ing.amount})
     end
-    local mult = 1
+    local prod_bonus = 0
     for _, category in pairs(recipe.categories or {}) do
         if category == "metallurgy" or category == "electromagnetics" or category == "organic" then
-            mult = 1.5
+            prod_bonus = 0.5
             break
         end
     end
-    local solver_util = require "api.solver_util"
     for i, prod in pairs(recipe.products) do
-        local mean = solver_util.get_product_expected_amount(recipe, prod, i)
-        table.insert(r.products, {name = prod.name, amount = mean * mult})
+        local mean = recipe.get_product_amount(i, prod_bonus)
+        table.insert(r.products, {name = prod.name, amount = mean})
     end
     return r
 end
