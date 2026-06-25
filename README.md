@@ -142,6 +142,7 @@ Features unlocked from quests are the following exhaustive list:
 - *Item Buff Enhancement* - allows spending coins to upgrade any unlocked item-specific bonuses
 - *Enhance All Item Buffs* - click a single button to spend as many coins as possible to enhance or unlock all affordable item buffs
 - *Quick Trading* - click one button to process one (minimal) batch of each trade in a hex core in order to trigger item rank-ups
+- *Spider Network* - placed Sentient Spiders will automatically make trades to rank up items
 
 ### The Catalog
 This is a GUI which shows all items ever found in trades.\
@@ -152,8 +153,23 @@ The bronze rank unlocks **item buffs**, which are the item-specific bonuses.
 
 ### Item Buffs
 Item buffs can first be unlocked using coins, providing a base value of the item's special bonus.\
-Once unlocked, they can then be enhanced using more coins, increasing the effect of the item's bonus.\
+Once **unlocked**, they can then be **enhanced** using more coins, increasing the effect of the item's bonus.\
 Costs to enhance increase exponentially, and an item buff may either increase linearly or also exponentially but less quickly.
+
+### Item Ranks
+Seen in **The Catalog**, items have upgradable ranks.\
+Each rank-up after bronze stars requires some amount of trade productivity:
+| Factor | Bronze -> Silver | Silver -> Gold | Gold -> Red |
+| --- | --- | --- | --- |
+| Previous rank requirement | - | ~40% | ~95% |
+| Planet productivity | 0% (Nauvis) | +15% (Gleba) | 0% (stay on Gleba) |
+| Quest rewards | +5% (dungeon quest)<br>+5% (catalog quest)<br>+1% (strongbox quest) | +5% (misc quests) | +15% (dungeon quests) |
+| Item buffs | +3%-ish (prod. modules) | +5%-ish (prod. modules) | +15%-ish (prod. modules and more) |
+| Item rank bonuses | +30% from a six-item trade full of bronze stars | +30% from upgrading bronze inputs to silver | +30% from upgrading silver inputs to gold |
+| Total obtainable (sum above) | = ~40% | = ~95% | = ~155% |
+| Intended game stage | Late Nauvis / Early inner planets | Late inner planets | Endgame / Post-Aquilo |
+
+These values are cumulative milestones, being balanced around the productivity sources that the player is *able to achieve* at various stages of the game.
 
 ### Dungeons
 Hexes have a chance to be generated with a dungeon covering them, spanning multiple contiguous hexes at once.\
