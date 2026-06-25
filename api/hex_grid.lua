@@ -2338,7 +2338,7 @@ function hex_grid.spawn_hexport(state, replace_existing)
     if not hexport then return end
 
     hexport.destructible = false
-    hexport.minable = false
+    hexport.minable_flag = false
 
     state.hexport = hexport
 end
@@ -2372,7 +2372,7 @@ function hex_grid.spawn_hexlight(state)
     if not hexlight2 then return end
 
     hexlight.destructible = false
-    hexlight.minable = false
+    hexlight.minable_flag = false
     hexlight.always_on = true
 
     if state.is_dungeon then
@@ -2387,7 +2387,7 @@ function hex_grid.spawn_hexlight(state)
     state.hexlight = hexlight
 
     hexlight2.destructible = false
-    hexlight2.minable = false
+    hexlight2.minable_flag = false
     hexlight2.always_on = true
     hexlight2.color = hexlight.color
 
