@@ -6,6 +6,7 @@ Date: 15/7/26
       - The bug should be fixed, but if it somehow comes up again, run the command /regenerate-loaders while standing in the same hex as the inert loader.
     - Fix invalid entity crash caused by picking up a dungeon chest and then changing mod configuration.
     - Fixed crash relating to trades containing coins.
+    - Fixed that item buffs giving belt capacity weren't also giving an equivalent bonus to bulk inserter capacity.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.5
 Date: 9/6/26
