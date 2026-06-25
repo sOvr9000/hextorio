@@ -180,6 +180,11 @@ return {
                 value = 1,
                 level_scaling = 0.125,
             },
+            {
+                type = "bulk-inserter-capacity",
+                value = 1,
+                level_scaling = 0.125,
+            },
         },
         ["spoilage"] = {
             {

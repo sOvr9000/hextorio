@@ -6,6 +6,7 @@ Date: 25/6/26
     - Updating the mod no longer reevaluates trades that have the wrong efficiency ratio if they've been used at least once throughout the game.
   Bugfixes:
     - Fixed crash relating to trades containing coins.
+    - Fixed that item buffs giving belt capacity weren't also giving an equivalent bonus to bulk inserter capacity.
   Balancing:
     - Reduced red star rank productivity requirement from 165% to 155%.
 ---------------------------------------------------------------------------------------------------
