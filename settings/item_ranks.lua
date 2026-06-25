@@ -41,7 +41,7 @@ data:extend({
         type = "double-setting",
         name = "hextorio-rank-4-prod-requirement",
         setting_type = "runtime-global",
-        default_value = 1.65,
+        default_value = 1.55,
         minimum_value = -10,
         maximum_value = 10,
         order = "r[ranks]-p[productivity-requirement]-u[red]",

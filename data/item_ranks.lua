@@ -7,7 +7,7 @@ return {
         -- Override with mod settings on start.
         -- [2] = 0.4, -- Bronze -> Silver
         -- [3] = 0.95, -- Silver -> Gold
-        -- [4] = 1.65 -- Gold -> Red
+        -- [4] = 1.55 -- Gold -> Red
     },
 
     rank_colors = {
