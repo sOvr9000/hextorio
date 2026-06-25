@@ -313,7 +313,7 @@ for _, pos in pairs {
 } do
     pos[2] = pos[2] + shift_y
 end
-
+hex_core.circuit_connector = {hex_core.circuit_connector}
 
 
 
