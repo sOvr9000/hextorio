@@ -888,10 +888,9 @@ function lib.normalize_recipe_structure(recipe)
             break
         end
     end
-    for _, prod in pairs(recipe.products) do
-        local min = prod.amount_min or prod.amount
-        local max = prod.amount_max or prod.amount
-        local mean = (min + max) * 0.5 * prod.probability
+    local solver_util = require "api.solver_util"
+    for i, prod in pairs(recipe.products) do
+        local mean = solver_util.get_product_expected_amount(recipe, prod, i)
         table.insert(r.products, {name = prod.name, amount = mean * mult})
     end
     return r

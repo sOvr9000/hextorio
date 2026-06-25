@@ -60,14 +60,8 @@ function solver_util.extract_recipe_data(recipe)
         table.insert(ingredients, {name = ing.name, amount = ing.amount})
     end
     local products = {}
-    for _, prod in pairs(recipe.products) do
-        local amount = prod.amount
-        if not amount and prod.amount_min and prod.amount_max then
-            amount = (prod.amount_min + prod.amount_max) / 2
-        end
-        amount = (amount or 0) + (prod.extra_count_fraction or 0)
-        local prob = prod.probability or 1
-        local expected = amount * prob
+    for i, prod in pairs(recipe.products) do
+        local expected = recipe.get_product_amount(i, 0) -- TODO: Account for base productivity like +50% from foundries if the recipe can only be produced in such a building
         if expected > 0 then
             table.insert(products, {name = prod.name, amount = expected})
         end
