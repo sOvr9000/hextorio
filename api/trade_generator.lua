@@ -173,7 +173,7 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
         if not is_coin_trade and math.random() < lib.runtime_setting_value "coin-trade-chance" then
             if math.random() < lib.runtime_setting_value "sell-trade-chance" then
                 local i = math.random(1, #output_item_names)
-                if #output_item_names[i] > 1 and output_item_names[i] == include_item then
+                if #output_item_names > 1 and output_item_names[i] == include_item then
                     i = i % #output_item_names + 1
                 end
                 if output_item_names[i] ~= include_item then
@@ -181,7 +181,7 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
                 end
             else
                 local i = math.random(1, #input_item_names)
-                if #input_item_names[i] > 1 and input_item_names[i] == include_item then
+                if #input_item_names > 1 and input_item_names[i] == include_item then
                     i = i % #input_item_names + 1
                 end
                 if input_item_names[i] ~= include_item then
