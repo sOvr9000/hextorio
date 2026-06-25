@@ -2,11 +2,11 @@
 local lib = require "api.lib"
 
 -- Buff recipes
-data.raw["recipe"]["rocket"].category = "organic-or-assembling"
-data.raw["recipe"]["explosive-rocket"].category = "organic-or-assembling"
-data.raw["recipe"]["logistic-robot"].category = "electronics"
-data.raw["recipe"]["construction-robot"].category = "electronics"
-data.raw["recipe"]["roboport"].category = "electronics"
+data.raw["recipe"]["rocket"].categories = {"organic", "crafting"}
+data.raw["recipe"]["explosive-rocket"].categories = {"organic", "crafting"}
+data.raw["recipe"]["logistic-robot"].categories = {"crafting", "electromagnetics"}
+data.raw["recipe"]["construction-robot"].categories = {"crafting", "electromagnetics"}
+data.raw["recipe"]["roboport"].categories = {"crafting", "electromagnetics"}
 
 -- Custom recipes
 local hexic_transport_belt = table.deepcopy(data.raw["recipe"]["turbo-transport-belt"])
@@ -70,7 +70,7 @@ for _, module_type in pairs {"speed", "productivity", "efficiency", "quality"} d
     r.name = "hexa-" .. module_type .. "-module"
     -- r.icon = "__hextorio__/graphics/icons/hexa-" .. module_type .. "-module.png"
     r.enabled = false
-    r.category = "electromagnetics"
+    r.categories = {"electromagnetics"}
     local amount = {[module_type] = 3}
     r.ingredients = {
         {type = "item", name = "speed-module-3", amount = amount["speed"] or 1},
@@ -96,7 +96,7 @@ data:extend(module_recipes)
 -- local disintegrator_capsule = {
 --     type = "recipe",
 --     name = "disintegrator-capsule",
---     category = "metallurgy",
+--     categories = {"metallurgy"},
 --     ingredients = {
 --         {type = "item", name = "destroyer-capsule", amount = 6},
 --         {type = "item", name = "processing-unit", amount = 10},
@@ -114,7 +114,7 @@ data:extend(module_recipes)
 -- local detonator_capsule = {
 --     type = "recipe",
 --     name = "detonator-capsule",
---     category = "organic",
+--     categories = {"organic"},
 --     ingredients = {
 --         {type = "item", name = "destroyer-capsule", amount = 6},
 --         {type = "item", name = "processing-unit", amount = 10},
@@ -132,7 +132,7 @@ data:extend(module_recipes)
 local demolisher_capsule = {
     type = "recipe",
     name = "demolisher-capsule",
-    category = "metallurgy",
+    categories = {"metallurgy"},
     ingredients = {
         {type = "item", name = "destroyer-capsule", amount = 6},
         {type = "item", name = "quantum-processor", amount = 10},
@@ -151,7 +151,7 @@ local demolisher_capsule = {
 local sentient_spider_recipe = {
     type = "recipe",
     name = "sentient-spider",
-    category = "cryogenics",
+    categories = {"cryogenics"},
     ingredients = {
         {type = "item", name = "fusion-reactor", amount = 1},
         {type = "item", name = "fusion-generator", amount = 2},
@@ -175,7 +175,7 @@ local sentient_spider_recipe = {
 local energized_thruster_fuel = table.deepcopy(data.raw["recipe"]["advanced-thruster-fuel"])
 energized_thruster_fuel.name = "energized-thruster-fuel"
 energized_thruster_fuel.enabled = false
-energized_thruster_fuel.category = "chemistry-or-cryogenics"
+energized_thruster_fuel.categories = {"chemistry", "cryogenics"}
 energized_thruster_fuel.icon = "__hextorio__/graphics/icons/energized-thruster-fuel.png"
 energized_thruster_fuel.ingredients = {
     {type = "item", name = "carbon", amount = 10},
@@ -192,7 +192,7 @@ energized_thruster_fuel.localised_name = nil
 local energized_thruster_oxidizer = table.deepcopy(data.raw["recipe"]["advanced-thruster-oxidizer"])
 energized_thruster_oxidizer.name = "energized-thruster-oxidizer"
 energized_thruster_oxidizer.enabled = false
-energized_thruster_oxidizer.category = "chemistry-or-cryogenics"
+energized_thruster_oxidizer.categories = {"chemistry", "cryogenics"}
 energized_thruster_oxidizer.icon = "__hextorio__/graphics/icons/energized-thruster-oxidizer.png"
 energized_thruster_oxidizer.ingredients = {
     {type = "item", name = "iron-ore", amount = 10},
@@ -209,7 +209,7 @@ energized_thruster_oxidizer.localised_name = nil
 local crystalline_fuel = table.deepcopy(data.raw["recipe"]["nuclear-fuel"])
 crystalline_fuel.name = "crystalline-fuel"
 crystalline_fuel.enabled = false
-crystalline_fuel.category = "cryogenics"
+crystalline_fuel.categories = {"cryogenics"}
 crystalline_fuel.icon = "__hextorio__/graphics/icons/crystalline-fuel.png"
 crystalline_fuel.ingredients = {
     {type = "item", name = "nuclear-fuel", amount = 1},
@@ -226,7 +226,7 @@ crystalline_fuel.main_product = "crystalline-fuel"
 local plague_rocket = {
     type = "recipe",
     name = "plague-rocket",
-    category = "organic",
+    categories = {"organic"},
     energy_required = 8,
     enabled = false,
     ingredients = {
@@ -242,7 +242,7 @@ local plague_rocket = {
 local magmatic_rounds_magazine = {
     type = "recipe",
     name = "magmatic-rounds-magazine",
-    category = "metallurgy",
+    categories = {"metallurgy"},
     energy_required = 12,
     enabled = false,
     ingredients = {
@@ -259,7 +259,7 @@ local magmatic_rounds_magazine = {
 local casting_piercing_rounds_magazine = {
     type = "recipe",
     name = "casting-piercing-rounds-magazine",
-    category = "metallurgy",
+    categories = {"metallurgy"},
     energy_required = 3,
     enabled = false,
     ingredients = {
@@ -275,7 +275,7 @@ local casting_piercing_rounds_magazine = {
 local casting_firearm_magazine = {
     type = "recipe",
     name = "casting-firearm-magazine",
-    category = "metallurgy",
+    categories = {"metallurgy"},
     energy_required = 1,
     enabled = false,
     ingredients = {
@@ -289,7 +289,7 @@ local casting_firearm_magazine = {
 local electromagnetic_penetrator = {
     type = "recipe",
     name = "electromagnetic-penetrator",
-    category = "cryogenics",
+    categories = {"cryogenics"},
     energy_required = 20,
     enabled = false,
     ingredients = {
@@ -310,7 +310,7 @@ local electromagnetic_penetrator = {
 local electromagnetic_penetrator_cell = {
     type = "recipe",
     name = "electromagnetic-penetrator-cell",
-    category = "cryogenics",
+    categories = {"cryogenics"},
     energy_required = 50,
     enabled = false,
     ingredients = {
@@ -358,7 +358,7 @@ for i = 2, 6 do
         name = "sovr-enrichment-process-tier-" .. i,
         localised_name = {"recipe-name.sovr-enrichment-process", i .. "/6"},
         localised_description = {"", {"technology-description.sovr-enrichment-process"}, "\n", lib.color_localized_string({"recipe-description-extra.productivity-only-affects"}, "yellow", "default-semibold")},
-        category = "organic",
+        categories = {"organic"},
         energy_required = 24,
         enabled = false,
         allow_productivity = true,

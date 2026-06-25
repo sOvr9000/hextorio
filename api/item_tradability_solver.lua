@@ -34,6 +34,7 @@ Overall, this whole system prevents weird edge cases from occurring like nutrien
 local lib = require "api.lib"
 local item_values = require "api.item_values"
 local solver_util = require "api.solver_util"
+local sets = require "api.sets"
 local event_system = require "api.event_system"
 
 local item_tradability_solver = {}
@@ -43,7 +44,8 @@ local item_tradability_solver = {}
 ---@class ItemTradabilitySolver.RecipeData
 ---@field ingredients ItemTradabilitySolver.ItemAmount[] Input items and amounts
 ---@field products ItemTradabilitySolver.ItemAmount[] Output items and expected (average) amounts
----@field category string|nil Recipe category (e.g. "recycling"), nil for pseudo-recipes like burnt or spoil products
+---@field category string|nil First recipe category, nil for pseudo-recipes like burnt or spoil products
+---@field categories string[]|nil Recipe categories
 ---@field surface_conditions SurfaceCondition[]|nil Surface conditions from the recipe prototype
 
 ---@class ItemTradabilitySolver.ItemAmount
@@ -383,15 +385,15 @@ local function collect_recipes_and_origins()
     -- Build category -> valid planets from crafting machine surface conditions
     local categories = {}
     for name, recipe in pairs(prototypes.recipe) do
-        if not recipe.hidden or recipe.category == "recycling" then
-            categories[recipe.category] = true
+        if not recipe.hidden or solver_util.recipe_has_category(recipe, "recycling") then
+            categories = sets.union(categories, sets.new(solver_util.extract_recipe_categories(recipe)))
         end
     end
     local category_vp = solver_util.build_category_valid_planets(categories)
 
     -- Collect recipes
     for name, recipe in pairs(prototypes.recipe) do
-        if not recipe.hidden or recipe.category == "recycling" then
+        if not recipe.hidden or solver_util.recipe_has_category(recipe, "recycling") then
             local data = solver_util.extract_recipe_data(recipe)
             if data and #data.ingredients > 0 and #data.products > 0 then
                 recipes[name] = data
@@ -407,7 +409,7 @@ local function collect_recipes_and_origins()
                 end
 
                 local recipe_vp = solver_util.get_valid_planets(data.surface_conditions)
-                local cat_vp = category_vp[data.category]
+                local cat_vp = solver_util.get_categories_valid_planets(data.categories, category_vp)
                 recipe_valid_planets[name] = solver_util.intersect_valid_planets(recipe_vp, cat_vp)
             end
         end
@@ -520,7 +522,7 @@ local function forward_propagate(planet, candidates, recipes, always_fire)
         for recipe_name in pairs(candidates) do
             if not fired[recipe_name] then
                 local data = recipes[recipe_name]
-                local is_recycling = data.category == "recycling"
+                local is_recycling = solver_util.categories_include(data.categories, "recycling")
                 local can_fire = always_fire[recipe_name]
                 if not can_fire then
                     can_fire = true

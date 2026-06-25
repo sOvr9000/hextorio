@@ -17,7 +17,7 @@ for _, ingredient in pairs(recipe.ingredients) do
         ingredient.name = "tesla-turret"
     end
 end
-recipe.category = "electromagnetics"
+recipe.categories = {"crafting", "electromagnetics"}
 
 -- Rebalance tech
 local tech = data.raw["technology"]["discharge-defense-equipment"]

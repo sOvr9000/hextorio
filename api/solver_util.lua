@@ -6,6 +6,51 @@ local solver_util = {}
 
 
 
+---@param recipe LuaRecipePrototype
+---@return string[]
+function solver_util.extract_recipe_categories(recipe)
+    local categories = {}
+    for _, category in pairs(recipe.categories or {}) do
+        table.insert(categories, category)
+    end
+    return categories
+end
+
+---@param categories string[]|nil
+---@param category string
+---@return boolean
+function solver_util.categories_include(categories, category)
+    for _, candidate in pairs(categories or {}) do
+        if candidate == category then return true end
+    end
+    return false
+end
+
+---@param recipe LuaRecipePrototype
+---@param category string
+---@return boolean
+function solver_util.recipe_has_category(recipe, category)
+    return solver_util.categories_include(solver_util.extract_recipe_categories(recipe), category)
+end
+
+---@param categories string[]|nil
+---@param category_valid_planets {[string]: {[string]: boolean}}
+---@return {[string]: boolean}|nil
+function solver_util.get_categories_valid_planets(categories, category_valid_planets)
+    local valid_planets = {}
+    local has_restriction = false
+    for _, category in pairs(categories or {}) do
+        local category_vp = category_valid_planets[category]
+        if not category_vp then return nil end
+        has_restriction = true
+        for planet in pairs(category_vp) do
+            valid_planets[planet] = true
+        end
+    end
+    if not has_restriction then return nil end
+    return valid_planets
+end
+
 ---Extract normalized recipe data from a LuaRecipePrototype.
 ---@param recipe LuaRecipePrototype
 ---@return ItemValueSolver.CollectedRecipe|nil
@@ -29,9 +74,11 @@ function solver_util.extract_recipe_data(recipe)
     end
     if #products == 0 then return nil end
 
+    local categories = solver_util.extract_recipe_categories(recipe)
     return {
         energy = recipe.energy,
-        category = recipe.category,
+        category = categories[1],
+        categories = categories,
         ingredients = ingredients,
         products = products,
         surface_conditions = recipe.surface_conditions,

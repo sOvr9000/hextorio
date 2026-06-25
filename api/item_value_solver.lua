@@ -38,6 +38,7 @@ Phases:
 
 local lib = require "api.lib"
 local solver_util = require "api.solver_util"
+local sets = require "api.sets"
 local event_system = require "api.event_system"
 local item_values = require "api.item_values"
 local data_item_values = require "data.item_values"
@@ -90,7 +91,8 @@ local solver = {}
 
 ---@class ItemValueSolver.CollectedRecipe
 ---@field energy number Crafting time in seconds
----@field category string Recipe category (e.g. "crafting", "smelting", "recycling")
+---@field category string|nil First recipe category, nil for pseudo-recipes
+---@field categories string[] Recipe categories
 ---@field ingredients ItemValueSolver.ItemAmount[] Input items and amounts
 ---@field products ItemValueSolver.ItemAmount[] Output items and expected amounts
 ---@field surface_conditions SurfaceCondition[]|nil Surface conditions from the recipe prototype
@@ -255,7 +257,7 @@ local function phase_collect(s)
         local recipe = prototypes.recipe[name]
         c.recipe_idx = c.recipe_idx + 1
 
-        if recipe and (not recipe.hidden or recipe.category == "recycling") then
+        if recipe and (not recipe.hidden or solver_util.recipe_has_category(recipe, "recycling")) then
             local data = solver_util.extract_recipe_data(recipe)
             if data then
                 c.recipes[recipe.name] = data
@@ -295,8 +297,8 @@ local function find_fuel_categories(collected_recipes)
     -- Identify categories with 0-ingredient recipes
     local zero_cats = {}
     for _, data in pairs(collected_recipes) do
-        if #data.ingredients == 0 and data.category then
-            zero_cats[data.category] = true
+        if #data.ingredients == 0 then
+            zero_cats = sets.union(zero_cats, sets.new(data.categories))
         end
     end
 
@@ -351,14 +353,20 @@ local function phase_build(s)
 
     local categories = {}
     for _, data in pairs(s.collect.recipes) do
-        if data.category then categories[data.category] = true end
+        categories = sets.union(categories, sets.new(data.categories))
     end
     local category_valid_planets = solver_util.build_category_valid_planets(categories)
 
     for recipe_name, data in pairs(s.collect.recipes) do
-        local fuel_info = #data.ingredients == 0 and fuel_categories[data.category] or nil
+        local fuel_info = nil
+        if #data.ingredients == 0 then
+            for _, category in pairs(data.categories or {}) do
+                fuel_info = fuel_categories[category]
+                if fuel_info then break end
+            end
+        end
         local recipe_vp = solver_util.get_valid_planets(data.surface_conditions)
-        local cat_vp = category_valid_planets[data.category]
+        local cat_vp = solver_util.get_categories_valid_planets(data.categories, category_valid_planets)
 
         if fuel_info then
             -- Fuel-consuming recipe (e.g. captive-spawner-process): expand into one

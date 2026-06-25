@@ -882,8 +882,11 @@ function lib.normalize_recipe_structure(recipe)
         table.insert(r.ingredients, {name = ing.name, amount = ing.amount})
     end
     local mult = 1
-    if recipe.category == "metallurgy" or recipe.category == "electromagnetics" or recipe.category == "organic" then
-        mult = 1.5
+    for _, category in pairs(recipe.categories or {}) do
+        if category == "metallurgy" or category == "electromagnetics" or category == "organic" then
+            mult = 1.5
+            break
+        end
     end
     for _, prod in pairs(recipe.products) do
         local min = prod.amount_min or prod.amount
@@ -898,7 +901,7 @@ end
 function lib.get_recipe_tree()
     local recipe_tree = {}
     for name, recipe in pairs(prototypes.recipe) do
-        if recipe.category ~= "recycling" then
+        if not recipe.has_category "recycling" then
             recipe_tree[name] = lib.normalize_recipe_structure(recipe)
         end
     end

@@ -11,7 +11,7 @@ destroyer.friction = 0.03
 
 -- Adjust recipe
 local recipe = data.raw["recipe"]["destroyer-capsule"]
-recipe.category = "electromagnetics"
+recipe.categories = {"crafting", "electromagnetics"}
 table.insert(recipe.ingredients, {type = "item", name = "tesla-ammo", amount = 4})
 
 -- Rebalance tech
