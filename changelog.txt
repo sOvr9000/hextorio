@@ -2,7 +2,8 @@
 Version: 1.9.0
 Date: 25/6/26
   Changes:
-    - Updated for Factorio 2.1
+    - Updated for Factorio 2.1.
+    - Updating the mod no longer reevaluates trades that have the wrong efficiency ratio if they've been used at least once throughout the game.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.6
 Date: 10/6/26

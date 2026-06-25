@@ -44,6 +44,7 @@ local trades = {}
 ---@field has_items_in_output boolean Cached flag for quickly checking whether this trade contains non-coin items in its outputs.
 ---@field input_items TradeItem[] List of item names and counts representing the inputs of the trade.
 ---@field output_items TradeItem[] List of item names and counts representing the outputs of the trade.
+---@field total_batches_processed int|nil Total number of batches that have been processed over this trade's lifetime.
 
 ---@class TradeItem
 ---@field name string
@@ -2286,6 +2287,38 @@ function trades.get_item_names_in_trade(trade)
     return item_names
 end
 
+---Return an estimation of how many batches a trade has processed throughout the game.
+---
+---Primarily intended as a helper function for pre-1.9.0 saves that never tracked Trade.total_batches_processed.
+---@param trade Trade
+---@return int
+function trades.get_estimated_total_batches_processed(trade)
+    local state = trades.get_hex_state(trade)
+    if not state then return 0 end
+
+    local total_items_sold = state.total_items_sold
+    local total_coins_consumed = state.total_coins_consumed
+
+    if not total_items_sold and not total_coins_consumed then return 0 end
+
+    total_items_sold = total_items_sold or {}
+    total_coins_consumed = total_coins_consumed or coin_tiers.new()
+
+    local num_batches = 0
+    for quality, items in pairs(total_items_sold) do
+        num_batches = num_batches + trades.get_num_batches_for_trade({[quality] = items}, total_coins_consumed, trade, quality, nil, false)
+    end
+
+    return num_batches
+end
+
+---Return how many batches a trade has processed throughout the game.
+---@param trade Trade
+---@return int
+function trades.get_total_batches_processed(trade)
+    return trade.total_batches_processed or 0
+end
+
 ---Process all trades from one inventory to another.
 ---@param surface_id int
 ---@param input_inv LuaInventory|LuaTrain
@@ -2382,6 +2415,8 @@ function trades.process_trades_in_inventories(surface_id, input_inv, output_inv,
                     gameplay_statistics.increment("sell-item-of-quality", num_batches, quality)
                     total_batches = total_batches + num_batches
                     unique_trades_used = unique_trades_used + 1
+
+                    trade.total_batches_processed = (trade.total_batches_processed or 0) + num_batches
 
                     local total_removed, total_inserted, remaining_to_insert, remaining_coin, coins_added = trades.trade_items(input_inv, output_inv, trade, num_batches, quality, quality_cost_mult, all_items_lookup, input_coin, cargo_wagons)
                     if total_removed and total_inserted and remaining_to_insert and remaining_coin and coins_added then
@@ -2732,12 +2767,18 @@ end
 ---@param trade Trade
 ---@param params TradeGenerationParameters
 function trades.try_recalculate_item_counts(trade, params)
+    if trades.get_total_batches_processed(trade) > 0 then
+        -- log("skipping trade because it has been used at least once: " .. lib.tostring_trade(trade))
+        return
+    end
+
     if trades.is_value_ratio_correct(trade, params) then
         -- log("okay ratio: " .. lib.tostring_trade(trade) .. " (ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. ", target = " .. params.target_efficiency .. ", epsilon = " .. params.target_efficiency_epsilon .. ")")
         return
     end
 
-    lib.log("trades.try_recalculate_item_counts: Recalculating item counts in trade due to item value changes (prev ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. ", target = " .. (params.target_efficiency or 1) .. "):\n" .. lib.tostring_trade(trade))
+    local trade_str_before = lib.tostring_trade(trade)
+    local ratio_before = trades.get_trade_value_ratio(trade.surface_name, trade)
 
     trade_generator.solve_item_counts(
         trade.surface_name,
@@ -2749,7 +2790,13 @@ function trades.try_recalculate_item_counts(trade, params)
         params
     )
 
-    lib.log("trades.try_recalculate_item_counts: New item counts (new ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. "):\n" .. lib.tostring_trade(trade))
+    local pos_str = "[missing hex core]"
+    local state = trades.get_hex_state(trade)
+    if state and state.hex_core and state.hex_core.valid then
+        pos_str = state.hex_core.gps_tag
+    end
+
+    lib.log("trades.try_recalculate_item_counts: Recalculating item counts in trade at " .. pos_str .. " due to item value changes, approximating ratio = " .. (params.target_efficiency or 1) .. ":\n   Item counts before (ratio = " .. ratio_before .. "): " .. trade_str_before .. "\n-> Item counts after (ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. "): " .. lib.tostring_trade(trade))
 end
 
 ---@param surface_name string|nil
