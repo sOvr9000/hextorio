@@ -735,7 +735,7 @@ return {
         },
         {
             name = "speed-demon",
-            conditions = {{type = "fastest-ship-speed", progress_requirement = 450}},
+            conditions = {{type = "fastest-ship-speed", progress_requirement = 430}},
             rewards = {
                 {
                     type = "receive-items",
