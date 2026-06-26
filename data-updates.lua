@@ -43,12 +43,12 @@ for _, item_name in pairs(progression) do
     end
 end
 
-data.raw["utility-constants"].default.max_belt_stack_size = math.max(5, data.raw["utility-constants"].default.max_belt_stack_size)
+data.raw["utility-constants"].default.max_belt_stack_size = math.max(10, data.raw["utility-constants"].default.max_belt_stack_size)
 data.raw["utility-constants"].default.inserter_hand_stack_max_sprites = math.max(5, data.raw["utility-constants"].default.inserter_hand_stack_max_sprites)
 for _, prot_type in pairs {"inserter", "loader", "loader-1x1"} do
     for _, prot in pairs(data.raw[prot_type]) do
         if (prot.max_belt_stack_size or 1) > 1 then
-            prot.max_belt_stack_size = math.max(5, prot.max_belt_stack_size)
+            prot.max_belt_stack_size = math.max(10, prot.max_belt_stack_size)
             log("set size of " .. prot.name .. " to " .. prot.max_belt_stack_size)
         end
     end

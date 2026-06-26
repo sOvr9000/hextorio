@@ -7,6 +7,9 @@ Date: 25/6/26
   Bugfixes:
     - Fixed crash relating to trades containing coins.
     - Fixed that item buffs giving belt capacity weren't also giving an equivalent bonus to bulk inserter capacity.
+    - Fixed that item buffs giving belt capacity upgrades weren't taking effect.
+      - Factorio has a universal limit, which wasn't being set to a high enough value by this mod.
+      - The limit set by this mod is now 10, which means item buffs can give a total of +5 before that limit is hit again.
   Balancing:
     - Reduced red star rank productivity requirement from 165% to 155%.
 ---------------------------------------------------------------------------------------------------
