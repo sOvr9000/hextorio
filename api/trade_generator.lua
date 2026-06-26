@@ -152,26 +152,29 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
         end
     end
 
+    local coin_trade_chance = lib.runtime_setting_value "coin-trade-chance"
+    local sell_trade_chance = lib.runtime_setting_value "sell-trade-chance"
+
     local attempts = 10
     for _ = 1, attempts do
         local input_item_names, output_item_names = trade_generator.generate_item_names(surface_name, volume, params, allow_untradable, include_item)
 
-        if not next(output_item_names) or not next(input_item_names) then
-            lib.log("trade_generator.generate_random: Not enough items centered around the value " .. volume)
-            return
-        end
-
         local is_coin_trade = false
-        if #input_item_names == 1 and not next(output_item_names) then
+        if not next(output_item_names) then
             table.insert(output_item_names, coin_type)
             is_coin_trade = true
-        elseif #output_item_names == 1 and not next(input_item_names) then
+        elseif not next(input_item_names) then
             table.insert(input_item_names, coin_type)
             is_coin_trade = true
         end
 
-        if not is_coin_trade and math.random() < lib.runtime_setting_value "coin-trade-chance" then
-            if math.random() < lib.runtime_setting_value "sell-trade-chance" then
+        if not next(output_item_names) or not next(input_item_names) then
+            lib.log_error("trade_generator.generate_random: No items exist around the value " .. volume)
+            return
+        end
+
+        if not is_coin_trade and math.random() < coin_trade_chance then
+            if math.random() < sell_trade_chance then
                 local i = math.random(1, #output_item_names)
                 if #output_item_names > 1 and output_item_names[i] == include_item then
                     i = i % #output_item_names + 1
