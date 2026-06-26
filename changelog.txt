@@ -6,6 +6,8 @@ Date: 25/6/26
     - Updating the mod no longer reevaluates trades that have the wrong efficiency ratio if they've been used at least once throughout the game.
   Bugfixes:
     - Fixed crash relating to trades containing coins.
+    - Fixed crash relating to trades not containing enough items.
+    - Fixed that Aquilo's hexes near spawn oftentimes contained no trades.  Coin-involving trades are now used as a fallback.
     - Fixed that item buffs giving belt capacity weren't also giving an equivalent bonus to bulk inserter capacity.
     - Fixed that item buffs giving belt capacity upgrades weren't taking effect.
       - Factorio has a universal limit, which wasn't being set to a high enough value by this mod.
