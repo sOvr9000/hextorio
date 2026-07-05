@@ -676,29 +676,31 @@ end
 ---@param surface LuaSurface|nil Defaults to the current surface of the player's character.
 ---@param allow_vehicle boolean|nil Whether to instead teleport the vehicle that the player is driving if they are in one. Defaults to false.
 function lib.teleport_player(player, position, surface, allow_vehicle)
-    if not player.character then
+    local char = player.character
+    if not char then
         lib.log_error("lib.teleport_player: player has no character")
         return
     end
 
     if not surface then
-        surface = player.character.surface
+        surface = char.surface
     end
 
     local entity_name = "character"
-    if player.character.vehicle then
+    local vehicle = char.vehicle
+    if vehicle then
         if not allow_vehicle then
             return
         end
-        if not player.character.vehicle.valid then
+        if not vehicle.valid then
             lib.log_error("lib.teleport_player: Player vehicle entity is invalid.")
             return
         end
-        local prot_type = player.character.vehicle.prototype.type
+        local prot_type = vehicle.prototype.type
         if prot_type ~= "car" and prot_type ~= "spider-vehicle" then
             return
         end
-        entity_name = player.character.vehicle.name
+        entity_name = vehicle.name
     end
 
     local non_colliding_position = surface.find_non_colliding_position(entity_name, position, 20, 0.5, false)
@@ -707,18 +709,23 @@ function lib.teleport_player(player, position, surface, allow_vehicle)
         return
     end
 
-    if player.character.vehicle then
-        local zoom = player.zoom
-        player.character.vehicle.teleport(non_colliding_position, surface)
-        player.set_controller {
-            type = defines.controllers.character,
-            character = player.character,
-        }
-        player.set_driving(true)
-        player.zoom = zoom
+    if vehicle then
+        vehicle.teleport(non_colliding_position, surface)
     else
-        player.teleport(non_colliding_position, surface)
+        char.teleport(non_colliding_position, surface)
     end
+
+    local zoom = player.zoom
+    player.set_controller {
+        type = defines.controllers.character,
+        character = char,
+    }
+
+    if vehicle then
+        player.set_driving(true)
+    end
+
+    player.zoom = zoom
 end
 
 ---Teleport a player to a position on a surface.  If the surface is different from the player's character's current one, then prevent teleportation if items exist in the player's inventory, or the main inventory of the player's current vehicle if they are in one.
