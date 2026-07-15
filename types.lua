@@ -202,6 +202,7 @@
 ---| "runtime-setting-changed-unresearched-penalty"
 ---| "spider-reached-hex-state" When a spider-vehicle reached a hex state under one of its autopilot patrol points
 ---| "spider-reached-patrol-point" When a spider-vehicle reached one of its autopilot patrol points
+---| "starting-hex-initialized" When the hex at {q=0, r=0} gets initialized on a surface
 ---| "string-translated" When a string is translated
 ---| "surface-created" When a surface is created
 ---| "trade-added" When a trade is added to a hex state

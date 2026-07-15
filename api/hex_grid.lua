@@ -836,50 +836,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     local is_dungeon = storage.loot_tables ~= nil and is_land and (dungeons.is_dungeon_hex(surface_id, hex_pos) or (dist >= 3 and math.random() < dungeon_chance))
 
     if is_starting_hex then
-        if surface.name == "fulgora" then
-            surface.create_entity {
-                name = "fulgoran-ruin-attractor",
-                quality = lib.get_hextreme_or_next_highest_quality(),
-                position = {0, -5},
-                force = "player",
-            }
-        elseif surface.name == "vulcanus" then
-            for i = 1, 48 do
-                local pos = surface.find_non_colliding_position("huge-volcanic-rock", {x = math.random(-20, 20), y = math.random(-20, 20)}, 10, 0.5, false)
-                if pos then
-                    surface.create_entity {
-                        name = "huge-volcanic-rock",
-                        position = pos,
-                        force = "neutral",
-                    }
-                end
-            end
-        elseif surface.name == "nauvis" then
-            if lib.runtime_setting_value "nauvis-grace" then
-                local turrets = {}
-                for _, pos in pairs {
-                    {-5, -5},
-                    {-5, 6},
-                    {6, -5},
-                    {6, 6},
-                } do
-                    table.insert(turrets, surface.create_entity {
-                        name = "gun-turret",
-                        position = pos,
-                        force = "player",
-                        quality = "epic",
-                    })
-                end
-                lib.reload_turrets(turrets, {bullet_type = "piercing-rounds-magazine", bullet_count = 30})
-            end
-            for _, player in pairs(game.connected_players) do
-                if not player.character then
-                    player.create_character()
-                    player.set_controller {type = defines.controllers.character, character = player.character, surface = "nauvis"}
-                end
-                lib.teleport_player(player, {0, 5}, game.surfaces.nauvis)
-            end
-        end
+        event_system.trigger("starting-hex-initialized", surface_id)
         state.is_starting_hex = true
     else
         if surface.name == "fulgora" then
