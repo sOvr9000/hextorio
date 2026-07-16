@@ -45,8 +45,12 @@ function initialization.init()
 
     local mgs = game.surfaces.nauvis.map_gen_settings
 
-    -- Zero out all default resources
-    zero_freq_rich_size(mgs.autoplace_controls, {"water", "coal", "stone", "copper-ore", "iron-ore", "uranium-ore", "crude-oil", "enemy-base"})
+    -- Zero out all default resources (excluding water frequency to prevent division-by-zero crashes in noise expressions)
+    if mgs.autoplace_controls.water then
+        mgs.autoplace_controls.water.richness = 0
+        mgs.autoplace_controls.water.size = 0
+    end
+    zero_freq_rich_size(mgs.autoplace_controls, {"coal", "stone", "copper-ore", "iron-ore", "uranium-ore", "crude-oil", "enemy-base"})
     zero_freq_rich_size(mgs.autoplace_settings.tile.settings, {"water", "deepwater"})
     zero_freq_rich_size(mgs.autoplace_settings.entity.settings, {"coal", "iron-ore", "copper-ore", "uranium-ore", "stone"})
 
