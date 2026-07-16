@@ -62,8 +62,6 @@ local function calculate_extent(distances)
     return max_distance
 end
 
-
-
 function hex_island.register_events()
     event_system.register("surface-created", hex_island.process_surface_creation)
 end
@@ -97,7 +95,7 @@ function hex_island.process_surface_creation(surface)
     local total_hexes = lib.runtime_setting_value_as_int("total-hexes-" .. surface.name)
     local generator_name = lib.runtime_setting_value_as_string("world-generation-mode-" .. surface.name)
     local maze_algorithm = lib.runtime_setting_value_as_string "maze-generation-algorithm"
-    local params
+    local params = {total_hexes = total_hexes}
 
     if generator_name == "standard" then
         local mgs = storage.hex_grid.mgs[surface.name]
@@ -106,91 +104,47 @@ function hex_island.process_surface_creation(surface)
             return
         end
 
-        local land_chance
-        if surface.name == "nauvis" then
-            if mgs.autoplace_controls.water.size == 0 then
-                land_chance = 0
-            else
-                land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.water.size)) * 0.5
+        local surface_controls = {
+            nauvis = "water",
+            vulcanus = "vulcanus_volcanism",
+            fulgora = "fulgora_islands",
+            gleba = "gleba_water"
+        }
+
+        local land_chance = 0
+        local control_key = surface_controls[surface.name]
+        if control_key then
+            local control = mgs.autoplace_controls[control_key]
+            if control and control.size > 0 then
+                land_chance = (lib.remap_map_gen_setting(1 / control.frequency) + lib.remap_map_gen_setting(control.size)) * 0.5
             end
-        elseif surface.name == "vulcanus" then
-            land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.vulcanus_volcanism.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.vulcanus_volcanism.size)) * 0.5
-        elseif surface.name == "fulgora" then
-            land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.fulgora_islands.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.fulgora_islands.size)) * 0.5
-        elseif surface.name == "gleba" then
-            land_chance = (lib.remap_map_gen_setting(1 / mgs.autoplace_controls.gleba_water.frequency) + lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_water.size)) * 0.5
         elseif surface.name == "aquilo" then
             land_chance = 0.60
         end
+
         if surface.name ~= "fulgora" and surface.name ~= "aquilo" then
             land_chance = (1 - land_chance * land_chance) ^ 0.5 -- basically turning a triangle into a circle
         end
+        params.fill_ratio = land_chance
 
-        params = {
-            total_hexes = total_hexes,
-            fill_ratio = land_chance,
+    elseif island_generators[generator_name] then
+        local extra_params_by_generator = {
+            maze = {algorithm = maze_algorithm},
+            ribbon = {width = 5},
+            ["ribbon-maze"] = {width = 7, algorithm = maze_algorithm},
+            lattice = {spacing = 3},
+            donut = {width = 5},
+            clusters = {min_cluster_size = 2, max_cluster_size = 5}
         }
-    elseif generator_name == "maze" then
-        params = {
-            total_hexes = total_hexes,
-            algorithm = maze_algorithm,
-        }
-    elseif generator_name == "spiral" then
-        params = {
-            total_hexes = total_hexes,
-        }
-    elseif generator_name == "double-spiral" then
-        params = {
-            total_hexes = total_hexes,
-        }
-    elseif generator_name == "triple-spiral" then
-        params = {
-            total_hexes = total_hexes,
-        }
-    elseif generator_name == "double-triple-spiral" then
-        params = {
-            total_hexes = total_hexes,
-        }
-    elseif generator_name == "triangular" then
-        params = {
-            total_hexes = total_hexes,
-        }
-    elseif generator_name == "ribbon" then
-        params = {
-            total_hexes = total_hexes,
-            width = 5,
-        }
-    elseif generator_name == "ribbon-maze" then
-        params = {
-            total_hexes = total_hexes,
-            width = 7,
-            algorithm = maze_algorithm,
-        }
-    elseif generator_name == "spider-web" then
-        params = {
-            total_hexes = total_hexes,
-        }
-    elseif generator_name == "lattice" then
-        params = {
-            total_hexes = total_hexes,
-            spacing = 3,
-        }
-    elseif generator_name == "solid" then
-        params = {
-            total_hexes = total_hexes,
-        }
-    elseif generator_name == "donut" then
-        params = {
-            total_hexes = total_hexes,
-            width = 5,
-        }
-    elseif generator_name == "clusters" then
-        params = {
-            total_hexes = total_hexes,
-            min_cluster_size = 2,
-            max_cluster_size = 5,
-        }
+
+        local extras = extra_params_by_generator[generator_name]
+        if extras then
+            for k, v in pairs(extras) do
+                params[k] = v
+            end
+        end
     end
+
 
     lib.log("hex_island.process_surface_creation: Generating island with generator = " .. generator_name .. ", params = " .. serpent.line(params))
     local island = hex_island.generate_island(generator_name, params)
