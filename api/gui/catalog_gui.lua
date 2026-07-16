@@ -1,8 +1,7 @@
-
 local lib = require "api.lib"
 local gui = require "api.gui.core_gui"
 local item_values = require "api.item_values"
-local coin_tiers  = require "api.coin_tiers"
+local coin_tiers = require "api.coin_tiers"
 local inventories = require "api.inventories"
 local item_ranks = require "api.item_ranks"
 local trades = require "api.trades"
@@ -12,7 +11,7 @@ local features = require "api.features"
 local item_buffs = require "api.item_buffs"
 local gui_stack = require "api.gui.gui_stack"
 local coin_tier_gui = require "api.gui.coin_tier_gui"
-local translations  = require "api.translations"
+local translations = require "api.translations"
 
 local catalog_gui = {}
 
@@ -151,83 +150,90 @@ function catalog_gui.init_catalog(player)
     gui.auto_width_height(inspect_frame)
     inspect_frame.style.width = 308
 
-    for i, surface_name in ipairs {
-        "nauvis",
-        "vulcanus",
-        "fulgora",
-        "gleba",
-        "aquilo",
-    } do
+    local is_first_surface = true
+    for _, surface in pairs(game.planets) do
+        local surface_name = surface.name
         local items_sorted_by_value = item_values.get_items_sorted_by_value(surface_name, true, true, false, true)
 
-        if i > 1 then
-            scroll_pane.add {type = "line", direction = "horizontal"}
-        end
-
-        local surface_header = scroll_pane.add {type = "label", name = "surface-header-" .. surface_name, caption = {"", "[img=space-location." .. surface_name .. "] ", {"space-location-name." .. surface_name}}}
-        surface_header.style.font = "heading-1"
-
-        local pb_discovery = scroll_pane.add {type = "progressbar", name = "pb-discovery-" .. surface_name, value = 0}
-        pb_discovery.style.horizontally_stretchable = true
-        pb_discovery.tooltip = {"hextorio-gui.items-discovered", 0, #items_sorted_by_value}
-        pb_discovery.style.color = {39, 137, 228}
-
-        local progress_bar_flow = scroll_pane.add {type = "flow", name = "progress-bar-flow-" .. surface_name, direction = "horizontal"}
-        progress_bar_flow.style.horizontally_stretchable = true
-        progress_bar_flow.style.horizontally_squashable = true
-        for j = 2, 5 do
-            local pb_ranks = progress_bar_flow.add {type = "progressbar", name = "pb-ranks-" .. j, value = 0}
-            pb_ranks.tooltip = lib.get_rank_img_str(j) .. " x0"
-            pb_ranks.style.color = storage.item_ranks.rank_colors[j]
-            pb_ranks.style.horizontally_stretchable = true
-            pb_ranks.style.horizontally_squashable = true
-        end
-
-        local catalog_table = scroll_pane.add {type = "table", name = "table-" .. surface_name, column_count = 13, tags = {surface_name = surface_name}}
-        gui.auto_width(catalog_table)
-
-        local n = 1
-        for j = 1, #items_sorted_by_value do
-            local item_name = items_sorted_by_value[j]
-            if lib.is_catalog_item(surface_name, item_name) then
-                -- log("create catalog entry for " .. item_name .. " on " .. surface_name)
-
-                n = n + 1
-                local rank = item_ranks.get_item_rank(item_name)
-
-                local rank_flow = catalog_table.add {
-                    type = "flow",
-                    name = "rank-flow-" .. item_name,
-                    direction = "vertical",
-                    tags = {item_name = item_name},
-                }
-
-                rank_flow.style.top_margin = 20
-                rank_flow.style.width = 60 -- this makes undiscovered items have the same width as discovered items
-
-                if n % catalog_table.column_count > 0 then
-                    rank_flow.style.left_margin = 0
-                end
-
-                local sprite_button = rank_flow.add {
-                    type = "sprite-button",
-                    name = "catalog-item",
-                    sprite = "item/" .. item_name,
-                    tags = {handlers = {["gui-clicked"] = "catalog-item"}, surface_name = surface_name, item_name = item_name},
-                }
-                sprite_button.style.left_margin = 5
-
-                local rank_stars = rank_flow.add {
-                    type = "sprite",
-                    name = "rank-stars",
-                    sprite = "rank-" .. rank,
-                }
-                rank_stars.style.height = 20
-                rank_stars.style.width = 50
-                rank_stars.style.stretch_image_to_widget_size = true
-
-                gui.give_item_tooltip(player, surface_name, sprite_button)
+        if storage.SUPPORTED_PLANETS[surface_name] then
+            if not is_first_surface then
+                scroll_pane.add {type = "line", direction = "horizontal"}
+            else
+                is_first_surface = false
             end
+
+            catalog_gui.create_surface_header(scroll_pane, surface_name, #items_sorted_by_value)
+            catalog_gui.list_catalog_table(player, scroll_pane, surface_name, items_sorted_by_value)
+        end
+    end
+end
+
+function catalog_gui.create_surface_header(scroll_pane, surface_name, total_items)
+    local surface_header = scroll_pane.add {type = "label", name = "surface-header-" .. surface_name, caption = {"", "[img=space-location." .. surface_name .. "] ", {"space-location-name." .. surface_name}}}
+    surface_header.style.font = "heading-1"
+
+    local pb_discovery = scroll_pane.add {type = "progressbar", name = "pb-discovery-" .. surface_name, value = 0}
+    pb_discovery.style.horizontally_stretchable = true
+    pb_discovery.tooltip = {"hextorio-gui.items-discovered", 0, total_items}
+    pb_discovery.style.color = {39, 137, 228}
+
+    local progress_bar_flow = scroll_pane.add {type = "flow", name = "progress-bar-flow-" .. surface_name, direction = "horizontal"}
+    progress_bar_flow.style.horizontally_stretchable = true
+    progress_bar_flow.style.horizontally_squashable = true
+    for j = 2, 5 do
+        local pb_ranks = progress_bar_flow.add {type = "progressbar", name = "pb-ranks-" .. j, value = 0}
+        pb_ranks.tooltip = lib.get_rank_img_str(j) .. " x0"
+        pb_ranks.style.color = storage.item_ranks.rank_colors[j]
+        pb_ranks.style.horizontally_stretchable = true
+        pb_ranks.style.horizontally_squashable = true
+    end
+end
+
+function catalog_gui.list_catalog_table(player, scroll_pane, surface_name, items_sorted_by_value)
+    local catalog_table = scroll_pane.add {type = "table", name = "table-" .. surface_name, column_count = 13, tags = {surface_name = surface_name}}
+    gui.auto_width(catalog_table)
+
+    local n = 1
+    for j = 1, #items_sorted_by_value do
+        local item_name = items_sorted_by_value[j]
+        if lib.is_catalog_item(surface_name, item_name) then
+            -- log("create catalog entry for " .. item_name .. " on " .. surface_name)
+
+            n = n + 1
+            local rank = item_ranks.get_item_rank(item_name)
+
+            local rank_flow = catalog_table.add {
+                type = "flow",
+                name = "rank-flow-" .. item_name,
+                direction = "vertical",
+                tags = {item_name = item_name},
+            }
+
+            rank_flow.style.top_margin = 20
+            rank_flow.style.width = 60 -- this makes undiscovered items have the same width as discovered items
+
+            if n % catalog_table.column_count > 0 then
+                rank_flow.style.left_margin = 0
+            end
+
+            local sprite_button = rank_flow.add {
+                type = "sprite-button",
+                name = "catalog-item",
+                sprite = "item/" .. item_name,
+                tags = {handlers = {["gui-clicked"] = "catalog-item"}, surface_name = surface_name, item_name = item_name},
+            }
+            sprite_button.style.left_margin = 5
+
+            local rank_stars = rank_flow.add {
+                type = "sprite",
+                name = "rank-stars",
+                sprite = "rank-" .. rank,
+            }
+            rank_stars.style.height = 20
+            rank_stars.style.width = 50
+            rank_stars.style.stretch_image_to_widget_size = true
+
+            gui.give_item_tooltip(player, surface_name, sprite_button)
         end
     end
 end
@@ -1340,7 +1346,5 @@ function catalog_gui.on_search_text_changed(player, elem)
         end
     end
 end
-
-
 
 return catalog_gui
