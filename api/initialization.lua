@@ -1,4 +1,3 @@
-
 local lib               = require "api.lib"
 local sets              = require "api.sets"
 local hex_grid          = require "api.hex_grid"
@@ -20,6 +19,17 @@ function initialization.register_events()
     event_system.register("starting-hex-initialized", initialization.on_starting_hex_initialized)
 end
 
+local function zero_freq_rich_size(parent, keys)
+    for _, key in ipairs(keys) do
+        local node = parent[key]
+        if node then
+            node.frequency = 0
+            node.richness = 0
+            node.size = 0
+        end
+    end
+end
+
 function initialization.init()
     -- Disable crash site generation, may be done by other mods anyway.
     if remote.interfaces.freeplay then
@@ -34,50 +44,12 @@ function initialization.init()
     storage.hex_grid.mgs["nauvis"] = mgs_original
 
     local mgs = game.surfaces.nauvis.map_gen_settings
-    mgs.autoplace_controls.water.richness = 0
-    mgs.autoplace_controls.water.size = 0
-    mgs.autoplace_controls.coal.frequency = 0
-    mgs.autoplace_controls.coal.richness = 0
-    mgs.autoplace_controls.coal.size = 0
-    mgs.autoplace_controls.stone.frequency = 0
-    mgs.autoplace_controls.stone.richness = 0
-    mgs.autoplace_controls.stone.size = 0
-    mgs.autoplace_controls["copper-ore"].frequency = 0
-    mgs.autoplace_controls["copper-ore"].richness = 0
-    mgs.autoplace_controls["copper-ore"].size = 0
-    mgs.autoplace_controls["iron-ore"].frequency = 0
-    mgs.autoplace_controls["iron-ore"].richness = 0
-    mgs.autoplace_controls["iron-ore"].size = 0
-    mgs.autoplace_controls["uranium-ore"].frequency = 0
-    mgs.autoplace_controls["uranium-ore"].richness = 0
-    mgs.autoplace_controls["uranium-ore"].size = 0
-    mgs.autoplace_controls["crude-oil"].frequency = 0
-    mgs.autoplace_controls["crude-oil"].richness = 0
-    mgs.autoplace_controls["crude-oil"].size = 0
-    mgs.autoplace_controls["enemy-base"].frequency = 0
-    mgs.autoplace_controls["enemy-base"].richness = 0
-    mgs.autoplace_controls["enemy-base"].size = 0
-    mgs.autoplace_settings.tile.settings.water.frequency = 0
-    mgs.autoplace_settings.tile.settings.water.richness = 0
-    mgs.autoplace_settings.tile.settings.water.size = 0
-    mgs.autoplace_settings.tile.settings.deepwater.frequency = 0
-    mgs.autoplace_settings.tile.settings.deepwater.richness = 0
-    mgs.autoplace_settings.tile.settings.deepwater.size = 0
-    mgs.autoplace_settings.entity.settings.coal.frequency = 0
-    mgs.autoplace_settings.entity.settings.coal.richness = 0
-    mgs.autoplace_settings.entity.settings.coal.size = 0
-    mgs.autoplace_settings.entity.settings["iron-ore"].frequency = 0
-    mgs.autoplace_settings.entity.settings["iron-ore"].richness = 0
-    mgs.autoplace_settings.entity.settings["iron-ore"].size = 0
-    mgs.autoplace_settings.entity.settings["copper-ore"].frequency = 0
-    mgs.autoplace_settings.entity.settings["copper-ore"].richness = 0
-    mgs.autoplace_settings.entity.settings["copper-ore"].size = 0
-    mgs.autoplace_settings.entity.settings["uranium-ore"].frequency = 0
-    mgs.autoplace_settings.entity.settings["uranium-ore"].richness = 0
-    mgs.autoplace_settings.entity.settings["uranium-ore"].size = 0
-    mgs.autoplace_settings.entity.settings.stone.frequency = 0
-    mgs.autoplace_settings.entity.settings.stone.richness = 0
-    mgs.autoplace_settings.entity.settings.stone.size = 0
+
+    -- Zero out all default resources
+    zero_freq_rich_size(mgs.autoplace_controls, {"water", "coal", "stone", "copper-ore", "iron-ore", "uranium-ore", "crude-oil", "enemy-base"})
+    zero_freq_rich_size(mgs.autoplace_settings.tile.settings, {"water", "deepwater"})
+    zero_freq_rich_size(mgs.autoplace_settings.entity.settings, {"coal", "iron-ore", "copper-ore", "uranium-ore", "stone"})
+
     game.surfaces.nauvis.map_gen_settings = mgs
 
     local surface = game.surfaces.nauvis
@@ -287,7 +259,5 @@ function initialization.on_starting_hex_initialized(surface_id)
         end
     end
 end
-
-
 
 return initialization
