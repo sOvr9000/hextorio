@@ -29,6 +29,7 @@ local hex_rank = require "api.hex_rank"
 local gameplay_statistics = require "api.gameplay_statistics"
 local gsr = require "api.gameplay_statistics_recalculators"
 local trade_generator = require "api.trade_generator"
+local tournament_trades = require "api.tournament_trades"
 local features = require "api.features"
 local item_value_solver = require "api.item_value_solver"
 local item_tradability_solver = require "api.item_tradability_solver"
@@ -63,6 +64,7 @@ spider_control.register_events()
 spider_network.register_events()
 hex_pathfinding.register_events()
 trade_generator.register_events()
+tournament_trades.register_events()
 initialization.register_events()
 
 gui.register_events()
@@ -142,6 +144,7 @@ script.on_init(function()
     item_ranks.init()
     quests.init()
     trade_generator.init()
+    tournament_trades.init()
     blueprints.init()
     dungeons.init()
     train_trading.init()
