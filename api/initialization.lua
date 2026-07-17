@@ -1,3 +1,4 @@
+
 local lib               = require "api.lib"
 local sets              = require "api.sets"
 local hex_grid          = require "api.hex_grid"
@@ -9,6 +10,7 @@ local hex_sets          = require "api.hex_sets"
 local event_system      = require "api.event_system"
 local item_value_solver = require "api.item_value_solver"
 local weighted_choice   = require "api.weighted_choice"
+local mgs_util          = require "api.util.mgs"
 
 local initialization = {}
 
@@ -17,17 +19,6 @@ local initialization = {}
 function initialization.register_events()
     event_system.register("player-created", initialization.on_player_created)
     event_system.register("starting-hex-initialized", initialization.on_starting_hex_initialized)
-end
-
-local function zero_freq_rich_size(parent, keys)
-    for _, key in ipairs(keys) do
-        local node = parent[key]
-        if node then
-            node.frequency = 0
-            node.richness = 0
-            node.size = 0
-        end
-    end
 end
 
 function initialization.init()
@@ -40,23 +31,18 @@ function initialization.init()
         remote.call("freeplay", "set_skip_intro", true)
     end
 
-    local mgs_original = game.surfaces.nauvis.map_gen_settings -- makes a copy
+    local surface = game.surfaces.nauvis
+
+    local mgs_original = surface.map_gen_settings -- makes a copy
     storage.hex_grid.mgs["nauvis"] = mgs_original
 
-    local mgs = game.surfaces.nauvis.map_gen_settings
+    local mgs = surface.map_gen_settings -- makes another copy
+    mgs_util.zero_freq_rich_size(mgs.autoplace_controls, {"water", "coal", "stone", "copper-ore", "iron-ore", "uranium-ore", "crude-oil", "enemy-base"})
+    mgs_util.zero_freq_rich_size(mgs.autoplace_settings.tile.settings, {"water", "deepwater"}) -- frequency doesn't get set to zero for water, but this has no effect compared to previous behavior
+    mgs_util.zero_freq_rich_size(mgs.autoplace_settings.entity.settings, {"coal", "iron-ore", "copper-ore", "uranium-ore", "stone"})
 
-    -- Zero out all default resources (excluding water frequency to prevent division-by-zero crashes in noise expressions)
-    if mgs.autoplace_controls.water then
-        mgs.autoplace_controls.water.richness = 0
-        mgs.autoplace_controls.water.size = 0
-    end
-    zero_freq_rich_size(mgs.autoplace_controls, {"coal", "stone", "copper-ore", "iron-ore", "uranium-ore", "crude-oil", "enemy-base"})
-    zero_freq_rich_size(mgs.autoplace_settings.tile.settings, {"water", "deepwater"})
-    zero_freq_rich_size(mgs.autoplace_settings.entity.settings, {"coal", "iron-ore", "copper-ore", "uranium-ore", "stone"})
+    surface.map_gen_settings = mgs
 
-    game.surfaces.nauvis.map_gen_settings = mgs
-
-    local surface = game.surfaces.nauvis
     local water_names = {"water", "deepwater", "water-green", "deepwater-green", "water-shallow", "water-mud"}
     local water_set = sets.new(water_names)
 
@@ -263,5 +249,7 @@ function initialization.on_starting_hex_initialized(surface_id)
         end
     end
 end
+
+
 
 return initialization

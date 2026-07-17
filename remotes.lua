@@ -4,6 +4,8 @@ local api = {}
 
 
 for _, api_name in pairs{
+    "util.mgs",
+
     "gui.catalog_gui",
     "gui.coin_tier_gui",
     "gui.core_gui",
