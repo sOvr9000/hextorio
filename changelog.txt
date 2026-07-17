@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.6
-Date: 10/6/26
+Date: 15/7/26
   Bugfixes:
+    - Fixed a very rare bug where one of the loaders of a hex core is inert.
+      - The bug should be fixed, but if it somehow comes up again, run the command /regenerate-loaders while standing in the same hex as the inert loader.
     - Fix invalid entity crash caused by picking up a dungeon chest and then changing mod configuration.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.5
