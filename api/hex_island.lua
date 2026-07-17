@@ -62,6 +62,8 @@ local function calculate_extent(distances)
     return max_distance
 end
 
+
+
 function hex_island.register_events()
     event_system.register("surface-created", hex_island.process_surface_creation)
 end
@@ -144,7 +146,6 @@ function hex_island.process_surface_creation(surface)
             end
         end
     end
-
 
     lib.log("hex_island.process_surface_creation: Generating island with generator = " .. generator_name .. ", params = " .. serpent.line(params))
     local island = hex_island.generate_island(generator_name, params)
