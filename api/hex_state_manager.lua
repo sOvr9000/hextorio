@@ -45,6 +45,7 @@ local hex_state_manager = {}
 ---@field is_resources boolean|nil Whether this hex is supposed to contain resource entities.
 ---@field is_well boolean|nil Whether this hex is supposed to contain resource wells like crude oil or fluorine vents.
 ---@field is_infinite boolean|nil Whether the resource entities or wells in this hex were turned infinite.
+---@field loader_fix_tick int|nil The tick during which or after which the rare but possible loader bug is attempted to be fixed.
 ---@field output_buffer QualityItemCounts|nil The numbers of items per quality name waiting to unload into the inventory of this hex state's hex core.
 ---@field total_items_sold QualityItemCounts|nil The total items consumed by the trades in this hex state's hex core.
 ---@field total_items_bought QualityItemCounts|nil The total items produced by the trades in this hex state's hex core.

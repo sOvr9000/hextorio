@@ -95,6 +95,10 @@ local all_commands = {
         examples = {"/summon spitter-spawner", "/summon small-worm-turret 2", "/summon big-stomper-pentapod 5 hextreme"},
     },
     {
+        name = "regenerate-loaders",
+        usage = "/regenerate-loaders",
+    },
+    {
         name = "regenerate-trades",
         usage = "/regenerate-trades",
         requires_confirmation = true,

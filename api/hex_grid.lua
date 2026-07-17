@@ -183,6 +183,12 @@ function hex_grid.register_events()
         hex_grid.claim_hexes_range(player.surface.name, {q = 0, r = 0}, 1, nil, true) -- claim by server
     end)
 
+    event_system.register("command-regenerate-loaders", function(player, params)
+        local state = hex_state_manager.get_hex_state_containing(player.surface, player.position)
+        if not state then lib.log_error("Couldn't find hex state to process command /regenerate-loaders") return end
+        hex_grid.generate_loaders(state)
+    end)
+
     event_system.register("command-claim", function(player, params)
         if params[1] then
             if params[1] > 2 then
@@ -2228,8 +2234,9 @@ function hex_grid.spawn_hex_core(surface, position)
     state.hex_core_input_inventory = hex_core.get_inventory(defines.inventory.chest)
     -- state.hex_core_output_inventory = output_chest.get_inventory(defines.inventory.chest)
     state.hex_core_output_inventory = state.hex_core_input_inventory
+    state.loader_fix_tick = game.tick + 30 -- just give it some time to resolve hex core entity data which is not immediatley resolved by this point in the code in this tick (apparently... this is a Factorio bug of some kind, not from Hextorio)
 
-    hex_grid.generate_loaders(state)
+    hex_grid.generate_loaders(state) -- first set of loaders, which will be regenerated 30 ticks later because there's a very small chance that one will be broken for some reason since they're created in the same tick as the hex core entity (the Factorio bug)
     hex_grid.spawn_hexlight(state)
 
     state.trades = {}
@@ -2663,11 +2670,29 @@ function hex_grid.upgrade_quality(hex_core)
     hex_grid.set_quality(hex_core, next_quality)
 end
 
+---Return whether the hex core's loaders were somehow generated incorrectly the first time.
+---@param state HexState
+---@return boolean
+function hex_grid.are_loaders_bugged(state)
+    if not state.input_loaders or not state.output_loaders then return true end
+
+    for _, e in pairs(state.input_loaders) do
+        if not e.loader_container or not e.loader_container.valid then
+            return true
+        end
+    end
+
+    for _, e in pairs(state.output_loaders) do
+        if not e.loader_container or not e.loader_container.valid then
+            return true
+        end
+    end
+
+    return false
+end
+
 function hex_grid.generate_loaders(hex_core_state)
     if not hex_core_state.hex_core then return end
-
-    hex_core_state.input_loaders = {}
-    hex_core_state.output_loaders = {}
 
     local surface = hex_core_state.hex_core.surface
     local position = hex_core_state.hex_core.position
@@ -2686,7 +2711,7 @@ function hex_grid.generate_loaders(hex_core_state)
 
     local entities = surface.find_entities_filtered {
         name = "hex-core-loader",
-        area = {{position.x - 2, position.y - 2}, {position.x + 2, position.y + 2}},
+        area = {{position.x - 2.5, position.y - 2.5}, {position.x + 2.5, position.y + 2.5}},
     }
     for _, e in pairs(entities) do
         if e.valid then
@@ -2697,12 +2722,15 @@ function hex_grid.generate_loaders(hex_core_state)
         end
     end
 
+    hex_core_state.input_loaders = {}
+    hex_core_state.output_loaders = {}
+
     local dx = 1
     local dy = -2
     for i = 1, 4 do
         local input_loader = surface.create_entity {name = "hex-core-loader", position = {position.x + dx, position.y + dy}, direction = 4 * ((3 - i) % 4), type = "input", force = "player"}
         input_loader.destructible = false
-        table.insert(hex_core_state.input_loaders, input_loader)
+        hex_core_state.input_loaders[i] = input_loader
 
         local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - dx, position.y + dy}, direction = 4 * ((3 + i) % 4), type = "output", force = "player"}
         output_loader.loader_filter_mode = "whitelist"
@@ -2710,7 +2738,7 @@ function hex_grid.generate_loaders(hex_core_state)
         if filters[lib.position_to_string(output_loader.position)] then
             set_filters(output_loader, filters[lib.position_to_string(output_loader.position)])
         end
-        table.insert(hex_core_state.output_loaders, output_loader)
+        hex_core_state.output_loaders[i] = output_loader
 
         dx, dy = dy, -dx
     end
@@ -3141,6 +3169,7 @@ function hex_grid.process_hex_core_pool()
     for _, pool_params in pairs(pool) do
         local state = hex_grid.get_hex_state_from_pool_params(pool_params)
         if state then
+            hex_grid.try_fix_loaders(state)
             hex_grid.process_hex_core_trades(state, state.hex_core_input_inventory, state.hex_core_output_inventory, quality_cost_multipliers, nil)
             hex_grid.process_strongboxes(state)
             hex_grid.process_hexlight(state)
@@ -3798,6 +3827,20 @@ function hex_grid.process_hexlight(state)
             gameplay_statistics.set("give-hexlight-color", 1, {"blue", 128})
         end
     end
+end
+
+---Attempt to regenerate the loader entities in the given hex state.
+---This only executes once and fixes a very rare bug where loaders sometimes do not get set up correctly, despite all of the code being correct (the API is bugged).
+---@param state HexState
+function hex_grid.try_fix_loaders(state)
+    if not state.loader_fix_tick then return end
+    if game.tick < state.loader_fix_tick then return end
+
+    if hex_grid.are_loaders_bugged(state) then
+        hex_grid.generate_loaders(state)
+    end
+
+    state.loader_fix_tick = nil
 end
 
 function hex_grid.add_to_output_buffer(state, items)

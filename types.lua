@@ -35,6 +35,7 @@
 ---| "command-rank-up"
 ---| "command-rank-up-all"
 ---| "command-refresh-all-trades"
+---| "command-regenerate-loaders"
 ---| "command-regenerate-trades"
 ---| "command-reload-item-buff-effects"
 ---| "command-remove-item-value"
