@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.3
-Date: 15/7/26
+Date: 17/7/26
   Bugfixes:
     - Fixed a very rare bug where one of the loaders of a hex core is inert.
       - The bug should be fixed, but if it somehow comes up again, run the command /regenerate-loaders while standing in the same hex as the inert loader.
