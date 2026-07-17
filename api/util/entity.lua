@@ -10,24 +10,6 @@ function entity_util.get_tier_of_strongbox(sb_entity)
     return tonumber(sb_entity.name:sub(16))
 end
 
----@param surface_id int
----@return IndexMap
-function entity_util.get_covered_ore_counters(surface_id)
-    local ore_counters = storage.hex_grid.ores_covered
-    if not ore_counters then
-        ore_counters = {} ---@type {[int]: IndexMap}
-        storage.hex_grid.ores_covered = ore_counters
-    end
-
-    local surface_ore_counters = ore_counters[surface_id]
-    if not surface_ore_counters then
-        surface_ore_counters = {}
-        ore_counters[surface_id] = surface_ore_counters
-    end
-
-    return surface_ore_counters
-end
-
 ---Get a list of ore entities that are within the given drill's mining area.
 ---@param drill_entity LuaEntity
 ---@return LuaEntity[]
@@ -61,6 +43,24 @@ function entity_util.get_ores_within_drill_coverage(drill_entity)
     end
 
     return solid_ores
+end
+
+---@param surface_id int
+---@return IndexMap
+function entity_util.get_covered_ore_counters(surface_id)
+    local ore_counters = storage.hex_grid.ores_covered
+    if not ore_counters then
+        ore_counters = {} ---@type {[int]: IndexMap}
+        storage.hex_grid.ores_covered = ore_counters
+    end
+
+    local surface_ore_counters = ore_counters[surface_id]
+    if not surface_ore_counters then
+        surface_ore_counters = {}
+        ore_counters[surface_id] = surface_ore_counters
+    end
+
+    return surface_ore_counters
 end
 
 ---Add ores to the total ores covered counter.

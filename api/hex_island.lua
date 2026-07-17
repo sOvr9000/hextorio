@@ -4,7 +4,7 @@ local lib = require "api.lib"
 local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
-local hex_util     = require "api.hex_util"
+local hex_util = require "api.util.hex"
 
 local hex_island = {}
 

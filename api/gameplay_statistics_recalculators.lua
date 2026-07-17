@@ -1,9 +1,9 @@
 
+local lib = require "api.lib"
 local event_system = require "api.event_system"
 local gameplay_statistics = require "api.gameplay_statistics"
-local lib = require "api.lib"
-local entity_util = require "api.entity_util"
-local dungeons    = require "api.dungeons"
+local dungeons = require "api.dungeons"
+local entity_util = require "api.util.entity"
 
 local recalculators = {}
 
@@ -14,9 +14,10 @@ local recalculators = {}
 ---@type {[GameplayStatisticType]: GameplayStatisticRecalculator}
 local recalculator_functions = {}
 
+
+
 function recalculators.register_events()
-    event_system.register("recalculate-statistic", gameplay_statistics.on_recalculate_statistic)
-    event_system.register("recalculate-all-statistics", gameplay_statistics.on_recalculate_all_statistics)
+    event_system.register("recalculate-statistic", recalculators.on_recalculate_statistic)
 end
 
 ---Register a recalculator function for a statistic type.
@@ -28,7 +29,7 @@ end
 
 ---@param stat_type GameplayStatisticType
 ---@param stat_value GameplayStatisticValue
-function gameplay_statistics.on_recalculate_statistic(stat_type, stat_value)
+function recalculators.on_recalculate_statistic(stat_type, stat_value)
     local func = recalculator_functions[stat_type]
     if not func then
         lib.log("gameplay_statistics_recalculators.on_recalculate_statistics: Missing recalculator for stat type " .. stat_type)

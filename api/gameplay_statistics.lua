@@ -1,7 +1,7 @@
 
-local event_system = require "api.event_system"
 local lib = require "api.lib"
-local entity_util  = require "api.entity_util"
+local event_system = require "api.event_system"
+local entity_util  = require "api.util.entity"
 
 local gameplay_statistics = {}
 

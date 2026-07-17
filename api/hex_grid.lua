@@ -17,11 +17,11 @@ local item_ranks  = require "api.item_ranks"
 local dungeons = require "api.dungeons"
 local inventories = require "api.inventories"
 local strongboxes = require "api.strongboxes"
-local entity_util = require "api.entity_util"
 local piggy_bank  = require "api.piggy_bank"
 local gameplay_statistics = require "api.gameplay_statistics"
-local hex_util            = require "api.hex_util"
-local hex_sets            = require "api.hex_sets"
+local hex_sets = require "api.hex_sets"
+local hex_util = require "api.util.hex"
+local entity_util = require "api.util.entity"
 
 
 

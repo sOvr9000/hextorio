@@ -6,7 +6,7 @@ local piggy_bank          = require "api.piggy_bank"
 local inventories         = require "api.inventories"
 local event_system        = require "api.event_system"
 local gameplay_statistics = require "api.gameplay_statistics"
-local entity_util         = require "api.entity_util"
+local entity_util         = require "api.util.entity"
 
 local strongboxes = {}
 

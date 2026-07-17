@@ -5,6 +5,8 @@ local api = {}
 
 for _, api_name in pairs{
     "util.mgs",
+    "util.hex",
+    "util.entity",
 
     "gui.catalog_gui",
     "gui.coin_tier_gui",
@@ -23,7 +25,6 @@ for _, api_name in pairs{
     "coin_tiers",
     "core_math",
     "dungeons",
-    "entity_util",
     "event_system",
     "features",
     "gameplay_statistics",
@@ -35,7 +36,6 @@ for _, api_name in pairs{
     "hex_rank",
     "hex_sets",
     "hex_state_manager",
-    "hex_util",
     "initialization",
     "inventories",
     "item_buffs",

@@ -158,7 +158,6 @@
 ---| "quest-revealed"
 ---| "quest-reward-received"
 ---| "quests-reinitialized"
----| "recalculate-all-statistics"
 ---| "recalculate-statistic"
 ---| "research-completed"
 ---| "resource-depleted"

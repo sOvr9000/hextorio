@@ -4,13 +4,13 @@ local sets              = require "api.sets"
 local hex_grid          = require "api.hex_grid"
 local trades            = require "api.trades"
 local coin_tiers        = require "api.coin_tiers"
-local hex_util          = require "api.hex_util"
 local hex_island        = require "api.hex_island"
 local hex_sets          = require "api.hex_sets"
 local event_system      = require "api.event_system"
 local item_value_solver = require "api.item_value_solver"
 local weighted_choice   = require "api.weighted_choice"
 local mgs_util          = require "api.util.mgs"
+local hex_util          = require "api.util.hex"
 
 local initialization = {}
 
