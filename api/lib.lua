@@ -765,16 +765,6 @@ function lib.get_player_owner_of_inventory(inventory)
     -- No player found from inventory
 end
 
-function lib.disable_everything(t)
-    for key, value in pairs(t) do
-        if key == "size" and type(value) == "number" then
-            t[key] = 0
-        elseif type(value) == "table" then
-            lib.disable_everything(value)
-        end
-    end
-end
-
 -- Check if a tile at a given position is land
 function lib.is_land_tile(surface, tile_position)
     local tile = surface.get_tile(tile_position)
