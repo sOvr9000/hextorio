@@ -589,7 +589,7 @@ function trades_gui.on_ping_button_clicked(player, elem)
     if not state or not state.hex_core or not state.hex_core.valid then return end
 
     local trade_str = lib.get_trade_img_str(trade, trades.trade_has_untradable_items(trade))
-    local gps_str = lib.get_gps_str_from_hex_core(state.hex_core)
+    local gps_str = state.hex_core.gps_tag
 
     game.print({"hextorio.player-trade-ping", player.name, trade_str, gps_str})
     gameplay_statistics.set("ping-trade", 1)

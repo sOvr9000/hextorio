@@ -579,7 +579,7 @@ function hex_grid.apply_extra_trades_bonus(state)
                     "yellow", "heading-1"
                 ),
                 " ",
-                lib.get_gps_str_from_hex_core(state.hex_core),
+                state.hex_core.gps_tag,
                 " ",
                 lib.get_trade_img_str(trade, trades.trade_has_untradable_items(trade))
             })
@@ -4054,7 +4054,7 @@ function hex_grid.apply_extra_trades_bonus_retro(item_name)
             if i > 1 then
                 hex_cores_str = hex_cores_str .. "   "
             end
-            hex_cores_str = hex_cores_str .. lib.get_gps_str_from_hex_core(state.hex_core)
+            hex_cores_str = hex_cores_str .. state.hex_core.gps_tag
             i = i + 1
         end
     end
@@ -4100,7 +4100,7 @@ function hex_grid.apply_interplanetary_trade_bonus(state, item_name)
                 "cyan", "heading-1"
             ),
             " ",
-            lib.get_gps_str_from_hex_core(state.hex_core),
+            state.hex_core.gps_tag,
             " ",
             lib.get_trade_img_str(trade),
         })
@@ -4160,7 +4160,7 @@ function hex_grid.try_recover_trade(trade, states, notify)
                     "heading-1"
                 ),
                 " ",
-                lib.get_gps_str_from_hex_core(state.hex_core),
+                state.hex_core.gps_tag,
                 " ",
                 lib.get_trade_img_str(trade),
             })

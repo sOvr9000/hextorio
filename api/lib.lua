@@ -1260,10 +1260,6 @@ function lib.format_percentage(x, decimal_places, include_symbol, include_sign)
     return s
 end
 
-function lib.get_gps_str_from_hex_core(hex_core)
-    return "[gps=" .. hex_core.position.x .. "," .. hex_core.position.y .. "," .. hex_core.surface.name .. "]"
-end
-
 function lib.insert_endgame_armor(player)
     local inv = player.get_inventory(5)
 
