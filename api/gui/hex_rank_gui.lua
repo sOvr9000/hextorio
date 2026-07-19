@@ -4,6 +4,7 @@ local core_gui = require "api.gui.core_gui"
 local gui_stack = require "api.gui.gui_stack"
 local event_system = require "api.event_system"
 local hex_rank     = require "api.hex_rank"
+local hud_gui = require "api.gui.hud_gui"
 
 local hex_rank_gui = {}
 
@@ -62,28 +63,18 @@ function hex_rank_gui.register_events()
     event_system.register_gui("gui-clicked", "hex-rank-button", hex_rank_gui.on_hex_rank_button_clicked)
     event_system.register_gui("gui-closed", "hex-rank", hex_rank_gui.hide_hex_rank)
 
+    event_system.register("item-values-recalculated", hex_rank_gui.update_hud_visibility)
+    event_system.register("item-value-solver-started", hex_rank_gui.update_hud_visibility)
     event_system.register("hex-rank-changed", hex_rank_gui.on_hex_rank_changed)
     event_system.register("feature-unlocked", hex_rank_gui.on_feature_unlocked)
+    event_system.register("hud-reinitialized", hex_rank_gui.reinitialize_hud)
 
     event_system.register("runtime-setting-changed-show-hex-rank-hud", function(player_index)
         local player = game.get_player(player_index)
         if not player then return end
 
-        local flow = player.gui.center["hex-rank-hud"]
-        if not flow then
-            hex_rank_gui.init_hex_rank_hud(player)
-            flow = player.gui.center["hex-rank-hud"]
-        end
-
-        flow.visible = lib.player_setting_value_as_boolean(player, "show-hex-rank-hud")
-
-        if flow.visible then
-            hex_rank_gui.update_hex_rank_hud(player)
-        end
+        hex_rank_gui.update_hud_visibility(player)
     end)
-
-    event_system.register("player-display-scale-changed", hex_rank_gui.reinitialize_hud)
-    event_system.register("player-display-resolution-changed", hex_rank_gui.reinitialize_hud)
 end
 
 ---Reinitialize the hex rank GUI for the given player, or all players if no player is provided.
@@ -100,15 +91,15 @@ function hex_rank_gui.reinitialize(player)
     if frame then frame.destroy() end
 
     hex_rank_gui.init_hex_rank(player)
-
     hex_rank_gui.reinitialize_hud(player)
 end
 
 ---Reinitialize the hex rank HUD for the given player, particularly important when display changes.
 ---@param player LuaPlayer
 function hex_rank_gui.reinitialize_hud(player)
-    local hud = player.gui.center["hex-rank-hud"]
-    if hud then hud.destroy() end
+    local hud = hud_gui.get_hud_gui(player)
+    local label = hud["hex-rank"]
+    if label then label.destroy() end
     hex_rank_gui.init_hex_rank_hud(player)
 end
 
@@ -126,8 +117,6 @@ function hex_rank_gui.init_hex_rank(player)
         type = "label",
         name = "hex-rank",
     })
-    hex_rank_label.style.top_padding = 15
-    hex_rank_label.style.bottom_padding = 20
 
     local scroll_pane = frame.add {
         type = "scroll-pane",
@@ -214,26 +203,15 @@ end
 
 ---@param player LuaPlayer
 function hex_rank_gui.init_hex_rank_hud(player)
-    if player.gui.center["hex-rank-hud"] then return end
-
-    local hud = player.gui.center.add {
-        type = "flow",
-        name = "hex-rank-hud",
-        direction = "vertical",
-        ignored_by_interaction = true,
-    }
-
-    local resolution = player.display_resolution
-    hud.style.vertically_stretchable = true
-    hud.style.height = resolution.height * 0.98 / player.display_scale
-    hud.style.vertically_squashable = true
+    local hud = hud_gui.get_hud_gui(player)
+    if hud["hex-rank"] then return end
 
     local hex_rank_label = hud.add {
         type = "label",
         name = "hex-rank",
     }
 
-    hex_rank_gui.update_hex_rank_hud(player)
+    hex_rank_gui.update_hud_visibility(player)
 end
 
 ---Update the hex rank info GUI for a player.
@@ -319,18 +297,13 @@ end
 ---@param player LuaPlayer
 ---@param new_value int|nil
 function hex_rank_gui.update_hex_rank_hud(player, new_value)
-    local flow = player.gui.center["hex-rank-hud"]
-    if not flow then
+    local hud = hud_gui.get_hud_gui(player)
+    local label = hud["hex-rank"]
+    if not label then
         hex_rank_gui.init_hex_rank_hud(player)
-        flow = player.gui.center["hex-rank-hud"]
+        label = hud["hex-rank"]
     end
 
-    if not flow or not flow.valid or not flow.visible then return end
-
-    -- local center_flow = flow["center"]
-    -- if not center_flow or not center_flow.valid or not center_flow.visible then return end
-
-    local label = flow["hex-rank"]
     if not label or not label.valid or not label.visible then return end
 
     if not new_value then
@@ -338,6 +311,29 @@ function hex_rank_gui.update_hex_rank_hud(player, new_value)
     end
 
     label.caption = "[img=hex-rank] [font=count-font][color=192,32,255]" .. new_value .. "[.color][.font]"
+end
+
+---Hide or show the hex rank HUD for a player depending on their settings.
+---@param player LuaPlayer|nil
+function hex_rank_gui.update_hud_visibility(player)
+    if not player then
+        for _, _player in pairs(game.players) do
+            hex_rank_gui.update_hud_visibility(_player)
+        end
+        return
+    end
+
+    local hud = hud_gui.get_hud_gui(player)
+    local label = hud["hex-rank"]
+    if not label then
+        hex_rank_gui.init_hex_rank_hud(player)
+        label = hud["hex-rank"]
+    end
+
+    label.visible = (storage.solver == nil or not storage.solver.active) and lib.player_setting_value_as_boolean(player, "show-hex-rank-hud")
+    if label.visible then
+        hex_rank_gui.update_hex_rank_hud(player)
+    end
 end
 
 ---Show the hex rank info GUI for a player.

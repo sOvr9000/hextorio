@@ -67,6 +67,7 @@
 ---| "spider-network-hex-state-processed" When a hex state that belongs to a spider network passes through the hex pool, regardless of whether it is actively trading
 ---| "hex-rank-changed"
 ---| "hex-rank-factor-changed"
+---| "hud-reinitialized" When the HUD gets reinitialized for a player
 ---| "initial-trades-added"
 ---| "interplanetary-trade-generated"
 ---| "item-buff-changed-trade-productivity"
@@ -76,7 +77,10 @@
 ---| "item-buffs-gui-closed"
 ---| "item-rank-up"
 ---| "item-tradability-recalculated" When tradability flags for items are recalculated
----| "item-values-recalculated"
+---| "item-value-solver-aborted" When the item value solver gets terminated mid-process
+---| "item-value-solver-progress" When the item value solver finishes a pass over all recipes
+---| "item-value-solver-started" When the item value solver begins solving for all item values on all planets
+---| "item-values-recalculated" When the item value solver finishes solving and writing all item values on all planets
 ---| "lightning-struck-character"
 ---| "loot-tables-initialized" When loot table data is initialized
 ---| "player-built-entity"

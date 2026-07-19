@@ -609,19 +609,25 @@ function lib.log_error(txt)
 end
 
 function lib.log(txt, error)
-    local prefix = "HEXTORIO | "
+    local prefix = ""
+
+    if game then
+        prefix = prefix .. "[tick=" .. game.tick .. "] "
+    else
+        prefix = prefix .. "[startup] "
+    end
+
     if error then
         prefix = prefix .. "ERROR: "
     end
+
     local s
     if type(txt) == "table" then
         s = prefix .. "\n" .. serpent.block(txt)
     else
         s = prefix .. tostring(txt)
     end
-    -- if error then
-    --     s = s .. "\n"
-    -- end
+
     log(s)
 end
 

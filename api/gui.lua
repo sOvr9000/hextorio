@@ -2,6 +2,7 @@
 local gui = {
     tray = require "api.gui.tray_gui",
     core_gui = require "api.gui.core_gui",
+    hud_gui = require "api.gui.hud_gui",
     intro_gui = require "api.gui.intro_gui",
     questbook = require "api.gui.questbook_gui",
     trade_overview = require "api.gui.trade_overview_gui",
@@ -10,6 +11,7 @@ local gui = {
     hex_core = require "api.gui.hex_core_gui",
     item_buffs = require "api.gui.item_buffs_gui",
     piggy_bank = require "api.gui.piggy_bank_gui",
+    solver_progress = require "api.gui.solver_progress_gui",
 
     trades = require "api.gui.trades_gui",
     toasts = require "api.gui.toasts_gui"

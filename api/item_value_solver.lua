@@ -66,7 +66,8 @@ local solver = {}
 
 ---@class ItemValueSolver.State
 ---@field active boolean Whether the solver is currently running
----@field ticks_elapsed integer Number of ticks passed since solver start
+---@field tick_started integer Game tick when solver started
+---@field tick_started_solve_phase integer|nil Game tick when solver entered the solve phase
 ---@field phase ItemValueSolver.Phase Current phase of the solver
 ---@field collect ItemValueSolver.CollectState|nil Collect phase working data (nil after collect completes)
 ---@field recipes ItemValueSolver.SolverRecipe[]|nil Preprocessed recipe list
@@ -83,6 +84,10 @@ local solver = {}
 ---@field recipe_idx integer|nil Current recipe index within a solve pass
 ---@field pass_updates integer|nil Number of value updates in the current pass, moving the solver to the "finalize" state when calculated to be zero
 ---@field iteration integer|nil Number of completed solve passes
+---@field log_delta_history number[] Most recent mean decrements in logarithms of item values across a single pass
+---@field prev_cached_progress_percentage number|nil Previous cached progress percentage for each tick
+---@field cached_progress_percentage number|nil Cached progress percentage for each tick
+---@field cached_progress_ticks_remaining number|nil Cached progress ticks remaining for each tick
 
 ---@class ItemValueSolver.CollectState
 ---@field recipe_names string[] All recipe prototype names to process
@@ -124,9 +129,8 @@ local STACK_SIZE_FACTOR = 4
 
 local INITIAL_VALUE = math.huge
 local DEFAULT_THRESHOLD = 1e-5 -- Values smaller than this are considered to be effectively zero, and they default to a value of 1 for the sake of preserving playability.
-local MAX_TICKS = 10000
-local COLLECT_BATCH = 100
-local SOLVE_BATCH = 200
+local COLLECT_BATCH = 250
+local SOLVE_BATCH = 500
 
 
 
@@ -644,19 +648,6 @@ local function phase_build(s)
         .. table_size(all_items) .. " items, "
         .. table_size(rocket_capacities) .. " transportable")
 
-    local planet_count = table_size(all_planets)
-    local per_planet_total = 0
-    for _, recipe in pairs(recipes) do
-        if recipe.valid_planets then
-            for p in pairs(recipe.valid_planets) do
-                if all_planets[p] then per_planet_total = per_planet_total + 1 end
-            end
-        else
-            per_planet_total = per_planet_total + planet_count
-        end
-    end
-    game.print({"hextorio.solver-recipe-count", per_planet_total})
-
     -- Diagnostic: dump producing recipes and interplanetary status for key items
     local diag_items = {
         -- "rocket-part",
@@ -700,6 +691,7 @@ local function phase_build(s)
         end
     end
 
+    s.tick_started_solve_phase = game.tick
     s.phase = "solve"
 end
 
@@ -712,9 +704,13 @@ local function phase_solve(s)
     local values = s.values ---@type {[string]: {[string]: number}}
     local sources = s.sources ---@type {[string]: {[string]: ItemValueSource}}
     local is_raw = s.is_raw ---@type {[string]: {[string]: boolean}}
-    local count = 0
-
     local all_planets = storage.SUPPORTED_PLANETS
+
+    s.cached_progress_percentage = nil
+    s.cached_progress_ticks_remaining = nil
+
+    local total_log_delta = 0
+    local count = 0
 
     while count < SOLVE_BATCH and s.recipe_idx <= #recipes do
         local recipe = recipes[s.recipe_idx]
@@ -748,11 +744,17 @@ local function phase_solve(s)
                         local per_product = total_output / num_non_raw
                         for _, prod in pairs(recipe.products) do
                             if not is_raw[planet][prod.name] then
-                                local implied = per_product / prod.amount
-                                if implied < values[planet][prod.name] then
-                                    values[planet][prod.name] = implied
+                                local new_value = per_product / prod.amount
+                                if new_value < values[planet][prod.name] then
+                                    local previous_value = values[planet][prod.name]
+                                    values[planet][prod.name] = new_value
                                     sources[planet][prod.name] = {type = "recipe", recipe_name = recipe.label}
                                     s.pass_updates = s.pass_updates + 1
+
+                                    local log_delta = math.log(new_value) - math.log(previous_value)
+                                    if log_delta > -math.huge then
+                                        total_log_delta = total_log_delta + log_delta
+                                    end
                                 end
                             end
                         end
@@ -775,11 +777,17 @@ local function phase_solve(s)
                         if src ~= planet then
                             local src_val = values[src][item_name]
                             if src_val and src_val < INITIAL_VALUE then
-                                local imported = import_cost(s, src, planet, item_name, src_val)
-                                if imported < val then
-                                    values[planet][item_name] = imported
-                                    val = imported
+                                local new_value = import_cost(s, src, planet, item_name, src_val)
+                                if new_value < val then
+                                    local previous_value = val
+                                    values[planet][item_name] = new_value
+                                    val = new_value
                                     s.pass_updates = s.pass_updates + 1
+
+                                    local log_delta = math.log(new_value) - math.log(previous_value)
+                                    if log_delta > -math.huge then
+                                        total_log_delta = total_log_delta + log_delta
+                                    end
 
                                     local path = {src}
                                     local cur = src
@@ -822,9 +830,18 @@ local function phase_solve(s)
             end
         end
 
-        if s.iteration % 10 == 0 then
-            lib.log("Solver: pass " .. s.iteration .. " | updates=" .. s.pass_updates)
+        lib.log("Solver: pass " .. s.iteration .. " | updates=" .. s.pass_updates)
+
+        if s.pass_updates > 0 then
+            -- Record log delta
+            local history_len = #s.log_delta_history
+            s.log_delta_history[history_len+1] = total_log_delta / s.pass_updates
+            if history_len >= 8 then
+                table.remove(s.log_delta_history, 1)
+            end
         end
+
+        event_system.trigger "item-value-solver-progress"
 
         if s.pass_updates == 0 then
             lib.log("Solver: converged after " .. s.iteration .. " passes")
@@ -1017,7 +1034,6 @@ local function phase_finalize(s)
     end
 
     storage.solver = nil
-    game.print {"hextorio.solver-complete"}
     event_system.trigger "item-values-recalculated"
     event_system.trigger "post-item-values-recalculated"
 
@@ -1032,15 +1048,6 @@ function solver.process_step()
     if not is_active() then return end
 
     local s = storage.solver
-    s.ticks_elapsed = s.ticks_elapsed + 1
-
-    if s.ticks_elapsed > MAX_TICKS then
-        lib.log("Solver: ABORTED after " .. MAX_TICKS .. " ticks (safety timeout)")
-        game.print {"hextorio.solver-timeout"}
-        storage.solver = nil
-        return
-    end
-
     if s.phase == "collect" then
         phase_collect(s)
     elseif s.phase == "build" then
@@ -1055,12 +1062,74 @@ end
 function solver.run()
     if is_active() then return end
 
-    game.print {"hextorio.solver-started"}
     storage.solver = {
         active = true,
         phase = "collect",
-        ticks_elapsed = 0,
+        log_delta_history = {},
+        tick_started = game.tick,
+        prev_cached_progress_percentage = 0,
+        cached_progress_percentage = 0,
     }
+
+    event_system.trigger "item-value-solver-started"
+end
+
+---Get the current progress of the solver.
+---@return number percentage, int ticks_remaining
+function solver.get_progress()
+    local s = storage.solver
+    if not s or s.phase ~= "solve" then
+        return 0, 999999999
+    end
+
+    if s.cached_progress_percentage and s.cached_progress_ticks_remaining then
+        return s.cached_progress_percentage, s.cached_progress_ticks_remaining
+    end
+
+    local history = s.log_delta_history
+    -- lib.log("History: " .. serpent.line(history))
+
+    local history_len = #history
+    if history_len < 2 then
+        return 0, 999999999
+    end
+
+    local ticks_elapsed = game.tick - s.tick_started_solve_phase
+    -- lib.log("Solve phase ticks elapsed: " .. ticks_elapsed)
+
+    local cur_mean_log = 0
+    for _, v in pairs(history) do
+        cur_mean_log = cur_mean_log + v
+    end
+    cur_mean_log = cur_mean_log / history_len
+    -- lib.log("Current mean log: " .. cur_mean_log)
+
+    local target_log = -1 -- The estimated threshold for convergence is 10^-target_log, although most recipe graphs converge much sooner due to the algorithm that this solver uses.
+
+    local rate = math.min(-0.001, (cur_mean_log - history[1]) / history_len)
+    -- lib.log("Mean log rate: min(-0.001, (" .. cur_mean_log .. " - " .. history[1] .. ") / " .. history_len .. ") = " .. rate)
+    local remaining_passes = (target_log - cur_mean_log) / rate
+    -- lib.log("Remaining passes (expected): (" .. target_log .. " - " .. cur_mean_log .. ") / " .. rate .. " = " .. remaining_passes)
+
+    local mean_ticks_per_pass = ticks_elapsed / s.iteration
+    -- lib.log("Ticks per pass (mean): " .. ticks_elapsed .. " / " .. s.iteration .. " = " .. mean_ticks_per_pass)
+    local percentage = cur_mean_log / target_log
+    -- lib.log("Log percentage: " .. cur_mean_log .. " / " .. target_log .. " = " .. percentage)
+    local ticks_remaining = math.ceil(remaining_passes * mean_ticks_per_pass)
+    -- lib.log("Ticks remaining: ceil(" .. remaining_passes .. " * " .. mean_ticks_per_pass .. ") = " .. ticks_remaining)
+
+    percentage = math.min(0.5, math.max(0, percentage))
+
+    if not s.prev_cached_progress_percentage then
+        s.prev_cached_progress_percentage = 0
+    end
+
+    local incremental_percentage = s.prev_cached_progress_percentage + (1 - s.prev_cached_progress_percentage) * percentage
+    s.cached_progress_percentage = incremental_percentage
+    s.cached_progress_ticks_remaining = ticks_remaining
+    s.prev_cached_progress_percentage = s.cached_progress_percentage
+
+    return incremental_percentage, ticks_remaining
 end
 
 function solver.init()
@@ -1089,11 +1158,7 @@ end
 
 function solver.register_events()
     event_system.register("command-solve-item-values", function(player)
-        if is_active() then
-            player.print {"hextorio.solver-already-running"}
-            return
-        end
-
+        if is_active() then return end
         solver.run()
     end)
 
