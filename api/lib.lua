@@ -721,12 +721,6 @@ function lib.teleport_player_cross_surface(player, position, surface, allow_vehi
     return true
 end
 
-function lib.initial_player_spawn(player)
-    if not player then return end
-    player.teleport({0, 5}, game.surfaces.nauvis)
-    lib.unstuck_player(player)
-end
-
 function lib.get_player_inventory(player)
     if not player then
         lib.log_error("get_player_inventory: player is nil")
