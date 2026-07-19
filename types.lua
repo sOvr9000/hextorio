@@ -77,7 +77,6 @@
 ---| "item-buffs-gui-closed"
 ---| "item-rank-up"
 ---| "item-tradability-recalculated" When tradability flags for items are recalculated
----| "item-value-solver-aborted" When the item value solver gets terminated mid-process
 ---| "item-value-solver-progress" When the item value solver finishes a pass over all recipes
 ---| "item-value-solver-started" When the item value solver begins solving for all item values on all planets
 ---| "item-values-recalculated" When the item value solver finishes solving and writing all item values on all planets

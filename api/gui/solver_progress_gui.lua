@@ -11,7 +11,6 @@ local solver_progress_gui = {}
 function solver_progress_gui.register_events()
     event_system.register("item-value-solver-started", solver_progress_gui.update_progress)
     event_system.register("item-value-solver-progress", solver_progress_gui.update_progress)
-    event_system.register("item-value-solver-aborted", solver_progress_gui.on_solver_ended)
     event_system.register("item-values-recalculated", solver_progress_gui.on_solver_ended)
 end
 
