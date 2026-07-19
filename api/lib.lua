@@ -722,6 +722,8 @@ function lib.teleport_player(player, position, surface, allow_vehicle)
     end
 
     local zoom = player.zoom
+    local opened = player.opened
+
     player.set_controller {
         type = defines.controllers.character,
         character = char,
@@ -732,6 +734,7 @@ function lib.teleport_player(player, position, surface, allow_vehicle)
     end
 
     player.zoom = zoom
+    player.opened = opened
 end
 
 ---Teleport a player to a position on a surface.  If the surface is different from the player's character's current one, then prevent teleportation if items exist in the player's inventory, or the main inventory of the player's current vehicle if they are in one.
