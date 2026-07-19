@@ -80,7 +80,6 @@ local vanilla_planet_names = {
 ---@return int den If `x == 0`, then this is always one. Always positive, never zero.
 function lib.get_rational_approximation(x, epsilon, max_numerator, max_denominator)
     if x == 0 then
-        -- log("returning 0 / 1")
         return 0, 1
     end
 
@@ -111,7 +110,6 @@ function lib.get_rational_approximation(x, epsilon, max_numerator, max_denominat
         end
 
         if coef == val then
-            -- log("break: " .. coef .. " == " .. val)
             break
         end
 
@@ -119,7 +117,6 @@ function lib.get_rational_approximation(x, epsilon, max_numerator, max_denominat
 
         -- Can use lib.is_ratio_symmetrically_le() here, but it's faster to check this explicitly to avoid division overhead.
         if ratio >= epsilon_inv and ratio <= epsilon then
-            -- log("break: " .. ratio .. " >= " .. epsilon_inv .. " and " .. ratio .. " <= " .. epsilon)
             break
         end
 
@@ -131,7 +128,6 @@ function lib.get_rational_approximation(x, epsilon, max_numerator, max_denominat
 
     num, den = den, num
     if den == 0 then
-        -- log("setting num=0, den=1")
         num = 0
         den = 1
     end
@@ -202,7 +198,7 @@ function lib.apply_multiplier(x, mult)
 end
 
 ---@param name string
----@return boolean|string|number|Color.0|{ [1]: number, [2]: number, [3]: number, [4]: number }
+---@return boolean|string|number|Color
 function lib.startup_setting_value(name)
     local prefixedName = "hextorio-" .. name
     local v = settings.startup[prefixedName]
@@ -254,7 +250,7 @@ function lib.startup_setting_value_as_color(name)
 end
 
 ---@param name string
----@return boolean|string|number|Color.0|{ [1]: number, [2]: number, [3]: number, [4]: number }
+---@return boolean|string|number|Color
 function lib.runtime_setting_value(name)
     local prefixedName = "hextorio-" .. name
     local v = settings.global[prefixedName]
@@ -307,7 +303,7 @@ end
 
 ---@param player LuaPlayer
 ---@param name string
----@return boolean|string|number|Color.0|{ [1]: number, [2]: number, [3]: number, [4]: number }
+---@return boolean|string|number|Color
 function lib.player_setting_value(player, name)
     local s = settings.get_player_settings(player)
     local prefixedName = "hextorio-" .. name
@@ -486,36 +482,6 @@ function lib._apply_to_table_with_path(root_table, func, current_path)
             root_table[key] = func(new_path, key, value)
         end
     end
-end
-
-function lib.table_to_string(t, indent)
-    -- courtesy ChatGPT
-
-    indent = indent or 0  -- Keep track of indentation level
-    local result = "{\n" -- Start the table representation
-
-    for k, v in pairs(t) do
-        local key
-        if type(k) == "string" then
-            key = string.format("[\"%s\"]", k)
-        else
-            key = string.format("[%s]", tostring(k))
-        end
-
-        local value
-        if type(v) == "table" then
-            value = lib.table_to_string(v, indent + 2) -- Recursive call for nested tables
-        elseif type(v) == "string" then
-            value = string.format("\"%s\"", v)
-        else
-            value = tostring(v)
-        end
-
-        result = result .. string.rep(" ", indent + 2) .. key .. " = " .. value .. ",\n"
-    end
-
-    result = result .. string.rep(" ", indent) .. "}"
-    return result
 end
 
 function lib.color_localized_string(str, color, font)
@@ -786,131 +752,6 @@ function lib.get_recipe_tree()
         end
     end
     return recipe_tree
-end
-
--- Generate a graph of all recipes in the game from the recipe tree, adding useful information for advanced calculations
-function lib.get_recipe_graph(recipe_tree)
-    local recipe_graph = {
-        made_from = {},
-        used_in = {},
-        recipes_by_name = {},
-        item_edges = {},
-        all_items = {},
-    }
-
-    local added_edges = {}
-    for recipe_name, recipe in pairs(recipe_tree) do
-        recipe_graph.recipes_by_name[recipe_name] = recipe
-        for _, ing in pairs(recipe.ingredients) do
-            local t = recipe_graph.used_in[ing.name]
-            if not t then
-                t = {}
-                recipe_graph.used_in[ing.name] = t
-            end
-            table.insert(t, recipe.name)
-            if not recipe_graph.all_items[ing.name] then
-                recipe_graph.all_items[ing.name] = true
-            end
-        end
-        for _, prod in pairs(recipe.products) do
-            local t = recipe_graph.made_from[prod.name]
-            if not t then
-                t = {}
-                recipe_graph.made_from[prod.name] = t
-            end
-            table.insert(t, recipe.name)
-            if not recipe_graph.all_items[prod.name] then
-                recipe_graph.all_items[prod.name] = true
-            end
-            for _, ing in pairs(recipe.ingredients) do
-                local edge_key = ing.name .. "->" .. prod.name
-                if not added_edges[edge_key] then
-                    added_edges[edge_key] = true
-                    table.insert(recipe_graph.item_edges, {ing.name, prod.name})
-                end
-            end
-        end
-    end
-
-    recipe_graph.all_items = sets.to_array(recipe_graph.all_items)
-
-    return recipe_graph
-end
-
--- Return a table of all technologies in the game from the tech tree, adding useful information for advanced calculations
-function lib.get_technology_graph()
-    local tech_graph = {}
-    -- Each tech is of the form:
-    -- {name: name, unlocked_by: unlocked_by, unlocks: unlocks, effects: effects, required_planet: required_planet}
-
-    for name, tech in pairs(prototypes.technology) do
-        local t = {name = name, unlocks = {}, unlocked_by = {}, effects = {}, techs_by_item = {}}
-        for successor_name, _ in pairs(tech.successors) do
-            table.insert(t.unlocks, successor_name)
-        end
-        for prereq_name, _ in pairs(tech.prerequisites) do
-            table.insert(t.unlocked_by, prereq_name)
-        end
-        for _, effect in pairs(tech.effects) do
-            table.insert(t.effects, effect)
-        end
-        t.required_planet = nil -- will be calculated by DFS
-        t.required_planet_depth = math.huge
-        tech_graph[name] = t
-    end
-
-    -- Use DFS to find the latest planet discovery techs if they exist for each tech, labeling which tech comes from which planet
-    local function dfs(tech_name, depth)
-        -- each dfs call returns a planet name and depth of search
-        local tech = tech_graph[tech_name]
-
-        if not tech then
-            lib.log_error("no tech found for " .. tech_name)
-        end
-
-        -- Check if this tech has the modifier type "unlock-space-location"
-        for _, modifier in pairs(tech.effects) do
-            if modifier.type == "unlock-space-location" then
-                tech.required_planet = modifier.space_location
-                tech.required_planet_depth = depth
-                return modifier.space_location, depth
-            end
-        end
-
-        local min_depth = math.huge
-        local min_planet
-        for _, name in pairs(tech.unlocked_by) do
-            local planet, d = dfs(name, depth + 1)
-            if d < min_depth then
-                min_depth = d
-                min_planet = planet
-            end
-        end
-
-        if not min_planet then
-            min_planet = "nauvis"
-            min_depth = depth
-        end
-        if not tech.required_planet or min_depth < tech.required_planet_depth then
-            tech.required_planet = min_planet
-            tech.required_planet_depth = min_depth
-        end
-        return min_planet, min_depth
-    end
-
-    for name, tech in pairs(tech_graph) do
-        dfs(name, 0)
-        if tech.required_planet then
-            lib.log("tech " .. name .. " requires planet " .. tech.required_planet .. " at depth " .. tech.required_planet_depth)
-        else
-            lib.log_error("no planet found for tech " .. name)
-        end
-    end
-
-    -- For each recipe, list all techs which directly unlock it
-
-
-    return tech_graph
 end
 
 -- Return a lookup table of angles for a pie chart from a weighted choice
@@ -1591,23 +1432,6 @@ function lib.is_tier6_quality(quality)
     return false
 end
 
-function lib.reservoir_sample_index(t)
-    local m = math.huge
-    local K
-    for k, v in pairs(t) do
-        local r = math.random()
-        if r < m then
-            m = r
-            K = k
-        end
-    end
-    return K
-end
-
-function lib.reservoir_sample(t)
-    return t[lib.reservoir_sample_index(t)]
-end
-
 function lib.get_tier_of_coin_name(coin_name)
     return storage.coin_tiers.COIN_TIERS_BY_NAME[coin_name] or 1
 end
@@ -1957,15 +1781,6 @@ function lib.get_str_from_coin(coin, show_leading_zeros, sigfigs)
         return tostring(value)
     end
 
-    -- deprecated
-    -- if show_leading_zeros then
-    --     local s = 0
-    --     for i, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
-            
-    --     end
-    --     return "[img=hex-coin]x" .. format(coin.values[1]) .. " [img=gravity-coin]x" .. format(coin.values[2]) .. " [img=meteor-coin]x" .. format(coin.values[3]) .. " [img=hexaprism-coin]x" .. format(coin.values[4])
-    -- end
-
     local text = ""
     local visible = false
 
@@ -2137,12 +1952,6 @@ function lib.get_player_opened_or_selected_entity(player)
         return e
     end
 end
-
--- ---Get the required tiles for placement of an entity prototype.
--- ---@param prot LuaEntityPrototype
--- function lib.entity_required_tiles(prot)
-
--- end
 
 ---Return whether the given player's cooldown under the category `cooldown_name` is ready for retriggering.
 ---@param player_index int
