@@ -217,12 +217,6 @@ function lib.get_surface_id(surface)
     return -1
 end
 
-function lib.random_unit_vector(length)
-    length = length or 1
-    local angle = math.random() * 2 * math.pi
-    return {x=length*math.cos(angle), y=length*math.sin(angle)}
-end
-
 ---Linearly interpolate from `a` to `b` by the factor `t`.
 ---@param a number
 ---@param b number
@@ -230,33 +224,6 @@ end
 ---@return number
 function lib.lerp(a, b, t)
     return a + (b - a) * t
-end
-
----Linearly interpolate from `a` to `b` by the factor `t`.
----@param a MapPosition
----@param b MapPosition
----@param t number
----@return MapPosition
-function lib.lerp_positions(a, b, t)
-    -- TODO: Optimize by using variables for each coordinate instead of creating two more tables than needed to compute this.
-    local _a = {a[1] or a.x, a[2] or a.y}
-    local _b = {b[1] or b.x, b[2] or b.y}
-
-    return {
-        x = _a[1] + (_b[1] - _a[1]) * t,
-        y = _a[2] + (_b[2] - _a[2]) * t,
-    }
-end
-
----Round the position to integer coordinates, and optionally offset by 0.5.
----@param pos MapPosition
----@param offset_by_half boolean|nil
----@return MapPosition
-function lib.rounded_position(pos, offset_by_half)
-    if offset_by_half then
-        return {x = math.floor(0.5 + (pos.x or pos[1])) + 0.5, y = math.floor(0.5 + (pos.y or pos[2])) + 0.5}
-    end
-    return {x = math.floor(0.5 + (pos.x or pos[1])), y = math.floor(0.5 + (pos.y or pos[2]))}
 end
 
 ---Return `x * (1 + mult)` if mult is nonnegative.
@@ -629,42 +596,6 @@ function lib.log(txt, error)
     end
 
     log(s)
-end
-
--- Convert chunk position to rectangular coordinates
-function lib.chunk_to_rect(chunk_pos)
-    local top_left = {
-        x = chunk_pos.x * 32,
-        y = chunk_pos.y * 32
-    }
-
-    local bottom_right = {
-        x = top_left.x + 31,
-        y = top_left.y + 31
-    }
-
-    return top_left, bottom_right
-end
-
-function lib.get_chunk_pos_from_tile_position(pos)
-    return {x = math.floor((pos.x or pos[1]) / 32), y = math.floor((pos.y or pos[2]) / 32)}
-end
-
-function lib.get_area_for_chunk_position(chunk_pos)
-    return {
-        left_top = {
-            x = chunk_pos.x * 32,
-            y = chunk_pos.y * 32,
-        },
-        right_bottom = {
-            x = chunk_pos.x * 32 + 31,
-            y = chunk_pos.y * 32 + 31,
-        },
-    }
-end
-
-function lib.is_position_in_rect(position, top_left, bottom_right)
-    return position.x >= top_left.x and position.x <= bottom_right.x and position.y >= top_left.y and position.y <= bottom_right.y
 end
 
 function lib.unstuck_player(player)
@@ -1540,35 +1471,6 @@ end
 ---@return boolean
 function lib.is_vanilla_planet_name(surface_name)
     return vanilla_planet_names[surface_name] == true
-end
-
----Flattened a 2D array of positions that are indexed by x and y coordinates.
----@param arr MapPositionSet
----@return MapPosition[]
-function lib.flattened_position_array(arr)
-    local flat = {}
-    local idx = 1
-    for x, Y in pairs(arr) do
-        for y, _ in pairs(Y) do
-            flat[idx] = {x = x, y = y}
-            idx = idx + 1
-        end
-    end
-    return flat
-end
-
----Convert a list of positions to a 2D array indexed by x and y coordinates.
----@param arr MapPosition[]
----@return MapPositionSet
-function lib.indexed_position_array(arr)
-    local set = {}
-    for _, pos in pairs(arr) do
-        if not set[pos.x] then
-            set[pos.x] = {}
-        end
-        set[pos.x][pos.y] = true
-    end
-    return set
 end
 
 function lib.is_t2_planet(surface_name)

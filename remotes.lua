@@ -8,6 +8,7 @@ for _, api_name in pairs{
     "util.entity",
     "util.hex",
     "util.mgs",
+    "util.rect",
 
     "gui.catalog_gui",
     "gui.coin_tier_gui",
@@ -26,7 +27,6 @@ for _, api_name in pairs{
     "bezier",
     "blueprints",
     "coin_tiers",
-    "core_math",
     "dungeons",
     "event_system",
     "features",

@@ -1,6 +1,8 @@
 
 local lib = require "api.lib"
 local axial = require "api.util.axial"
+local rect = require "api.util.rect"
+local hex_util = require "api.util.hex"
 local hex_island = require "api.hex_island"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"
@@ -286,7 +288,7 @@ function dungeons.spawn_hex(surface_id, hex_pos, hex_grid_scale, hex_grid_rotati
     if not surface then return end
 
     -- Generate tiles
-    local tile_positions = axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
+    local tile_positions = hex_util.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, hex_stroke_width)
     terrain.set_tiles(surface_id, tile_positions, prot.tile_type)
     dungeons.fill_edges_between_dungeon_hexes(dungeon, hex_pos, prot.tile_type)
     dungeons.fill_corners_between_dungeon_hexes(dungeon, hex_pos, prot.tile_type)
@@ -341,7 +343,7 @@ function dungeons.spawn_entities(dungeon, hex_pos, hex_grid_scale, hex_grid_rota
         if entity_prot then
             local max_dim = math.max(entity_prot.tile_width, entity_prot.tile_height)
             for _, radius in pairs(radii) do
-                local positions = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, max_dim * 1.5, hex_stroke_width + radius, false)
+                local positions = hex_util.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, max_dim * 1.5, hex_stroke_width + radius, false)
                 positions = axial.filter_positions_by_directions(hex_center, positions, directions, hex_grid_rotation)
                 for x, X in pairs(used_positions) do
                     if positions[x] then
@@ -673,8 +675,8 @@ function dungeons.spawn_loot_chests(dungeon, hex_pos, hex_grid_scale, hex_grid_r
 
     for i = 1, prot.chests_per_hex or 1 do
         local radius = math.max(5, math.random() ^ 0.5 * 10)
-        local random_pos = lib.vector_add(lib.random_unit_vector(radius), hex_center)
-        local pos = dungeon.surface.find_non_colliding_position("dungeon-chest", lib.rounded_position(random_pos, true), 2, 1, true)
+        local random_pos = lib.vector_add(rect.random_unit_vector(radius), hex_center)
+        local pos = dungeon.surface.find_non_colliding_position("dungeon-chest", rect.rounded_position(random_pos, true), 2, 1, true)
         if pos then
             local chest = dungeon.surface.create_entity {
                 name = "dungeon-chest",

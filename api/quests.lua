@@ -1,5 +1,6 @@
 
 local lib = require "api.lib"
+local rect = require "api.util.rect"
 local event_system = require "api.event_system"
 local sets         = require "api.sets"
 local features     = require "api.features"
@@ -1245,7 +1246,7 @@ function quests.process_lightning_acceleration()
             -- The lightning strikes are between hex vertices.
             local t = (1 + vertex_round_step - STEPS_PER_PHASE_1_VERTEX) / (1 + STEPS_PER_PHASE_1_EDGE)
             for i = 1, 6 do
-                local position = lib.lerp_positions(vertices[i], vertices[1 + i % 6], t)
+                local position = rect.lerp_positions(vertices[i], vertices[1 + i % 6], t)
                 surface.execute_lightning {
                     name = "lightning",
                     position = position,
@@ -1256,7 +1257,7 @@ function quests.process_lightning_acceleration()
         -- This is PHASE 2: Lightning closes in for the kill.
         local t = (anim_frame - TOTAL_STEPS_PHASE_1) / TOTAL_STEPS_PHASE_2
         for i = 1, 6 do
-            local position = lib.lerp_positions(vertices[i], center_pos, t)
+            local position = rect.lerp_positions(vertices[i], center_pos, t)
             surface.execute_lightning {
                 name = "lightning",
                 position = position,

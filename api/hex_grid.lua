@@ -2,6 +2,8 @@
 local lib = require "api.lib"
 local sets = require "api.sets"
 local axial = require "api.util.axial"
+local rect = require "api.util.rect"
+local hex_util = require "api.util.hex"
 local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"
@@ -20,7 +22,6 @@ local strongboxes = require "api.strongboxes"
 local piggy_bank  = require "api.piggy_bank"
 local gameplay_statistics = require "api.gameplay_statistics"
 local hex_sets = require "api.hex_sets"
-local hex_util = require "api.util.hex"
 local mgs_util = require "api.util.mgs"
 local entity_util = require "api.util.entity"
 
@@ -569,7 +570,7 @@ function hex_grid.apply_extra_trades_bonus(state)
         end
     end
 
-    local chunk_pos = lib.get_chunk_pos_from_tile_position(state.hex_core.position)
+    local chunk_pos = rect.get_chunk_pos_from_tile_position(state.hex_core.position)
     if next(added_trades) and game.forces.player.is_chunk_charted(state.hex_core.surface, chunk_pos) then
         for item_name, trade in pairs(added_trades) do
             lib.print_notification("extra-trade", {"",
@@ -858,7 +859,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             elseif math.random() < lib.runtime_setting_value "fulgoran-attractor-chance" then
                 local transformation = terrain.get_surface_transformation "fulgora"
                 local pos = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
-                pos = lib.vector_add(pos, lib.random_unit_vector(9))
+                pos = lib.vector_add(pos, rect.random_unit_vector(9))
                 surface.create_entity {
                     name = "fulgoran-ruin-attractor",
                     position = pos,
@@ -1108,13 +1109,13 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             rotation = math.random() * math.pi * 2
         end
 
-        local hex_center = lib.rounded_position(axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation), false)
+        local hex_center = rect.rounded_position(axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation), false)
 
         local ore_positions
         local offset_hex_center -- Used only by single-hex shapes.  Used to determine how unmixed ores should be generated.
         local ore_generation_mode = lib.runtime_setting_value "ore-generation-mode"
         if ore_generation_mode == "along-edges" then
-            ore_positions = axial.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
+            ore_positions = hex_util.get_hex_border_tiles(hex_pos, hex_grid_scale, hex_grid_rotation, resource_stroke_width, stroke_width + 2)
         elseif ore_generation_mode == "single-hex" then
             local offset_scale = 5 + resource_stroke_width
             local offset_rotation = math.random() * math.pi
@@ -1139,7 +1140,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
 
             offset_hex_center = axial.get_hex_center(offset_hex_pos, offset_scale, offset_rotation)
 
-            ore_positions = axial.get_hex_tile_positions(offset_hex_pos, offset_scale, offset_rotation, 0)
+            ore_positions = hex_util.get_hex_tile_positions(offset_hex_pos, offset_scale, offset_rotation, 0)
         elseif ore_generation_mode == "center-square" then
             ore_positions = {}
             local min_x = hex_center.x - 2 - resource_stroke_width
@@ -1153,7 +1154,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             end
         elseif ore_generation_mode == "spokes" then
             local half_width = resource_stroke_width / 2
-            local inner_tiles = axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+            local inner_tiles = hex_util.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
             local spoke_rotation = math.random() * math.pi / 3
             ore_positions = {}
             for _, tile in pairs(inner_tiles) do
@@ -1171,7 +1172,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
             end
         elseif ore_generation_mode == "scattered" then
             local inner_size = hex_grid_scale - stroke_width
-            local inner_tiles = axial.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
+            local inner_tiles = hex_util.get_hex_tile_positions(hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
             local density = inner_size > 0 and math.min(1, 2 * resource_stroke_width / inner_size) or 1
             ore_positions = {}
             for _, tile in pairs(inner_tiles) do
@@ -1621,7 +1622,7 @@ function hex_grid.try_generate_strongbox(state)
 
     local surface = state.hex_core.surface
     local pos = state.hex_core.position
-    local offset = lib.random_unit_vector(math.random(8, 16))
+    local offset = rect.random_unit_vector(math.random(8, 16))
     pos = {x = pos.x + offset.x, y = pos.y + offset.y}
 
     local clear_pos = surface.find_non_colliding_position("strongbox-tier-1", pos, 10, 1, true)
@@ -2161,11 +2162,12 @@ function hex_grid.can_initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_
     if not surface_obj then return false end
 
     -- Only return true if all overlapping chunks are generated
-    for _, chunk_pos in pairs(axial.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)) do
+    for _, chunk_pos in pairs(hex_util.get_overlapping_chunks(hex_pos, hex_grid_scale, hex_grid_rotation)) do
         if not surface_obj.is_chunk_generated(chunk_pos) then
             return false
         end
     end
+
     return true
 end
 
@@ -2195,7 +2197,7 @@ function hex_grid.spawn_hex_core(surface, position)
         return
     end
 
-    local rounded_position = lib.rounded_position(position, true)
+    local rounded_position = rect.rounded_position(position, true)
 
     local hex_pos = axial.get_hex_containing(position, transformation.scale, transformation.rotation)
     local state = hex_state_manager.get_hex_state(surface_id, hex_pos)
@@ -2940,7 +2942,7 @@ function hex_grid.get_hex_resource_entities(hex_core)
     -- local state = hex_grid.get_hex_state_from_core(hex_core)
     -- if not state then return entities end
 
-    -- local inner_border_tiles = axial.get_hex_border_tiles(state.position, transformation.scale, transformation.rotation, transformation.scale - transformation.stroke_width, transformation.stroke_width, false)
+    -- local inner_border_tiles = hex_util.get_hex_border_tiles(state.position, transformation.scale, transformation.rotation, transformation.scale - transformation.stroke_width, transformation.stroke_width, false)
     -- for i = #entities, 1, -1 do
     --     local entity = entities[i]
     --     if not inner_border_tiles[entity.position.x] or not inner_border_tiles[entity.position.x][entity.position.y] then
@@ -4562,10 +4564,10 @@ function hex_grid.on_chunk_generated(surface, chunk_pos)
     local stroke_width = transformation.stroke_width
 
     -- Convert chunk position to rectangle coordinates
-    local top_left, bottom_right = lib.chunk_to_rect(chunk_pos)
+    local top_left, bottom_right = rect.chunk_to_rect(chunk_pos)
 
     -- Find all hexes that overlap with this chunk
-    local overlapping_hexes = axial.get_overlapping_hexes(
+    local overlapping_hexes = hex_util.get_overlapping_hexes(
         top_left, bottom_right, hex_grid_scale, hex_grid_rotation
     )
 

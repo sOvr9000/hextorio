@@ -3,6 +3,7 @@
 
 local lib = require "api.lib"
 local axial = require "api.util.axial"
+local hex_util = require "api.util.hex"
 local tile_names = require "api.tile_names"
 
 local terrain = {}
@@ -88,11 +89,11 @@ function terrain.set_hex_tiles(surface, hex_pos, tile_type, overwrite_water)
     end
 
     -- Get all tiles in the hex (with no exclusion)
-    local all_positions = axial.get_hex_tile_positions(hex_pos, transformation.scale, transformation.rotation, 0)
+    local all_positions = hex_util.get_hex_tile_positions(hex_pos, transformation.scale, transformation.rotation, 0)
 
     -- Get the border tiles (same calculation used when placing water)
     -- hex_size_decrement = 0 means border is placed around the full-size hex
-    local border_tiles = axial.get_hex_border_tiles(hex_pos, transformation.scale, transformation.rotation, transformation.stroke_width, 0, false)
+    local border_tiles = hex_util.get_hex_border_tiles(hex_pos, transformation.scale, transformation.rotation, transformation.stroke_width, 0, false)
 
     -- Subtract border tiles from all positions to get the land interior
     local land_positions = {}
@@ -115,7 +116,7 @@ function terrain.generate_hex_border(surface, hex_pos, hex_grid_scale, hex_grid_
     ignore_tiles = ignore_tiles or {}
 
     local corners = axial.get_hex_corners(hex_pos, hex_grid_scale, hex_grid_rotation)
-    local border_tiles = axial.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width)
+    local border_tiles = hex_util.get_hex_border_tiles_from_corners(corners, hex_grid_scale, stroke_width)
 
     local surface_id = lib.get_surface_id(surface)
     surface = game.get_surface(surface_id)
@@ -262,8 +263,8 @@ function terrain.fill_edges_between_hexes(surface, hex_pos1, hex_pos2, tile_type
     -- Get border tiles for both hexes
     local corners1 = axial.get_hex_corners(hex_pos1, transformation.scale, transformation.rotation)
     local corners2 = axial.get_hex_corners(hex_pos2, transformation.scale, transformation.rotation)
-    local border_tiles1 = axial.get_hex_border_tiles_from_corners(corners1, transformation.scale, transformation.stroke_width)
-    local border_tiles2 = axial.get_hex_border_tiles_from_corners(corners2, transformation.scale, transformation.stroke_width)
+    local border_tiles1 = hex_util.get_hex_border_tiles_from_corners(corners1, transformation.scale, transformation.stroke_width)
+    local border_tiles2 = hex_util.get_hex_border_tiles_from_corners(corners2, transformation.scale, transformation.stroke_width)
 
     -- Combine border tiles
     local all_border_tiles = {}
@@ -341,9 +342,9 @@ function terrain.fill_corners_between_hexes(surface, hex_pos1, hex_pos2, hex_pos
 
     if common_corner then
         -- Get border tiles for all three hexes
-        local border_tiles0 = axial.get_hex_border_tiles_from_corners(corners0, transformation.scale, transformation.stroke_width)
-        local border_tiles1 = axial.get_hex_border_tiles_from_corners(corners1, transformation.scale, transformation.stroke_width)
-        local border_tiles2 = axial.get_hex_border_tiles_from_corners(corners2, transformation.scale, transformation.stroke_width)
+        local border_tiles0 = hex_util.get_hex_border_tiles_from_corners(corners0, transformation.scale, transformation.stroke_width)
+        local border_tiles1 = hex_util.get_hex_border_tiles_from_corners(corners1, transformation.scale, transformation.stroke_width)
+        local border_tiles2 = hex_util.get_hex_border_tiles_from_corners(corners2, transformation.scale, transformation.stroke_width)
 
         -- Combine all border tiles
         local all_border_tiles = {}
