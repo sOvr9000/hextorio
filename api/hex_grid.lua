@@ -859,7 +859,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
             elseif math.random() < lib.runtime_setting_value "fulgoran-attractor-chance" then
                 local transformation = terrain.get_surface_transformation "fulgora"
                 local pos = axial.get_hex_center(hex_pos, transformation.scale, transformation.rotation)
-                pos = lib.vector_add(pos, rect.random_unit_vector(9))
+                pos = rect.vector_add(pos, rect.random_unit_vector(9))
                 surface.create_entity {
                     name = "fulgoran-ruin-attractor",
                     position = pos,
@@ -1130,7 +1130,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                 local closest_dist = math.huge
                 for _, adj_pos in pairs(axial.get_adjacent_hexes(center_offset_hex)) do
                     local rect_pos = axial.get_hex_center(adj_pos, offset_scale, offset_rotation)
-                    local d = lib.square_distance(rect_pos, hex_center)
+                    local d = rect.square_distance(rect_pos, hex_center)
                     if d < closest_dist then
                         closest_dist = d
                         offset_hex_pos = adj_pos
@@ -2721,7 +2721,7 @@ function hex_grid.generate_loaders(hex_core_state)
     for _, e in pairs(entities) do
         if e.valid then
             if e.loader_filter_mode == "whitelist" then
-                filters[lib.position_to_string(e.position)] = get_filters(e)
+                filters[rect.position_to_string(e.position)] = get_filters(e)
             end
             e.destroy()
         end
@@ -2740,8 +2740,8 @@ function hex_grid.generate_loaders(hex_core_state)
         local output_loader = surface.create_entity {name = "hex-core-loader", position = {position.x - dx, position.y + dy}, direction = 4 * ((3 + i) % 4), type = "output", force = "player"}
         output_loader.loader_filter_mode = "whitelist"
         output_loader.destructible = false
-        if filters[lib.position_to_string(output_loader.position)] then
-            set_filters(output_loader, filters[lib.position_to_string(output_loader.position)])
+        if filters[rect.position_to_string(output_loader.position)] then
+            set_filters(output_loader, filters[rect.position_to_string(output_loader.position)])
         end
         hex_core_state.output_loaders[i] = output_loader
 

@@ -1,11 +1,12 @@
 
 local lib               = require "api.lib"
+local axial             = require "api.util.axial"
+local rect              = require "api.util.rect"
 local coin_tiers        = require "api.coin_tiers"
 local trades            = require "api.trades"
 local event_system      = require "api.event_system"
 local spider_control    = require "api.spider_control"
 local inventories       = require "api.inventories"
-local axial             = require "api.util.axial"
 local hex_state_manager = require "api.hex_state_manager"
 local hex_sets          = require "api.hex_sets"
 
@@ -532,7 +533,7 @@ function spider_network.compute_tradertron_score_for_order(tradertron, order)
     if matching_ratio <= 0 then return end
 
     local age_factor = 0.01 * (game.tick - order.tick_created)
-    local distance_factor = 0.001 * lib.square_distance(entity.position, order.map_position)
+    local distance_factor = 0.001 * rect.square_distance(entity.position, order.map_position)
 
     return order.priority * matching_ratio * (1 + age_factor) / (1 + distance_factor)
 end

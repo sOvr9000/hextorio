@@ -675,7 +675,7 @@ function dungeons.spawn_loot_chests(dungeon, hex_pos, hex_grid_scale, hex_grid_r
 
     for i = 1, prot.chests_per_hex or 1 do
         local radius = math.max(5, math.random() ^ 0.5 * 10)
-        local random_pos = lib.vector_add(rect.random_unit_vector(radius), hex_center)
+        local random_pos = rect.vector_add(rect.random_unit_vector(radius), hex_center)
         local pos = dungeon.surface.find_non_colliding_position("dungeon-chest", rect.rounded_position(random_pos, true), 2, 1, true)
         if pos then
             local chest = dungeon.surface.create_entity {

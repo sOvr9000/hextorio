@@ -5,6 +5,42 @@ local rect = {}
 
 
 
+---Return a string representation of a vector.
+---@param x number|MapPosition
+---@param y number|nil Must not be nil if `x` is a number
+---@return string
+function rect.position_to_string(x, y)
+    local _x, _y
+
+    if not y then
+        _x = x.x or x[1]
+        _y = x.y or x[2]
+    else
+        _x = x
+        _y = y
+    end
+
+    return "(" .. _x .. ", " .. _y .. ")"
+end
+
+---Add two vectors.
+---@param a any
+---@param b any
+---@return table
+function rect.vector_add(a, b)
+    return {x=(a.x or a[1])+(b.x or b[1]), y=(a.y or a[2])+(b.y or b[2])}
+end
+
+---Get the square of the Euclidean distance between two positions.
+---@param pos1 MapPosition
+---@param pos2 MapPosition
+---@return number
+function rect.square_distance(pos1, pos2)
+    local dx = (pos1.x or pos1[1]) - (pos2.x or pos2[1])
+    local dy = (pos1.y or pos1[2]) - (pos2.y or pos2[2])
+    return dx * dx + dy * dy
+end
+
 ---Return a 2D vector of length `length` with a random angle.
 ---@param length number|nil
 ---@return MapPosition

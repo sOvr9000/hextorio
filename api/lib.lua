@@ -71,42 +71,6 @@ local vanilla_planet_names = {
 
 
 
-function lib.position_to_string(x, y)
-    if not y then
-        y = x.y or x[2]
-        x = x.x or x[1]
-    end
-    return "(" .. tostring(x) .. ", " .. tostring(y) .. ")"
-end
-
-function lib.vector_add(a, b)
-    return {x=(a.x or a[1])+(b.x or b[1]), y=(a.y or a[2])+(b.y or b[2])}
-end
-
-function lib.vector_multiply(a, b)
-    return {x=(a.x or a[1]) * b, y=(a.y or a[2]) * b}
-end
-
----Get the square of the L2 (a.k.a. Euclidean) distance between two positions.
----@param pos1 MapPosition
----@param pos2 MapPosition
----@return number
-function lib.square_distance(pos1, pos2)
-    local dx = (pos1.x or pos1[1]) - (pos2.x or pos2[1])
-    local dy = (pos1.y or pos1[2]) - (pos2.y or pos2[2])
-    return dx * dx + dy * dy
-end
-
----Get the L1 (a.k.a. Manhattan) distance between the two positions.
----@param pos1 MapPosition
----@param pos2 MapPosition
----@return number
-function lib.manhattan_distance(pos1, pos2)
-    local dx = (pos1.x or pos1[1]) - (pos2.x or pos2[1])
-    local dy = (pos1.y or pos1[2]) - (pos2.y or pos2[2])
-    return math.abs(dx) + math.abs(dy)
-end
-
 ---Return integers `num` and `den` such that `num / den` is approximately equal to `x`. Computes in O(n) time where n corresponds to desired precision.
 ---@param x number
 ---@param epsilon number Minimal value of `num / (x * den)` or `x * den / num` (whichever is bigger, representing the proportional error). Should always be greater than 1.
@@ -2240,7 +2204,8 @@ function lib.get_cargo_wagons_nearest_to_stop(train, train_stop)
     if not front or not front.valid then return {} end
     if not train_stop.valid then return train.cargo_wagons end
 
-    if lib.square_distance(front.position, train_stop.position) < 13.2 then -- Comparing distance is the best way I can come up with for correctly distinguishing this.
+    -- TODO: Use rect.square_distance(), but first need to move this function outside of api/lib.lua to avoid circular dependencies
+    if (front.position.x - train_stop.position.x) * (front.position.x - train_stop.position.x) + (front.position.y - train_stop.position.y) * (front.position.y - train_stop.position.y) < 13.2 then -- Comparing distance is the best way I can come up with for correctly distinguishing this.
         return train.cargo_wagons
     end
 
