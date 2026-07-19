@@ -1,6 +1,6 @@
 
 local lib = require "api.lib"
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local terrain = require "api.terrain"
 local event_system = require "api.event_system"
 local hex_state_manager = require "api.hex_state_manager"

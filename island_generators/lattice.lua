@@ -1,7 +1,7 @@
 
 -- Generates a lattice of hexes, filling in a hexagonal shape.  The nonland hexes inside the island are in a dilated hexagonal pattern.
 
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 
 local function estimate_radius(total_hexes)

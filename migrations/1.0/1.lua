@@ -1,5 +1,5 @@
 
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local terrain = require "api.terrain"
 local hex_state_manager = require "api.hex_state_manager"
 

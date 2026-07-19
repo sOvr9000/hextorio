@@ -1,7 +1,7 @@
 -- Generate hex sets which represent a single, connected island.
 
 local lib = require "api.lib"
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
 local hex_util = require "api.util.hex"

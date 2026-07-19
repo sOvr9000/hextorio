@@ -1,6 +1,6 @@
 
 local lib                 = require "api.lib"
-local axial               = require "api.axial"
+local axial               = require "api.util.axial"
 local terrain             = require "api.terrain"
 local item_values         = require "api.item_values"
 local sets                = require "api.sets"

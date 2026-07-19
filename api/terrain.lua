@@ -2,7 +2,7 @@
 -- Management of terrain tiles in the game.
 
 local lib = require "api.lib"
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local tile_names = require "api.tile_names"
 
 local terrain = {}

@@ -1,6 +1,6 @@
 
 local lib = require "api.lib"
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_island = require "api.hex_island"
 local weighted_choice = require "api.weighted_choice"
 local item_values = require "api.item_values"

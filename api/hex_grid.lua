@@ -1,7 +1,7 @@
 
 local lib = require "api.lib"
 local sets = require "api.sets"
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_island = require "api.hex_island"
 local event_system = require "api.event_system"
 local terrain = require "api.terrain"

@@ -5,7 +5,7 @@ local trades            = require "api.trades"
 local event_system      = require "api.event_system"
 local spider_control    = require "api.spider_control"
 local inventories       = require "api.inventories"
-local axial             = require "api.axial"
+local axial             = require "api.util.axial"
 local hex_state_manager = require "api.hex_state_manager"
 local hex_sets          = require "api.hex_sets"
 

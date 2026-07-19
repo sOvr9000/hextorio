@@ -3,7 +3,7 @@
 -- Intended to provide utility functions such as pathfinding algorithms or other filtering methods of hex sets.
 -- Or to extend the axial module's logic onto hex sets.
 
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 
 local hex_util = {}

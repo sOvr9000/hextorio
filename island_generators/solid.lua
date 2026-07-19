@@ -1,7 +1,7 @@
 
 -- Generates a full hexagon, containing zero holes.
 
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 
 local function estimate_radius(total_hexes)

@@ -1,7 +1,7 @@
 
 -- This uses a min heap to cut score searching from O(n) to O(logn).
 
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 local lib      = require "api.lib"
 local hex_state_manager = require "api.hex_state_manager"

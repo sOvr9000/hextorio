@@ -1,6 +1,6 @@
 
 local lib = require "api.lib"
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 
 local hex_maze = {}

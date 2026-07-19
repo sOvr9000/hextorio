@@ -1,7 +1,7 @@
 
 -- Generates a series of hexagonal rings spaced by water, but with the main axes of the world connecting them, forming what looks like a spider web.
 
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 
 local function estimate_radius(total_hexes)

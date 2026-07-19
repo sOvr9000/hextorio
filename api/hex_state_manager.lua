@@ -1,7 +1,7 @@
 
 local lib = require "api.lib"
 local terrain = require "api.terrain"
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 
 local hex_state_manager = {}
 

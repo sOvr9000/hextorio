@@ -1,7 +1,7 @@
 
 -- Generates a large maze, filling in a giant hexagon.
 
-local axial = require "api.axial"
+local axial = require "api.util.axial"
 local hex_sets = require "api.hex_sets"
 local hex_maze = require "api.hex_maze"
 
