@@ -6,6 +6,8 @@ Date: 16/7/26
   Changes:
     - Removed the item value solver messages in chat (replaced by visual progress bar).
     - Overclocked the item value solver by 2.5x.
+  Bugfixes:
+    - Hex core GUIs now get updated when the item value solver finishes while you're looking at them.
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.3
 Date: 17/7/26

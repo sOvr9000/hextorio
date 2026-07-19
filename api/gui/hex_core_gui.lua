@@ -73,21 +73,11 @@ function hex_core_gui.register_events()
         end
     end)
 
-    event_system.register("trade-toggle-button-clicked", function(player, element)
-        hex_core_gui.on_toggle_trade_button_click(player, element)
-    end)
-
-    event_system.register("trade-tag-button-clicked", function(player, element)
-        hex_core_gui.on_tag_button_click(player, element)
-    end)
-
-    event_system.register("trade-add-to-filters-button-clicked", function(player, element)
-        hex_core_gui.on_add_to_filters_button_click(player, element)
-    end)
-
-    event_system.register("trade-quality-selected", function(player, element, trade_number)
-        hex_core_gui.on_quality_selected(player, element, trade_number)
-    end)
+    event_system.register("trade-toggle-button-clicked", hex_core_gui.on_toggle_trade_button_click)
+    event_system.register("trade-tag-button-clicked", hex_core_gui.on_tag_button_click)
+    event_system.register("trade-add-to-filters-button-clicked", hex_core_gui.on_add_to_filters_button_click)
+    event_system.register("trade-quality-selected", hex_core_gui.on_quality_selected)
+    event_system.register("post-item-values-recalculated", hex_core_gui.on_post_item_values_recalculated)
 end
 
 ---Reinitialize the hex core GUI for the given player, or all players if no player is provided.
@@ -1038,6 +1028,12 @@ function hex_core_gui.on_trade_processed(trade, total_removed, total_inserted)
             -- what?
             -- table.remove(update_players, i)
         end
+    end
+end
+
+function hex_core_gui.on_post_item_values_recalculated()
+    for _, player in pairs(game.connected_players) do
+        hex_core_gui.update_hex_core(player)
     end
 end
 
