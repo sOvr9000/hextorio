@@ -4,9 +4,10 @@ local api = {}
 
 
 for _, api_name in pairs{
-    "util.mgs",
-    "util.hex",
+    "util.axial",
     "util.entity",
+    "util.hex",
+    "util.mgs",
 
     "gui.catalog_gui",
     "gui.coin_tier_gui",
@@ -22,7 +23,6 @@ for _, api_name in pairs{
     "gui.trades_gui",
     "gui.solver_progress_gui",
 
-    "axial",
     "bezier",
     "blueprints",
     "coin_tiers",
