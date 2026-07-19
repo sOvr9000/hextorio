@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.4
-Date: 16/7/26
+Date: 19/7/26
   Minor Features:
     - Added a progress bar that updates live while the item value solver runs, including an estimated time remaining until finished.
   Changes:
