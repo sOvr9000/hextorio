@@ -5,6 +5,7 @@ local axial = require "api.axial"
 local hex_sets = require "api.hex_sets"
 local event_system = require "api.event_system"
 local hex_util = require "api.util.hex"
+local mgs_util = require "api.util.mgs"
 
 local hex_island = {}
 
@@ -118,7 +119,7 @@ function hex_island.process_surface_creation(surface)
         if control_key then
             local control = mgs.autoplace_controls[control_key]
             if control and control.size > 0 then
-                land_chance = (lib.remap_map_gen_setting(1 / control.frequency) + lib.remap_map_gen_setting(control.size)) * 0.5
+                land_chance = (mgs_util.remap_map_gen_setting(1 / control.frequency) + mgs_util.remap_map_gen_setting(control.size)) * 0.5
             end
         elseif surface.name == "aquilo" then
             land_chance = 0.60

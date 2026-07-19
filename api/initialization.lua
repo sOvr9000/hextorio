@@ -84,16 +84,14 @@ function initialization.init()
     local copper_ore_frequency = lib.runtime_setting_value "copper-ore-frequency"
     local coal_frequency = lib.runtime_setting_value "nauvis-coal-frequency"
     local stone_frequency = lib.runtime_setting_value "nauvis-stone-frequency"
-    -- local uranium_ore_frequency = lib.runtime_setting_value "uranium-ore-frequency"
 
     -- Define default nauvis resource randomization based on map gen settings frequencies
     storage.hex_grid.resource_weighted_choice.nauvis = {}
     storage.hex_grid.resource_weighted_choice.nauvis.resources = weighted_choice.new {
-        ["iron-ore"] = mgs_original.autoplace_controls["iron-ore"].size * iron_frequency,
-        ["copper-ore"] = mgs_original.autoplace_controls["copper-ore"].size * copper_ore_frequency,
-        ["coal"] = mgs_original.autoplace_controls["coal"].size * coal_frequency,
-        ["stone"] = mgs_original.autoplace_controls["stone"].size * stone_frequency,
-        -- ["uranium-ore"] = mgs_original.autoplace_controls["uranium-ore"].size * uranium_ore_frequency,
+        ["iron-ore"] = mgs_util.get_autoplace_control(mgs_original, "iron-ore").size * iron_frequency,
+        ["copper-ore"] = mgs_util.get_autoplace_control(mgs_original, "copper-ore").size * copper_ore_frequency,
+        ["coal"] = mgs_util.get_autoplace_control(mgs_original, "coal").size * coal_frequency,
+        ["stone"] = mgs_util.get_autoplace_control(mgs_original, "stone").size * stone_frequency,
     }
     storage.hex_grid.resource_weighted_choice.nauvis.wells = weighted_choice.new {
         ["crude-oil"] = 1,

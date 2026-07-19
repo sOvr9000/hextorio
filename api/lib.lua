@@ -834,20 +834,6 @@ function lib.get_player_owner_of_inventory(inventory)
     -- No player found from inventory
 end
 
----Turn a map gen setting between 0.16667 and 6 into a number between 0 and 1, or to a specified range
----@param x number|nil
----@param to_min number | nil
----@param to_max number | nil
----@return number
-function lib.remap_map_gen_setting(x, to_min, to_max)
-    if not x then return ((to_min or 0) + (to_max or 1)) * 0.5 end
-    local v = math.log(x, 6) * 0.5 + 0.5
-    if to_min and to_max then
-        return to_min + (to_max - to_min) * v
-    end
-    return v
-end
-
 function lib.disable_everything(t)
     for key, value in pairs(t) do
         if key == "size" and type(value) == "number" then
@@ -1554,20 +1540,6 @@ end
 ---@return boolean
 function lib.is_vanilla_planet_name(surface_name)
     return vanilla_planet_names[surface_name] == true
-end
-
-function lib.sum_mgs(mgs, target, keys)
-    local sum = 0
-    for _, key in pairs(keys) do
-        if not mgs[key] then
-            lib.log_error("lib.sum_mgs: key \"" .. key .. "\" not found in " .. serpent.line(mgs))
-        elseif not mgs[key][target] then
-            lib.log_error("lib.sum_mgs: target \"" .. target .. "\" not found in " .. serpent.line(mgs[key]))
-        else
-            sum = sum + lib.remap_map_gen_setting(mgs[key][target])
-        end
-    end
-    return sum
 end
 
 ---Flattened a 2D array of positions that are indexed by x and y coordinates.

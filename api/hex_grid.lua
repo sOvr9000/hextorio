@@ -21,6 +21,7 @@ local piggy_bank  = require "api.piggy_bank"
 local gameplay_statistics = require "api.gameplay_statistics"
 local hex_sets = require "api.hex_sets"
 local hex_util = require "api.util.hex"
+local mgs_util = require "api.util.mgs"
 local entity_util = require "api.util.entity"
 
 
@@ -875,10 +876,10 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
 
         if not is_dungeon then
             if surface.name == "nauvis" then
-                local min_biter_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
+                local min_biter_distance = mgs_util.remap_map_gen_setting(mgs.starting_area, 0, 3)
                 local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
                 if is_biter_hex then
-                    local biter_chance = lib.remap_map_gen_setting(mgs.autoplace_controls["enemy-base"].frequency)
+                    local biter_chance = mgs_util.remap_map_gen_setting(mgs.autoplace_controls["enemy-base"].frequency)
 
                     local r = math.random()
                     local proc = r < biter_chance
@@ -900,10 +901,10 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                     end
                 end
             elseif surface.name == "gleba" then
-                local min_pentapod_distance = lib.remap_map_gen_setting(mgs.starting_area, 0, 3)
+                local min_pentapod_distance = mgs_util.remap_map_gen_setting(mgs.starting_area, 0, 3)
                 local is_pentapod_hex = not is_starting_hex and dist >= min_pentapod_distance
                 if is_pentapod_hex then
-                    local pentapod_chance = math.sqrt(lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency))
+                    local pentapod_chance = math.sqrt(mgs_util.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency))
 
                     local r = math.random()
                     local proc = r < pentapod_chance
@@ -1017,7 +1018,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         resource_names = {}
     end
 
-    local total_resource_size = lib.sum_mgs(mgs.autoplace_controls, "size", resource_names)
+    local total_resource_size = mgs_util.sum_mgs(mgs.autoplace_controls, "size", resource_names)
     local r = math.random()
     local resource_stroke_width
 
@@ -1056,13 +1057,15 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         local num_entities_min
         local num_entities_max
         if surface.name == "nauvis" then
-            num_entities_min = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls["crude-oil"].size, 1, 3))
-            num_entities_max = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls["crude-oil"].size, 3, 6))
+            local autoplace_control = mgs_util.get_autoplace_control(mgs, "crude-oil")
+            num_entities_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 1, 3))
+            num_entities_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 3, 6))
         elseif surface.name == "vulcanus" then
-            num_entities_min = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls.sulfuric_acid_geyser.size, 1, 3))
-            num_entities_max = math.floor(0.5 + lib.remap_map_gen_setting(mgs.autoplace_controls.sulfuric_acid_geyser.size, 3, 6))
+            local autoplace_control = mgs_util.get_autoplace_control(mgs, "sulfuric_acid_geyser")
+            num_entities_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 1, 3))
+            num_entities_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 3, 6))
         elseif surface.name == "aquilo" then
-            local size = lib.sum_mgs(mgs.autoplace_controls, "size", {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}) / 3
+            local size = mgs_util.sum_mgs(mgs.autoplace_controls, "size", {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}) / 3
 
             num_entities_min = math.floor(0.5 + 1 + 2 * size)
             num_entities_max = math.floor(0.5 + 3 + 3 * size)
@@ -1354,8 +1357,8 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
             table.insert(resource_names, "uranium-ore")
         end
 
-        local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
-        local total_resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", resource_names)
+        local well_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
+        local total_resource_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", resource_names)
         local resource_freq = total_resource_freq
         resource_freq = resource_freq / #resource_names
         resource_freq = (resource_freq ^ 2.6) * #resource_names
@@ -1375,7 +1378,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
             return storage.hex_grid.resource_weighted_choice.nauvis.wells, true
         end
 
-        local is_uranium = can_be_uranium and math.random() < lib.remap_map_gen_setting(mgs.autoplace_controls["uranium-ore"].frequency) / total_resource_freq
+        local is_uranium = can_be_uranium and math.random() < mgs_util.remap_map_gen_setting(mgs.autoplace_controls["uranium-ore"].frequency) / total_resource_freq
         if is_uranium then
             return storage.hex_grid.resource_weighted_choice.nauvis.uranium, false
         end
@@ -1397,8 +1400,8 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         end
         local can_be_tungsten = dist >= lib.runtime_setting_value "min-tungsten-dist"
 
-        local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"sulfuric_acid_geyser"})
-        local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"vulcanus_coal", "calcite", "tungsten_ore"})
+        local well_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", {"sulfuric_acid_geyser"})
+        local resource_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", {"vulcanus_coal", "calcite", "tungsten_ore"})
         resource_freq = resource_freq * resource_freq / 3
         resource_freq = resource_freq / (1 + dist * dropoff)
         well_freq = well_freq / (1 + dist * dropoff)
@@ -1445,7 +1448,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
             return storage.hex_grid.resource_weighted_choice.fulgora.resources, false
         end
 
-        local resource_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", {"scrap"})
+        local resource_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", {"scrap"})
         resource_freq = resource_freq * resource_freq
         resource_freq = resource_freq / (1 + dist * dropoff)
         if math.random() > resource_freq then
@@ -1454,7 +1457,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
         return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.fulgora.resources), false
     elseif surface.name == "gleba" then
-        local resource_freq = lib.remap_map_gen_setting(mgs.autoplace_controls.gleba_stone.frequency)
+        local resource_freq = mgs_util.remap_map_gen_setting(mgs.autoplace_controls.gleba_stone.frequency)
         resource_freq = resource_freq * resource_freq
         resource_freq = resource_freq / (1 + dist * dropoff)
         if not is_starter_hex and math.random() > resource_freq then
@@ -1464,7 +1467,7 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
         return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.gleba.resources), false
     elseif surface.name == "aquilo" then
         local well_names = {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}
-        local well_freq = lib.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
+        local well_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
         well_freq = well_freq * well_freq / 3
         well_freq = well_freq / (1 + dist * dropoff)
         if math.random() > well_freq then
@@ -1499,8 +1502,8 @@ function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid
     local dist = axial.distance(hex_pos, {q=0, r=0})
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
-    local num_spawners_min = math.floor(0.5 + lib.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 3))
-    local num_spawners_max = math.floor(0.5 + lib.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 5))
+    local num_spawners_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 3))
+    local num_spawners_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 5))
     local num_spawners = math.random(num_spawners_min, num_spawners_max)
     local num_worms = math.floor(0.4999 + num_spawners * (0.5 + math.random()))
     local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
@@ -1519,8 +1522,8 @@ function hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_g
     local dist = axial.distance(hex_pos, {q=0, r=0})
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
-    local num_rafts_min = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 3))
-    local num_rafts_max = math.floor(0.5 + lib.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 5))
+    local num_rafts_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 3))
+    local num_rafts_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 5))
     local num_rafts = math.random(num_rafts_min, num_rafts_max)
     local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
 
