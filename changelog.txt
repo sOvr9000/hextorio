@@ -9,6 +9,7 @@ Date: 15/7/26
     - Fixed crash relating to trades not containing enough items.
     - Fixed that Aquilo's hexes near spawn oftentimes contained no trades.  Coin-involving trades are now used as a fallback.
     - Fixed that item buffs giving belt capacity weren't also giving an equivalent bonus to bulk inserter capacity.
+    - Fixed rare crash when hex cores contain no trades.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.5
 Date: 9/6/26
