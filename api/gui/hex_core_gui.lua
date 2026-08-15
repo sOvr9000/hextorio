@@ -291,7 +291,7 @@ function hex_core_gui.update_hex_core(player)
     end
 
     local hex_core = lib.get_player_opened_entity(player)
-    if not hex_core then return end
+    if not hex_core or not hex_core.valid then return end
 
     local state = hex_grid.get_hex_state_from_core(hex_core)
     if not state then return end
@@ -464,12 +464,16 @@ function hex_core_gui.update_hex_core(player)
         return
     end
 
+    if not state.trades or not next(state.trades) then
+        lib.log("No trades found in hex core at " .. hex_core.gps_tag)
+    end
+
     local show_quality_bounds = false
     if state.claimed then
         show_quality_bounds = lib.get_highest_unlocked_quality().name ~= "normal"
     end
 
-    trades_gui.build_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades), {
+    trades_gui.build_trades_scroll_pane(player, frame.trades, trades.convert_trade_id_array_to_trade_array(state.trades or {}), {
         show_toggle_trade = state.claimed,
         show_tag_creator = true,
         show_ping_button = true,
