@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.5
-Date: 19/7/26
+Date: 16/8/26
   Features:
     - Added the "Mod Blacklist" mod setting for blacklisting items in trade generation by mod name, defaulting to some popular decoration mods.
   Bugfixes:
