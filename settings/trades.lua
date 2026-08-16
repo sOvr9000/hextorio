@@ -44,6 +44,14 @@ data:extend({
     },
 
     {
+        type = "string-setting",
+        name = "hextorio-mod-blacklist",
+        setting_type = "runtime-global",
+        default_value = "dectorio-fixes, color-coding, textplates",
+        allow_blank = true,
+        order = "t[trades]-b[mod-blacklist]",
+    },
+    {
         type = "double-setting",
         name = "hextorio-coin-trade-chance",
         setting_type = "runtime-global",
