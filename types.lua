@@ -186,6 +186,7 @@
 ---| "runtime-setting-changed-hex-claim-cost-mult-nauvis"
 ---| "runtime-setting-changed-hex-claim-cost-mult-vulcanus"
 ---| "runtime-setting-changed-hex-pool-size"
+---| "runtime-setting-changed-mod-blacklist"
 ---| "runtime-setting-changed-rank-2-effect"
 ---| "runtime-setting-changed-rank-2-prod-requirement"
 ---| "runtime-setting-changed-rank-3-prod-requirement"

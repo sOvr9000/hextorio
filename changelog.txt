@@ -1,8 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.5
 Date: 19/7/26
+  Features:
+    - Added the "Mod Blacklist" mod setting for blacklisting items in trade generation by mod name, defaulting to some popular decoration mods.
   Bugfixes:
     - Fixed rare crash when hex cores contain no trades.
+    - Fixed that the catalog GUI did not update with item tradability updates that are separate from item value updates.
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.4
 Date: 19/7/26

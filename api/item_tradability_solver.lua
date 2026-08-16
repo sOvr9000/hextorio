@@ -54,6 +54,24 @@ local item_tradability_solver = {}
 
 
 
+---@return StringSet
+local function parse_blacklisted_mods_setting()
+    local list_str = lib.runtime_setting_value_as_string "mod-blacklist"
+    local blacklist = sets.new()
+
+    -- if string.len(list_str) > 0 then
+        -- Split by commas, trim entries, and then add to set.
+        for token in string.gmatch(list_str, "[^,]+") do
+            local mod_name = token:gsub("^%s*(.-)%s*$", "%1")
+            if #mod_name > 0 then
+                sets.add(blacklist, mod_name)
+            end
+        end
+    -- end
+
+    return blacklist
+end
+
 ---@return StringSet item_name -> true for all science pack items
 local function build_science_pack_set()
     local science_packs = {}
@@ -556,12 +574,14 @@ end
 
 function item_tradability_solver.register_events()
     event_system.register("item-values-recalculated", item_tradability_solver.solve)
+    event_system.register("runtime-setting-changed-mod-blacklist", item_tradability_solver.solve)
 end
 
 ---Solve tradability for all planets and populate storage.item_values.is_tradable.
 function item_tradability_solver.solve()
     lib.log("Tradability solver: starting")
 
+    local blacklisted_mods = parse_blacklisted_mods_setting()
     local recipes, recipe_origin, recipe_valid_planets = collect_recipes_and_origins()
 
     local is_tradable = {}
@@ -583,21 +603,26 @@ function item_tradability_solver.solve()
         local count = 0
         for item_name in pairs(available) do
             local item_prot = prototypes.item[item_name]
-            if item_prot and not item_prot.hidden and item_values.has_item_value(planet, item_name) then
-                planet_tradable[item_name] = true
-                count = count + 1
+            if item_prot and not item_prot.hidden then
+                local history = prototypes.get_history(item_prot.type, item_name)
+                if not blacklisted_mods[history.created] then
+                    if item_values.has_item_value(planet, item_name) then
+                        planet_tradable[item_name] = true
+                        count = count + 1
+                    end
+                -- else
+                --     log("Tradability solver: excluded " .. history.created .. ":" .. item_name .. " from the tradability set for " .. planet .. ".")
+                end
             end
+        end
+
+        -- Add all coin tiers.
+        for _, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
+            planet_tradable[coin_name] = true
         end
 
         is_tradable[planet] = planet_tradable
         lib.log("Tradability solver: " .. planet .. " — " .. count .. " tradable items")
-    end
-
-    for planet, _ in pairs(storage.SUPPORTED_PLANETS) do
-        local planet_tradable = is_tradable[planet]
-        for _, coin_name in pairs(storage.coin_tiers.COIN_NAMES) do
-            planet_tradable[coin_name] = true
-        end
     end
 
     storage.item_values.is_tradable = is_tradable
