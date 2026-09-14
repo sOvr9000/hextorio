@@ -3,6 +3,8 @@ Version: 1.9.6
 Date: 15/8/26
   Graphics:
     - Reworked coin sprites.
+  Bugfixes:
+    - Changed hexes in unlooted dungeons to stop showing a claim button, for the cost is irrelevant and they are auto-claimed for free on dungeon clear.
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.5
 Date: 16/8/26
