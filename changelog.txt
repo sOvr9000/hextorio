@@ -4,8 +4,8 @@ Date: 15/8/26
   Minor Features:
     - Added the /snap-to-hex-grid command, which configures the blueprint you're holding for perfect hex-to-hex tilability on the surface you're viewing.
   Changes:
-    - Hexes now have the same shape everywhere, allowing perfect blueprint tilability, e.g. mining drill layouts, railways, etc.
-        Requires a save restart to use. Credit to flamebeard10339 for making this work.
+    - Hexes now have the same shape everywhere, allowing perfect blueprint tilability, e.g. mining drill layouts, railways, concrete floor designs, etc.
+        Does not apply to older saves. Credit to flamebeard10339 for making this work.
   Graphics:
     - Reworked coin sprites.
   Bugfixes:

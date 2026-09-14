@@ -99,20 +99,75 @@ function blueprints.apply_hex_snapping(blueprint, axial_scale, axial_rotation)
     blueprint.blueprint_absolute_snapping = true
     blueprint.blueprint_position_relative_to_grid = snapping.position_relative_to_grid
 
-    blueprints._normalize_entity_positions_to_grid_size(blueprint)
+    blueprints._normalize_entity_and_tile_positions_to_grid_size(blueprint)
 
     return snapping.snap_to_grid
 end
 
----Translate all entity positions such that their center of mass is closest to the origin.
+---Translate all entity and tile positions such that their center of mass is closest to the origin, preserving relative positions to the tiling grid.
+---CAUTION: This translation can irreversibly corrupt blueprint data under narrow conditions in Factorio 2.1.17: https://forums.factorio.com/viewtopic.php?t=133849
 ---@param blueprint LuaItemStack|LuaRecord
-function blueprints._normalize_entity_positions_to_grid_size(blueprint)
+function blueprints._normalize_entity_and_tile_positions_to_grid_size(blueprint)
+    local grid_size = blueprint.blueprint_snap_to_grid
+    if not grid_size then return end
+
     local sum_x = 0
     local sum_y = 0
+    local total_positions = 0
 
-    -- TODO: find center of mass of entities in `blueprint`, then overwrite entity data to the same entities but with translated positions such that the center of mass is as close to the origin as possible.
-    -- avoid this bug: https://forums.factorio.com/viewtopic.php?t=133849
-    -- (ensure that this works okay with rail entities and other non-1x1-snapping entities)
+    local entities = blueprint.get_blueprint_entities()
+    if entities then
+        for _, e in pairs(entities) do
+            sum_x = sum_x + e.position.x
+            sum_y = sum_y + e.position.y
+        end
+        total_positions = total_positions + #entities
+    end
+
+    local tiles = blueprint.get_blueprint_tiles()
+    if tiles then
+        for _, t in pairs(tiles) do
+            sum_x = sum_x + t.position.x
+            sum_y = sum_y + t.position.y
+        end
+        total_positions = total_positions + #tiles
+    end
+
+    if total_positions == 0 then
+        -- This should never happen because Factorio prevents creating a completely empty blueprint.  But it's here just in case.
+        lib.log_error("blueprints._normalize_entity_and_tile_positions_to_grid_size: Cannot normalize positions in blueprint with no tiles or entities.")
+        return
+    end
+
+    local total_positions_inv = 1 / total_positions
+    local center_of_mass = {
+        x = sum_x * total_positions_inv,
+        y = sum_y * total_positions_inv,
+    }
+
+    -- Quantize to grid size.
+    local translation_x = math.floor(0.5 + center_of_mass.x / grid_size.x) * grid_size.x
+    local translation_y = math.floor(0.5 + center_of_mass.y / grid_size.y) * grid_size.y
+
+    if entities then
+        for _, e in pairs(entities) do
+            e.position = {
+                x = e.position.x - translation_x,
+                y = e.position.y - translation_y,
+            }
+        end
+        blueprint.set_blueprint_entities(entities)
+    end
+
+    if tiles then
+        for _, t in pairs(tiles) do
+            t.position = {
+                x = t.position.x - translation_x,
+                y = t.position.y - translation_y,
+            }
+        end
+        blueprint.set_blueprint_tiles(tiles)
+    end
 end
 
 
