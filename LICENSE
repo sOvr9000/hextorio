@@ -22,6 +22,6 @@ SOFTWARE.
 
 ---
 
-The music and audio files in the `sound/` directory are the original work of
-sOvr9000 and are not covered by the MIT License above. All rights reserved.
-See `sound/LICENSE` for details.
+The music and audio files in the `sound/` directory are not covered by the
+MIT License above. See `sound/LICENSE` for their applicable terms, including
+the third-party license for the electromagnetic penetrator sound effects.

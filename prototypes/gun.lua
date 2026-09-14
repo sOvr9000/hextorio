@@ -1,4 +1,6 @@
 
+require "sound-util"
+
 local electromagnetic_penetrator = table.deepcopy(data.raw["gun"]["railgun"])
 electromagnetic_penetrator.name = "electromagnetic-penetrator"
 electromagnetic_penetrator.weight = 1000000
@@ -12,6 +14,10 @@ electromagnetic_penetrator.attack_parameters = {
     range = 50,
     movement_slow_down_cooldown = 0.25,
     projectile_creation_distance = 1.125,
+    sound = {
+        variations = sound_variations("__hextorio__/sound/emp/electromagnetic-penetrator", 3, 1.5),
+        aggregation = {max_count = 2, remove = true, count_already_playing = true, progress_threshold = 0.2},
+    },
 }
 
 for i = 1, 6 do

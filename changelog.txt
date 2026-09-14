@@ -8,6 +8,8 @@ Date: 14/9/26
         Does not apply to older saves. Credit to flamebeard10339 for making this work.
   Graphics:
     - Reworked coin sprites.
+  Sounds:
+    - Added custom SFX to the [item=electromagnetic-penetrator].
   Bugfixes:
     - Changed hexes in unlooted dungeons to stop showing a claim button, for the cost is irrelevant and they are auto-claimed for free on dungeon clear.
     - Fixed that the "extra trade" bonus from bronze items sometimes didn't include the bronze-ranked item that created it.
