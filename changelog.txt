@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.6
-Date: 15/8/26
+Date: 14/9/26
   Minor Features:
     - Added the /snap-to-hex-grid command, which configures the blueprint you're holding for perfect hex-to-hex tilability on the surface you're viewing.
   Changes:
