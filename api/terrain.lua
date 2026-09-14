@@ -170,15 +170,16 @@ function terrain.get_surface_transformation(surfaceID)
         transformations[surface_id] = transformation
     end
 
-    if not transformation.scale then
-        transformation.scale = lib.startup_setting_value("hex-size-" .. surface_name)
-        if not transformation.scale then
-            transformation.scale = 24
+    if not transformation.scale or transformation.scale <= 0 then
+        if transformation.scale and transformation.scale <= 0 then
+            lib.log_error("terrain.get_surface_transformation: Invalid scale previously defined for " .. surface_name .. ": scale = " .. transformation.scale)
         end
+        transformation.scale = lib.startup_setting_value_as_number("hex-size-" .. surface_name)
+        lib.log("terrain.get_surface_transformation: Defined scale for " .. surface_name .. ": scale = " .. transformation.scale)
     end
 
     if not transformation.rotation then
-        local mode = lib.startup_setting_value("grid-rotation-mode-" .. surface_name)
+        local mode = lib.startup_setting_value_as_number("grid-rotation-mode-" .. surface_name)
         if mode == "random" then
             transformation.rotation = math.random() * math.pi
         elseif mode == "flat-top" then
@@ -190,11 +191,12 @@ function terrain.get_surface_transformation(surfaceID)
         end
     end
 
-    if not transformation.stroke_width then
-        transformation.stroke_width = lib.startup_setting_value("hex-stroke-width-" .. surface_name)
-        if not transformation.stroke_width then
-            transformation.stroke_width = 5
+    if not transformation.stroke_width or transformation.stroke_width < 0 then
+        if transformation.stroke_width and transformation.stroke_width < 0 then
+            lib.log_error("terrain.get_surface_transformation: Invalid stroke width previously defined for " .. surface_name .. ": stroke_width = " .. transformation.stroke_width)
         end
+        transformation.stroke_width = lib.startup_setting_value_as_number("hex-stroke-width-" .. surface_name)
+        lib.log("terrain.get_surface_transformation: Defined stroke width for " .. surface_name .. ": stroke_width = " .. transformation.stroke_width)
     end
 
     return transformation
