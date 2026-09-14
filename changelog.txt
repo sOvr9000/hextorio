@@ -1,18 +1,17 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.6
 Date: 15/8/26
+  Minor Features:
+    - Added the /snap-to-hex-grid command, which configures the blueprint you're holding for perfect hex-to-hex tilability on the surface you're viewing.
+  Changes:
+    - Hexes now have the same shape everywhere, allowing perfect blueprint tilability, e.g. mining drill layouts, railways, etc.
+        Requires a save restart to use. Credit to flamebeard10339 for making this work.
   Graphics:
     - Reworked coin sprites.
   Bugfixes:
     - Changed hexes in unlooted dungeons to stop showing a claim button, for the cost is irrelevant and they are auto-claimed for free on dungeon clear.
-  Changes:
-    - Hexes are now placed on a whole-number grid instead of at the irrational spacing of a perfect hexagon, so they stay lined up with the tile grid no matter how far from spawn they are. Saves generated before this keep their original hex placement.
-  Minor Features:
-    - Added the /snap-to-hex-grid command, which snaps the blueprint you're holding to a grid that lines up with the hexes on the planet you're standing on.
   Scripting:
-    - Added the hex_lattice utility module, which derives the whole-number grid that hexagons are drawn over from a hex grid's scale, and describes the blueprint snapping that matches it.
-    - Added axial.get_hex_inradius.
-    - Deprecated axial.get_hex_center_continuous, axial.get_hex_containing_continuous and axial.get_hex_corners_continuous, which hold the old placement math for the saves that were generated with it.
+    - Added the hex_lattice utility module, which solves the problem of blueprint non-tilability.
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.5
 Date: 16/8/26

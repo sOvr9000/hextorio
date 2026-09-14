@@ -158,11 +158,6 @@ function migrations.on_mod_updated(old_version, new_version)
         storage.SUPPORTED_PLANETS = {["nauvis"] = true, ["vulcanus"] = true, ["fulgora"] = true, ["gleba"] = true, ["aquilo"] = true}
     end
 
-    -- Worlds generated before the hex grid was aligned to the tile grid keep the geometry their terrain was built with.
-    if storage.hex_grid.continuous_geometry == nil then
-        storage.hex_grid.continuous_geometry = true
-    end
-
     coin_tiers.init()
 
     -- And trade data as well

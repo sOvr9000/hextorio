@@ -29,15 +29,16 @@ for i = 1, 6 do
 end
 
 
+
 ---Return whether hexes are placed at the exact regular-hexagon spacing instead of on the hex grid's lattice.
 ---Only worlds whose terrain was generated before the lattice existed do, so that their hexes stay where their terrain
 ---already put them.  Every world created since sets the flag to false in `data/hex_grid.lua`, so an absent flag means
 ---the world predates it, whether or not a migration has run yet.
 ---@return boolean
 local function is_continuous()
-    local hex_grid = storage.hex_grid
-    return hex_grid ~= nil and hex_grid.continuous_geometry ~= false
+    return storage.hex_grid.continuous_geometry == true
 end
+
 
 
 -- Get the third coordinate (s) in the cube coordinate system
@@ -91,20 +92,17 @@ end
 -- axial_rotation: rotation of the grid in radians
 function axial.get_hex_containing(rect_pos, axial_scale, axial_rotation)
     if is_continuous() then
-        ---@diagnostic disable-next-line: deprecated
         return axial.get_hex_containing_continuous(rect_pos, axial_scale, axial_rotation)
     end
 
     -- Create floating point coordinates on the hex grid's lattice
-    local q, r = hex_lattice.get_fractional_hex(rect_pos, axial_scale or 1, axial_rotation)
+    local fractional_hex = hex_lattice.get_fractional_hex(rect_pos, axial_scale or 1, axial_rotation)
+
     -- Round to the nearest hex
-    return axial.round {q = q, r = r}
+    return axial.round(fractional_hex)
 end
 
----Convert rectangular coordinates to axial coordinates, placing hexes at the exact regular-hexagon spacing rather than
----on the hex grid's lattice.
----Superseded by `axial.get_hex_containing`, and only still reached by the worlds that were generated with it.
----@deprecated
+---Convert rectangular coordinates to axial coordinates, placing hexes at the exact regular-hexagon spacing rather than on the hex grid's lattice.
 function axial.get_hex_containing_continuous(rect_pos, axial_scale, axial_rotation)
     -- Default values
     axial_scale = axial_scale or 1
@@ -136,7 +134,6 @@ end
 ---@return MapPosition
 function axial.get_hex_center(hex_pos, axial_scale, axial_rotation)
     if is_continuous() then
-        ---@diagnostic disable-next-line: deprecated
         return axial.get_hex_center_continuous(hex_pos, axial_scale, axial_rotation)
     end
 
@@ -150,7 +147,6 @@ end
 ---@param axial_scale number
 ---@param axial_rotation number
 ---@return MapPosition
----@deprecated
 function axial.get_hex_center_continuous(hex_pos, axial_scale, axial_rotation)
     -- Default values
     axial_scale = axial_scale or 1
@@ -349,7 +345,6 @@ end
 ---@return MapPosition[]
 function axial.get_hex_corners(hex_pos, axial_scale, axial_rotation, hex_size_decrement)
     if is_continuous() then
-        ---@diagnostic disable-next-line: deprecated
         return axial.get_hex_corners_continuous(hex_pos, axial_scale, axial_rotation, hex_size_decrement)
     end
 
@@ -364,7 +359,6 @@ end
 ---@param axial_rotation number|nil
 ---@param hex_size_decrement number|nil
 ---@return MapPosition[]
----@deprecated
 function axial.get_hex_corners_continuous(hex_pos, axial_scale, axial_rotation, hex_size_decrement)
     -- Default values
     axial_scale = axial_scale or 1
@@ -372,7 +366,6 @@ function axial.get_hex_corners_continuous(hex_pos, axial_scale, axial_rotation, 
     hex_size_decrement = hex_size_decrement or 0
 
     -- Get center without rotation
-    ---@diagnostic disable-next-line: deprecated
     local center = axial.get_hex_center_continuous(hex_pos, axial_scale, 0)
     local corners = {}
 

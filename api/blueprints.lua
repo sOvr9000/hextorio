@@ -99,7 +99,20 @@ function blueprints.apply_hex_snapping(blueprint, axial_scale, axial_rotation)
     blueprint.blueprint_absolute_snapping = true
     blueprint.blueprint_position_relative_to_grid = snapping.position_relative_to_grid
 
+    blueprints._normalize_entity_positions_to_grid_size(blueprint)
+
     return snapping.snap_to_grid
+end
+
+---Translate all entity positions such that their center of mass is closest to the origin.
+---@param blueprint LuaItemStack|LuaRecord
+function blueprints._normalize_entity_positions_to_grid_size(blueprint)
+    local sum_x = 0
+    local sum_y = 0
+
+    -- TODO: find center of mass of entities in `blueprint`, then overwrite entity data to the same entities but with translated positions such that the center of mass is as close to the origin as possible.
+    -- avoid this bug: https://forums.factorio.com/viewtopic.php?t=133849
+    -- (ensure that this works okay with rail entities and other non-1x1-snapping entities)
 end
 
 

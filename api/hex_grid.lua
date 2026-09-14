@@ -255,7 +255,6 @@ function hex_grid.register_events()
         end
 
         blueprints.apply_hex_snapping(blueprint, transformation.scale, transformation.rotation)
-        player.print {"hextorio.snap-to-hex-grid-applied", snapping.snap_to_grid.x, snapping.snap_to_grid.y}
     end)
 
 
@@ -1151,7 +1150,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         elseif ore_generation_mode == "single-hex" then
             local offset_scale = 5 + resource_stroke_width
             local offset_rotation = math.random() * math.pi
-            local center_offset_hex = axial.get_hex_containing(hex_center, offset_scale, offset_rotation)
+            local center_offset_hex = axial.get_hex_containing_continuous(hex_center, offset_scale, offset_rotation)
             local offset_hex_pos
 
             if offset_scale > hex_grid_scale / 3 then
@@ -1161,7 +1160,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                 -- Resource hex is small enough to be offset to an adjacent hex so that it's not completely under the hex core.
                 local closest_dist = math.huge
                 for _, adj_pos in pairs(axial.get_adjacent_hexes(center_offset_hex)) do
-                    local rect_pos = axial.get_hex_center(adj_pos, offset_scale, offset_rotation)
+                    local rect_pos = axial.get_hex_center_continuous(adj_pos, offset_scale, offset_rotation)
                     local d = rect.square_distance(rect_pos, hex_center)
                     if d < closest_dist then
                         closest_dist = d
@@ -1170,7 +1169,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                 end
             end
 
-            offset_hex_center = axial.get_hex_center(offset_hex_pos, offset_scale, offset_rotation)
+            offset_hex_center = axial.get_hex_center_continuous(offset_hex_pos, offset_scale, offset_rotation)
 
             ore_positions = hex_util.get_hex_tile_positions(offset_hex_pos, offset_scale, offset_rotation, 0)
         elseif ore_generation_mode == "center-square" then

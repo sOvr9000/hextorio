@@ -1,6 +1,4 @@
 
-local lib = require "api.lib"
-
 local rect = {}
 
 
@@ -75,6 +73,26 @@ function rect.rounded_position(pos, offset_by_half)
         return {x = math.floor(0.5 + (pos.x or pos[1])) + 0.5, y = math.floor(0.5 + (pos.y or pos[2])) + 0.5}
     end
     return {x = math.floor(0.5 + (pos.x or pos[1])), y = math.floor(0.5 + (pos.y or pos[2]))}
+end
+
+---Rotate a position about the origin by `angle` radians.
+---@param pos MapPosition
+---@param angle number
+---@return MapPosition
+function rect.rotate(pos, angle)
+    if angle == 0 then
+        return pos
+    end
+
+    local x = pos[1] or pos.x
+    local y = pos[2] or pos.y
+    local c = math.cos(angle)
+    local s = math.sin(angle)
+
+    return {
+        x = x * c - y * s,
+        y = x * s + y * c,
+    }
 end
 
 ---Convert chunk position to rectangular coordinates.

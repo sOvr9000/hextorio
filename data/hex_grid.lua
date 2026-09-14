@@ -23,10 +23,6 @@ return {
         "wetland-blue-slime",
     },
 
-    -- Whether hexes are placed at the exact regular-hexagon spacing instead of on the tile-aligned lattice.
-    -- Only worlds generated before the lattice existed use it, so it is false for every new world.
-    continuous_geometry = false,
-
     pool_size = 25,
     chunk_generation_range_per_player = 7,
     show_trade_flying_text = {},
