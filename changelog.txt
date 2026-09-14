@@ -10,6 +10,7 @@ Date: 14/9/26
     - Reworked coin sprites.
   Bugfixes:
     - Changed hexes in unlooted dungeons to stop showing a claim button, for the cost is irrelevant and they are auto-claimed for free on dungeon clear.
+    - Fixed that the "extra trade" bonus from bronze items sometimes didn't include the bronze-ranked item that created it.
   Scripting:
     - Added the hex_lattice utility module, which solves the problem of blueprint non-tilability.
 ---------------------------------------------------------------------------------------------------

@@ -188,7 +188,7 @@ function trade_generator.generate_random(surface_name, existing_trades, volume, 
                     i = i % #input_item_names + 1
                 end
                 if input_item_names[i] ~= include_item then
-                    input_item_names[math.random(1, #input_item_names)] = coin_type
+                    input_item_names[i] = coin_type
                 end
             end
         end
