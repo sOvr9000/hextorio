@@ -1,6 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.6
 Date: 15/8/26
+  Graphics:
+    - Reworked coin sprites.
+  Bugfixes:
+    - Changed hexes in unlooted dungeons to stop showing a claim button, for the cost is irrelevant and they are auto-claimed for free on dungeon clear.
   Changes:
     - Hexes are now placed on a whole-number grid instead of at the irrational spacing of a perfect hexagon, so they stay lined up with the tile grid no matter how far from spawn they are. Saves generated before this keep their original hex placement.
   Minor Features:
