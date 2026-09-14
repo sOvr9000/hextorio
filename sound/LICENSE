@@ -1,5 +1,15 @@
 Copyright (c) 2026 sOvr9000. All rights reserved.
 
-The music and audio files in this directory are the original work of sOvr9000
+Except for the electromagnetic penetrator assets identified below,
+the music and audio files in this directory are the original work of sOvr9000
 and may not be reproduced, distributed, or adapted without explicit written
 permission from the author.
+
+The electromagnetic-penetrator-1.ogg, electromagnetic-penetrator-2.ogg,
+and electromagnetic-penetrator-3.ogg files in emp/ are
+adapted from "Sci-fi weapon, neutron cannon, hitting" by Future Audios,
+provided by Gfx Sounds: https://gfxsounds.com/
+Source: https://gfxsounds.com/sound-effect/sci-fi-weapon-neutron-cannon-hitting/
+These adapted assets remain subject to the Gfx Sounds Standard License:
+https://gfxsounds.com/licensing/standard-license/
+They are not covered by the original-work claim above. See emp/README.md.

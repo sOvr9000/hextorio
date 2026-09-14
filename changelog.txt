@@ -5,6 +5,8 @@ Date: 15/7/26
     - Added the "Mod Blacklist" mod setting for blacklisting items in trade generation by mod name, defaulting to some popular decoration mods.
   Graphics:
     - Reworked coin sprites.
+  Sounds:
+    - Added custom SFX to the [item=electromagnetic-penetrator].
   Bugfixes:
     - Fixed a very rare bug where one of the loaders of a hex core is inert.
       - The bug should be fixed, but if it somehow comes up again, run the command /regenerate-loaders while standing in the same hex as the inert loader.
