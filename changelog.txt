@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 1.8.6
+Version: 1.8.7
 Date: 15/9/26
   Features:
     - Added the "Mod Blacklist" mod setting for blacklisting items in trade generation by mod name, defaulting to some popular decoration mods.
@@ -8,15 +8,19 @@ Date: 15/9/26
   Sounds:
     - Added custom SFX to the [item=electromagnetic-penetrator].
   Bugfixes:
-    - Fixed a very rare bug where one of the loaders of a hex core is inert.
-      - The bug should be fixed, but if it somehow comes up again, run the command /regenerate-loaders while standing in the same hex as the inert loader.
-    - Fix invalid entity crash caused by picking up a dungeon chest and then changing mod configuration.
     - Fixed crash relating to trades containing coins.
     - Fixed crash relating to trades not containing enough items.
     - Fixed that Aquilo's hexes near spawn oftentimes contained no trades.  Coin-involving trades are now used as a fallback.
     - Fixed that item buffs giving belt capacity weren't also giving an equivalent bonus to bulk inserter capacity.
     - Fixed rare crash when hex cores contain no trades.
     - Fixed that the "extra trade" bonus from bronze items sometimes didn't include the bronze-ranked item that created it.
+---------------------------------------------------------------------------------------------------
+Version: 1.8.6
+Date: 15/7/26
+  Bugfixes:
+    - Fixed a very rare bug where one of the loaders of a hex core is inert.
+      - The bug should be fixed, but if it somehow comes up again, run the command /regenerate-loaders while standing in the same hex as the inert loader.
+    - Fix invalid entity crash caused by picking up a dungeon chest and then changing mod configuration.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.5
 Date: 9/6/26
