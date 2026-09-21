@@ -1,6 +1,7 @@
 
 require "prototypes.quality"
 require "nerf_atomic_bomb"
+require "restore_recycling"
 
 local lib = require "api.lib"
 
