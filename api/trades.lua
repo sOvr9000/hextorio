@@ -2737,7 +2737,7 @@ function trades.try_recalculate_item_counts(trade, params)
         return
     end
 
-    lib.log("trades.try_recalculate_item_counts: Recalculating item counts in trade due to item value changes (prev ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. ", target = " .. (params.target_efficiency or 1) .. "):\n" .. lib.tostring_trade(trade))
+    -- lib.log("trades.try_recalculate_item_counts: Recalculating item counts in trade due to item value changes (prev ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. ", target = " .. (params.target_efficiency or 1) .. "):\n" .. lib.tostring_trade(trade))
 
     trade_generator.solve_item_counts(
         trade.surface_name,
@@ -2749,7 +2749,7 @@ function trades.try_recalculate_item_counts(trade, params)
         params
     )
 
-    lib.log("trades.try_recalculate_item_counts: New item counts (new ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. "):\n" .. lib.tostring_trade(trade))
+    -- lib.log("trades.try_recalculate_item_counts: New item counts (new ratio = " .. trades.get_trade_value_ratio(trade.surface_name, trade) .. "):\n" .. lib.tostring_trade(trade))
 end
 
 ---@param surface_name string|nil
