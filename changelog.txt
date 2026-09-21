@@ -6,6 +6,8 @@ Version: 1.9.8
 Date: 15/9/26
   Changes:
     - Forced all recycling recipes to be enabled from the start so that the recycler quest reward is useful pre-Fulgora.
+  Bugfixes:
+    - Fixed that the catalog search stopped working after migrating a save to new mod versions.
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.7
 Date: 15/9/26

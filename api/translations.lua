@@ -24,34 +24,24 @@ end
 
 
 function translations.register_events()
-    event_system.register("string-translated", function(event)
-        ---@cast event EventData.on_string_translated
-
-        local from_string = get_string_from_localized_string(event.localised_string)
-        if not from_string then
-            lib.log_error("Failed to index string: " .. serpent.line(event.localised_string))
-            return
-        end
-
-        local to_string = event.result
-        local player_index = event.player_index
-
-        local player_translations = translations.get_player_translations_table(player_index)
-        player_translations[from_string] = to_string
-    end)
+    event_system.register("string-translated", translations.on_string_translated)
 end
 
 function translations.init()
-    lib.log("Clearing translation cache for all players.")
+    for _, player in pairs(game.connected_players) do
+        translations.request_translations(player)
+    end
 
+    translations.populate_to_translate()
+end
+
+function translations.get_storage()
     local translations_storage = storage.translations
     if not translations_storage then
         translations_storage = {}
         storage.translations = translations_storage
     end
-
-    translations_storage.player_translations = {} -- Wipe all previous translation data and regenerate as needed.
-    translations.populate_to_translate()
+    return translations_storage
 end
 
 ---Get an item's display name.
@@ -75,10 +65,12 @@ function translations.populate_to_translate()
         storage.translations = translations_storage
     end
 
+    lib.log("translations.populate_to_translate: Populating to_translate table")
     local to_translate = {}
     for _, prot in pairs(prototypes.item) do
         to_translate[#to_translate+1] = prot.localised_name
     end
+    lib.log("translations.populate_to_translate: " .. #to_translate .. " items added to table")
 
     translations_storage.to_translate = to_translate
 end
@@ -86,11 +78,9 @@ end
 ---Request translations for a player.
 ---@param player LuaPlayer
 function translations.request_translations(player)
-    local translations_storage = storage.translations
-    if not translations_storage then
-        translations_storage = {}
-        storage.translations = translations_storage
-    end
+    lib.log("translations.request_translations: Requesting translations for " .. player.name)
+
+    local translations_storage = translations.get_storage()
 
     local to_translate = translations_storage.to_translate
     if not to_translate then
@@ -105,11 +95,7 @@ end
 ---@param player_index int
 ---@return {[string]: string}
 function translations.get_player_translations_table(player_index)
-    local translations_storage = storage.translations
-    if not translations_storage then
-        translations_storage = {}
-        storage.translations = translations_storage
-    end
+    local translations_storage = translations.get_storage()
 
     local player_translations_storage = translations_storage.player_translations
     if not player_translations_storage then
@@ -124,6 +110,23 @@ function translations.get_player_translations_table(player_index)
     end
 
     return player_translations
+end
+
+---@param event EventData.on_string_translated
+function translations.on_string_translated(event)
+    local from_string = get_string_from_localized_string(event.localised_string)
+    if not from_string then
+        lib.log_error("Failed to index string: " .. serpent.line(event.localised_string))
+        return
+    end
+
+    local to_string = event.result
+    local player_index = event.player_index
+
+    -- lib.log("translations.on_string_translated: Translated string " .. from_string .. " to \"" .. to_string .. "\"")
+
+    local player_translations = translations.get_player_translations_table(player_index)
+    player_translations[from_string] = to_string
 end
 
 
