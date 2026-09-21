@@ -1327,7 +1327,7 @@ function catalog_gui.on_search_text_changed(player, elem)
                 sets.add(items_to_show, item_name)
             end
         else
-            lib.log_error("Missing translation for " .. item_name)
+            lib.log_error("catalog_gui.on_search_text_changed: Missing translation for " .. item_name)
         end
     end
 
