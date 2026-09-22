@@ -116,7 +116,14 @@ function piggy_bank_gui.on_piggy_bank_coin_clicked(player, elem)
     local clicked_tier = elem.name
     local withdraw_tier = stored_coin.values[lib.get_tier_of_coin_name(clicked_tier)]
 
-    withdraw_tier = math.min(withdraw_tier, 4294967295) -- Safety limit for modding API, should also integrate this in the function call (inventories.update_inventory()) around the inventory insert function, but this works for now.
+    local coin_prot = prototypes.item[clicked_tier]
+    if not coin_prot then
+        lib.log_error("piggy_bank_gui.on_piggy_bank_coin_clicked: Couldn't find coin item prototype.")
+        return
+    end
+    ---@cast coin_prot LuaItemPrototype
+
+    withdraw_tier = math.min(withdraw_tier, coin_prot.stack_size)
 
     local to_add = coin_tiers.from_coin_values_by_name({
         [clicked_tier] = withdraw_tier,
