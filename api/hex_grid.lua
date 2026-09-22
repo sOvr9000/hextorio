@@ -4575,7 +4575,7 @@ function hex_grid.on_hex_island_generated(surface, island)
         local distances = hex_island.get_island_distances(surface.name)
         for q, Q in pairs(distances) do
             for r, dist in pairs(Q) do
-                if dist <= 2 then
+                if dist <= 2 and dist > 0 then
                     candidates[#candidates+1] = {q=q, r=r}
                 end
             end
