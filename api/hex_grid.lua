@@ -879,8 +879,17 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
         state.is_starting_hex = true
     else
         if surface.name == "fulgora" then
-            -- Chance to spawn a fulgoran-ruin-vault
-            if math.random() < lib.runtime_setting_value "vault-chance" then
+            -- Conditions for spawning a vault or attractor
+            local is_vault = false
+
+            local vault_pos = storage.hex_grid.starter_vault_position
+            if vault_pos and hex_pos.q == vault_pos.q and hex_pos.r == vault_pos.r then
+                is_vault = true
+            end
+
+            is_vault = is_vault or math.random() < lib.runtime_setting_value "vault-chance"
+
+            if is_vault then
                 local transformation = terrain.get_surface_transformation "fulgora"
                 surface.create_entity {
                     name = "fulgoran-ruin-vault",
@@ -4515,42 +4524,62 @@ end
 ---@param surface LuaSurface
 ---@param island HexSet
 function hex_grid.on_hex_island_generated(surface, island)
-    if surface.name ~= "nauvis" then return end
+    if surface.name == "nauvis" then
+        -- Sample multiple positions for guaranteed hexaprism spawns.
 
-    local gh = storage.hex_grid.guaranteed_hexaprisms
-    if not gh then
-        gh = {} ---@type HexSet
-        storage.hex_grid.guaranteed_hexaprisms = gh
-    end
+        local gh = storage.hex_grid.guaranteed_hexaprisms
+        if not gh then
+            gh = {} ---@type HexSet
+            storage.hex_grid.guaranteed_hexaprisms = gh
+        end
 
-    local extent = hex_island.get_island_extent(surface.name)
-    local distances = hex_island.get_island_distances(surface.name)
+        local extent = hex_island.get_island_extent(surface.name)
+        local distances = hex_island.get_island_distances(surface.name)
 
-    local min_distance = extent * 0.95
-    local max_distance = extent
+        local min_distance = extent * 0.95
+        local max_distance = extent
 
-    local candidates = {}
-    for q, island_Q in pairs(island) do
-        for r, _ in pairs(island_Q) do
-            local dist_Q = distances[q]
-            if dist_Q then
-                local dist = dist_Q[r]
-                if dist and dist >= min_distance and dist <= max_distance then
+        local candidates = {}
+        for q, island_Q in pairs(island) do
+            for r, _ in pairs(island_Q) do
+                local dist_Q = distances[q]
+                if dist_Q then
+                    local dist = dist_Q[r]
+                    if dist and dist >= min_distance and dist <= max_distance then
+                        candidates[#candidates+1] = {q=q, r=r}
+                    end
+                end
+            end
+        end
+
+        for i = 1, 10 do
+            if #candidates == 0 then
+                lib.log_error("hex_grid.on_hex_island_generated: Ran out of position candidates to force hexaprism placement, after " .. (i-1) .. " successful placements.")
+                break
+            end
+
+            local pos = table.remove(candidates, math.random(1, #candidates))
+            hex_sets.add(gh, pos)
+        end
+    elseif surface.name == "fulgora" then
+        -- Sample a position for guaranteed Fulgoran ruin vault spawn.
+
+        local candidates = {}
+        local distances = hex_island.get_island_distances(surface.name)
+        for q, Q in pairs(distances) do
+            for r, dist in pairs(Q) do
+                if dist <= 2 then
                     candidates[#candidates+1] = {q=q, r=r}
                 end
             end
         end
-    end
 
-    -- Sample multiple positions for guaranteed hexaprism spawns.
-    for i = 1, 10 do
         if #candidates == 0 then
-            lib.log_error("hex_grid.on_hex_island_generated: Ran out of position candidates to force hexaprism placement, after " .. (i-1) .. " successful placements.")
-            break
+            lib.log_error("hex_grid.on_hex_island_generated: No position found for Fulgoran vault ruin")
+            return
         end
 
-        local pos = table.remove(candidates, math.random(1, #candidates))
-        hex_sets.add(gh, pos)
+        storage.hex_grid.starter_vault_position = candidates[math.random(1, #candidates)]
     end
 end
 
