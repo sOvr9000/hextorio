@@ -3,6 +3,8 @@ Version: 1.9.10
 Date: 22/9/26
   Bugfixes:
     - Fixed that the starter [entity=fulgoran-ruin-vault] on Fulgora was sometimes skipped due to trying to generate on the spawn hex.
+  Changes:
+    - Shortened the mod description.
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.9
 Date: 22/9/26
