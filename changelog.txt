@@ -3,6 +3,7 @@ Version: 1.9.9
 Date: 22/9/26
   Changes:
     - Updated to Factorio 2.1.20.
+    - Piggy bank withdrawals are now capped to one stack of the clicked coin.
 ---------------------------------------------------------------------------------------------------
 Version: 1.9.8
 Date: 21/9/26
