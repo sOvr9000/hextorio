@@ -3,6 +3,7 @@ Version: 1.8.9
 Date: 22/9/26
   Changes:
     - Piggy bank withdrawals are now capped to one stack of the clicked coin.
+    - A [entity=fulgoran-ruin-vault] is now created near spawn on Fulgora to prevent making people search endlessly for their first one.
 ---------------------------------------------------------------------------------------------------
 Version: 1.8.8
 Date: 21/9/26
