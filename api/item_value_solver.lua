@@ -309,34 +309,40 @@ local function find_fuel_categories(collected_recipes)
     -- For each such category, find the crafting entity and its fuel requirements
     local result = {}
     for category in pairs(zero_cats) do
-        local entities = prototypes.get_entity_filtered(
-            {{filter = "crafting-category", crafting_category = category}})
+        local entities = prototypes.get_entity_filtered {
+            {filter = "crafting-category", crafting_category = category}
+        }
 
         for _, entity in pairs(entities) do
-            local bp = entity.burner_prototype
-            if bp and entity.energy_usage and entity.energy_usage > 0 then
-                for fuel_cat in pairs(bp.fuel_categories) do
-                    local fuel_items = {}
-                    for name, proto in pairs(prototypes.item) do
-                        if proto.fuel_category == fuel_cat
-                        and proto.fuel_value and proto.fuel_value > 0 then
-                            table.insert(fuel_items, {
-                                name = name, fuel_value = proto.fuel_value,
-                            })
+            ---@cast entity LuaEntityPrototype
+            if entity.energy_usage and entity.energy_usage > 0 then
+                local burner_prot = entity.burner_prototype
+                if burner_prot and burner_prot.fuel_categories then
+                    for fuel_cat in pairs(burner_prot.fuel_categories) do
+                        local fuel_items = {}
+                        for name, item_prot in pairs(prototypes.item) do
+                            if
+                                item_prot.fuel_value and item_prot.fuel_value > 0 and
+                                item_prot.fuel_categories and lib.table_index(item_prot.fuel_categories, fuel_cat)
+                            then
+                                table.insert(fuel_items, {
+                                    name = name, fuel_value = item_prot.fuel_value,
+                                })
+                            end
+                        end
+                        if #fuel_items > 0 then
+                            local sc = entity.object_name == "LuaEntityPrototype" and entity.surface_conditions or nil
+                            result[category] = {
+                                fuel_items = fuel_items,
+                                energy_usage = entity.energy_usage,
+                                effectivity = burner_prot.effectivity or 1,
+                                surface_conditions = sc,
+                            }
+                            break
                         end
                     end
-                    if #fuel_items > 0 then
-                        local sc = entity.object_name == "LuaEntityPrototype" and entity.surface_conditions or nil
-                        result[category] = {
-                            fuel_items = fuel_items,
-                            energy_usage = entity.energy_usage,
-                            effectivity = bp.effectivity or 1,
-                            surface_conditions = sc,
-                        }
-                        break
-                    end
+                    if result[category] then break end
                 end
-                if result[category] then break end
             end
         end
     end
