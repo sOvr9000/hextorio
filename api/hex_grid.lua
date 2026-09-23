@@ -50,7 +50,7 @@ local explicitly_handled_resources = sets.new {
 
 -- Bumped when the modded-resource registration logic changes, so that saves
 -- registered with an older version get re-scanned on load.
-local MODDED_RESOURCES_VERSION = 3
+local MODDED_RESOURCES_VERSION = 4
 
 
 
@@ -1113,7 +1113,7 @@ function hex_grid.register_modded_resources(surface_name)
                 local frequency = hex_grid.get_resource_setting(mgs, resource_name, "frequency") or 1
                 local weight = size * weight_multiplier
                 if weight > 0 and frequency > 0 then
-                    if prototype.resource_category == "basic-fluid" then
+                    if hex_grid.is_well_resource(prototype) then
                         new_wells[resource_name] = weight
                     else
                         local fluid = hex_grid.get_required_fluid(resource_name)
@@ -1131,22 +1131,49 @@ function hex_grid.register_modded_resources(surface_name)
         end
     end
 
-    -- Migrate fluid-requiring resources that earlier versions may have left in
-    -- the normal resources pool, so they are placed in isolated hexes instead.
+    -- Migrate resources that earlier versions may have placed incorrectly:
+    -- well-type resources (fluids/gases and multi-tile resources) belong in the
+    -- wells pool, and fluid-requiring solids belong in isolated fluid pools.
+    local function migrate_resource(resource_name, weight)
+        local prototype = prototypes.entity[resource_name]
+        if hex_grid.is_well_resource(prototype) then
+            new_wells[resource_name] = new_wells[resource_name] or weight
+        else
+            local fluid = hex_grid.get_required_fluid(resource_name)
+            if fluid then
+                fluid_solids[fluid] = fluid_solids[fluid] or {}
+                fluid_solids[fluid][resource_name] = fluid_solids[fluid][resource_name] or weight
+            end
+        end
+    end
+
     if wc.resources then
         local to_move = {}
         for resource_name, weight in pairs(wc.resources) do
             if resource_name ~= "__total_weight" then
-                local fluid = hex_grid.get_required_fluid(resource_name)
-                if fluid then
-                    to_move[#to_move + 1] = {name = resource_name, weight = weight, fluid = fluid}
+                if hex_grid.is_well_resource(prototypes.entity[resource_name]) or hex_grid.get_required_fluid(resource_name) then
+                    to_move[#to_move + 1] = {name = resource_name, weight = weight}
                 end
             end
         end
         for _, entry in ipairs(to_move) do
-            fluid_solids[entry.fluid] = fluid_solids[entry.fluid] or {}
-            fluid_solids[entry.fluid][entry.name] = fluid_solids[entry.fluid][entry.name] or entry.weight
+            migrate_resource(entry.name, entry.weight)
             weighted_choice.set_weight(wc.resources, entry.name, 0)
+        end
+    end
+
+    if wc.fluid_resources then
+        for _, group in pairs(wc.fluid_resources) do
+            local to_move = {}
+            for resource_name, weight in pairs(group) do
+                if resource_name ~= "__total_weight" and hex_grid.is_well_resource(prototypes.entity[resource_name]) then
+                    to_move[#to_move + 1] = {name = resource_name, weight = weight}
+                end
+            end
+            for _, entry in ipairs(to_move) do
+                new_wells[entry.name] = new_wells[entry.name] or entry.weight
+                weighted_choice.set_weight(group, entry.name, 0)
+            end
         end
     end
 
@@ -1231,6 +1258,33 @@ function hex_grid.get_required_fluid(resource_name)
     local required_fluid = prototype and prototype.mineable_properties and prototype.mineable_properties.required_fluid
     required_fluid_cache[resource_name] = required_fluid or false
     return required_fluid
+end
+
+---Return whether a resource must be handled as a "well" (a few discrete
+---entities) rather than tiled across a hex. This is the case for fluid/gas
+---resources and for resources whose collision box spans more than one tile
+---(e.g. aquifers, vents, forests), which cannot be placed per tile.
+---@param prototype LuaEntityPrototype
+---@return boolean
+function hex_grid.is_well_resource(prototype)
+    if not prototype then return false end
+    if prototype.resource_category ~= "basic-solid" then return true end
+
+    local box = prototype.collision_box
+    if not box then return false end
+
+    local width, height
+    if box.left_top then
+        width = box.right_bottom.x - box.left_top.x
+        height = box.right_bottom.y - box.left_top.y
+    elseif box[1] then
+        width = box[2][1] - box[1][1]
+        height = box[2][2] - box[1][2]
+    else
+        return false
+    end
+
+    return width > 1 or height > 1
 end
 
 ---Restrict a resource weighted choice to a single "mining fluid" group, so that
