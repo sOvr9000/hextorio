@@ -38,8 +38,11 @@ function initialization.init()
 
     local mgs = surface.map_gen_settings -- makes another copy
     mgs_util.zero_freq_rich_size(mgs.autoplace_controls, {"water", "coal", "stone", "copper-ore", "iron-ore", "uranium-ore", "crude-oil", "enemy-base"})
-    mgs_util.zero_freq_rich_size(mgs.autoplace_settings.tile.settings, {"water", "deepwater"}) -- frequency doesn't get set to zero for water, but this has no effect compared to previous behavior
-    mgs_util.zero_freq_rich_size(mgs.autoplace_settings.entity.settings, {"coal", "iron-ore", "copper-ore", "uranium-ore", "stone"})
+    mgs_util.zero_freq_rich_size(mgs.autoplace_settings and mgs.autoplace_settings.tile and mgs.autoplace_settings.tile.settings, {"water", "deepwater"}) -- frequency doesn't get set to zero for water, but this has no effect compared to previous behavior
+    mgs_util.zero_freq_rich_size(mgs.autoplace_settings and mgs.autoplace_settings.entity and mgs.autoplace_settings.entity.settings, {"coal", "iron-ore", "copper-ore", "uranium-ore", "stone"})
+    -- Disable autoplacing of every resource, including those added by other mods,
+    -- since hextorio places ores itself.
+    mgs_util.disable_all_resource_autoplace(mgs)
 
     surface.map_gen_settings = mgs
 
@@ -85,20 +88,43 @@ function initialization.init()
     local coal_frequency = lib.runtime_setting_value "nauvis-coal-frequency"
     local stone_frequency = lib.runtime_setting_value "nauvis-stone-frequency"
 
-    -- Define default nauvis resource randomization based on map gen settings frequencies
+    -- Define default nauvis resource randomization based on map gen settings frequencies.
+    -- Only include resources that actually exist, since other mods may replace
+    -- or remove the vanilla ores.
     storage.hex_grid.resource_weighted_choice.nauvis = {}
-    storage.hex_grid.resource_weighted_choice.nauvis.resources = weighted_choice.new {
-        ["iron-ore"] = mgs_util.get_autoplace_control(mgs_original, "iron-ore").size * iron_frequency,
-        ["copper-ore"] = mgs_util.get_autoplace_control(mgs_original, "copper-ore").size * copper_ore_frequency,
-        ["coal"] = mgs_util.get_autoplace_control(mgs_original, "coal").size * coal_frequency,
-        ["stone"] = mgs_util.get_autoplace_control(mgs_original, "stone").size * stone_frequency,
-    }
-    storage.hex_grid.resource_weighted_choice.nauvis.wells = weighted_choice.new {
-        ["crude-oil"] = 1,
-    }
-    storage.hex_grid.resource_weighted_choice.nauvis.uranium = weighted_choice.new {
-        ["uranium-ore"] = 1,
-    }
+
+    local function resource_exists(name)
+        local prototype = prototypes.entity[name]
+        return prototype ~= nil and prototype.type == "resource"
+    end
+
+    local nauvis_resources = {}
+    local function add_resource(name, weight)
+        if resource_exists(name) and weight and weight > 0 then
+            nauvis_resources[name] = weight
+        end
+    end
+    add_resource("iron-ore", mgs_util.get_autoplace_control(mgs_original, "iron-ore").size * iron_frequency)
+    add_resource("copper-ore", mgs_util.get_autoplace_control(mgs_original, "copper-ore").size * copper_ore_frequency)
+    add_resource("coal", mgs_util.get_autoplace_control(mgs_original, "coal").size * coal_frequency)
+    add_resource("stone", mgs_util.get_autoplace_control(mgs_original, "stone").size * stone_frequency)
+    if next(nauvis_resources) then
+        storage.hex_grid.resource_weighted_choice.nauvis.resources = weighted_choice.new(nauvis_resources)
+    end
+
+    if resource_exists("crude-oil") then
+        storage.hex_grid.resource_weighted_choice.nauvis.wells = weighted_choice.new {
+            ["crude-oil"] = 1,
+        }
+    end
+    if resource_exists("uranium-ore") then
+        storage.hex_grid.resource_weighted_choice.nauvis.uranium = weighted_choice.new {
+            ["uranium-ore"] = 1,
+        }
+    end
+
+    -- Add resources from other mods to the weighted choices.
+    hex_grid.register_modded_resources "nauvis"
 
     local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
     trades.generate_interplanetary_trade_locations("nauvis", num_trades)

@@ -117,7 +117,7 @@ function hex_island.process_surface_creation(surface)
         local land_chance = 0
         local control_key = surface_controls[surface.name]
         if control_key then
-            local control = mgs.autoplace_controls[control_key]
+            local control = mgs.autoplace_controls and mgs.autoplace_controls[control_key]
             if control and control.size > 0 then
                 land_chance = (mgs_util.remap_map_gen_setting(1 / control.frequency) + mgs_util.remap_map_gen_setting(control.size)) * 0.5
             end

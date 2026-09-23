@@ -19,6 +19,23 @@ data:extend({
     },
 
     {
+        type = "bool-setting",
+        name = "hextorio-modded-resources-enabled",
+        setting_type = "runtime-global",
+        default_value = true,
+        order = "w[resources]-d[modded-resources]-a[enabled]",
+    },
+    {
+        type = "double-setting",
+        name = "hextorio-modded-resource-weight",
+        setting_type = "runtime-global",
+        default_value = 1.0,
+        minimum_value = 0.0,
+        maximum_value = 100.0,
+        order = "w[resources]-d[modded-resources]-b[weight]",
+    },
+
+    {
         type = "double-setting",
         name = "hextorio-resource-richness-per-dist-nauvis",
         setting_type = "runtime-global",

@@ -11,6 +11,7 @@ local mgs_util = {}
 ---@param autoplace_controls {[string]: AutoplaceControl}
 ---@param keys string[]
 function mgs_util.zero_freq_rich_size(autoplace_controls, keys)
+    if not autoplace_controls then return end
     for _, key in pairs(keys) do
         local autoplace_control = autoplace_controls[key]
         if autoplace_control then
@@ -50,6 +51,56 @@ function mgs_util.sum_mgs(mgs, target, keys)
         end
     end
     return sum
+end
+
+---Disable autoplacement of every resource entity in the given map gen settings,
+---including resources added by other mods. hextorio places ores itself per hex.
+---Does nothing when modded resource handling is disabled, so that resources from
+---other mods keep their normal vanilla autoplacement.
+---@param mgs MapGenSettings
+function mgs_util.disable_all_resource_autoplace(mgs)
+    if not lib.runtime_setting_value_as_boolean "modded-resources-enabled" then return end
+
+    local entity_settings = mgs.autoplace_settings
+        and mgs.autoplace_settings.entity
+        and mgs.autoplace_settings.entity.settings
+    if not entity_settings then return end
+
+    for entity_name in pairs(entity_settings) do
+        local prototype = prototypes.entity[entity_name]
+        if prototype and prototype.type == "resource" then
+            entity_settings[entity_name].frequency = 0
+            entity_settings[entity_name].richness = 0
+            entity_settings[entity_name].size = 0
+        end
+    end
+end
+
+---Change a value of a number of autoplace controls, if the control exists.
+---@param mgs MapGenSettings
+---@param key string
+---@param field "frequency"|"size"|"richness"
+---@param value number
+function mgs_util.set_autoplace_control(mgs, key, field, value)
+    local control = mgs.autoplace_controls and mgs.autoplace_controls[key]
+    if control then
+        control[field] = value
+    end
+end
+
+---Change a value of a tile autoplace setting, if the setting exists.
+---@param mgs MapGenSettings
+---@param key string
+---@param field "frequency"|"size"|"richness"
+---@param value number
+function mgs_util.set_tile_setting(mgs, key, field, value)
+    local settings = mgs.autoplace_settings
+        and mgs.autoplace_settings.tile
+        and mgs.autoplace_settings.tile.settings
+    local setting = settings and settings[key]
+    if setting then
+        setting[field] = value
+    end
 end
 
 ---Turn a map gen setting between 0.16667 and 6 into a number between 0 and 1, or to a specified range
