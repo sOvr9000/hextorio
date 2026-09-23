@@ -11,6 +11,7 @@ local mgs_util = {}
 ---@param autoplace_controls {[string]: AutoplaceControl}
 ---@param keys string[]
 function mgs_util.zero_freq_rich_size(autoplace_controls, keys)
+    if not autoplace_controls then return end
     for _, key in pairs(keys) do
         local autoplace_control = autoplace_controls[key]
         if autoplace_control then
@@ -72,6 +73,33 @@ function mgs_util.disable_all_resource_autoplace(mgs)
             entity_settings[entity_name].richness = 0
             entity_settings[entity_name].size = 0
         end
+    end
+end
+
+---Change a value of a number of autoplace controls, if the control exists.
+---@param mgs MapGenSettings
+---@param key string
+---@param field "frequency"|"size"|"richness"
+---@param value number
+function mgs_util.set_autoplace_control(mgs, key, field, value)
+    local control = mgs.autoplace_controls and mgs.autoplace_controls[key]
+    if control then
+        control[field] = value
+    end
+end
+
+---Change a value of a tile autoplace setting, if the setting exists.
+---@param mgs MapGenSettings
+---@param key string
+---@param field "frequency"|"size"|"richness"
+---@param value number
+function mgs_util.set_tile_setting(mgs, key, field, value)
+    local settings = mgs.autoplace_settings
+        and mgs.autoplace_settings.tile
+        and mgs.autoplace_settings.tile.settings
+    local setting = settings and settings[key]
+    if setting then
+        setting[field] = value
     end
 end
 

@@ -381,13 +381,13 @@ script.on_event(defines.events.on_surface_created, function (event)
 
     if surface.name == "vulcanus" then
         local mgs = surface.map_gen_settings
-        mgs.autoplace_controls.vulcanus_coal.size = 0
-        mgs.autoplace_controls.calcite.size = 0
-        mgs.autoplace_controls.tungsten_ore.size = 0
-        mgs.autoplace_controls.sulfuric_acid_geyser.size = 0
-        mgs.autoplace_controls.vulcanus_volcanism.size = 0
-        mgs.autoplace_settings.tile.settings.lava.size = 0
-        mgs.autoplace_settings.tile.settings["lava-hot"].size = 0
+        mgs_util.set_autoplace_control(mgs, "vulcanus_coal", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "calcite", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "tungsten_ore", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "sulfuric_acid_geyser", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "vulcanus_volcanism", "size", 0)
+        mgs_util.set_tile_setting(mgs, "lava", "size", 0)
+        mgs_util.set_tile_setting(mgs, "lava-hot", "size", 0)
         mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
@@ -395,65 +395,76 @@ script.on_event(defines.events.on_surface_created, function (event)
         local calcite_frequency = lib.runtime_setting_value "calcite-frequency"
         local tungsten_ore_frequency = lib.runtime_setting_value "tungsten-ore-frequency"
 
-        storage.hex_grid.resource_weighted_choice.vulcanus = {}
-        storage.hex_grid.resource_weighted_choice.vulcanus.resources = weighted_choice.new {
-            ["coal"] = mgs_original.autoplace_controls.vulcanus_coal.size * coal_frequency,
-            ["calcite"] = mgs_original.autoplace_controls.calcite.size * calcite_frequency,
-            ["tungsten-ore"] = mgs_original.autoplace_controls.tungsten_ore.size * tungsten_ore_frequency,
-        }
-        storage.hex_grid.resource_weighted_choice.vulcanus.wells = weighted_choice.new {
-            ["sulfuric-acid-geyser"] = 1,
-        }
+        local vulcanus = {}
+        storage.hex_grid.resource_weighted_choice.vulcanus = vulcanus
 
-        -- Resource randomization in starting hex
-        storage.hex_grid.resource_weighted_choice.vulcanus.starting = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.resources)
-        weighted_choice.set_weight(storage.hex_grid.resource_weighted_choice.vulcanus.starting, "tungsten-ore", 0)
+        local resources = {}
+        local function add_resource(name, weight)
+            local prototype = prototypes.entity[name]
+            if prototype and prototype.type == "resource" and weight and weight > 0 then
+                resources[name] = weight
+            end
+        end
+        add_resource("coal", mgs_util.get_autoplace_control(mgs_original, "vulcanus_coal").size * coal_frequency)
+        add_resource("calcite", mgs_util.get_autoplace_control(mgs_original, "calcite").size * calcite_frequency)
+        add_resource("tungsten-ore", mgs_util.get_autoplace_control(mgs_original, "tungsten_ore").size * tungsten_ore_frequency)
+        if next(resources) then
+            vulcanus.resources = weighted_choice.new(resources)
+        end
 
-        -- Resource randomization without tungsten
-        storage.hex_grid.resource_weighted_choice.vulcanus.non_tungsten = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.starting)
+        if prototypes.entity["sulfuric-acid-geyser"] then
+            vulcanus.wells = weighted_choice.new { ["sulfuric-acid-geyser"] = 1 }
+        end
+
+        if vulcanus.resources then
+            -- Resource randomization in starting hex, without tungsten.
+            vulcanus.starting = weighted_choice.copy(vulcanus.resources)
+            weighted_choice.set_weight(vulcanus.starting, "tungsten-ore", 0)
+            vulcanus.non_tungsten = weighted_choice.copy(vulcanus.starting)
+        end
     elseif surface.name == "fulgora" then
         local mgs = surface.map_gen_settings
-        mgs.autoplace_controls.scrap.size = 0
-        mgs.autoplace_controls.fulgora_islands.size = 0
-        mgs.autoplace_controls.fulgora_cliff.size = 0
-        mgs.autoplace_settings.tile.settings["oil-ocean-shallow"].size = 0
-        mgs.autoplace_settings.tile.settings["oil-ocean-shallow-2"].size = 0
-        mgs.autoplace_settings.tile.settings["oil-ocean-deep"].size = 0
-        mgs.autoplace_settings.tile.settings["oil-ocean-deep-2"].size = 0
+        mgs_util.set_autoplace_control(mgs, "scrap", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "fulgora_islands", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "fulgora_cliff", "size", 0)
+        mgs_util.set_tile_setting(mgs, "oil-ocean-shallow", "size", 0)
+        mgs_util.set_tile_setting(mgs, "oil-ocean-shallow-2", "size", 0)
+        mgs_util.set_tile_setting(mgs, "oil-ocean-deep", "size", 0)
+        mgs_util.set_tile_setting(mgs, "oil-ocean-deep-2", "size", 0)
         mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
         storage.hex_grid.resource_weighted_choice.fulgora = {}
-        storage.hex_grid.resource_weighted_choice.fulgora.resources = weighted_choice.new {
-            ["scrap"] = 1,
-        }
+        if prototypes.entity["scrap"] then
+            storage.hex_grid.resource_weighted_choice.fulgora.resources = weighted_choice.new {
+                ["scrap"] = 1,
+            }
+        end
     elseif surface.name == "gleba" then
         local mgs = surface.map_gen_settings
-        -- log(serpent.block(mgs))
-        mgs.autoplace_controls.gleba_stone.size = 0
-        mgs.autoplace_controls.gleba_water.size = 0
-        mgs.autoplace_controls.gleba_plants.size = 6
-        mgs.autoplace_controls.gleba_plants.frequency = 1/6
-        mgs.autoplace_controls.gleba_plants.size = 6
-        mgs.autoplace_controls.gleba_plants.richness = 6
-        mgs.autoplace_settings.tile.settings["gleba-deep-lake"].size = 0
-        -- mgs.autoplace_settings.tile.settings["gleba-deep-lake"].frequency = 0
-        -- mgs.autoplace_settings.tile.settings["gleba-deep-lake"].richness = 0
+        mgs_util.set_autoplace_control(mgs, "gleba_stone", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "gleba_water", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "gleba_plants", "size", 6)
+        mgs_util.set_autoplace_control(mgs, "gleba_plants", "frequency", 1/6)
+        mgs_util.set_autoplace_control(mgs, "gleba_plants", "richness", 6)
+        mgs_util.set_tile_setting(mgs, "gleba-deep-lake", "size", 0)
         mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
         storage.hex_grid.resource_weighted_choice.gleba = {}
-        storage.hex_grid.resource_weighted_choice.gleba.resources = weighted_choice.new {
-            ["stone"] = 1,
-        }
+        if prototypes.entity["stone"] then
+            storage.hex_grid.resource_weighted_choice.gleba.resources = weighted_choice.new {
+                ["stone"] = 1,
+            }
+        end
     elseif surface.name == "aquilo" then
         local mgs = surface.map_gen_settings
-        mgs.autoplace_controls.aquilo_crude_oil.size = 0
-        mgs.autoplace_controls.lithium_brine.size = 0
-        mgs.autoplace_controls.fluorine_vent.size = 0
-        mgs.autoplace_settings.tile.settings["ammoniacal-ocean"].size = 0
-        mgs.autoplace_settings.tile.settings["ammoniacal-ocean-2"].size = 0
-        mgs.autoplace_settings.tile.settings["brash-ice"].size = 0
+        mgs_util.set_autoplace_control(mgs, "aquilo_crude_oil", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "lithium_brine", "size", 0)
+        mgs_util.set_autoplace_control(mgs, "fluorine_vent", "size", 0)
+        mgs_util.set_tile_setting(mgs, "ammoniacal-ocean", "size", 0)
+        mgs_util.set_tile_setting(mgs, "ammoniacal-ocean-2", "size", 0)
+        mgs_util.set_tile_setting(mgs, "brash-ice", "size", 0)
         mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
@@ -461,12 +472,22 @@ script.on_event(defines.events.on_surface_created, function (event)
         local lithium_brine_frequency = lib.runtime_setting_value "lithium-brine-frequency"
         local fluorine_vent_frequency = lib.runtime_setting_value "fluorine-vent-frequency"
 
-        storage.hex_grid.resource_weighted_choice.aquilo = {}
-        storage.hex_grid.resource_weighted_choice.aquilo.wells = weighted_choice.new {
-            ["crude-oil"] = mgs_original.autoplace_controls.aquilo_crude_oil.size * crude_oil_frequency,
-            ["lithium-brine"] = mgs_original.autoplace_controls.lithium_brine.size * lithium_brine_frequency,
-            ["fluorine-vent"] = mgs_original.autoplace_controls.fluorine_vent.size * fluorine_vent_frequency,
-        }
+        local aquilo = {}
+        storage.hex_grid.resource_weighted_choice.aquilo = aquilo
+
+        local wells = {}
+        local function add_well(name, weight)
+            local prototype = prototypes.entity[name]
+            if prototype and prototype.type == "resource" and weight and weight > 0 then
+                wells[name] = weight
+            end
+        end
+        add_well("crude-oil", mgs_util.get_autoplace_control(mgs_original, "aquilo_crude_oil").size * crude_oil_frequency)
+        add_well("lithium-brine", mgs_util.get_autoplace_control(mgs_original, "lithium_brine").size * lithium_brine_frequency)
+        add_well("fluorine-vent", mgs_util.get_autoplace_control(mgs_original, "fluorine_vent").size * fluorine_vent_frequency)
+        if next(wells) then
+            aquilo.wells = weighted_choice.new(wells)
+        end
     else
         unknown = true
     end

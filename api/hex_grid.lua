@@ -935,7 +935,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 local min_biter_distance = mgs_util.remap_map_gen_setting(mgs.starting_area, 0, 3)
                 local is_biter_hex = not is_starting_hex and dist >= min_biter_distance
                 if is_biter_hex then
-                    local biter_chance = mgs_util.remap_map_gen_setting(mgs.autoplace_controls["enemy-base"].frequency)
+                    local biter_chance = hex_grid.sum_resource_frequencies(mgs, {"enemy-base"})
 
                     local r = math.random()
                     local proc = r < biter_chance
@@ -960,7 +960,7 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
                 local min_pentapod_distance = mgs_util.remap_map_gen_setting(mgs.starting_area, 0, 3)
                 local is_pentapod_hex = not is_starting_hex and dist >= min_pentapod_distance
                 if is_pentapod_hex then
-                    local pentapod_chance = math.sqrt(mgs_util.remap_map_gen_setting(mgs.autoplace_controls.gleba_enemy_base.frequency))
+                    local pentapod_chance = math.sqrt(hex_grid.sum_resource_frequencies(mgs, {"gleba_enemy_base"}))
 
                     local r = math.random()
                     local proc = r < pentapod_chance
@@ -1050,6 +1050,52 @@ function hex_grid.get_solid_resource_names(surface_name)
     local wc = storage.hex_grid.resource_weighted_choice[surface_name]
     if not wc or not wc.resources then return {} end
     return weighted_choice.get_items(wc.resources)
+end
+
+---Return the names in a weighted choice, or an empty list for nil.
+---@param wc WeightedChoice|nil
+---@return string[]
+function hex_grid.get_weighted_choice_names(wc)
+    if not wc then return {} end
+    return weighted_choice.get_items(wc)
+end
+
+---Sum the remapped autoplace frequency of the given resources. Missing
+---frequencies default to 1 (the map gen default), so the sum is safe even when
+---a resource's autoplace control has been removed by another mod.
+---@param mgs MapGenSettings
+---@param names string[]
+---@return number
+function hex_grid.sum_resource_frequencies(mgs, names)
+    local sum = 0
+    for _, name in ipairs(names) do
+        sum = sum + mgs_util.remap_map_gen_setting(hex_grid.get_safe_frequency(mgs, name, 1))
+    end
+    return sum
+end
+
+---Look up a resource's autoplace frequency, falling back to a default when it
+---is missing or non-positive (so it is safe to pass to remap_map_gen_setting).
+---@param mgs MapGenSettings
+---@param name string
+---@param default number
+---@return number
+function hex_grid.get_safe_frequency(mgs, name, default)
+    local frequency = hex_grid.get_resource_setting(mgs, name, "frequency")
+    if not frequency or frequency <= 0 then return default end
+    return frequency
+end
+
+---Look up a resource's autoplace size, falling back to a default when it is
+---missing or non-positive (so it is safe to pass to remap_map_gen_setting).
+---@param mgs MapGenSettings
+---@param name string
+---@param default number
+---@return number
+function hex_grid.get_safe_size(mgs, name, default)
+    local size = hex_grid.get_resource_setting(mgs, name, "size")
+    if not size or size <= 0 then return default end
+    return size
 end
 
 ---Discover resources added by other mods and register them into the given
@@ -1363,8 +1409,7 @@ function hex_grid.get_fluid_ore_weighted_choice(surface)
         for resource_name, weight in pairs(group) do
             if resource_name ~= "__total_weight" then
                 group_weight = group_weight + weight
-                local frequency = hex_grid.get_resource_setting(mgs, resource_name, "frequency") or 1
-                fluid_freq = fluid_freq + mgs_util.remap_map_gen_setting(frequency)
+                fluid_freq = fluid_freq + mgs_util.remap_map_gen_setting(hex_grid.get_safe_frequency(mgs, resource_name, 1))
             end
         end
         group_weights[fluid] = group_weight
@@ -1374,8 +1419,7 @@ function hex_grid.get_fluid_ore_weighted_choice(surface)
     local normal_freq = 0
     for resource_name in pairs(wc.resources or {}) do
         if resource_name ~= "__total_weight" then
-            local frequency = hex_grid.get_resource_setting(mgs, resource_name, "frequency") or 1
-            normal_freq = normal_freq + mgs_util.remap_map_gen_setting(frequency)
+            normal_freq = normal_freq + mgs_util.remap_map_gen_setting(hex_grid.get_safe_frequency(mgs, resource_name, 1))
         end
     end
 
@@ -1467,10 +1511,7 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
     -- weighted choice so that resources added by other mods are included too.
     local total_resource_size = 0
     for _, resource_name in pairs(hex_grid.get_solid_resource_names(surface.name)) do
-        local size = hex_grid.get_resource_setting(mgs, resource_name, "size")
-        if size then
-            total_resource_size = total_resource_size + mgs_util.remap_map_gen_setting(size)
-        end
+        total_resource_size = total_resource_size + mgs_util.remap_map_gen_setting(hex_grid.get_safe_size(mgs, resource_name, 1))
     end
     local r = math.random()
     local resource_stroke_width
@@ -1510,15 +1551,17 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         local num_entities_min
         local num_entities_max
         if surface.name == "nauvis" then
-            local autoplace_control = mgs_util.get_autoplace_control(mgs, "crude-oil")
-            num_entities_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 1, 3))
-            num_entities_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 3, 6))
+            local size = hex_grid.get_safe_size(mgs, "crude-oil", 1)
+            num_entities_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(size, 1, 3))
+            num_entities_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(size, 3, 6))
         elseif surface.name == "vulcanus" then
-            local autoplace_control = mgs_util.get_autoplace_control(mgs, "sulfuric_acid_geyser")
-            num_entities_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 1, 3))
-            num_entities_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(autoplace_control.size), 3, 6))
+            local size = hex_grid.get_safe_size(mgs, "sulfuric-acid-geyser", 1)
+            num_entities_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(size, 1, 3))
+            num_entities_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(size, 3, 6))
         elseif surface.name == "aquilo" then
-            local size = mgs_util.sum_mgs(mgs.autoplace_controls, "size", {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}) / 3
+            local size = (hex_grid.get_safe_size(mgs, "crude-oil", 1)
+                + hex_grid.get_safe_size(mgs, "lithium-brine", 1)
+                + hex_grid.get_safe_size(mgs, "fluorine-vent", 1)) / 3
 
             num_entities_min = math.floor(0.5 + 1 + 2 * size)
             num_entities_max = math.floor(0.5 + 3 + 3 * size)
@@ -1793,44 +1836,58 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
     -- Calculate frequencies
     if surface.name == "nauvis" then
+        local wc_data = storage.hex_grid.resource_weighted_choice.nauvis
         if is_starter_hex or hex_sets.contains(storage.hex_grid.guaranteed_hexaprisms or {}, hex_pos) then
-            return storage.hex_grid.resource_weighted_choice.nauvis.resources, false
+            return wc_data.resources, false
         end
-        local well_names = {"crude-oil"}
-        local resource_names = {"iron-ore", "copper-ore", "coal", "stone"}
 
-        local can_be_uranium = dist >= lib.runtime_setting_value "min-uranium-dist"
+        local resource_names = hex_grid.get_weighted_choice_names(wc_data.resources)
+        local well_names = hex_grid.get_weighted_choice_names(wc_data.wells)
+        local uranium_names = hex_grid.get_weighted_choice_names(wc_data.uranium)
+
+        local can_be_uranium = #uranium_names > 0 and dist >= lib.runtime_setting_value "min-uranium-dist"
+
+        -- When uranium is available it is part of the frequency pool (matching
+        -- the original balance); otherwise only the normal resources count.
+        local freq_names = resource_names
         if can_be_uranium then
-            table.insert(resource_names, "uranium-ore")
+            freq_names = {}
+            for _, name in ipairs(resource_names) do freq_names[#freq_names + 1] = name end
+            for _, name in ipairs(uranium_names) do freq_names[#freq_names + 1] = name end
         end
+        local count = math.max(#freq_names, 1)
 
-        local well_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
-        local total_resource_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", resource_names)
-        local resource_freq = total_resource_freq
-        resource_freq = resource_freq / #resource_names
-        resource_freq = (resource_freq ^ 2.6) * #resource_names
+        local well_freq = hex_grid.sum_resource_frequencies(mgs, well_names)
+        local total_resource_freq = hex_grid.sum_resource_frequencies(mgs, freq_names)
+        local resource_freq = total_resource_freq / count
+        resource_freq = (resource_freq ^ 2.6) * count
         resource_freq = resource_freq / (1 + dist * dropoff)
         well_freq = well_freq / (1 + dist * dropoff)
 
         local well_guaranteed = guarantee_well()
-        if well_guaranteed then
-            return storage.hex_grid.resource_weighted_choice.nauvis.wells, true
+        if well_guaranteed and wc_data.wells then
+            return wc_data.wells, true
         end
-        if math.random() > (well_freq + resource_freq) / (1 + #resource_names) then
+        if total_resource_freq <= 0 and well_freq <= 0 then
+            return nil, nil
+        end
+        if math.random() > (well_freq + resource_freq) / (1 + count) then
             return nil, nil
         end
 
-        local is_well = math.random() < well_freq / (well_freq + total_resource_freq)
-        if is_well then
-            return storage.hex_grid.resource_weighted_choice.nauvis.wells, true
+        if wc_data.wells and (well_freq + total_resource_freq) > 0 and math.random() < well_freq / (well_freq + total_resource_freq) then
+            return wc_data.wells, true
         end
 
-        local is_uranium = can_be_uranium and math.random() < mgs_util.remap_map_gen_setting(mgs.autoplace_controls["uranium-ore"].frequency) / total_resource_freq
-        if is_uranium then
-            return storage.hex_grid.resource_weighted_choice.nauvis.uranium, false
+        if can_be_uranium and total_resource_freq > 0 then
+            local uranium_freq = hex_grid.sum_resource_frequencies(mgs, uranium_names)
+            if math.random() < uranium_freq / total_resource_freq then
+                return wc_data.uranium, false
+            end
         end
 
-        local wc = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.nauvis.resources)
+        if not wc_data.resources then return nil, nil end
+        local wc = weighted_choice.copy(wc_data.resources)
 
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
@@ -1842,37 +1899,46 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
         return resource_wc, false
     elseif surface.name == "vulcanus" then
+        local wc_data = storage.hex_grid.resource_weighted_choice.vulcanus
         if is_starter_hex then
-            return storage.hex_grid.resource_weighted_choice.vulcanus.starting, false
+            return wc_data.starting or wc_data.resources, false
         end
-        local can_be_tungsten = dist >= lib.runtime_setting_value "min-tungsten-dist"
 
-        local well_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", {"sulfuric_acid_geyser"})
-        local resource_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", {"vulcanus_coal", "calcite", "tungsten_ore"})
+        local resource_names = hex_grid.get_weighted_choice_names(wc_data.resources)
+        local well_names = hex_grid.get_weighted_choice_names(wc_data.wells)
+        local has_tungsten = false
+        for _, name in ipairs(resource_names) do
+            if name == "tungsten-ore" then has_tungsten = true break end
+        end
+        local can_be_tungsten = has_tungsten and dist >= lib.runtime_setting_value "min-tungsten-dist"
+
+        local well_freq = hex_grid.sum_resource_frequencies(mgs, well_names)
+        local resource_freq = hex_grid.sum_resource_frequencies(mgs, resource_names)
         resource_freq = resource_freq * resource_freq / 3
         resource_freq = resource_freq / (1 + dist * dropoff)
         well_freq = well_freq / (1 + dist * dropoff)
 
         local well_guaranteed = guarantee_well()
-        if well_guaranteed then
-            return storage.hex_grid.resource_weighted_choice.vulcanus.wells, true
+        if well_guaranteed and wc_data.wells then
+            return wc_data.wells, true
         end
 
         if math.random() > (well_freq + resource_freq) * 0.25 then
             return nil, nil
         end
 
-        local is_well = math.random() < well_freq / (well_freq + resource_freq)
-        if is_well then
-            return storage.hex_grid.resource_weighted_choice.vulcanus.wells, true
+        if wc_data.wells and (well_freq + resource_freq) > 0 and math.random() < well_freq / (well_freq + resource_freq) then
+            return wc_data.wells, true
         end
 
         local wc
         if can_be_tungsten then
-            wc = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.resources)
+            wc = wc_data.resources and weighted_choice.copy(wc_data.resources)
         else
-            wc = weighted_choice.copy(storage.hex_grid.resource_weighted_choice.vulcanus.non_tungsten)
+            wc = wc_data.non_tungsten and weighted_choice.copy(wc_data.non_tungsten)
         end
+        wc = wc or (wc_data.resources and weighted_choice.copy(wc_data.resources))
+        if not wc then return nil, nil end
 
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
@@ -1891,37 +1957,47 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
 
         return resource_wc, false
     elseif surface.name == "fulgora" then
+        local wc_data = storage.hex_grid.resource_weighted_choice.fulgora
         if is_starter_hex then
-            return storage.hex_grid.resource_weighted_choice.fulgora.resources, false
+            return wc_data.resources, false
         end
+        if not wc_data.resources then return nil, nil end
 
-        local resource_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", {"scrap"})
+        local resource_names = hex_grid.get_weighted_choice_names(wc_data.resources)
+        local resource_freq = hex_grid.sum_resource_frequencies(mgs, resource_names)
         resource_freq = resource_freq * resource_freq
         resource_freq = resource_freq / (1 + dist * dropoff)
         if math.random() > resource_freq then
             return nil, nil
         end
 
-        return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.fulgora.resources), false
+        return weighted_choice.copy(wc_data.resources), false
     elseif surface.name == "gleba" then
-        local resource_freq = mgs_util.remap_map_gen_setting(mgs.autoplace_controls.gleba_stone.frequency)
+        local wc_data = storage.hex_grid.resource_weighted_choice.gleba
+        if not wc_data.resources then return nil, nil end
+
+        local resource_names = hex_grid.get_weighted_choice_names(wc_data.resources)
+        local resource_freq = hex_grid.sum_resource_frequencies(mgs, resource_names)
         resource_freq = resource_freq * resource_freq
         resource_freq = resource_freq / (1 + dist * dropoff)
         if not is_starter_hex and math.random() > resource_freq then
             return nil, nil
         end
 
-        return weighted_choice.copy(storage.hex_grid.resource_weighted_choice.gleba.resources), false
+        return weighted_choice.copy(wc_data.resources), false
     elseif surface.name == "aquilo" then
-        local well_names = {"aquilo_crude_oil", "lithium_brine", "fluorine_vent"}
-        local well_freq = mgs_util.sum_mgs(mgs.autoplace_controls, "frequency", well_names)
+        local wc_data = storage.hex_grid.resource_weighted_choice.aquilo
+        local well_names = hex_grid.get_weighted_choice_names(wc_data.wells)
+        if not wc_data.wells then return nil, nil end
+
+        local well_freq = hex_grid.sum_resource_frequencies(mgs, well_names)
         well_freq = well_freq * well_freq / 3
         well_freq = well_freq / (1 + dist * dropoff)
         if math.random() > well_freq then
             return nil, nil
         end
 
-        local wc = storage.hex_grid.resource_weighted_choice.aquilo.wells
+        local wc = wc_data.wells
 
         -- Based on the standard weighted choice, apply a random bias
         local bias_wc = weighted_choice.copy(wc)
@@ -1949,8 +2025,8 @@ function hex_grid.generate_hex_biters(surface, hex_pos, hex_grid_scale, hex_grid
     local dist = axial.distance(hex_pos, {q=0, r=0})
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
-    local num_spawners_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 3))
-    local num_spawners_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(tonumber(storage.hex_grid.mgs["nauvis"].autoplace_controls["enemy-base"].size), 1, 5))
+    local num_spawners_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(hex_grid.get_safe_size(storage.hex_grid.mgs["nauvis"], "enemy-base", 1), 1, 3))
+    local num_spawners_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(hex_grid.get_safe_size(storage.hex_grid.mgs["nauvis"], "enemy-base", 1), 1, 5))
     local num_spawners = math.random(num_spawners_min, num_spawners_max)
     local num_worms = math.floor(0.4999 + num_spawners * (0.5 + math.random()))
     local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
@@ -1969,8 +2045,8 @@ function hex_grid.generate_hex_pentapods(surface, hex_pos, hex_grid_scale, hex_g
     local dist = axial.distance(hex_pos, {q=0, r=0})
     local quality = hex_grid.get_quality_from_distance(surface.name, dist)
 
-    local num_rafts_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 3))
-    local num_rafts_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(storage.hex_grid.mgs["gleba"].autoplace_controls.gleba_enemy_base.size, 1, 5))
+    local num_rafts_min = math.floor(0.5 + mgs_util.remap_map_gen_setting(hex_grid.get_safe_size(storage.hex_grid.mgs["gleba"], "gleba_enemy_base", 1), 1, 3))
+    local num_rafts_max = math.floor(0.5 + mgs_util.remap_map_gen_setting(hex_grid.get_safe_size(storage.hex_grid.mgs["gleba"], "gleba_enemy_base", 1), 1, 5))
     local num_rafts = math.random(num_rafts_min, num_rafts_max)
     local center = axial.get_hex_center(hex_pos, hex_grid_scale, hex_grid_rotation)
 
