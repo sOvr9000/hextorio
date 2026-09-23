@@ -37,6 +37,17 @@ local allowed_surfaces = sets.new {
     "aquilo",
 }
 
+-- Resources that hextorio already handles with bespoke logic. Any other
+-- autoplaced resource found in a planet's map gen settings is treated as a
+-- "modded" resource and registered into that planet's weighted choices.
+local explicitly_handled_resources = sets.new {
+    "iron-ore", "copper-ore", "coal", "stone", "uranium-ore",
+    "crude-oil", "hexaprism",
+    "calcite", "tungsten-ore", "sulfuric-acid-geyser",
+    "scrap", "gleba_stone",
+    "lithium-brine", "fluorine-vent",
+}
+
 
 
 local hex_grid = {}
@@ -1003,6 +1014,120 @@ function hex_grid.initialize_hex(surface, hex_pos, hex_grid_scale, hex_grid_rota
     event_system.trigger("hex-generated", surface_id, hex_pos)
 end
 
+---Look up a map gen setting (frequency, size, or richness) for a resource.
+---Prefers autoplace controls, falling back to per-resource autoplace settings,
+---so that resources added by other mods (whose control names may differ from
+---their entity names) can be looked up generically.
+---@param mgs MapGenSettings
+---@param resource_name string
+---@param setting_name "frequency"|"size"|"richness"
+---@return number|nil
+function hex_grid.get_resource_setting(mgs, resource_name, setting_name)
+    local control = mgs.autoplace_controls and mgs.autoplace_controls[resource_name]
+    if control and control[setting_name] then
+        return control[setting_name]
+    end
+
+    local entity_settings = mgs.autoplace_settings
+        and mgs.autoplace_settings.entity
+        and mgs.autoplace_settings.entity.settings
+    local entity_setting = entity_settings and entity_settings[resource_name]
+    if entity_setting and entity_setting[setting_name] then
+        return entity_setting[setting_name]
+    end
+
+    return nil
+end
+
+---Return the names of the solid (non-well) resources that can appear on the given surface.
+---@param surface_name string
+---@return string[]
+function hex_grid.get_solid_resource_names(surface_name)
+    local wc = storage.hex_grid.resource_weighted_choice[surface_name]
+    if not wc or not wc.resources then return {} end
+    return weighted_choice.get_items(wc.resources)
+end
+
+---Discover resources added by other mods and register them into the given
+---surface's weighted choices, so that they are placed by the hex generation
+---algorithm as well. Must be called after storage.hex_grid.mgs[surface_name]
+---and that surface's vanilla resource_weighted_choice tables have been populated.
+---@param surface_name string
+function hex_grid.register_modded_resources(surface_name)
+    if not allowed_surfaces[surface_name] then return end
+    if not lib.runtime_setting_value_as_boolean "modded-resources-enabled" then return end
+
+    local mgs = storage.hex_grid.mgs[surface_name]
+    if not mgs then return end
+
+    local entity_settings = mgs.autoplace_settings
+        and mgs.autoplace_settings.entity
+        and mgs.autoplace_settings.entity.settings
+    if not entity_settings then return end
+
+    local wc = storage.hex_grid.resource_weighted_choice[surface_name]
+    if not wc then
+        wc = {}
+        storage.hex_grid.resource_weighted_choice[surface_name] = wc
+    end
+
+    -- Collect the resource names that are already handled for this planet.
+    local handled = sets.copy(explicitly_handled_resources)
+    for _, key in pairs {"resources", "wells", "uranium", "starting", "non_tungsten"} do
+        for resource_name in pairs(wc[key] or {}) do
+            sets.add(handled, resource_name)
+        end
+    end
+
+    local weight_multiplier = lib.runtime_setting_value_as_number "modded-resource-weight"
+
+    local new_solids = {}
+    local new_wells = {}
+    for resource_name, fsr in pairs(entity_settings) do
+        if not handled[resource_name] then
+            local prototype = prototypes.entity[resource_name]
+            if prototype and prototype.type == "resource" then
+                local size = fsr.size or 0
+                local frequency = fsr.frequency or 0
+                local weight = size * weight_multiplier
+                if weight > 0 and frequency > 0 then
+                    if prototype.resource_category == "basic-fluid" then
+                        new_wells[resource_name] = weight
+                    else
+                        new_solids[resource_name] = weight
+                    end
+                end
+            end
+        end
+    end
+
+    local function merge(target_key, additions)
+        if not next(additions) then return end
+        local base = wc[target_key]
+        if base then
+            for resource_name, weight in pairs(additions) do
+                weighted_choice.set_weight(base, resource_name, weight)
+            end
+        else
+            wc[target_key] = weighted_choice.new(additions)
+        end
+    end
+
+    merge("resources", new_solids)
+    merge("wells", new_wells)
+
+    wc.modded_registered = true
+end
+
+---Register modded resources for a surface the first time they are needed,
+---so that the feature also works for saves created before it was added.
+---@param surface_name string
+function hex_grid.ensure_modded_resources_registered(surface_name)
+    local wc = storage.hex_grid.resource_weighted_choice[surface_name]
+    if wc and wc.modded_registered then return end
+    hex_grid.register_modded_resources(surface_name)
+end
+
 function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_grid_rotation, stroke_width)
     local surface_id = lib.get_surface_id(surface)
     surface = game.get_surface(surface_id)
@@ -1042,24 +1167,22 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
         resource_wc = weighted_choice.add_bias(bias_wc, resource, bias_strength)
     end
 
-    local resource_names
     local is_hexaprism = false
     if surface.name == "nauvis" then
         local extent = hex_island.get_island_extent "nauvis"
         local bfs_dist = hex_island.get_distance_from_spawn("nauvis", hex_pos) or 0
         is_hexaprism = bfs_dist >= extent * 0.95
-        resource_names = {"iron-ore", "copper-ore", "coal", "stone"}
-    elseif surface.name == "vulcanus" then
-        resource_names = {"vulcanus_coal", "calcite", "tungsten_ore"}
-    elseif surface.name == "fulgora" then
-        resource_names = {"scrap"}
-    elseif surface.name == "gleba" then
-        resource_names = {"gleba_stone"}
-    elseif surface.name == "aquilo" then
-        resource_names = {}
     end
 
-    local total_resource_size = mgs_util.sum_mgs(mgs.autoplace_controls, "size", resource_names)
+    -- Sum the resource "size" map gen settings for this planet. Derived from the
+    -- weighted choice so that resources added by other mods are included too.
+    local total_resource_size = 0
+    for _, resource_name in pairs(hex_grid.get_solid_resource_names(surface.name)) do
+        local size = hex_grid.get_resource_setting(mgs, resource_name, "size")
+        if size then
+            total_resource_size = total_resource_size + mgs_util.remap_map_gen_setting(size)
+        end
+    end
     local r = math.random()
     local resource_stroke_width
 
@@ -1252,20 +1375,8 @@ function hex_grid.generate_hex_resources(surface, hex_pos, hex_grid_scale, hex_g
                         end
                         resource = lib.get_item_in_pie_angles(pie_angles, angle) or "iron-ore"
                     end
-                    local amount_mean
-                    if surface.name == "vulcanus" then
-                        if resource == "coal" then
-                            amount_mean = scaled_richness * mgs.autoplace_controls.vulcanus_coal.richness
-                        elseif resource == "tungsten-ore" then
-                            amount_mean = scaled_richness * mgs.autoplace_controls.tungsten_ore.richness
-                        else
-                            amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
-                        end
-                    elseif surface.name == "gleba" then
-                        amount_mean = scaled_richness * mgs.autoplace_controls.gleba_stone.richness
-                    else
-                        amount_mean = scaled_richness * mgs.autoplace_controls[resource].richness
-                    end
+                    local richness = hex_grid.get_resource_setting(mgs, resource, "richness") or 1
+                    local amount_mean = scaled_richness * richness
                     amount = math.floor(amount_mean * (0.8 + 0.4 * math.random()))
                 end
                 if amount > 0 then
@@ -1358,6 +1469,8 @@ function hex_grid.get_randomized_resource_weighted_choice(surface, hex_pos)
     local dist = axial.distance(hex_pos, {q = 0, r = 0})
     local is_starter_hex = dist == 0
     local dropoff = lib.runtime_setting_value("resource-frequency-dropoff-" .. surface.name)
+
+    hex_grid.ensure_modded_resources_registered(surface.name)
 
     local function guarantee_well()
         if is_starter_hex or dist > 2 then return false end

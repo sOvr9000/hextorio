@@ -36,6 +36,7 @@ local translations = require "api.translations"
 local spider_control = require "api.spider_control"
 local spider_network = require "api.spider_network"
 local hex_pathfinding = require "api.hex_pathfinding"
+local mgs_util = require "api.util.mgs"
 
 migrations.load_handlers()
 
@@ -387,6 +388,7 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_controls.vulcanus_volcanism.size = 0
         mgs.autoplace_settings.tile.settings.lava.size = 0
         mgs.autoplace_settings.tile.settings["lava-hot"].size = 0
+        mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
         local coal_frequency = lib.runtime_setting_value "vulcanus-coal-frequency"
@@ -418,6 +420,7 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_settings.tile.settings["oil-ocean-shallow-2"].size = 0
         mgs.autoplace_settings.tile.settings["oil-ocean-deep"].size = 0
         mgs.autoplace_settings.tile.settings["oil-ocean-deep-2"].size = 0
+        mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
         storage.hex_grid.resource_weighted_choice.fulgora = {}
@@ -436,6 +439,7 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_settings.tile.settings["gleba-deep-lake"].size = 0
         -- mgs.autoplace_settings.tile.settings["gleba-deep-lake"].frequency = 0
         -- mgs.autoplace_settings.tile.settings["gleba-deep-lake"].richness = 0
+        mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
         storage.hex_grid.resource_weighted_choice.gleba = {}
@@ -450,6 +454,7 @@ script.on_event(defines.events.on_surface_created, function (event)
         mgs.autoplace_settings.tile.settings["ammoniacal-ocean"].size = 0
         mgs.autoplace_settings.tile.settings["ammoniacal-ocean-2"].size = 0
         mgs.autoplace_settings.tile.settings["brash-ice"].size = 0
+        mgs_util.disable_all_resource_autoplace(mgs)
         surface.map_gen_settings = mgs
 
         local crude_oil_frequency = lib.runtime_setting_value "aquilo-crude-oil-frequency"
@@ -467,6 +472,7 @@ script.on_event(defines.events.on_surface_created, function (event)
     end
 
     if not unknown then
+        hex_grid.register_modded_resources(surface.name)
         event_system.trigger("surface-created", surface)
     end
 

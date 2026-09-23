@@ -40,6 +40,9 @@ function initialization.init()
     mgs_util.zero_freq_rich_size(mgs.autoplace_controls, {"water", "coal", "stone", "copper-ore", "iron-ore", "uranium-ore", "crude-oil", "enemy-base"})
     mgs_util.zero_freq_rich_size(mgs.autoplace_settings.tile.settings, {"water", "deepwater"}) -- frequency doesn't get set to zero for water, but this has no effect compared to previous behavior
     mgs_util.zero_freq_rich_size(mgs.autoplace_settings.entity.settings, {"coal", "iron-ore", "copper-ore", "uranium-ore", "stone"})
+    -- Disable autoplacing of every resource, including those added by other mods,
+    -- since hextorio places ores itself.
+    mgs_util.disable_all_resource_autoplace(mgs)
 
     surface.map_gen_settings = mgs
 
@@ -99,6 +102,9 @@ function initialization.init()
     storage.hex_grid.resource_weighted_choice.nauvis.uranium = weighted_choice.new {
         ["uranium-ore"] = 1,
     }
+
+    -- Add resources from other mods to the weighted choices.
+    hex_grid.register_modded_resources "nauvis"
 
     local num_trades = lib.runtime_setting_value "rank-3-effect" --[[@as int]]
     trades.generate_interplanetary_trade_locations("nauvis", num_trades)

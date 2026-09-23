@@ -52,6 +52,29 @@ function mgs_util.sum_mgs(mgs, target, keys)
     return sum
 end
 
+---Disable autoplacement of every resource entity in the given map gen settings,
+---including resources added by other mods. hextorio places ores itself per hex.
+---Does nothing when modded resource handling is disabled, so that resources from
+---other mods keep their normal vanilla autoplacement.
+---@param mgs MapGenSettings
+function mgs_util.disable_all_resource_autoplace(mgs)
+    if not lib.runtime_setting_value_as_boolean "modded-resources-enabled" then return end
+
+    local entity_settings = mgs.autoplace_settings
+        and mgs.autoplace_settings.entity
+        and mgs.autoplace_settings.entity.settings
+    if not entity_settings then return end
+
+    for entity_name in pairs(entity_settings) do
+        local prototype = prototypes.entity[entity_name]
+        if prototype and prototype.type == "resource" then
+            entity_settings[entity_name].frequency = 0
+            entity_settings[entity_name].richness = 0
+            entity_settings[entity_name].size = 0
+        end
+    end
+end
+
 ---Turn a map gen setting between 0.16667 and 6 into a number between 0 and 1, or to a specified range
 ---@param x number|nil
 ---@param to_min number|nil
