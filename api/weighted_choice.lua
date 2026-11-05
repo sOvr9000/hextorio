@@ -98,6 +98,19 @@ function weighted_choice.choice(wc)
     end
 end
 
+---Return an array of the items in the weighted choice object (excluding the total weight sentinel).
+---@param wc WeightedChoice
+---@return any[]
+function weighted_choice.get_items(wc)
+    local items = {}
+    for item, _ in pairs(wc) do
+        if item ~= "__total_weight" then
+            items[#items + 1] = item
+        end
+    end
+    return items
+end
+
 ---Shallow copy a weighted choice object
 ---@param wc WeightedChoice
 ---@return WeightedChoice
